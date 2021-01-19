@@ -2,7 +2,7 @@
 //!
 //! # Example
 //! ```
-//! use synth_generator::prelude::*;
+//! use synth_gen::prelude::*;
 //! ```
 
 pub use crate::ser::OwnedSerializable;

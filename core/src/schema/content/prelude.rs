@@ -27,7 +27,7 @@ pub(super) use rand::distributions::Bernoulli;
 pub(super) use rand_regex::{Error as RegexError, Regex as RandRegex};
 
 // bynar
-pub(super) use synth_generator::{prelude::*, Chain, OneOf, Seed};
+pub(super) use synth_gen::{prelude::*, Chain, OneOf, Seed};
 
 // crate
 pub(super) use super::{suggest_closest, Content, Find};

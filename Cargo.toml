@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "synth-generator",
-  "synth-daemon",
+  "gen",
+  "core",
   "synth",
 ]

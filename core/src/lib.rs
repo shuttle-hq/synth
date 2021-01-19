@@ -13,12 +13,6 @@
 extern crate log;
 
 #[macro_use]
-extern crate diesel;
-
-#[macro_use]
-extern crate diesel_migrations;
-
-#[macro_use]
 extern crate anyhow;
 
 #[macro_use]
@@ -32,9 +26,6 @@ extern crate serde_json;
 pub mod error;
 pub use error::Error;
 
-pub mod index;
-pub use index::Index;
-
 #[macro_use]
 pub mod schema;
 pub use schema::{Content, Namespace, Name};
@@ -42,5 +33,3 @@ pub use schema::{Content, Namespace, Name};
 pub mod python;
 
 pub mod gen;
-//mod rlog;
-pub mod store;

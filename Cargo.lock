@@ -2423,43 +2423,13 @@ version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-std",
- "bincode",
- "chrono",
- "colored",
- "diesel",
- "diesel_migrations",
- "env_logger",
- "fake",
- "fs2",
- "lazy_static",
- "log",
- "num",
- "num_cpus",
- "pyo3",
- "rand",
- "rand_regex",
- "rayon",
- "regex",
- "serde",
- "serde_json",
- "shellexpand",
- "strsim 0.10.0",
- "synth-generator",
- "sysinfo",
- "tempfile",
- "tide",
-]
-
-[[package]]
-name = "synth-daemon"
-version = "0.2.1"
-dependencies = [
- "anyhow",
- "async-std",
  "chrono",
  "colored",
  "ctrlc",
+ "diesel",
+ "diesel_migrations",
  "env_logger",
+ "fs2",
  "git2",
  "lazy_static",
  "log",
@@ -2471,17 +2441,47 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "shellexpand",
  "strsim 0.10.0",
  "structopt",
- "synth",
- "synth-generator",
+ "synth-core",
+ "synth-gen",
  "sysinfo",
  "tempfile",
  "tide",
 ]
 
 [[package]]
-name = "synth-generator"
+name = "synth-core"
+version = "0.2.1"
+dependencies = [
+ "anyhow",
+ "async-std",
+ "bincode",
+ "chrono",
+ "colored",
+ "env_logger",
+ "fake",
+ "lazy_static",
+ "log",
+ "num",
+ "num_cpus",
+ "pyo3",
+ "rand",
+ "rand_regex",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "strsim 0.10.0",
+ "synth-gen",
+ "sysinfo",
+ "tempfile",
+ "tide",
+]
+
+[[package]]
+name = "synth-gen"
 version = "0.2.1"
 dependencies = [
  "anyhow",

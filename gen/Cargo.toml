@@ -1,5 +1,5 @@
 [package]
-name = "synth-generator"
+name = "synth-gen"
 version = "0.2.1"
 authors = [
   "Damien Broka <damien@getsynth.com>",

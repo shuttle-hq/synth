@@ -419,9 +419,9 @@ impl<D> Dummy<(), D> {
     ///
     /// # Example
     /// ```
-    /// # use synth_generator::prelude::*;
+    /// # use synth_gen::prelude::*;
     /// # fn main() {
-    /// let first_name: String = synth_generator::Dummy::new(faker::name::en::FirstName())
+    /// let first_name: String = synth_gen::Dummy::new(faker::name::en::FirstName())
     ///     .once()
     ///     .complete(&mut thread_rng());
     /// println!("{}", first_name)

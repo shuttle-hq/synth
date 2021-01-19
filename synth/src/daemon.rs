@@ -8,18 +8,19 @@ use chrono::NaiveDateTime;
 
 use anyhow::{Context, Result};
 
-use synth_generator::prelude::*;
-use synth::{
+use synth_gen::prelude::*;
+use synth_core::{
     error::{Error, ErrorKind},
     gen::Model,
     schema::{
 	FieldRef, ValueKindExt, optionalise::{Optionalise, OptionaliseApi},
 	s_override::{DefaultOverrideStrategy, OverrideStrategy},
-	Content, Namespace, Name
+	Content, Namespace, Name,
     },
-    index::Index,
     python::Pythonizer,
 };
+
+use crate::index::Index;
 
 pub type Document = Value;
 

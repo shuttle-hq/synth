@@ -10,7 +10,7 @@ use super::inference::{MergeStrategy, OptionalMergeStrategy};
 use super::{Name, suggest_closest, ArrayContent, Content, FieldRef, Find};
 use crate::gen::{Compile, Compiler, Model};
 
-use synth_generator::{value::IntoToken, Chain, TokenGeneratorExt};
+use synth_gen::{value::IntoToken, Chain, TokenGeneratorExt};
 
 #[allow(dead_code)]
 type JsonObject = Map<String, Value>;

@@ -15,6 +15,12 @@ extern crate log;
 #[macro_use]
 extern crate anyhow;
 
+#[macro_use]
+extern crate diesel;
+
+#[macro_use]
+extern crate diesel_migrations;
+
 //#[macro_use]
 //extern crate lazy_static;
 
@@ -51,6 +57,11 @@ use crate::rlog::target::TargetLogger;
 use crate::rlog::zenduty::ZenDuty;
 
 mod rlog;
+
+pub mod index;
+pub use index::Index;
+
+pub mod store;
 
 include!(concat!(env!("OUT_DIR"), "/meta.rs"));
 

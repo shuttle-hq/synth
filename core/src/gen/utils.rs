@@ -1,4 +1,4 @@
-use synth_generator::{prelude::*, GeneratorState};
+use synth_gen::{prelude::*, GeneratorState};
 
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};

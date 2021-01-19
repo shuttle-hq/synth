@@ -10,10 +10,13 @@ use chrono::{NaiveDateTime, Utc};
 
 use anyhow::{Context, Result};
 
-use crate::error::{Error, ErrorKind};
-use crate::index::generations::dsl::*;
+use synth_core::{
+    error::{Error, ErrorKind},
+    schema::{Name, Namespace}
+};
 use crate::store::FileStore;
-use crate::schema::{Name, Namespace};
+use crate::index::generations::dsl::*;
+
 use fs2::FileExt;
 
 embed_migrations!("migrations/");

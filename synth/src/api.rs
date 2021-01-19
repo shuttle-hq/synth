@@ -17,7 +17,7 @@ use crate::{
     Daemon,
 };
 
-use synth::Name;
+use synth_core::Name;
 
 #[inline]
 fn get_optional<R>(req: &Request<Api>, param: &str) -> TideResult<Option<R>>

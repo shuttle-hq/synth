@@ -53,7 +53,7 @@ in stdenv.mkDerivation {
 
   installPhase = ''
   mkdir -p $out/bin
-  makeWrapper "$src/bin/synth-daemon" "$out/bin/synthd" \
+  makeWrapper "$src/bin/synth" "$out/bin/synthd" \
               --prefix PATH ":" "${python}/bin" \
               --set RUST_BACKTRACE ${backtrace} \
               --set RUST_LOG ${logLevel}

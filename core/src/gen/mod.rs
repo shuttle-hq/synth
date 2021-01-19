@@ -15,8 +15,8 @@ use anyhow::Result;
 use compiler::NamespaceCompiler;
 use rand::prelude::Rng as RandRng;
 
-use synth_generator::Never;
-use synth_generator::{
+use synth_gen::Never;
+use synth_gen::{
     error::Error as GeneratorError,
     prelude::*,
     value::{Map, Token, Tokenizer},

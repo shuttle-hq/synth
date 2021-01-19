@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::iter::{DoubleEndedIterator, FromIterator, IntoIterator};
 
-use synth_generator::prelude::*;
+use synth_gen::prelude::*;
 use anyhow::{Context, Result};
 use colored::Colorize;
 
