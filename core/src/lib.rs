@@ -28,8 +28,6 @@ pub use error::Error;
 
 #[macro_use]
 pub mod schema;
-pub use schema::{Content, Namespace, Name};
-
-pub mod python;
+pub use schema::{Content, Name, Namespace};
 
 pub mod gen;

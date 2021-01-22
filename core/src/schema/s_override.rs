@@ -138,7 +138,11 @@ pub mod tests {
             .unwrap();
 
         match ns.get_s_node_mut(&field_ref).unwrap() {
-            Content::String(StringContent::Faker(FakerContent { generator, args })) => {
+            Content::String(StringContent::Faker(FakerContent {
+                generator,
+                args,
+                locales: _,
+            })) => {
                 assert_eq!(generator.as_str(), "name");
                 assert!(args.is_empty())
             }

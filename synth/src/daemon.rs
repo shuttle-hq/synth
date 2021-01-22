@@ -8,17 +8,16 @@ use chrono::NaiveDateTime;
 
 use anyhow::{Context, Result};
 
-use synth_gen::prelude::*;
 use synth_core::{
     error::{Error, ErrorKind},
     gen::Model,
     schema::{
-	FieldRef, ValueKindExt, optionalise::{Optionalise, OptionaliseApi},
-	s_override::{DefaultOverrideStrategy, OverrideStrategy},
-	Content, Namespace, Name,
+        optionalise::{Optionalise, OptionaliseApi},
+        s_override::{DefaultOverrideStrategy, OverrideStrategy},
+        Content, FieldRef, Name, Namespace, ValueKindExt,
     },
-    python::Pythonizer,
 };
+use synth_gen::prelude::*;
 
 use crate::index::Index;
 
@@ -125,7 +124,6 @@ pub enum GetDocumentsSampleResponse {
 
 pub struct Daemon {
     index: Index,
-    python: Pythonizer,
 }
 
 pub struct GetSchemaRequest {
@@ -218,7 +216,6 @@ impl Daemon {
     pub fn new<R: AsRef<Path>>(data_directory: R) -> Result<Self> {
         Ok(Self {
             index: Index::at(data_directory)?,
-            python: Pythonizer::new()?,
         })
     }
 
@@ -229,7 +226,7 @@ impl Daemon {
         target: usize,
     ) -> Result<Value> {
         let mut rng = rand::thread_rng();
-        let mut model = Model::from_namespace(namespace, &self.python)?.aggregate();
+        let mut model = Model::from_namespace(namespace)?.aggregate();
 
         fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
             match value {
@@ -445,10 +442,7 @@ impl Daemon {
         Ok(DeleteCollectionResponse)
     }
 
-    pub fn delete_namespace(
-        &self,
-        req: DeleteNamespaceRequest,
-    ) -> Result<DeleteNamespaceResponse> {
+    pub fn delete_namespace(&self, req: DeleteNamespaceRequest) -> Result<DeleteNamespaceResponse> {
         if !req.body.erase {
             return Err(failed!(target: Release,
                 "will not delete a namespace if the query parameter 'erase' is not explicitly set to 'true' (this operation cannot be reverted!!)"

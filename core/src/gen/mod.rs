@@ -1,19 +1,19 @@
 use std::collections::HashMap;
-use std::ops::Try;
-use std::ops::Range;
-use std::time::Duration;
 use std::convert::TryFrom;
 use std::fmt::Display;
+use std::ops::Range;
+use std::ops::Try;
+use std::time::Duration;
 
+use anyhow::Result;
+use compiler::NamespaceCompiler;
 use num::Zero;
-use rand_regex::Regex as RandRegex;
 use rand::distributions::{
     uniform::{SampleBorrow, SampleUniform, UniformDuration, UniformSampler},
     Bernoulli, Distribution, Uniform,
 };
-use anyhow::Result;
-use compiler::NamespaceCompiler;
 use rand::prelude::Rng as RandRng;
+use rand_regex::Regex as RandRegex;
 
 use synth_gen::Never;
 use synth_gen::{
@@ -30,9 +30,12 @@ mod utils;
 use utils::{Driver, Scoped, View};
 
 use crate::schema::{Categorical, CategoricalType};
-use crate::python::Pythonizer;
 use crate::schema::{
     ChronoContent, ChronoContentFormatter, FakerContentArgument, Namespace, Range as SRange,
+};
+
+use pyo3::{
+    types::IntoPyDict, types::PyTuple, FromPyObject, PyAny, PyObject, PyResult, Python, ToPyObject,
 };
 
 macro_rules! derive_generator {
@@ -236,8 +239,111 @@ derive_generator!(
 
 pub struct FakerSeed {
     pub generator: String,
-    pub python: Pythonizer,
-    pub args: HashMap<String, FakerContentArgument>,
+    pub faker_instance_name: String,
+    pub args: HashMap<String, PyObject>,
+}
+
+impl FakerSeed {
+    pub(crate) fn new(
+        generator: String,
+        args: HashMap<String, FakerContentArgument>,
+        locales: Vec<String>,
+    ) -> Result<Self> {
+        let gil = Python::acquire_gil();
+        let python = gil.python();
+        let faker = Self::faker(&locales, &python)?;
+        let faker_instance_name = Self::instance_name();
+        let main = python.import("__main__")?;
+        main.setattr(&faker_instance_name, faker)?;
+        Ok(FakerSeed {
+            generator,
+            args: Self::map_args(args),
+            faker_instance_name,
+        })
+    }
+
+    /// Creates an instance of python `Faker` with appropriate locales
+    fn faker<'p>(locales: &Vec<String>, python: &Python<'p>) -> PyResult<&'p PyAny> {
+        let faker = python.import("faker")?.get("Faker")?;
+        match locales.len() {
+            // No locales call an empty constructor
+            0 => faker.call0(),
+            // Pass locales in python `Faker` constructor
+            _ => faker.call1(PyTuple::new(python.clone(), vec![locales])),
+        }
+    }
+
+    /// Maps FakerContentArgs to args which can be used by Python interpreter
+    fn map_args<K, V>(args: HashMap<K, V>) -> HashMap<String, PyObject>
+    where
+        K: AsRef<str>,
+        V: ToPyObject,
+    {
+        let gil = Python::acquire_gil();
+        let python = gil.python();
+        let mut kwargs = HashMap::new();
+        for (key, value) in args {
+            let key_str = key.as_ref().to_string();
+            let value_obj = value.to_object(python);
+            kwargs.insert(key_str, value_obj);
+        }
+        kwargs
+    }
+
+    /// Instance name is just an uuid which is then used for GC in the drop Impl
+    /// Instance name starts with `_` and has no `-` to be a valid variable name in python
+    fn instance_name() -> String {
+        format!("_{}", uuid::Uuid::new_v4().to_simple().to_string())
+    }
+
+    fn generate<'p, R>(&self, python: Python<'p>) -> PyResult<R>
+    where
+        R: FromPyObject<'p>,
+    {
+        let faker_instance = python
+            .import("__main__")
+            .and_then(|main| main.getattr(&self.faker_instance_name))?;
+        faker_instance
+            .call_method(
+                &self.generator,
+                (),
+                Some(self.args.clone().into_py_dict(python)),
+            )?
+            .extract()
+    }
+}
+
+impl Drop for FakerSeed {
+    /// This essentially implements a garbage collector, cleaning up resources when
+    /// FakerSeed is dropped and the instance of python `Faker` is no longer used.
+    fn drop(&mut self) {
+        let gil = Python::acquire_gil();
+        let python = gil.python();
+        let code = format!("del {}", self.faker_instance_name);
+        let _ = python.run(&code, None, None).map_err(|e| {
+            error!(
+                "Could not garbage collect variable {} in python runtime with error: {}",
+                self.faker_instance_name, e
+            );
+            e
+        });
+    }
+}
+
+impl Generator for FakerSeed {
+    type Yield = Token;
+
+    type Return = Never;
+
+    fn next(&mut self, _rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+        let gil = Python::acquire_gil();
+        let generated = self
+            .generate::<String>(gil.python())
+            .map(|g| g.into_token());
+        GeneratorState::Yielded(
+            generated.unwrap_or_else(|err| GeneratorError::custom(err).into_token()),
+        )
+    }
 }
 
 pub struct IncrementingSeed {
@@ -251,23 +357,6 @@ impl Generator for IncrementingSeed {
     fn next(&mut self, _rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
         self.count += 1;
         GeneratorState::Yielded(self.count - 1)
-    }
-}
-
-impl Generator for FakerSeed {
-    type Yield = Token;
-
-    type Return = Never;
-
-    fn next(&mut self, _rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
-        let mut inner = self.python.faker(&self.generator);
-        for (key, value) in self.args.iter() {
-            inner = inner.arg(key, value);
-        }
-        let generated = inner.generate::<String>().map(|g| g.into_token());
-        GeneratorState::Yielded(
-            generated.unwrap_or_else(|err| GeneratorError::custom(err).into_token()),
-        )
     }
 }
 
@@ -398,8 +487,8 @@ impl Model {
         Model::Primitive(PrimitiveModel::Null(().yield_token()))
     }
 
-    pub fn from_namespace(ns: &Namespace, pythonizer: &Pythonizer) -> Result<Self> {
-        NamespaceCompiler::new(ns, pythonizer).compile()
+    pub fn from_namespace(ns: &Namespace) -> Result<Self> {
+        NamespaceCompiler::new(ns).compile()
     }
 }
 
@@ -437,6 +526,13 @@ pub mod tests {
             "username": {
             "type": "string",
             "pattern": "[a-z0-9]{5,15}"
+            },
+            "bank_country": {
+            "type": "string",
+            "faker": {
+                "generator": "bank_country",
+                "locales": ["en_GB", "es_ES"]
+            }
             },
             "num_logins": {
             "type": "number",
@@ -530,16 +626,14 @@ pub mod tests {
                 "low": 0,
                 "step": 0.1
             }
-            }
+            },
         }
             }
         });
 
         let mut rng = rand::thread_rng();
 
-        let python = Pythonizer::new().unwrap();
-
-        let mut model = Model::from_namespace(&schema, &python)
+        let mut model = Model::from_namespace(&schema)
             .unwrap()
             .inspect(|yielded| {
                 println!("{:?}", yielded);
@@ -567,6 +661,7 @@ pub mod tests {
             id: u64,
             num_logins: u64,
             username: String,
+            bank_country: String,
             currency: String,
             credit_card: String,
             maybe_an_email: Option<String>,
@@ -587,6 +682,8 @@ pub mod tests {
             let mut currencies = HashMap::new();
             for user in sample_data.users {
                 assert_eq!(user.num_logins, user.num_logins_again);
+                println!("bank_country={}", user.bank_country);
+                assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
                 all_users.insert(user.username.clone());
                 currencies.insert(user.username, user.currency);
                 /*
@@ -640,10 +737,7 @@ pub mod tests {
 
     #[test]
     fn test_schema_compiles_and_generates() {
-        let python = Pythonizer::new().unwrap();
-        let mut model = Model::from_namespace(&USER_NAMESPACE, &python)
-            .unwrap()
-            .aggregate();
+        let mut model = Model::from_namespace(&USER_NAMESPACE).unwrap().aggregate();
         let mut rng = rand::thread_rng();
         let ser = OwnedSerializable::new(model.complete(&mut rng));
         serde_json::to_string_pretty(&ser).unwrap();

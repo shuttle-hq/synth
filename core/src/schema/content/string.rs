@@ -141,6 +141,9 @@ impl Serialize for FakerContentArgument {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FakerContent {
     pub generator: String,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub locales: Vec<String>,
     #[serde(flatten)]
     pub args: HashMap<String, FakerContentArgument>,
 }
@@ -170,12 +173,12 @@ impl ToPyObject for FakerContentArgument {
 }
 
 impl Compile for FakerContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Model> {
-        let seed = FakerSeed {
-            generator: self.generator.clone(),
-            python: compiler.python()?,
-            args: self.args.clone(),
-        };
+    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Model> {
+        let seed = FakerSeed::new(
+            self.generator.clone(),
+            self.args.clone(),
+            self.locales.clone(),
+        )?;
         Ok(Model::Primitive(PrimitiveModel::Faker(seed.once())))
     }
 }

@@ -10,7 +10,6 @@ use super::{
     Model, Unwrapped,
 };
 
-use crate::python::Pythonizer;
 use crate::schema::{Content, FieldRef, Namespace};
 
 macro_rules! says {
@@ -37,10 +36,6 @@ pub trait Compiler<'a> {
 
     /// @brokad: API contract: do not inspect `Model`
     fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Model>;
-
-    fn python(&self) -> Result<Pythonizer> {
-        Err(anyhow!("compiler does not support pythonizing"))
-    }
 }
 
 pub trait Compile {
@@ -493,18 +488,13 @@ impl<'t, 'a> Entry<'t, 'a> {
 pub(crate) struct NamespaceCompiler<'a> {
     state: CompilerState<'a>,
     vtable: Symbols,
-    pythonizer: &'a Pythonizer,
 }
 
 impl<'a> NamespaceCompiler<'a> {
-    pub fn new(namespace: &'a Namespace, pythonizer: &'a Pythonizer) -> Self {
+    pub fn new(namespace: &'a Namespace) -> Self {
         let state = CompilerState::namespace(namespace);
         let vtable = Symbols::new();
-        Self {
-            state,
-            vtable,
-            pythonizer,
-        }
+        Self { state, vtable }
     }
 
     pub fn compile(mut self) -> Result<Model> {
@@ -585,7 +575,6 @@ impl<'a> NamespaceCompiler<'a> {
                 cursor: next,
                 drivers: &mut drivers,
                 vtable: &mut self.vtable,
-                pythonizer: self.pythonizer,
             };
 
             stage_2!("{}: building", next_scope);
@@ -644,7 +633,6 @@ pub(crate) struct ContentCompiler<'c, 'a: 'c> {
     cursor: &'c mut CompilerState<'a>,
     drivers: &'c mut HashMap<Scope, Driver<Model>>,
     vtable: &'c mut Symbols,
-    pythonizer: &'c Pythonizer,
 }
 
 impl<'c, 'a: 'c> ContentCompiler<'c, 'a> {
@@ -698,10 +686,6 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
             .issue(&as_scope, &self.scope)?
             .ok_or(failed!(target: Release, Compilation => "reference not built: {}", as_scope))?;
         Ok(Model::View(Unwrapped::wrap(view)))
-    }
-
-    fn python(&self) -> Result<Pythonizer> {
-        Ok(self.pythonizer.clone())
     }
 }
 
