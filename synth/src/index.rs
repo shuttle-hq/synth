@@ -80,13 +80,10 @@ impl NamespaceEntry {
 }
 
 impl Index {
-    pub fn at<R: AsRef<Path>>(repo: R) -> Result<Self> {
-        let path: PathBuf = shellexpand::tilde(repo.as_ref().to_str().unwrap())
-            .into_owned()
-            .into();
-        debug!("index directory root: {}", path.to_str().unwrap());
+    pub fn at<R: AsRef<Path>>(path: R) -> Result<Self> {
+        debug!("index directory root: {}", path.as_ref().to_str().unwrap());
         let conn_str = Index::build_conn_str(&path);
-        let store = FileStore::new(path)?;
+        let store = FileStore::new(path.as_ref().to_owned())?;
         let out = Self { store, conn_str };
         out.verify()?;
         Ok(out)

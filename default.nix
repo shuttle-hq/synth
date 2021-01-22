@@ -51,6 +51,10 @@ in stdenv.mkDerivation {
     python
   ];
 
+  passthru = {
+    unwrapped = synthdUnwrapped;
+  };
+
   installPhase = ''
   mkdir -p $out/bin
   makeWrapper "$src/bin/synth" "$out/bin/synthd" \

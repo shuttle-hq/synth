@@ -17,8 +17,13 @@ $ nix-build debug.nix
 ```
 
 Once the build is complete, you will find the built binary under
-`$PWD/result/bin`. Note that this is the build used for debugging. Should you
-wish to compile the release build, run `nix-build release.nix` instead.
+`$PWD/result/bin`. Note that this is the build used for
+debugging. Should you wish to compile the release build, run
+`nix-build release.nix` instead. Or, to build the `docker` image, run
+
+```bash
+$ nix-build docker.nix
+```
 
 Alternatively, you can run traditional `cargo` builds through a [Nix shell][nix
 shell]. For that, run

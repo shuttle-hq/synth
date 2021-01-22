@@ -34,9 +34,10 @@ use structopt::StructOpt;
 
 use colored::Colorize;
 
-use std::net::SocketAddr;
+use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::{net::SocketAddr, str::FromStr};
 
 use anyhow::Result;
 
@@ -65,13 +66,43 @@ pub mod store;
 
 include!(concat!(env!("OUT_DIR"), "/meta.rs"));
 
+struct DataDirectoryPath(PathBuf);
+
+impl Default for DataDirectoryPath {
+    fn default() -> Self {
+        let home = env::var("HOME").unwrap_or("/".to_string());
+        let default_path = if home == "/" {
+            env::current_dir()
+                .map(|pwd| pwd.to_str().unwrap().to_string())
+                .unwrap_or("/".to_string())
+        } else {
+            shellexpand::tilde("~/.local/share/synthd").into_owned()
+        };
+        Self(default_path.into())
+    }
+}
+
+impl ToString for DataDirectoryPath {
+    fn to_string(&self) -> String {
+        self.0.to_str().unwrap().to_string()
+    }
+}
+
+impl FromStr for DataDirectoryPath {
+    type Err = <PathBuf as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        PathBuf::from_str(s).map(|pb| Self(pb))
+    }
+}
+
 #[derive(StructOpt)]
 #[structopt(name = "synthd", about = "synthetic data engine")]
 pub struct Args {
     #[structopt(short, long, default_value = "0.0.0.0:8182")]
     bind: SocketAddr,
-    #[structopt(short, long, default_value = "~/.local/share/synthd")]
-    data_directory: PathBuf,
+    #[structopt(short, long, default_value)]
+    data_directory: DataDirectoryPath,
     #[structopt(long)]
     zenduty: Option<String>,
 }
@@ -160,7 +191,7 @@ async fn main() -> Result<()> {
     let splash = Splash::auto()?;
     debug!("{}", splash);
 
-    let daemon = Arc::new(Daemon::new(args.data_directory)?);
+    let daemon = Arc::new(Daemon::new(args.data_directory.0)?);
 
     let server = Api::new_server(daemon)?;
     eprintln!(
