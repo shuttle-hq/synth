@@ -1,6 +1,6 @@
 [package]
 name = "synth"
-version = "0.2.1"
+version = "0.3.0"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>"

@@ -14,7 +14,7 @@
 , synthSrc ? null
 }:
 let
-  version = "0.2.1";
+  version = "0.3.0";
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
   synthUnwrapped = naersk.buildPackage {
     name = "synth-unwrapped";
