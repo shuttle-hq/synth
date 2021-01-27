@@ -1,5 +1,5 @@
 {
   pkgs ? import ./nixpkgs.nix {}
-, synthd ? import ./.
+, synth ? import ./.
 }:
-pkgs.callPackage synthd {}
+pkgs.callPackage synth {}

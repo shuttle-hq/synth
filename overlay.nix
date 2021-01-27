@@ -14,7 +14,7 @@ self: super: {
 
     nixBundle = (import sources.nix-bundle { nixpkgs = self; }).nix-bootstrap;
 
-    synthd = self.callPackage ./default.nix {
+    synth = self.callPackage ./default.nix {
       release = true;
       logLevel = "info";
       backtrace = "1";
@@ -25,7 +25,7 @@ self: super: {
 
   python = self.synthPackages.python;
 
-  synthd = self.synthPackages.synthd;
+  synth = self.synthPackages.synth;
   synthpy = self.python.pkgs.toPythonApplication self.synthPackages.synthpy;
 
   naersk = self.callPackage sources.naersk {

@@ -1,8 +1,8 @@
 {
   pkgs ? import ./nixpkgs.nix {}
-, synthd ? import ./.
+, synth ? import ./.
 }:
-pkgs.callPackage synthd {
+pkgs.callPackage synth {
   release = true;
   logLevel = "info";
   backtrace = "1";

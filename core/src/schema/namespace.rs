@@ -7,7 +7,7 @@ use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
 use super::inference::{MergeStrategy, OptionalMergeStrategy};
-use super::{Name, suggest_closest, ArrayContent, Content, FieldRef, Find};
+use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::gen::{Compile, Compiler, Model};
 
 use synth_gen::{value::IntoToken, Chain, TokenGeneratorExt};
@@ -70,6 +70,12 @@ impl Namespace {
 
     pub fn collection_exists(&self, name: &Name) -> bool {
         self.collections.contains_key(name)
+    }
+
+    pub fn put_collection(&mut self, name: &Name, content: Content) -> Result<()> {
+        // TODO collection exists
+        self.collections.insert(name.clone(), content);
+        Ok(())
     }
 
     pub fn create_collection(&mut self, name: &Name, value: &Value) -> Result<()> {

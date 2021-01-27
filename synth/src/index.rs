@@ -10,12 +10,12 @@ use chrono::{NaiveDateTime, Utc};
 
 use anyhow::{Context, Result};
 
+use crate::index::generations::dsl::*;
+use crate::store::FileStore;
 use synth_core::{
     error::{Error, ErrorKind},
-    schema::{Name, Namespace}
+    schema::{Name, Namespace},
 };
-use crate::store::FileStore;
-use crate::index::generations::dsl::*;
 
 use fs2::FileExt;
 
@@ -81,9 +81,11 @@ impl NamespaceEntry {
 
 impl Index {
     pub fn at<R: AsRef<Path>>(path: R) -> Result<Self> {
-        debug!("index directory root: {}", path.as_ref().to_str().unwrap());
-        let conn_str = Index::build_conn_str(&path);
-        let store = FileStore::new(path.as_ref().to_owned())?;
+        let expanded_path = path.as_ref().canonicalize()?;
+        debug!("index directory root: {}", expanded_path.to_str().unwrap());
+
+        let conn_str = Index::build_conn_str(&expanded_path);
+        let store = FileStore::new(expanded_path)?;
         let out = Self { store, conn_str };
         out.verify()?;
         Ok(out)

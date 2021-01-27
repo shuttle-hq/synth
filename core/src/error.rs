@@ -29,8 +29,8 @@ macro_rules! generate_error_variants {
     }
 }
 
-/// This macro is a convenience for error handling logic in synthd.
-/// The crux of the situation is the synthd contract is that no sensitive information is ever stored
+/// This macro is a convenience for error handling logic in synth.
+/// The crux of the situation is the synth contract is that no sensitive information is ever stored
 /// except when explicitly given permission by the user. This includes logs.
 /// Our definition of sensitive information is:
 ///     1) User defined values in data. For example in { "name" : "John" }, "John" is considered to be sensitive where as "age" is not

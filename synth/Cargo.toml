@@ -20,6 +20,7 @@ lazy_static = "1.4.0"
 tempfile = "3.1.0"
 
 [dependencies]
+lazy_static = "1.4.0"
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"
 
@@ -57,3 +58,5 @@ synth-core = { path = "../core", features = [ "python" ] }
 synth-gen = { path = "../gen" }
 
 pyo3 = { version = "0.12.1", optional = true }
+
+dialoguer = "0.7.1"

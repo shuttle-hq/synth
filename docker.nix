@@ -5,7 +5,7 @@
 }:
 with pkgs.dockerTools;
 let
-  synthd = import (if release then ./release.nix else ./debug.nix) {};
+  synth = import (if release then ./release.nix else ./debug.nix) {};
   baseImage = buildImage {
     name = "synth-base";
     tag = "latest";
@@ -26,7 +26,7 @@ buildImage {
   fromImage = baseImage;
 
   contents = [
-    synthd
+    synth
   ];
 
   runAsRoot = if runAsRoot then null else ''
@@ -37,7 +37,7 @@ buildImage {
   '';
 
   config = {
-    Entrypoint = [ "${synthd}/bin/synthd" ];
+    Entrypoint = [ "${synth}/bin/synth" ];
   } // (pkgs.lib.optionalAttrs (! runAsRoot) {
     User = "synthia";
   });

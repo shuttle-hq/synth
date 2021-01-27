@@ -1,8 +1,8 @@
 {
   pkgs ? import ./nixpkgs.nix {}
-, synthd ? import ./release.nix { inherit pkgs; }
+, synth ? import ./release.nix { inherit pkgs; }
 }:
 pkgs.synthPackages.nixBundle {
-  target = synthd;
-  run = "/bin/synthd";
+  target = synth;
+  run = "/bin/synth";
 }

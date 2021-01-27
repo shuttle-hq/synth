@@ -57,10 +57,13 @@ use crate::rlog::composite::CompositeLogger;
 use crate::rlog::target::TargetLogger;
 use crate::rlog::zenduty::ZenDuty;
 
+mod cli;
 mod rlog;
 
 pub mod index;
+use crate::cli::{Cli, CliArgs};
 pub use index::Index;
+use std::convert::TryFrom;
 
 pub mod store;
 
@@ -70,15 +73,10 @@ struct DataDirectoryPath(PathBuf);
 
 impl Default for DataDirectoryPath {
     fn default() -> Self {
-        let home = env::var("HOME").unwrap_or("/".to_string());
-        let default_path = if home == "/" {
-            env::current_dir()
-                .map(|pwd| pwd.to_str().unwrap().to_string())
-                .unwrap_or("/".to_string())
-        } else {
-            shellexpand::tilde("~/.local/share/synthd").into_owned()
-        };
-        Self(default_path.into())
+        let path = env::current_dir()
+            .expect("Failed to get current directory. Either the current directory does not exist or the user has insufficient permissions.")
+            .join(".synth/");
+        Self(path)
     }
 }
 
@@ -97,8 +95,14 @@ impl FromStr for DataDirectoryPath {
 }
 
 #[derive(StructOpt)]
-#[structopt(name = "synthd", about = "synthetic data engine")]
-pub struct Args {
+pub(crate) enum Args {
+    #[structopt(about = "Run Synth in daemon mode")]
+    Serve(ServeArgs),
+    #[structopt(flatten)]
+    Cli(CliArgs),
+}
+#[derive(StructOpt)]
+pub(crate) struct ServeArgs {
     #[structopt(short, long, default_value = "0.0.0.0:8182")]
     bind: SocketAddr,
     #[structopt(short, long, default_value)]
@@ -109,9 +113,9 @@ pub struct Args {
 
 struct Splash {
     python_ver: String,
-    synthd_ver: String,
-    synthd_ref: String,
-    synthd_rev: String,
+    synth_ver: String,
+    synth_ref: String,
+    synth_rev: String,
     os: String,
     arch: String,
     mem: u64,
@@ -132,10 +136,10 @@ impl Splash {
         #[cfg(not(feature = "python"))]
         let python_ver = { "disabled".bold().red().to_string() };
 
-        let synthd_ver = env!("CARGO_PKG_VERSION").to_string();
+        let synth_ver = env!("CARGO_PKG_VERSION").to_string();
 
-        let synthd_ref = META_SHORTNAME.to_string();
-        let synthd_rev = META_OID.to_string();
+        let synth_ref = META_SHORTNAME.to_string();
+        let synth_rev = META_OID.to_string();
         let os = META_OS.to_string();
         let arch = META_ARCH.to_string();
 
@@ -144,9 +148,9 @@ impl Splash {
 
         Ok(Self {
             python_ver,
-            synthd_ver,
-            synthd_ref,
-            synthd_rev,
+            synth_ver,
+            synth_ref,
+            synth_rev,
             os,
             arch,
             mem,
@@ -160,18 +164,18 @@ impl std::fmt::Display for Splash {
             f,
             "
 
-version = {synthd_ver}
-ref     = {synthd_ref}
-rev     = {synthd_rev}
+version = {synth_ver}
+ref     = {synth_ref}
+rev     = {synth_rev}
 python  = {python_ver}
 target  = {os}
 arch    = {arch}
 threads = {cpu}
 mem     = {mem}
 ",
-            synthd_ver = self.synthd_ver.blue().bold(),
-            synthd_ref = self.synthd_ref.bold(),
-            synthd_rev = self.synthd_rev.bold(),
+            synth_ver = self.synth_ver.blue().bold(),
+            synth_ref = self.synth_ref.bold(),
+            synth_rev = self.synth_rev.bold(),
             python_ver = self.python_ver.bold(),
             arch = self.arch.bold(),
             os = self.os.bold(),
@@ -186,6 +190,13 @@ mem     = {mem}
 async fn main() -> Result<()> {
     let args = Args::from_args();
 
+    match args {
+        Args::Serve(sa) => serve_daemon(sa).await,
+        Args::Cli(cli_args) => Cli::try_from(cli_args)?.run().await,
+    }
+}
+
+async fn serve_daemon(args: ServeArgs) -> Result<()> {
     init_remote_logger(&args);
 
     let splash = Splash::auto()?;
@@ -196,7 +207,7 @@ async fn main() -> Result<()> {
     let server = Api::new_server(daemon)?;
     eprintln!(
         "{} is listening on {}",
-        "synthd".bold(),
+        "synth".bold(),
         args.bind.to_string()
     );
 
@@ -214,7 +225,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn init_remote_logger(args: &Args) {
+fn init_remote_logger(args: &ServeArgs) {
     let mut loggers = Vec::<Box<dyn log::Log>>::new();
 
     // Env logger

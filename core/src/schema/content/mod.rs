@@ -11,7 +11,7 @@
 //!   modules.
 //! - Public fields should be avoided, short of `content: Content`.
 //! - Things that belong to those submodules that also need to be exposed
-//!   to other parts of `synthd` should be re-exported here.
+//!   to other parts of `synth` should be re-exported here.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

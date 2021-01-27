@@ -16,8 +16,8 @@
 let
   version = "0.2.1";
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
-  synthdUnwrapped = naersk.buildPackage {
-    name = "synth-daemon-unwrapped";
+  synthUnwrapped = naersk.buildPackage {
+    name = "synth-unwrapped";
     inherit version;
 
     src = ./.;
@@ -40,24 +40,24 @@ let
     ];
   };
 in stdenv.mkDerivation {
-  name = "synth-daemon";
+  name = "synth";
   inherit version;
 
-  src = synthdUnwrapped;
+  src = synthUnwrapped;
 
   buildInputs = [
     makeWrapper
-    synthdUnwrapped
+    synthUnwrapped
     python
   ];
 
   passthru = {
-    unwrapped = synthdUnwrapped;
+    unwrapped = synthUnwrapped;
   };
 
   installPhase = ''
   mkdir -p $out/bin
-  makeWrapper "$src/bin/synth" "$out/bin/synthd" \
+  makeWrapper "$src/bin/synth" "$out/bin/synth" \
               --prefix PATH ":" "${python}/bin" \
               --set RUST_BACKTRACE ${backtrace} \
               --set RUST_LOG ${logLevel}
