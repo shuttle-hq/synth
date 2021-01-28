@@ -8,6 +8,7 @@
 , sqlite
 , openssl
 , ncurses6
+, libiconv
 , release ? false
 , logLevel ? "debug"
 , backtrace ? "1"
@@ -15,6 +16,8 @@
 }:
 let
   version = "0.3.0";
+  darwinBuildInputs =
+    stdenv.lib.optional stdenv.hostPlatform.isDarwin libiconv;
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
   synthUnwrapped = naersk.buildPackage {
     name = "synth-unwrapped";
@@ -37,7 +40,7 @@ let
       sqlite.dev
       openssl.dev
       python
-    ];
+    ] ++ darwinBuildInputs;
   };
 in stdenv.mkDerivation {
   name = "synth";
