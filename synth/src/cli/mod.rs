@@ -89,7 +89,7 @@ impl Cli {
         Path::new(".synth/config.toml").exists()
     }
 
-    fn import(&self, path: PathBuf, from: SomeImportStrategy) -> Result<()> {
+    fn import(&self, path: PathBuf, import_strategy: Option<SomeImportStrategy>) -> Result<()> {
         if !self.workspace_initialised() {
             return Err(anyhow!(
                 "Workspace has not been initialised. To initialise the workspace run `synth init`."
@@ -98,11 +98,12 @@ impl Cli {
 
         if self.store.ns_exists(&path) {
             return Err(anyhow!(
-                "The namespace at `{}` already exists. Cannot import into an existing namespace."
+                "The namespace at `{}` already exists. Cannot import into an existing namespace.",
+                path.display()
             ));
         }
 
-        let ns = from.import()?;
+        let ns = import_strategy.unwrap_or_default().import()?;
 
         self.store.save_ns_path(path, ns)?;
 
@@ -196,7 +197,7 @@ impl Cli {
 }
 
 #[derive(StructOpt)]
-#[structopt(name = "synthcli", about = "synthetic data engine on the command line")]
+#[structopt(name = "synth", about = "synthetic data engine on the command line")]
 pub(crate) enum CliArgs {
     #[structopt(about = "Generate data from a namespace")]
     Generate {
@@ -210,15 +211,18 @@ pub(crate) enum CliArgs {
         #[structopt(long, help = "the number of samples", default_value = "1")]
         size: usize,
     },
-    #[structopt(about = "Generate data from a namespace")]
+    #[structopt(about = "Create a namespace from a data source")]
     Import {
         #[structopt(
             help = "the namespace directory into which to import",
             parse(from_os_str)
         )]
         namespace: PathBuf,
-        #[structopt(subcommand)]
-        from: SomeImportStrategy,
+        #[structopt(
+            long,
+            help = "The location from which to import. Currently synth supports multiple import strategies. Importing directly from a database will be supported in future versions. \n\nImporting from a file: Currently we support importing from JSON files by specifying the path to the file: `/some/path/to/file.json`. \n\nImporting from standard input: Not specifying `from` will accept JSON files from stdin."
+        )]
+        from: Option<SomeImportStrategy>,
     },
     #[structopt(about = "Apply namespace changes to underlying state")]
     #[allow(unused)]
@@ -229,6 +233,6 @@ pub(crate) enum CliArgs {
         )]
         namespace: PathBuf,
     },
-    #[structopt(about = "Initialise workspace")]
+    #[structopt(about = "Initialise the workspace")]
     Init {},
 }
