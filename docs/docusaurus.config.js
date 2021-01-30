@@ -2,7 +2,7 @@ module.exports = {
     title: 'Synth - Documentation',
     tagline: 'Easy data generation',
     url: 'https://openquery-io.github.io/synth',
-    baseUrl: '/',
+    baseUrl: '/synth/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/getsynth_favicon.png',
