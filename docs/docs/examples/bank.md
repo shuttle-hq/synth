@@ -7,11 +7,11 @@ title: Bank
 
 ## Scenario
 
-In our fictitious example, a software developer, Cynthia works at a financial services company and wants to create a realistic replica of their production data for application testing. Having looked at the market and seeing that Synth is clearly the superior tool for doing this, the Cynthia downloads Synth and runs it locally on her machine.
+In our fictitious example, a software engineer called Cynthia works at a financial services company and wants to create a realistic replica of their production database `bank_db` for application testing. Having looked at the market and seeing that Synth is clearly the superior tool for doing this, the Cynthia downloads Synth and runs it locally on her machine.
 
 ## Example Data
 
-Cynthia wants to clone a schema named `bank_db`, and `bank_db` has two tables.
+`bank_db` has two tables:
 
 1. The `users` table which has all the information pertaining to their customers. 
 

@@ -7,7 +7,7 @@ This section covers the core concepts found in Synth.
 
 ## Workspaces
 
-A workspace, marked by a `.synth/` subdirectory, represent a collection of synthetic data namespaces managed by Synth.
+A workspace, marked by a `.synth/` subdirectory. A workspace represents a set of synthetic data namespaces managed by Synth.
 
 A workspace can have *zero or more namespaces*, where the namespaces are just represented as subdirectories as well as some internal state in `.synth/`.
 
@@ -32,7 +32,7 @@ Every namespace has zero or more **collections**. Collections are addressable by
 
 ## Schema
 
-The schema is the core data structure that you need to understand to be productive with Synth. The schema represents your data model, it tells Synth exactly how to generate data, which fields we need, what types and so on. This a little involved so there is a section devoted to just the [Schema](schema.md)
+The schema is the core data structure that you need to understand to be productive with Synth. The schema represents your data model, it tells Synth exactly how to generate data, which fields we need, what types and so on. This is a little involved so there is a section devoted to just the [Schema](schema.md)
 
 ## Field References
 
@@ -48,5 +48,5 @@ Synth can ingest and build data models (aka Synth Schemas) on the fly - assuming
 
 You can use the `synth import` command to import data into a namespace.
 
-Not only will Synth automatically *derive* the Schema for you, inferring the types and topology of the content graph. Synth will also automatically adjust the Schema as new information is ingested. FOr more on this, refer to the [inference](inference.md) page.
+Not only will Synth automatically *derive* the Schema for you, inferring the types and topology of the content graph. Synth will also automatically adjust the Schema as new information is ingested. For more on this, refer to the [inference](inference.md) page.
 

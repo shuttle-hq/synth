@@ -5,30 +5,40 @@ title: Hello World
 
 ## Installation
 
-To get started you need the Rust package manager `cargo`. If you don't have it, you can install Rust and Cargo using:
+To get started you need the Rust package manager `cargo`. If you don't have it, you can install Rust and Cargo using (this will also make nightly the default toolchain):
 
 ```bash
-$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly
 ```
 
 Next, clone the Synth repository:
 
 ```bash
-$ git clone https://github.com/openquery-io/synth
+git clone https://github.com/openquery-io/synth
 ```
 
-Finally, navigate to the `synth` source folder and run:
+Next, to compile `synth` run:
 
 ```bash
-$ cd synth && cargo install
+cd synth/synth && cargo build
 ```
+> Note: If compilation fails, there are some dependencies required at compile time which you may not have installed: `sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev`
+
+And finally, to install `synth` run:
+
+```bash
+cp ../target/debug/synth ~/.local/bin/synth
+```
+
+> Note: The binary is copied to `~/.local/bin/synth` but this can vary depending on where your OS stores user binaries 
 
 You should then be able to interact with the `synth` cli.
 
+### Runtime Dependencies
 Synth uses the Python [Faker](https://pypi.org/project/Faker/) library to generate different flavours of dummy data. To install Faker, run:
 
 ```bash
-$ pip3 install Faker
+pip3 install Faker
 ```
 
 ## Hello World
@@ -36,7 +46,7 @@ $ pip3 install Faker
 After install the Synth cli, the next step is to create a `workspace`. To do this create a directory and run `synth init`.
 
 ```bash
-$ mkdir my_synth_workspace && cd my_synth_workspace && synth init
+mkdir my_synth_workspace && cd my_synth_workspace && synth init
 ```
 
 This will create a `.synth` subdirectory in `my_synth_workspace`. Currently, this directory acts as simply an anchor to tell Synth that this is a workspace.
@@ -44,7 +54,7 @@ This will create a `.synth` subdirectory in `my_synth_workspace`. Currently, thi
 Next we create a namespace with a dummy collection:
 
 ```bash
-$ mkdir my_app 
+mkdir my_app 
 ```
 And then a file, `my_app/dummy.json` with the following content:
 
