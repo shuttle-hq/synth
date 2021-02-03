@@ -1,57 +1,51 @@
-# Synth
+<p align=center>
+  <img height="128px" src="https://cdn.discordapp.com/icons/803236282088161321/fff7943ed3e3d656a4fb1fdb603d7e5d.png?size=128"/>
+</p>
+<p align=center>
+  A declarative synthetic data engine for semi-structured data.
+</p>
+<br>
+<p align=center>
+  <a href="https://github.com/openquery-io/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
+  <a href="https://github.com/openquery-io/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
+  <a href="https://github.com/openquery-io/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/openquery-io/synth/docs"/></a>
+  <a href="https://discord.gg/wwJVAFKKkq"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
+</p>
 
-## Building [`synth`][synth]
-Clone the repository with
+------
 
-```bash
-$ git clone git@github.com:openquery-io/synth.git
-```
+Synth is a tool for generating realistic looking and anonymized synthetic data. Synth is database agnostic and can scale to millions of rows of data.
 
-and navigate to the root of your local copy. 
+The key features of Synth are:
+- **Synthetic Data as Code**: Data generation is described using a configuration language allowing you to specify your entire data model as code. Synthetic data as code enables you to peer review, version control and automate your synthetic data generation.
+ 
+- **Data Inference**: Synth can ingest data from your primary data source and infer the structure of the data. Understanding the relationships, distributions and types of the underlying dataset.
 
-### Using [Nix][nix]
-To build [`synth`][synth] using the [Nix][nix] package manager, run
+- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases. 
+ 
+- **Semantic Data Types**: Synth integrates with the (amazing) Python [Faker](https://pypi.org/project/Faker/) library, supporting generation of thousands of semantic types (e.g. credit card numbers, email addresses etc.) as well as locales.
 
-```bash
-$ nix-build debug.nix
-```
+## Installation & Getting Started
 
-Once the build is complete, you will find the built binary under
-`$PWD/result/bin`. Note that this is the build used for
-debugging. Should you wish to compile the release build, run
-`nix-build release.nix` instead. Or, to build the `docker` image, run
+To get started quickly, check out the [docs](https://openquery-io.github.io/synth/)
 
-```bash
-$ nix-build docker.nix
-```
+## Why Rust
 
-Alternatively, you can run traditional `cargo` builds through a [Nix shell][nix
-shell]. For that, run
+We decided to build Synth from the ground up in Rust. We love Rust, and given the scale of data we wanted `synth` to generate, it made sense as a first choice. The combination of memory safety, performance, expressiveness and a great community made it a no-brainer and we've never looked back!
 
-```bash
-$ nix-shell
-```
+## Get in touch
 
-at the root of the repository. It will set up the same Rust toolchain used for
-debug and release builds above as well as all required Python
-dependencies. From there, you can just run `cargo build`, `cargo run` as usual.
+If you would like to learn more, or you would like support for your use-case, feel free to open an issue on Github.
 
-### Using `cargo`
-You need [cargo][cargo] and a recent version of the Rust [nightly][nightly] toolchain.
+If your query is more sensitive, you can email [opensource@getsynth.com](mailto:opensource@getsynth.com) and we'll happily chat about your usecase.
 
-Run `cargo build` to build from source, `cargo install` to install the [`synth`][synth]
-CLI, and `cargo test` to run the tests.
+If you intend on using Synth, we would recommend joining our growing [Discord](https://discord.gg/wwJVAFKKkq) community.
 
-Note that because some tests rely on functionalities pulled over from `Python`
-modules (such as [Faker][faker]) through the amazing [pyo3][pyo3], you will
-need a local Python environment (at least 3.6) and the Faker module. Follow the
-instructions over at [Faker][faker] to install Faker.
+## About Us
 
+The Synth project is backed by OpenQuery. We are a [YCombinator](https://www.ycombinator.com/) backed startup based in London, England. We are passionate about data privacy, developer productivity, and building great tools for software engineers.
 
-[faker]: https://github.com/joke2k/faker
-[pyo3]: https://github.com/PyO3/pyo3
-[nix]: https://nixos.org/download.html#nix-quick-install
-[cargo]: https://doc.rust-lang.org/cargo/
-[nightly]: https://www.rust-lang.org/tools/install
-[nix shell]: https://nixos.org/guides/nix-pills/developing-with-nix-shell.html
-[synth]: https://github.com/openquery-io/synth
+## License
+
+Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/openquery-io/synth/blob/master/LICENSE).
+

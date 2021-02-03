@@ -11,28 +11,14 @@ To get started you need the Rust package manager `cargo`. If you don't have it, 
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly
 ```
 
-Next, clone the Synth repository:
+Next, install Synth using `cargo`:
 
 ```bash
-git clone https://github.com/openquery-io/synth
+cargo install --locked --git https://github.com/openquery-io/synth.git synth
 ```
+> Note: If compilation fails, there are some dependencies required at compile time which you may not have installed: `sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev` 
 
-Next, to compile `synth` run:
-
-```bash
-cd synth/synth && cargo build
-```
-> Note: If compilation fails, there are some dependencies required at compile time which you may not have installed: `sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev`
-
-And finally, to install `synth` run:
-
-```bash
-cp ../target/debug/synth ~/.local/bin/synth
-```
-
-> Note: The binary is copied to `~/.local/bin/synth` but this can vary depending on where your OS stores user binaries 
-
-You should then be able to interact with the `synth` cli.
+You can run `synth --version` to make sure the CLI installed correctly.
 
 ### Runtime Dependencies
 Synth uses the Python [Faker](https://pypi.org/project/Faker/) library to generate different flavours of dummy data. To install Faker, run:
