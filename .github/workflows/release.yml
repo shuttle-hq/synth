@@ -25,7 +25,7 @@ jobs:
       uses: dawidd6/action-get-tag@v1
     - run: cargo +nightly build --release
     - working-directory: target/release
-      run: tar -czf target/release/synth.tar.gz synth
+      run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
       with:
         name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
