@@ -3,8 +3,44 @@ id: hello-world
 title: Hello World
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Installation
 
+<Tabs
+  defaultValue="linux"
+  values={[
+    {label: 'Linux', value: 'linux'},
+    {label: 'macOS', value: 'mac'},
+    {label: 'Compile from source', value: 'source'},
+  ]}>
+  
+  <TabItem value='linux'>
+  
+Run the following command to install the `synth` binary:
+
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+```
+  </TabItem>
+  
+  <TabItem value='mac'>
+  
+Run the following command to install the `synth` binary:
+
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+```
+
+:::tip
+You'll need `python3` - if you don't have it already you can `brew install python3`.
+:::
+  </TabItem>
+  
+  <TabItem value='source'>
 To get started you need the Rust package manager `cargo`. If you don't have it, you can install Rust and Cargo using (this will also make nightly the default toolchain):
 
 ```bash
@@ -16,7 +52,12 @@ Next, install Synth using `cargo`:
 ```bash
 cargo install --locked --git https://github.com/openquery-io/synth.git synth
 ```
-> Note: If compilation fails, there are some dependencies required at compile time which you may not have installed: `sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev` 
+:::note
+If compilation fails, there are some dependencies required at compile time which you may not have installed: `sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev`
+:::
+    
+  </TabItem>
+</Tabs>
 
 You can run `synth --version` to make sure the CLI installed correctly.
 
