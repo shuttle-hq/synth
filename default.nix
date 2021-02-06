@@ -9,6 +9,7 @@
 , openssl
 , ncurses6
 , libiconv
+, darwin
 , release ? false
 , logLevel ? "debug"
 , backtrace ? "1"
@@ -17,7 +18,11 @@
 let
   version = "0.3.0";
   darwinBuildInputs =
-    stdenv.lib.optional stdenv.hostPlatform.isDarwin libiconv;
+    stdenv.lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk.frameworks; [
+      libiconv
+      IOKit
+      Security
+    ]);
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
   synthUnwrapped = naersk.buildPackage {
     name = "synth-unwrapped";
@@ -62,6 +67,7 @@ in stdenv.mkDerivation {
   mkdir -p $out/bin
   makeWrapper "$src/bin/synth" "$out/bin/synth" \
               --prefix PATH ":" "${python}/bin" \
+              --prefix NIX_PYTHONPATH ":" "${python}/lib/python3.7/site-packages" \
               --set RUST_BACKTRACE ${backtrace} \
               --set RUST_LOG ${logLevel}
   '';

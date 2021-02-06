@@ -42,7 +42,7 @@ use std::{net::SocketAddr, str::FromStr};
 use anyhow::Result;
 
 #[cfg(feature = "python")]
-use pyo3::Python;
+use pyo3::{Python, PyResult};
 
 #[macro_use]
 mod error;
@@ -113,6 +113,7 @@ pub(crate) struct ServeArgs {
 
 struct Splash {
     python_ver: String,
+    python_path: String,
     synth_ver: String,
     synth_ref: String,
     synth_rev: String,
@@ -124,13 +125,18 @@ struct Splash {
 impl Splash {
     fn auto() -> Result<Self> {
         #[cfg(feature = "python")]
-        let python_ver = {
+        let (python_ver, python_path) = {
             let gil = Python::acquire_gil();
             let py = gil.python();
             let sys = py.import("sys")?;
-            sys.get("version")?
-                .extract()
-                .map(|ver_str: String| ver_str.replace("\n", ""))
+            let version = sys.get("version")?
+                .extract::<String>()?
+		.replace("\n", "");
+	    let path = sys.get("path")?
+		.extract::<Vec<String>>()?
+		.join(":");
+	    let out: PyResult<_> = Ok((version, path));
+	    out
         }?;
 
         #[cfg(not(feature = "python"))]
@@ -148,6 +154,7 @@ impl Splash {
 
         Ok(Self {
             python_ver,
+	    python_path,
             synth_ver,
             synth_ref,
             synth_rev,
@@ -164,19 +171,21 @@ impl std::fmt::Display for Splash {
             f,
             "
 
-version = {synth_ver}
-ref     = {synth_ref}
-rev     = {synth_rev}
-python  = {python_ver}
-target  = {os}
-arch    = {arch}
-threads = {cpu}
-mem     = {mem}
+version     = {synth_ver}
+ref         = {synth_ref}
+rev         = {synth_rev}
+python      = {python_ver}
+python_path = {python_path}
+target      = {os}
+arch        = {arch}
+threads     = {cpu}
+mem         = {mem}
 ",
             synth_ver = self.synth_ver.blue().bold(),
             synth_ref = self.synth_ref.bold(),
             synth_rev = self.synth_rev.bold(),
             python_ver = self.python_ver.bold(),
+	    python_path = self.python_path,
             arch = self.arch.bold(),
             os = self.os.bold(),
             mem = self.mem,

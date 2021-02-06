@@ -4,7 +4,7 @@
 self: super: {
   synthPackages = {
     rustToolchain = super.rustChannelOf {
-      date = "2020-11-17";
+      date = "2020-12-20";
       channel = "nightly";
     };
 
