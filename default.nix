@@ -4,16 +4,14 @@
 , makeWrapper
 , stdenv
 , python
+, pythonPackages
 , pkgconfig
 , sqlite
 , openssl
 , ncurses6
 , libiconv
 , darwin
-, release ? false
-, logLevel ? "debug"
-, backtrace ? "1"
-, synthSrc ? null
+, release ? true
 }:
 let
   version = "0.3.0";
@@ -24,15 +22,12 @@ let
       Security
     ]);
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
+  pythonEnv = python.withPackages pythonPackages;
   synthUnwrapped = naersk.buildPackage {
-    name = "synth-unwrapped";
+    name = "synth-unwrapped${suffix}";
     inherit version;
 
     src = ./.;
-
-    overrideMain = old: {
-      SYNTH_SRC = if synthSrc == null then ../. else synthSrc;
-    };
 
     preferLocalBuild = true;
 
@@ -44,31 +39,30 @@ let
       ncurses6.dev
       sqlite.dev
       openssl.dev
-      python
+      pythonEnv
     ] ++ darwinBuildInputs;
   };
+  suffix = if release then "" else "-debug";
 in stdenv.mkDerivation {
-  name = "synth";
+  name = "synth${suffix}";
   inherit version;
 
   src = synthUnwrapped;
 
   buildInputs = [
     makeWrapper
-    synthUnwrapped
-    python
+    pythonEnv
   ];
 
   passthru = {
     unwrapped = synthUnwrapped;
+    inherit pythonEnv;
   };
 
   installPhase = ''
   mkdir -p $out/bin
   makeWrapper "$src/bin/synth" "$out/bin/synth" \
-              --prefix PATH ":" "${python}/bin" \
-              --prefix NIX_PYTHONPATH ":" "${python}/lib/python3.7/site-packages" \
-              --set RUST_BACKTRACE ${backtrace} \
-              --set RUST_LOG ${logLevel}
+              --prefix PATH ":" "${pythonEnv}/bin" \
+              --prefix NIX_PYTHONPATH ":" "${pythonEnv}/lib/python3.7/site-packages"
   '';
 }

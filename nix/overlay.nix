@@ -1,5 +1,5 @@
 {
-  sources ? import ./nix/sources.nix
+  sources ? import ./sources.nix
 }:
 self: super: {
   synthPackages = {
@@ -8,9 +8,10 @@ self: super: {
       channel = "nightly";
     };
 
-    python = super.python37.withPackages (pp: [
-      pp.faker
-    ]);
+    python = super.python37;
+    pythonPackages = pp: with pp; [
+      faker
+    ];
 
     nixBundle = (import sources.nix-bundle { nixpkgs = self; }).nix-bootstrap;
 
@@ -48,13 +49,9 @@ self: super: {
         '';
       };
 
-    synth = self.callPackage ./default.nix {
-      release = true;
-      logLevel = "info";
-      backtrace = "1";
+    synth = self.callPackage ../default.nix {
+      pythonPackages = self.synthPackages.pythonPackages;
     };
-
-    synthpy = self.callPackage ./client/synthpy/default.nix {};
   };
 
   rustToolchain = self.synthPackages.rustToolchain;
@@ -63,7 +60,6 @@ self: super: {
   python = self.synthPackages.python;
 
   synth = self.synthPackages.synth;
-  synthpy = self.python.pkgs.toPythonApplication self.synthPackages.synthpy;
 
   naersk = self.callPackage sources.naersk {
     rustc = self.synthPackages.rustToolchain.rust;

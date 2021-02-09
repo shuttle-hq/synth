@@ -17,7 +17,7 @@ fn git_data(repo_src: PathBuf) -> Result<(String, String), Box<dyn std::error::E
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let repo_src = PathBuf::from(&env::var("SYNTH_SRC").unwrap_or("../.".to_string()));
+    let repo_src = PathBuf::from(&env::var("SYNTH_SRC").unwrap_or("./.".to_string()));
     let (oid, shortname) = git_data(repo_src).unwrap_or(("unknown".to_string(), "unknown".to_string()));
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();

@@ -1,5 +1,5 @@
 {
-  sources ? import ./nix/sources.nix
+  sources ? import ./sources.nix
 }:
 let
   nixpkgs-mozilla-rust = import "${sources.nixpkgs-mozilla}/rust-overlay.nix";
