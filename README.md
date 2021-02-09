@@ -45,6 +45,12 @@ If you intend on using Synth, we would recommend joining our growing [Discord](h
 
 The Synth project is backed by OpenQuery. We are a [YCombinator](https://www.ycombinator.com/) backed startup based in London, England. We are passionate about data privacy, developer productivity, and building great tools for software engineers.
 
+## Contributing
+
+First of all, we sincerely appreciate all contributions to Synth, large or small so thank you.
+
+See the [contributing](./CONTRIBUTING.md) section for details.
+
 ## License
 
 Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/openquery-io/synth/blob/master/LICENSE).

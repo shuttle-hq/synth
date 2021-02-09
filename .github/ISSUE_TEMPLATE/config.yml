@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord Community Support
+    url: https://discord.gg/wwJVAFKKkq
+    about: Please ask any questions here
+  - name: Enterprise Questions
+    url: opensource@getsynth.com
+    about: Please get in touch for any enterprise related questions
