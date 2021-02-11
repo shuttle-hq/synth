@@ -6,17 +6,33 @@ SYNTH_INSTALLER=$SYNTH_REPO/releases/$SYNTH_VERSION/download/install-nix
 BUG_REPORT_URL="$SYNTH_REPO/issues/new?assignees=&labels=bug&template=bug_report.md&title="
 GETTING_STARTED=https://openquery-io.github.io/synth/hello-world
 
+MUTED='\033[1;30m'
+CLEAR='\033[0m'
+BOLD='\033[1m'
+RED='\033[0;31m'
+
+trap 'uncaught $? $LINENO' SIGTERM SIGKILL ERR INT
+
 oops() {
     log $@
     exit 1
 }
 
 uncaught() {
-    oops "got $?.\n\nCould not install synth. Let us know what went wrong by opening a GitHub issue and copy/pasting the logs:\n\n\t$BUG_REPORT_URL\n"
+    clear
+    oops "got $?.\n\n${RED}Could not install synth. Let us know what went wrong by opening a GitHub issue and copy/pasting the logs:\n\n\t$BUG_REPORT_URL\n"
+}
+
+muted() {
+    echo -e "$MUTED"
+}
+
+clear() {
+    echo -e "$CLEAR"
 }
 
 log() {
-    echo -e "$0:" "$@" >&2
+    echo -e "$0:" "$BOLD$@$CLEAR" >&2
 }
 
 check_util() {
@@ -27,7 +43,10 @@ ensure_nix() {
     if check_util "nix"; then
 	log "found nix"
     else
+	log "installing nix"
+	muted
 	curl -L https://nixos.org/nix/install | sh
+	clear
     fi
     . $HOME/.nix-profile/etc/profile.d/nix.sh
 }
@@ -36,8 +55,12 @@ ensure_cachix() {
     if check_util "cachix"; then
 	log "found cachix"
     else
+	log "installing cachix"
+	muted
 	nix-env -iA cachix -f https://cachix.org/api/v1/install
+	clear
     fi
+    log "adding getsynth to your binary caches"
     cachix use getsynth
 }
 
@@ -57,7 +80,7 @@ ensure_path() {
     echo $PATH | grep $HOME/.nix-profile/bin 2>&1 > /dev/null
 
     if [ ! -z $? ]; then
-	echo -e "\nWARNING: \$HOME/.local/bin is not in \$PATH. You may need to run:\n\n\texport PATH=\$HOME/.local/bin:\$PATH\n"
+	log "${RED}WARNING: \$HOME/.local/bin is not in \$PATH. You may need to run:\n\n\texport PATH=\$HOME/.local/bin:\$PATH\n"
     fi
 }
 
@@ -70,16 +93,20 @@ ensure_synth() {
 	ensure_cachix
 	ensure_utils
 
-	trap 'uncaught $? $LINENO' ERR
-
 	# Flow for `nix < 2.4`: Because `nix-env -f` does not seem to
 	# support HTTP redirects and the default github artifact
 	# release URL redirects to a one-time S3 URL.
 	WORKDIR=$(mktemp -d)
 	pushd $WORKDIR
+	log "downloading and extracting synth"
+	muted
 	curl -Ls --output install-nix $SYNTH_INSTALLER
 	tar -xf install-nix
+	clear
+	log "installing synth"
+	muted
 	nix-env -iA synth -f default.nix
+	clear
 	popd
 	rm -r $WORKDIR
 
@@ -99,4 +126,4 @@ ensure_synth
 
 ensure_path
 
-log "synth is ready to roll!\n\nGet started by heading over to:\n\n\t$GETTING_STARTED\n"
+log "synth is ready to roll! Get started by heading over to:\n\n\t$GETTING_STARTED\n"
