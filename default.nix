@@ -11,6 +11,7 @@
 , ncurses6
 , libiconv
 , darwin
+, synthSrc ? null
 , release ? true
 }:
 let
@@ -27,7 +28,7 @@ let
     name = "synth-unwrapped${suffix}";
     inherit version;
 
-    src = ./.;
+    src = if synthSrc == null then ./. else synthSrc;
 
     preferLocalBuild = true;
 
@@ -49,7 +50,7 @@ let
   };
   suffix = if release then "" else "-debug";
 in stdenv.mkDerivation {
-  name = "synth${suffix}";
+  name = "synth${suffix}-${version}";
   inherit version;
 
   src = synthUnwrapped;
