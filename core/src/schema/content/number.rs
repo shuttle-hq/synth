@@ -83,6 +83,7 @@ macro_rules! number_content {
 	}
 
 	#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+	#[serde(deny_unknown_fields)]
     pub struct Id {
         #[serde(default)]
         #[serde(skip_serializing_if = "Option::is_none")]

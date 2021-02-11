@@ -25,7 +25,7 @@
             "type": "number",
             "subtype": "u64",
             "id": {
-                "start": 0
+                "start_at": 1000
             }
         },
         "timestamp": {

@@ -516,7 +516,7 @@ pub mod tests {
             "type" : "number",
             "subtype" : "u64",
             "id" : {
-            "start" : 100
+            "start_at" : 100
             }
             },
             "is_active": {
@@ -684,6 +684,7 @@ pub mod tests {
                 assert_eq!(user.num_logins, user.num_logins_again);
                 println!("bank_country={}", user.bank_country);
                 assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
+		assert!(user.id >= 100);
                 all_users.insert(user.username.clone());
                 currencies.insert(user.username, user.currency);
                 /*
