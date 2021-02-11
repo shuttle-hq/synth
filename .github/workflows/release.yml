@@ -54,6 +54,37 @@ jobs:
         name: upload_url
         path: ./upload_url
 
+  upload-nix-installer:
+    name: upload-nix-installer
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: upload_url
+        path: ./
+    - id: release
+      run: echo "##[set-output name=upload_url;]$(cat upload_url)"
+    - working-directory: tools/nix
+      run: |
+        cp install.nix default.nix
+        sed -i \
+            -e "s|master|$GITHUB_REF|g" \
+            -e "s|HEAD|$GITHUB_SHA|g" \
+            default.nix
+        tar -cvf install-nix default.nix
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }} 
+        asset_path: ./tools/nix/install-nix
+        asset_name: install-nix
+        asset_content_type: application/octet-stream
+
   upload:
     name: upload
     needs: [ release ]

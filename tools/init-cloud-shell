@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+
+SYNTH_REPO=${SYNTH_REPO:-https://github.com/openquery-io/synth}
+SYNTH_VERSION=${SYNTH_VERSION:-latest}
+SYNTH_INSTALLER=$SYNTH_REPO/releases/$SYNTH_VERSION/download/install-nix
+BUG_REPORT_URL="$SYNTH_REPO/issues/new?assignees=&labels=bug&template=bug_report.md&title="
+GETTING_STARTED=https://openquery-io.github.io/synth/hello-world
+
+oops() {
+    log $@
+    exit 1
+}
+
+uncaught() {
+    oops "got $?.\n\nCould not install synth. Let us know what went wrong by opening a GitHub issue and copy/pasting the logs:\n\n\t$BUG_REPORT_URL\n"
+}
+
+log() {
+    echo -e "$0:" "$@" >&2
+}
+
+check_util() {
+    command -v "$1" > /dev/null 2>&1
+}
+
+ensure_nix() {
+    if check_util "nix"; then
+	log "found nix"
+    else
+	curl -L https://nixos.org/nix/install | sh
+    fi
+    . $HOME/.nix-profile/etc/profile.d/nix.sh
+}
+
+ensure_cachix() {
+    if check_util "cachix"; then
+	log "found cachix"
+    else
+	nix-env -iA cachix -f https://cachix.org/api/v1/install
+    fi
+    cachix use getsynth
+}
+
+ensure_utils() {
+    check_util "curl"
+    if [[ $? -ne 0 ]]; then
+	oops "this installer needs curl to download synth"
+    fi
+
+    check_util "tar"
+    if [[ $? -ne 0 ]]; then
+	oops "this installer needs tar to extract synth"
+    fi
+}
+
+ensure_path() {
+    echo $PATH | grep $HOME/.nix-profile/bin 2>&1 > /dev/null
+
+    if [ ! -z $? ]; then
+	echo -e "\nWARNING: \$HOME/.local/bin is not in \$PATH. You may need to run:\n\n\texport PATH=\$HOME/.local/bin:\$PATH\n"
+    fi
+}
+
+ensure_synth() {
+    if check_util "synth"; then
+	log "synth is already installed, nothing to do"
+	exit 0
+    else
+	ensure_nix
+	ensure_cachix
+	ensure_utils
+
+	trap 'uncaught $? $LINENO' ERR
+
+	# Flow for `nix < 2.4`: Because `nix-env -f` does not seem to
+	# support HTTP redirects and the default github artifact
+	# release URL redirects to a one-time S3 URL.
+	WORKDIR=$(mktemp -d)
+	pushd $WORKDIR
+	curl -Ls --output install-nix $SYNTH_INSTALLER
+	tar -xf install-nix
+	nix-env -iA synth -f default.nix
+	popd
+	rm -r $WORKDIR
+
+	if [[ ! -z "$CLOUDSHELL_ENVIRONMENT" ]]; then
+	    # Assuming GCP Cloud Shell
+	    log "we seem to be running in a GCP Cloud Shell, symlinking 'synth' into your ~/.local/bin"
+	    if [ -f $HOME/.local/bin/synth ]; then
+		rm $HOME/.local/bin/synth
+	    fi
+	    mkdir -p $HOME/.local/bin
+	    ln -s $HOME/.nix-profile/bin/synth $HOME/.local/bin/synth 2>&1 > /dev/null
+	fi
+    fi
+}
+
+ensure_synth
+
+ensure_path
+
+log "synth is ready to roll!\n\nGet started by heading over to:\n\n\t$GETTING_STARTED\n"

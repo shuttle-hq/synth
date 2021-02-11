@@ -1,0 +1,24 @@
+name: synth public cachix
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  cachix:
+    name: synth public cachix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install nix
+        uses: cachix/install-nix-action@v12
+      - name: Setup cachix
+        uses: cachix/cachix-action@v8
+        with:
+          name: getsynth
+          authToken: ${{ secrets.CACHIX_TOKEN }}
+      - name: Build synth
+        run: nix-build tools/nix/install.nix --argstr ref $GITHUB_REF --argstr rev $GITHUB_SHA
