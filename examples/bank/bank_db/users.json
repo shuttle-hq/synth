@@ -1,0 +1,82 @@
+{
+    "type": "array",
+    "length": {
+        "type": "number",
+        "subtype": "u64",
+        "range": {
+            "low": 1,
+            "high": 4,
+            "step": 1
+        }
+    },
+    "content": {
+        "type": "object",
+        "password_hash": {
+            "type": "string",
+            "faker": {
+                "generator": "sha256"
+            }
+        },
+        "username": {
+            "type": "one_of",
+            "variants": [
+                {
+                    "type": "same_as",
+                    "ref": "users.content.email"
+                },
+                {
+                    "type": "string",
+                    "faker": {
+                        "generator": "user_name"
+                    }
+                }
+            ]
+        },
+        "credit_card": {
+            "type": "string",
+            "faker": {
+                "generator": "credit_card_number"
+            }
+        },
+        "id": {
+            "type": "number",
+            "subtype": "u64",
+            "id": {}
+        },
+        "num_logins": {
+            "type": "number",
+            "subtype": "u64",
+            "range": {
+                "low": 19,
+                "high": 96,
+                "step": 1
+            }
+        },
+        "created_at": {
+            "type": "string",
+            "date_time": {
+                "format": "%Y-%m-%dT%H:%M:%S%z",
+                "begin": "2015-01-01T00:00:00+0000",
+                "end": "2018-01-01T00:00:00+0000"
+            }
+        },
+        "email": {
+            "type": "string",
+            "faker": {
+                "generator": "email"
+            }
+        },
+        "is_active": {
+            "type": "bool",
+            "frequency": 0.1
+        },
+        "last_login_at": {
+            "type": "string",
+            "date_time": {
+                "format": "%Y-%m-%dT%H:%M:%S%z",
+                "begin": "2018-01-02T00:00:00+0000",
+                "end": "2020-01-01T00:00:00+0000"
+            }
+        }
+    }
+}

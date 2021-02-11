@@ -65,9 +65,6 @@ impl Cli {
                 ref from,
             } => self.import(namespace.clone(), from.clone()),
             CliArgs::Init {} => self.init(),
-            CliArgs::Apply { namespace: _ } => {
-                unimplemented!("Applying changes to state TODO for now.")
-            }
         }
     }
 
@@ -223,15 +220,6 @@ pub(crate) enum CliArgs {
             help = "The location from which to import. Currently synth supports multiple import strategies. Importing directly from a database will be supported in future versions. \n\nImporting from a file: Currently we support importing from JSON files by specifying the path to the file: `/some/path/to/file.json`. \n\nImporting from standard input: Not specifying `from` will accept JSON files from stdin."
         )]
         from: Option<SomeImportStrategy>,
-    },
-    #[structopt(about = "Apply namespace changes to underlying state")]
-    #[allow(unused)]
-    Apply {
-        #[structopt(
-            help = "the namespace directory into which to import",
-            parse(from_os_str)
-        )]
-        namespace: PathBuf,
     },
     #[structopt(about = "Initialise the workspace")]
     Init {},

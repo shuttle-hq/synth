@@ -14,6 +14,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Linux', value: 'linux'},
     {label: 'macOS', value: 'mac'},
     {label: 'Compile from source', value: 'source'},
+    {label: 'Run in the Cloud Shell', value: 'gcp_shell'},
   ]}>
   
   <TabItem value='linux'>
@@ -56,6 +57,20 @@ cargo install --locked --git https://github.com/openquery-io/synth.git synth
 If compilation fails, there are some dependencies required at compile time which you may not have installed: `sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev`
 :::
     
+  </TabItem>
+  
+  <TabItem value='gcp_shell'>
+
+<div align="center">
+<a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/openquery-io/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://storage.googleapis.com/gweb-cloudblog-publish/images/run_on_google_cloud.max-300x300.png"></img></a>
+</div>
+
+The run the following to install `synth` on the Cloud Shell:
+```bash
+./tools/init-cloud-shell && export PATH=$HOME/.local/bin:$PATH
+```
+
+  
   </TabItem>
 </Tabs>
 
