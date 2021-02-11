@@ -166,19 +166,19 @@ At this stage, we can run the `tree` command to see how the `synth import` sub-c
 ```bash
 $ tree -a
 .
-├── my_bank
+├── bank_db
 │   ├── transactions.json
 │   └── users.json
 └── .synth
     └── config.toml
 ```
 
-The directory `my_bank` (remember from [Core Concepts](../core-concepts.md) a subdirectory in a workspace represents a namespace) was created automatically as well as the two collections - `transactions` and `users`.
+The directory `bank_db` (remember from [Core Concepts](../core-concepts.md) a subdirectory in a workspace represents a namespace) was created automatically as well as the two collections - `transactions` and `users`.
 
 We can now generate data from our namespace using the `synth generate` sub-command. (We are piping this into [`jq`](https://stedolan.github.io/jq/download/) for the auto-formatting but this is optional.)
 
 ```bash
-$ synth generate my_bank/ | jq
+$ synth generate bank_db/ | jq
 {
   "transactions": [
     {
@@ -214,7 +214,7 @@ The semantic meaning of the data has not been perfectly captured by the Synth [i
 
 ## Tweaking the Schema
 
-To modify the schema, open the workspace in your favourite editor. Let's take a look at `my_bank/transactions.json` first.
+To modify the schema, open the workspace in your favourite editor. Let's take a look at `bank_db/transactions.json` first.
 
 ```json
 {
@@ -276,7 +276,7 @@ To modify the schema, open the workspace in your favourite editor. Let's take a 
 
 There is quite a bit going on here, so let's break it down. This file represents a schema for a [`collection`](../core-concepts.md). Collections are [Array::Array](../content/array.md)s under the hood and so they have 2 fields.
 
-1) The `content` of an Array. This can be any valid JSON, but since `my_bank` originates from a SQL database with column names and so on, it is a JSON object.
+1) The `content` of an Array. This can be any valid JSON, but since `bank_db` originates from a SQL database with column names and so on, it is a JSON object.
 
 2) The `length` of an Array. The length of an Array is actually also a Content node. This gives you flexibility - for example you can make the length of an array be a `Number::Range`
 
@@ -349,7 +349,7 @@ Finally, the `currency` field should reflect the real currencies that the bank s
 Now let's generate data from the `transactions` collection again:
 
 ```bash
-$ synth generate my_bank --collection transactions --size 10 | jq
+$ synth generate bank_db --collection transactions --size 10 | jq
 [
   {
     "amount": 1458.2,

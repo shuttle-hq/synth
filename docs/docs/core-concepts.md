@@ -7,9 +7,9 @@ This section covers the core concepts found in Synth.
 
 ## Workspaces
 
-A workspace, marked by a `.synth/` subdirectory. A workspace represents a set of synthetic data namespaces managed by Synth.
+Workspaces are marked by `.synth/` subdirectory. A workspace represents a set of synthetic data namespaces managed by Synth.
 
-A workspace can have *zero or more namespaces*, where the namespaces are just represented as subdirectories as well as some internal state in `.synth/`.
+A workspace can have *zero or more namespaces*, where the namespaces are just represented as subdirectories (as well as some hidden state in `.synth/` when using Synth in `daemon` mode). All information pertaining to a workspace is in its directory. 
 
 Below is an example directory structure for a workspace with a single namespace, `my_namepace`.
 

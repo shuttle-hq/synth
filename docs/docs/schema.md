@@ -11,7 +11,7 @@ It's a little involved, so let's start with a simpler example, JSON!
 
 If you've never actually seen how JSON is implemented under the hood, you may find this interesting.
 
-One of the reasons for JSON's popularity is just how simple of a data structure it is. JSON is a recursive data structure (just a tree but let's pretend we're smart) and can be defined in 8 lines of code:
+One of the reasons for JSON's popularity is just how simple of a data structure it is. JSON is a recursive data structure (just a tree but let's pretend we're smart) and can be defined in 8 lines of code (if you're wondering, this is Rust's `enum` notation):
 
 ```rust
 enum Value {

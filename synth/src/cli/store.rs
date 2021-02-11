@@ -8,12 +8,22 @@ use synth_core::schema::{Content, Name, Namespace};
 
 lazy_static! {
     static ref UNDERLYING: Underlying = Underlying {
-        file_ext: ".json".to_string(),
+        file_ext: "json".to_string(),
     };
 }
 
 struct Underlying {
     file_ext: String,
+}
+
+impl Underlying {
+    fn extension(&self) -> &str {
+        &self.file_ext
+    }
+
+    fn format_filename(&self, filename: &str) -> String {
+        format!("{}.{}", filename, self.extension())
+    }
 }
 
 impl Underlying {
@@ -50,10 +60,14 @@ impl Store {
 
         for entry in ns_path.read_dir()? {
             let entry = entry?;
-            let (collection_name, content) = self
-                .get_collection(&entry)
-                .context(anyhow!("at file {}", entry.path().display()))?;
-            ns.put_collection(&collection_name, content)?;
+            if let Some(file_ext) = entry.path().extension() {
+                if file_ext == UNDERLYING.extension() {
+                    let (collection_name, content) = self
+                        .get_collection(&entry)
+                        .context(anyhow!("at file {}", entry.path().display()))?;
+                    ns.put_collection(&collection_name, content)?;
+                }
+            }
         }
 
         Ok(ns)
@@ -63,8 +77,7 @@ impl Store {
     pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Namespace) -> Result<()> {
         let mut collections = vec![];
         for (collection_name, collection) in namespace.collections.iter() {
-            let collection_file_name =
-                format!("{}{}", collection_name.to_string(), UNDERLYING.file_ext);
+            let collection_file_name = UNDERLYING.format_filename(&collection_name.to_string());
             let collection_path = ns_path.clone().join(collection_file_name);
             collections.push((collection_path, serde_json::to_string_pretty(collection)?))
         }
@@ -104,18 +117,14 @@ impl Store {
     fn get_collection(&self, dir_entry: &DirEntry) -> Result<(Name, Content)> {
         let entry_name = dir_entry.file_name();
         let file_name = entry_name.to_str().unwrap();
-        if file_name.ends_with(&UNDERLYING.file_ext) {
-            let collection_name = file_name.split(".").next().ok_or(failed!(
-                target: Debug,
-                "invalid filename {}",
-                file_name
-            ))?;
-            let collection_file_content = std::fs::read_to_string(dir_entry.path())?;
-            let collection = UNDERLYING.parse(&collection_file_content)?;
-            return Ok((Name::from_str(collection_name)?, collection));
-        } else {
-            Err(failed!(target: Debug, "file is not of the right type"))
-        }
+        let collection_name = file_name.split(".").next().ok_or(failed!(
+            target: Debug,
+            "invalid filename {}",
+            file_name
+        ))?;
+        let collection_file_content = std::fs::read_to_string(dir_entry.path())?;
+        let collection = UNDERLYING.parse(&collection_file_content)?;
+        return Ok((Name::from_str(collection_name)?, collection));
     }
 }
 
