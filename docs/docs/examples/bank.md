@@ -7,7 +7,7 @@ title: Bank
 
 ## Scenario
 
-In our fictitious example, a software engineer called Cynthia works at a financial services company and wants to create a realistic replica of their production database `bank_db` for application testing. Having looked at the market and seeing that Synth is clearly the superior tool for doing this, the Cynthia downloads Synth and runs it locally on her machine.
+In our fictitious example, a software engineer called Cynthia works at a financial services company and wants to create a realistic replica of their production database `bank_db` for application testing. Having looked at the market and seeing that Synth is clearly the superior tool for doing this, Cynthia downloads Synth and runs it locally on her machine.
 
 ## Example Data
 
@@ -286,17 +286,19 @@ For more information on how to compose schemas, see the [Schema](../schema.md) p
 
 Reading through the schema, we can see that Synth inferred `id` as being a `Number::Range`. 
 
+What we actually need, is for `id` to be a monotonically increasing [`Number::Id`](../content/number.md) type starting at `0`.
+
 ```json
 "id" : {
     "type": "number",
     "subtype": "u64",
     "id": {
-      "start" : 0
+      "start_at" : 0
     } 
 }
 ```
 
-The `amount` field is almost right. Synth inferred the right `low` and `high` bounds, but, the step should be `0.1` as we are dealing with currencies. So let's replace the `amount` field:
+The `amount` field is almost right. Synth inferred the right `low` and `high` bounds, but, the step should be `0.01` as we are dealing with currencies. So let's replace the `amount` field:
 
 ```json
 "amount": {
@@ -306,7 +308,7 @@ The `amount` field is almost right. Synth inferred the right `low` and `high` bo
   "range": {
     "low": 274.4,
     "high": 6597.5,
-    "step": 0.1
+    "step": 0.01
   }
 }
 ```
@@ -321,7 +323,7 @@ Next, the `timestamp` field is not a string following a random pattern. Consulti
         "begin": "2000-01-01T00:00:00+0000",
         "end": "2020-01-01T00:00:00+0000"
     }
-},
+}
 ```
 
 The `user_id` field should point to a valid entry in the `users` collection, so let's use the [SameAs::SameAs](../content/same-as.md) content type to express this foreign key relationship.

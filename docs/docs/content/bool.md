@@ -32,8 +32,7 @@ A probabilistic Boolean type of content which with a single parameter. A floatin
     {
       "is_user_happy": true
     }
-  ]
-
+]
 ```
 
 #### Content: Bool::Constant
@@ -68,6 +67,5 @@ A constant boolean type. This will always evaluate to either true or false.
     {
       "is_user_happy": false
     }
-  ]
-
+]
 ```

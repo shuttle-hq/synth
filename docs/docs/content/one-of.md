@@ -71,5 +71,5 @@ Below is an example of a field `address` taking the value of a `Content::String`
     {
       "address": "207 Nicholas Loop Apt. 012\nRobertview, NV 01670"
     }
-  ]
+]
 ```

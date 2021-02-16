@@ -33,7 +33,7 @@ And then a file, `my_app/dummy.json` with the following content:
 }
 ```
 
-Finally, run `synth generate my_app/` to get a bunch of hello worlds!
+Finally, run `synth generate my_app/` to get your first 'Hello world!'.
 
 ## Running Synth in Daemon mode
 

@@ -58,5 +58,5 @@ Objects are basically JSON objects. Object keys have to be strings (they should 
         "name": "David Cohen"
       }
     }
-  ]
+ ]
 ```

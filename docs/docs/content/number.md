@@ -41,7 +41,7 @@ For example, the range below will generate values in the set: `{-273.15, -273.16
     {
       "temperature": 7076333.55
     }
-  ]
+]
 ```
 #### Content: Number::Constant
 
@@ -76,8 +76,7 @@ A constant number type. This will always evaluate to the same number.
     {
       "pi": 3.14159
     }
-  ]
-
+]
 ```
 #### Content: Number::Id
 
@@ -116,7 +115,5 @@ Synth currently supports `u64` ids.
     {
       "id": 14
     }
-  ]
-
-
+]
 ```
