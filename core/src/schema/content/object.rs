@@ -1,4 +1,5 @@
 use super::prelude::*;
+use std::ops::Not;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ObjectContent {
@@ -70,7 +71,7 @@ impl ObjectContent {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FieldContent {
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Not::not")]
     pub optional: bool,
     #[serde(flatten)]
     pub content: Box<Content>,
