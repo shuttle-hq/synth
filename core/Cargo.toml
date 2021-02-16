@@ -51,3 +51,5 @@ rand_regex = "0.14.2"
 
 synth-gen = { path = "../gen", features = [ "faker", "shared" ] }
 uuid = { version = "0.8.2", features = ["v4"] }
+
+bimap = { version = "0.6.0", features = [ "std" ] }
