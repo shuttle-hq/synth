@@ -41,7 +41,7 @@ pub trait Compile {
     fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph>;
 }
 
-pub(crate) struct StructuredState<'a> {
+pub struct StructuredState<'a> {
     children: HashMap<String, CompilerState<'a>>,
     ordering: Vec<String>,
 }
@@ -90,10 +90,10 @@ impl<'a> Default for StructuredState<'a> {
     }
 }
 
-pub(crate) mod structured_state {
+pub mod structured_state {
     use super::*;
 
-    pub(crate) struct IntoIter<'a> {
+    pub struct IntoIter<'a> {
         children: HashMap<String, CompilerState<'a>>,
         iter: std::vec::IntoIter<String>,
     }
@@ -140,7 +140,7 @@ impl<'a> IntoIterator for StructuredState<'a> {
     }
 }
 
-pub(crate) enum Source<'a> {
+pub enum Source<'a> {
     Namespace(&'a Namespace),
     Content(&'a Content),
 }
@@ -196,7 +196,7 @@ impl Artifact<Graph> {
     }
 }
 
-pub(crate) enum OutputState<G: Generator> {
+pub enum OutputState<G: Generator> {
     Emptied,
     Empty,
     Some(Artifact<G>),
@@ -232,7 +232,7 @@ impl<G: Generator> OutputState<G> {
     }
 }
 
-pub(crate) struct CompilerState<'a> {
+pub struct CompilerState<'a> {
     src: Source<'a>,
     compiled: OutputState<Graph>,
     scope: StructuredState<'a>,
@@ -453,7 +453,7 @@ impl<'a> CompilerState<'a> {
     }
 }
 
-pub(crate) struct Entry<'t, 'a> {
+pub struct Entry<'t, 'a> {
     node: &'t mut CompilerState<'a>,
     field: String,
 }
@@ -484,16 +484,28 @@ impl<'t, 'a> Entry<'t, 'a> {
     }
 }
 
-pub(crate) struct NamespaceCompiler<'a> {
+pub struct NamespaceCompiler<'a> {
     state: CompilerState<'a>,
     vtable: Symbols,
 }
 
 impl<'a> NamespaceCompiler<'a> {
+    pub fn new_at(state: CompilerState<'a>) -> Self {
+	let vtable = Symbols::new();
+	Self {
+	    state,
+	    vtable
+	}
+    }
+
     pub fn new(namespace: &'a Namespace) -> Self {
         let state = CompilerState::namespace(namespace);
-        let vtable = Symbols::new();
-        Self { state, vtable }
+	Self::new_at(state)
+    }
+
+    pub fn new_flat(content: &'a Content) -> Self {
+	let state = CompilerState::content(content);
+	Self::new_at(state)
     }
 
     pub fn compile(mut self) -> Result<Graph> {
@@ -627,7 +639,7 @@ impl<'a> NamespaceCompiler<'a> {
     }
 }
 
-pub(crate) struct ContentCompiler<'c, 'a: 'c> {
+pub struct ContentCompiler<'c, 'a: 'c> {
     scope: Scope,
     cursor: &'c mut CompilerState<'a>,
     drivers: &'c mut HashMap<Scope, Driver<Graph>>,
@@ -933,7 +945,7 @@ where
     }
 }
 
-pub(crate) struct Crawler<'t, 'a> {
+pub struct Crawler<'t, 'a> {
     cursor: &'t mut CompilerState<'a>,
     table: &'t mut Symbols,
     position: Scope,
