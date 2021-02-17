@@ -18,7 +18,7 @@ macro_rules! generate_error_variants {
 	    )*
 	}
 
-	impl Error {
+ 	impl Error {
 	    $(
 		#[inline]
 		pub fn $func_name<R: AsRef<str>>(msg: R) -> Self {
@@ -27,6 +27,19 @@ macro_rules! generate_error_variants {
 	    )*
 	}
     }
+}
+
+macro_rules! failed_crate {
+    (target: $target:ident, $lit: literal$(, $arg:expr)*) => {
+	failed_crate!(target: $target, BadRequest => $lit$(, $arg)*)
+    };
+    (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
+	crate::error::Error::new_with_target(
+	    crate::error::ErrorKind::$variant,
+	    format!($lit$(, $arg)*),
+	    crate::error::Target::$target
+	)
+    };
 }
 
 /// This macro is a convenience for error handling logic in synth.
@@ -44,11 +57,7 @@ macro_rules! failed {
     };
     (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
 	anyhow::Error::from(
-	    crate::error::Error::new_with_target(
-		crate::error::ErrorKind::$variant,
-		format!($lit$(, $arg)*),
-		crate::error::Target::$target
-	    )
+	    failed_crate!(target: $target, $variant => $lit$(,$arg)*)
 	)
     };
 }

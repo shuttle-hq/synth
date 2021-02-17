@@ -1,4 +1,4 @@
-use synth_gen::{prelude::*, GeneratorState};
+use synth_gen::prelude::*;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use bimap::BiBTreeMap;
 
-use super::compiler::Scope;
+use super::Scope;
 
 pub type GeneratorOutput<G: Generator> = GeneratorState<G::Yield, G::Return>;
 
@@ -288,7 +288,7 @@ where
 
     type Return = G::Return;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         let next = self.inner.next(rng);
         self.buf.push(next.clone());
         next
@@ -308,7 +308,7 @@ where
 
     type Return = G::Return;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         self.src.borrow_mut().next(rng)
     }
 }
@@ -378,7 +378,7 @@ where
 
     type Return = Option<G::Return>;
 
-    fn next(&mut self, _rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         let output = self
             .src
             .borrow_mut()
@@ -425,7 +425,7 @@ where
 
     type Return = G::Return;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         if self.is_complete {
             debug!("> scoped generator cycle BEGIN");
             self.is_complete = false;

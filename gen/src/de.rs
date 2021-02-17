@@ -5,6 +5,8 @@ use std::iter::Peekable;
 
 use std::marker::PhantomData;
 
+use rand::Rng;
+
 use serde::{
     de::{
         EnumAccess as SerdeEnumAccess, MapAccess as SerdeMapAccess, SeqAccess as SerdeSeqAccess,
@@ -13,7 +15,7 @@ use serde::{
     Deserialize, Deserializer as SerdeDeserializer,
 };
 
-use crate::{value::*, Error, Generator, GeneratorState, PeekableGenerator, Rng};
+use crate::{value::*, Error, Generator, GeneratorState};
 
 trait TokenIterator<'de>
 where
@@ -214,6 +216,7 @@ where
     I: Iterator<Item = &'de Token>,
 {
     type Error = Error;
+
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
@@ -420,7 +423,7 @@ where
 
     type Return = Result<T, Error>;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
             GeneratorState::Yielded(token) => {
                 self.buf.push(token.clone());

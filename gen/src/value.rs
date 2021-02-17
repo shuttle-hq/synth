@@ -3,9 +3,12 @@
 use std::convert::{TryFrom, TryInto};
 use std::marker::PhantomData;
 
+use rand::Rng;
+
 use crate::{
-    de::Deserializator, Brace, Concatenate, Constant, Error, Generator, GeneratorExt,
-    GeneratorState, Just, Prefix, Rng,
+    de::Deserializator,  Error, Generator, GeneratorExt,
+    GeneratorState,
+    generator::{Brace, Concatenate, Yield, Just, Prefix}
 };
 
 use serde::Deserialize;
@@ -155,7 +158,7 @@ macro_rules! generate_special_enum {
 	pub trait SpecialTokenExt: Generator<Yield = Token> {
 	    $(
 		#[inline]
-		fn $to(&mut self, rng: &mut Rng) -> Result<(), Error> {
+		fn $to<R: Rng>(&mut self, rng: &mut R) -> Result<(), Error> {
 		    match self.next(rng).into_yielded()?.try_into()? {
 			$id::$variant$(($(drop!($arg),)*))? => Ok(()),
 			otherwise => Err(Error::type_(stringify!($variant), otherwise))
@@ -316,7 +319,7 @@ impl Token {
     /// Transform this [`Token`](Token) into a constant
     /// [`Generator`](crate::Generator).
     pub fn just(self) -> Just<Self> {
-        Constant::new(self).once()
+        Yield::wrap(self).once()
     }
 }
 
@@ -368,13 +371,13 @@ pub trait IntoToken: Sized {
     /// Convert `self` to [`Token`](Token).
     fn into_token(self) -> Token;
 
-    /// Same as `Constant::new(self).once().into_token()`.
+    /// Same as `Yield::new(self).once().into_token()`.
     #[inline]
     fn yield_token(self) -> Tokenizer<Just<Self>>
     where
         Self: Clone,
     {
-        Constant::new(self).once().into_token()
+        Yield::wrap(self).once().into_token()
     }
 }
 
@@ -454,7 +457,7 @@ where
 
     type Return = G::Return;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
             GeneratorState::Yielded(y) => GeneratorState::Yielded(y.into_token()),
             GeneratorState::Complete(r) => GeneratorState::Complete(r),
@@ -505,7 +508,7 @@ macro_rules! data_model_variant {
 
 	    type Return = G::Return;
 
-	    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+	    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
 		self.inner.next(rng)
 	    }
 	}
@@ -559,8 +562,9 @@ data_model_variant! {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::{ser::OwnedSerializable, DiagonalGeneratorExt, GeneratorExt, Seed};
-    use rand::{prelude::Distribution, Rng as RandRng};
+    use crate::{ser::OwnedSerializable, GeneratorExt};
+
+    use crate::generator::Random;
 
     pub fn base_gen(i: usize) -> impl Generator<Yield = Token, Return = ()> {
         (i as u32)
@@ -571,18 +575,18 @@ pub mod tests {
                     .to_string()
                     .yield_token()
                     .into_struct_field("a_string")
-                    .map(move |_| value)
+                    .map_complete(move |_| value)
             })
             .into_struct("NestedStruct", 2)
             .into_struct_field("a_struct")
             .and_then(|an_u32| {
                 true.yield_token()
-                    .take(an_u32 as usize)
+                    .repeat(an_u32 as usize)
                     .into_seq(Some(an_u32 as usize))
                     .into_struct_field("a_seq")
             })
             .into_struct("BaseGen", 2)
-            .map(|_| ())
+            .map_complete(|_| ())
     }
 
     macro_rules! test_primitive_values {
@@ -595,13 +599,14 @@ pub mod tests {
 		#[test]
 		fn $id() {
 		    let mut rng = rand::thread_rng();
-		    let mut seed = Seed::new::<$ty>()
+		    let mut seed = Random::new::<$ty>()
 			.once()
 			.into_token()
 			.aggregate();
-		    let as_ser = OwnedSerializable::new(seed.complete(&mut rng));
+		    let next = seed.next(&mut rng).into_yielded().unwrap();
+		    let as_ser = OwnedSerializable::new(next);
 		    let as_str = serde_json::to_string(&as_ser).unwrap();
-		    let as_num: $ty = serde_json::from_str(&as_str).unwrap();
+		    let _as_num: $ty = serde_json::from_str(&as_str).unwrap();
 		}
 	    )*
 	}

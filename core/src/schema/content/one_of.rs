@@ -161,13 +161,13 @@ impl Find<Content> for OneOfContent {
 }
 
 impl Compile for OneOfContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Model> {
-        let gen = self
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
+        let one_of_node = self
             .variants
             .iter()
             .enumerate()
             .map(move |(idx, variant)| compiler.build(&idx.to_string(), &variant.content))
-            .collect::<Result<OneOf<_>>>()?;
-        Ok(Model::OneOf(gen))
+            .collect::<Result<OneOfNode>>()?;
+        Ok(Graph::OneOf(one_of_node))
     }
 }

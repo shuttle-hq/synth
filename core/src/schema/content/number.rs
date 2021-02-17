@@ -1,7 +1,6 @@
 use super::prelude::*;
 
 use super::Categorical;
-use crate::gen::IncrementingSeed;
 use num::Zero;
 
 #[derive(Clone, Copy)]
@@ -61,7 +60,7 @@ macro_rules! number_content {
 	}
 
 	pub mod number_content {
-	    use super::{Range, Categorical, NumberContent};
+	    use super::{RangeStep, Categorical, NumberContent};
 	    use serde::{Serialize, Deserialize};
 
 	    $(
@@ -117,7 +116,7 @@ macro_rules! number_content {
 
 	    $(
 		pub fn $def() -> Self {
-		    Self::$as(number_content::$as::Range(Range::default()))
+		    Self::$as(number_content::$as::Range(RangeStep::default()))
 		}
 
 		pub fn $is(&self) -> bool {
@@ -131,22 +130,22 @@ macro_rules! number_content {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 #[serde(deny_unknown_fields)]
-pub struct Range<N: PartialOrd + Zero + Display> {
+pub struct RangeStep<N> {
     pub low: N,
     pub high: N,
     pub step: N,
 }
 
-impl<N: PartialOrd + Zero + Display> Range<N> {
+impl<N: PartialOrd + Zero + Display> RangeStep<N> {
     #[allow(dead_code)]
     pub(crate) fn new(low: N, high: N, step: N) -> Self {
         Self { low, high, step }
     }
 }
 
-impl<N: PartialOrd + Zero + Display> Default for Range<N>
+impl<N: PartialOrd + Zero + Display> Default for RangeStep<N>
 where
     N: Bounded + One,
 {
@@ -162,68 +161,69 @@ where
 number_content!(
     u64[is_u64, default_u64_range] as U64 {
     #[default]
-    Range(Range<u64>),
+    Range(RangeStep<u64>),
     Categorical(Categorical<u64>),
     Constant(u64),
     Id(crate::schema::Id),
     },
     i64[is_i64, default_i64_range] as I64 {
     #[default]
-    Range(Range<i64>),
+    Range(RangeStep<i64>),
     Categorical(Categorical<i64>),
     Constant(i64),
     },
     f64[is_f64, default_f64_range] as F64 {
     #[default]
-    Range(Range<f64>),
+    Range(RangeStep<f64>),
     Constant(f64),
     },
 );
 
 impl Compile for NumberContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Model> {
-        let number_model = match self {
-            Self::U64(u64_content) => match u64_content {
-                number_content::U64::Range(range) => NumberModel::u64_range(range.clone())?,
-                number_content::U64::Categorical(categorical_content) => {
-                    let gen = Seed::new_with(categorical_content.clone().into())
-                        .once()
-                        .into_token();
-                    NumberModel::U64Categorical(gen)
-                }
-                number_content::U64::Constant(val) => NumberModel::u64_constant(*val),
-                number_content::U64::Id(id) => {
-                    let gen = IncrementingSeed {
-                        count: id.start_at.unwrap_or(0),
-                    };
-                    NumberModel::U64Id(gen.once().into_token())
-                }
+    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Graph> {
+        let number_node = match self {
+            Self::U64(u64_content) => {
+		let random_u64 = match u64_content {
+                    number_content::U64::Range(range) => RandomU64::range(*range)?,
+                    number_content::U64::Categorical(categorical_content) => {
+			RandomU64::categorical(categorical_content.clone())
+                    }
+                    number_content::U64::Constant(val) => RandomU64::constant(*val),
+                    number_content::U64::Id(id) => {
+			let gen = Incrementing::new_at(id.start_at.unwrap_or_default());
+			RandomU64::incrementing(gen)
+                    }
+		};
+		random_u64.into()
             },
-            Self::I64(i64_content) => match i64_content {
-                number_content::I64::Range(range) => NumberModel::i64_range(range.clone())?,
-                number_content::I64::Categorical(categorical_content) => {
-                    let gen = Seed::new_with(categorical_content.clone().into())
-                        .once()
-                        .into_token();
-                    NumberModel::I64Categorical(gen)
-                }
-                number_content::I64::Constant(val) => NumberModel::i64_constant(*val),
+            Self::I64(i64_content) => {
+		let random_i64 = match i64_content {
+                    number_content::I64::Range(range) => RandomI64::range(*range)?,
+                    number_content::I64::Categorical(categorical_content) => {
+			RandomI64::categorical(categorical_content.clone())
+                    }
+                    number_content::I64::Constant(val) => RandomI64::constant(*val),
+		};
+		random_i64.into()
             },
-            Self::F64(f64_content) => match f64_content {
-                number_content::F64::Range(range) => NumberModel::f64_range(range.clone())?,
-                number_content::F64::Constant(val) => NumberModel::f64_constant(*val),
-            },
+            Self::F64(f64_content) => {
+		let random_f64 = match f64_content {
+                    number_content::F64::Range(range) => RandomF64::range(*range)?,
+                    number_content::F64::Constant(val) => RandomF64::constant(*val),
+		};
+		random_f64.into()
+	    }
         };
-        Ok(Model::Primitive(PrimitiveModel::Number(number_model)))
+	Ok(Graph::Number(number_node))
     }
 }
 
-impl Range<u64> {
+impl RangeStep<u64> {
     pub fn upcast(self, to: NumberContentKind) -> Result<NumberContent> {
         match to {
             NumberContentKind::U64 => Ok(number_content::U64::Range(self).into()),
             NumberContentKind::I64 => {
-                let cast = Range {
+                let cast = RangeStep {
                     low: i64::try_from(self.low)?,
                     high: i64::try_from(self.high)?,
                     step: i64::try_from(self.step)?,
@@ -231,7 +231,7 @@ impl Range<u64> {
                 Ok(number_content::I64::Range(cast).into())
             }
             NumberContentKind::F64 => {
-                let cast = Range {
+                let cast = RangeStep {
                     low: self.low as f64,
                     high: self.high as f64,
                     step: self.step as f64,
@@ -267,7 +267,7 @@ impl Categorical<u64> {
     }
 }
 
-impl Range<i64> {
+impl RangeStep<i64> {
     pub fn upcast(self, to: NumberContentKind) -> Result<NumberContent> {
         match to {
             NumberContentKind::U64 => Err(failed!(
@@ -276,7 +276,7 @@ impl Range<i64> {
             )),
             NumberContentKind::I64 => Ok(number_content::I64::Range(self).into()),
             NumberContentKind::F64 => {
-                let cast = Range {
+                let cast = RangeStep {
                     low: self.low as f64,
                     high: self.high as f64,
                     step: self.step as f64,
@@ -287,7 +287,7 @@ impl Range<i64> {
     }
 }
 
-impl Range<f64> {
+impl RangeStep<f64> {
     pub fn upcast(self, to: NumberContentKind) -> Result<NumberContent> {
         match to {
             NumberContentKind::U64 | NumberContentKind::I64 => Err(failed!(

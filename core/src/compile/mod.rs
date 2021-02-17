@@ -5,11 +5,10 @@ use synth_gen::prelude::*;
 use anyhow::{Context, Result};
 use colored::Colorize;
 
-use super::{
-    utils::{Cursored, Driver, GeneratorOutput, Scoped, View},
-    Model, Unwrapped,
-};
+mod utils;
+pub use utils::{Cursored, Driver, GeneratorOutput, Scoped, View};
 
+use crate::graph::{Graph, Unwrapped};
 use crate::schema::{Content, FieldRef, Namespace};
 
 macro_rules! says {
@@ -31,15 +30,15 @@ macro_rules! stage_2 {
 }
 
 pub trait Compiler<'a> {
-    /// @brokad: API contract: do not inspect `Model`
-    fn build(&mut self, field: &str, content: &'a Content) -> Result<Model>;
+    /// @brokad: API contract: do not inspect `Graph`
+    fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph>;
 
-    /// @brokad: API contract: do not inspect `Model`
-    fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Model>;
+    /// @brokad: API contract: do not inspect `Graph`
+    fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Graph>;
 }
 
 pub trait Compile {
-    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Model>;
+    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph>;
 }
 
 pub(crate) struct StructuredState<'a> {
@@ -188,11 +187,11 @@ pub enum Artifact<G: Generator> {
     Driver(Driver<G>),
 }
 
-impl Artifact<Model> {
-    fn into_model(self) -> Model {
+impl Artifact<Graph> {
+    fn into_model(self) -> Graph {
         match self {
             Self::Just(g) => g,
-            Self::Driver(driver) => Model::Driver(driver),
+            Self::Driver(driver) => Graph::Driver(driver),
         }
     }
 }
@@ -235,7 +234,7 @@ impl<G: Generator> OutputState<G> {
 
 pub(crate) struct CompilerState<'a> {
     src: Source<'a>,
-    compiled: OutputState<Model>,
+    compiled: OutputState<Graph>,
     scope: StructuredState<'a>,
     refs: HashSet<Scope>,
 }
@@ -439,7 +438,7 @@ impl<'a> CompilerState<'a> {
     }
 
     #[inline]
-    fn move_output(&mut self) -> Option<Artifact<Model>> {
+    fn move_output(&mut self) -> Option<Artifact<Graph>> {
         self.compiled.move_output()
     }
 
@@ -497,7 +496,7 @@ impl<'a> NamespaceCompiler<'a> {
         Self { state, vtable }
     }
 
-    pub fn compile(mut self) -> Result<Model> {
+    pub fn compile(mut self) -> Result<Graph> {
         stage_1!("discovery");
 
         let crawler = Crawler {
@@ -591,7 +590,7 @@ impl<'a> NamespaceCompiler<'a> {
                         std::cmp::Ordering::Greater
                     }
                 });
-                model = Model::Scoped(Scoped {
+                model = Graph::Scoped(Scoped {
                     cursors,
                     drivers,
                     order,
@@ -602,7 +601,7 @@ impl<'a> NamespaceCompiler<'a> {
 
             let artifact = if self.vtable.flattened.contains(&next_scope) {
                 stage_2!("{}: targetted", next_scope);
-                let (driver, mut cursor) = super::utils::channel(model);
+                let (driver, mut cursor) = utils::channel(model);
                 for (root, tail) in self.vtable.paths(&next_scope) {
                     // @brokad: keep this order for future proofing
                     // when those become trees
@@ -631,12 +630,12 @@ impl<'a> NamespaceCompiler<'a> {
 pub(crate) struct ContentCompiler<'c, 'a: 'c> {
     scope: Scope,
     cursor: &'c mut CompilerState<'a>,
-    drivers: &'c mut HashMap<Scope, Driver<Model>>,
+    drivers: &'c mut HashMap<Scope, Driver<Graph>>,
     vtable: &'c mut Symbols,
 }
 
 impl<'c, 'a: 'c> ContentCompiler<'c, 'a> {
-    fn compile(self) -> Result<Model> {
+    fn compile(self) -> Result<Graph> {
         match self.cursor.source() {
             Source::Namespace(namespace) => namespace.compile(self),
             Source::Content(content) => content.compile(self),
@@ -645,7 +644,7 @@ impl<'c, 'a: 'c> ContentCompiler<'c, 'a> {
 }
 
 impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
-    fn build(&mut self, field: &str, _content: &'a Content) -> Result<Model> {
+    fn build(&mut self, field: &str, _content: &'a Content) -> Result<Graph> {
         stage_2!("{}: moving out of {}", self.scope, field);
         let model = self
             .cursor
@@ -663,7 +662,7 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
             Ok(factory) => {
                 // model is a driver
                 match model {
-                    Model::Driver(driver) => self.drivers.insert(as_scope, driver),
+                    Graph::Driver(driver) => self.drivers.insert(as_scope, driver),
                     _ => {
                         return Err(
                             failed!(target: Release, Compilation => "where has the driver gone?"),
@@ -673,19 +672,19 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
                 let as_view = factory.issue(&Scope::new_root())?.ok_or(
                     failed!(target: Release, Compilation => "reference not built: {}", field),
                 )?;
-                Ok(Model::View(Unwrapped::wrap(as_view)))
+                Ok(Graph::View(Unwrapped::wrap(as_view)))
             }
             Err(_) => Ok(model),
         }
     }
 
-    fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Model> {
+    fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Graph> {
         let as_scope = field.into();
         let view = self
             .vtable
             .issue(&as_scope, &self.scope)?
             .ok_or(failed!(target: Release, Compilation => "reference not built: {}", as_scope))?;
-        Ok(Model::View(Unwrapped::wrap(view)))
+        Ok(Graph::View(Unwrapped::wrap(view)))
     }
 }
 
@@ -839,7 +838,7 @@ where
     }
 }
 
-pub struct Symbols<G: Generator = Model> {
+pub struct Symbols<G: Generator = Graph> {
     flattened: HashSet<Scope>,
     storage: HashMap<Scope, LocalTable<G>>,
 }
@@ -961,19 +960,19 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
 }
 
 impl<'t, 'a: 't> Compiler<'a> for Crawler<'t, 'a> {
-    fn build(&mut self, field: &str, content: &'a Content) -> Result<Model> {
+    fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
         if let Err(err) = self.as_at(field, content).compile() {
             warn!(target: "compiler", "{} node {} err'ed at visit: {}", "stage 1".bold().cyan(), field, err);
         }
-        Ok(Model::null())
+        Ok(Graph::null())
     }
 
-    fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Model> {
+    fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Graph> {
         let as_scope: Scope = field.into();
         stage_1!("linking {} to {}", as_scope, self.position);
         self.table
             .declare(as_scope.clone(), self.position.clone())?;
         self.cursor.refs.insert(as_scope);
-        Ok(Model::null())
+        Ok(Graph::null())
     }
 }

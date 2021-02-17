@@ -133,23 +133,19 @@ impl Find<Content> for ObjectContent {
 }
 
 impl Compile for ObjectContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Model> {
-        let generator = self
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
+        let object_node = self
             .iter()
-            .map(|(name, field_content)| {
-                let mut built = compiler.build(name, &field_content.content)?;
-                if field_content.optional {
-                    let src = vec![built, Model::null()];
-                    let gen = src
-                        .into_iter()
-                        .map(|inner| Box::new(inner))
-                        .collect::<OneOf<_>>();
-                    built = Model::Optional(gen);
-                }
-                Ok(built.with_key(name.to_string().yield_token()))
+            .map(|(name, field)| {
+                compiler.build(name, &field.content).map(|graph| {
+                    if field.optional {
+                        KeyValueOrNothing::sometimes(name, graph)
+                    } else {
+                        KeyValueOrNothing::always(name, graph)
+                    }
+                })
             })
-            .collect::<Result<Chain<_>>>()?
-            .into_map(Some(self.len()));
-        Ok(Model::Object(generator))
+            .collect::<Result<ObjectNode>>()?;
+        Ok(Graph::Object(object_node))
     }
 }

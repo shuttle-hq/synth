@@ -10,9 +10,9 @@ pub mod value;
 pub use value::ValueMergeStrategy;
 
 use super::{
-    number_content, ArrayContent, BoolContent, Categorical, ChronoContentFormatter, Content,
+    number_content, ArrayContent, BoolContent, Categorical, ChronoValueFormatter, Content,
     DateTimeContent, FieldContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
-    Range, StringContent, ValueKindExt,
+    RangeStep, StringContent, ValueKindExt,
 };
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
@@ -164,7 +164,7 @@ impl MergeStrategy<ObjectContent, Map<String, Value>> for OptionalMergeStrategy 
 
 impl MergeStrategy<DateTimeContent, String> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut DateTimeContent, candidate: &String) -> Result<()> {
-        let fmt = ChronoContentFormatter::new_with(&master.format, Some(master.type_));
+        let fmt = ChronoValueFormatter::new_with(&master.format, Some(master.type_));
         let candidate = fmt.parse(candidate.as_str())?;
         if let Some(begin) = master.begin.as_mut() {
             if *begin > candidate {
@@ -188,10 +188,10 @@ impl MergeStrategy<DateTimeContent, String> for OptionalMergeStrategy {
 
 macro_rules! merge_strategy_for_numbers {
     (
-	Range for $($num:ty,)+
+	RangeStep for $($num:ty,)+
     ) => {$(
-	impl MergeStrategy<Range<$num>, $num> for OptionalMergeStrategy {
-	    fn try_merge(self, master: &mut Range<$num>, value: &$num) -> Result<()> {
+	impl MergeStrategy<RangeStep<$num>, $num> for OptionalMergeStrategy {
+	    fn try_merge(self, master: &mut RangeStep<$num>, value: &$num) -> Result<()> {
 		master.low = (*value).min(master.low);
 		master.high = (*value).max(master.high);
 		Ok(())
@@ -214,7 +214,7 @@ macro_rules! merge_strategy_for_numbers {
     )*}
 }
 
-merge_strategy_for_numbers!(Range for u64, i64, f64,);
+merge_strategy_for_numbers!(RangeStep for u64, i64, f64,);
 merge_strategy_for_numbers!(Categorical for u64, i64,);
 
 impl MergeStrategy<Id, u64> for OptionalMergeStrategy {
@@ -453,7 +453,7 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::U64(number_content::U64::Range(Range { low, high, step })) => {
+            NumberContent::U64(number_content::U64::Range(RangeStep { low, high, step })) => {
                 assert_eq!(low, 0);
                 assert_eq!(high, 15);
                 assert_eq!(step, 1);
@@ -469,7 +469,7 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::I64(number_content::I64::Range(Range { low, high, step })) => {
+            NumberContent::I64(number_content::I64::Range(RangeStep { low, high, step })) => {
                 assert_eq!(low, -10);
                 assert_eq!(high, 20);
                 assert_eq!(step, 1);
@@ -485,7 +485,7 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::F64(number_content::F64::Range(Range { low, high, step })) => {
+            NumberContent::F64(number_content::F64::Range(RangeStep { low, high, step })) => {
                 assert_eq!(low, -13.6);
                 assert_eq!(high, 20.6);
                 assert_eq!(step, 1.);

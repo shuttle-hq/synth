@@ -2505,7 +2505,7 @@ dependencies = [
 
 [[package]]
 name = "synth-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-std",
@@ -2536,7 +2536,7 @@ dependencies = [
 
 [[package]]
 name = "synth-gen"
-version = "0.2.1"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "fake",

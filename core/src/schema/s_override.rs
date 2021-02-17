@@ -74,7 +74,7 @@ pub mod tests {
 
     use crate::schema::tests::USER_NAMESPACE;
     use crate::schema::{number_content, StringContent};
-    use crate::schema::{ArrayContent, FakerContent, NumberContent, Range};
+    use crate::schema::{ArrayContent, FakerContent, NumberContent, RangeStep};
 
     #[test]
     fn override_leaf() {
@@ -102,7 +102,7 @@ pub mod tests {
             .unwrap();
 
         match ns.get_s_node_mut(&field_ref).unwrap() {
-            Content::Number(NumberContent::U64(number_content::U64::Range(Range {
+            Content::Number(NumberContent::U64(number_content::U64::Range(RangeStep {
                 low,
                 high,
                 step,

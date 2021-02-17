@@ -172,26 +172,15 @@ impl ToPyObject for FakerContentArgument {
     }
 }
 
-impl Compile for FakerContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Model> {
-        let seed = FakerSeed::new(
-            self.generator.clone(),
-            self.args.clone(),
-            self.locales.clone(),
-        )?;
-        Ok(Model::Primitive(PrimitiveModel::Faker(seed.once())))
-    }
-}
-
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
-pub enum ChronoContent {
+pub enum ChronoValue {
     NaiveDate(NaiveDate),
     NaiveTime(NaiveTime),
     NaiveDateTime(NaiveDateTime),
     DateTime(DateTime<FixedOffset>),
 }
 
-impl std::ops::Add<Duration> for ChronoContent {
+impl std::ops::Add<Duration> for ChronoValue {
     type Output = Self;
 
     fn add(self, rhs: Duration) -> Self::Output {
@@ -204,7 +193,7 @@ impl std::ops::Add<Duration> for ChronoContent {
     }
 }
 
-impl std::ops::Add<StdDuration> for ChronoContent {
+impl std::ops::Add<StdDuration> for ChronoValue {
     type Output = Self;
 
     fn add(self, rhs: StdDuration) -> Self::Output {
@@ -213,20 +202,20 @@ impl std::ops::Add<StdDuration> for ChronoContent {
     }
 }
 
-impl std::fmt::Display for ChronoContent {
+impl std::fmt::Display for ChronoValueType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NaiveDate(_) => write!(f, "naive date"),
-            Self::NaiveTime(_) => write!(f, "naive time"),
-            Self::NaiveDateTime(_) => write!(f, "naive date time"),
-            Self::DateTime(_) => write!(f, "date time"),
+            Self::NaiveDate => write!(f, "naive date"),
+            Self::NaiveTime => write!(f, "naive time"),
+            Self::NaiveDateTime => write!(f, "naive date time"),
+            Self::DateTime => write!(f, "date time"),
         }
     }
 }
 
-impl ChronoContent {
-    pub fn common_variant(&self, other: &Self) -> Option<ChronoContentType> {
-        if self.to_string() == other.to_string() {
+impl ChronoValue {
+    pub fn common_variant(&self, other: &Self) -> Option<ChronoValueType> {
+        if self.type_() == other.type_() {
             Some(self.type_())
         } else {
             None
@@ -245,12 +234,12 @@ impl ChronoContent {
         res.map(|c_duration| c_duration.to_std().unwrap())
     }
 
-    pub fn type_(&self) -> ChronoContentType {
+    pub fn type_(&self) -> ChronoValueType {
         match self {
-            Self::DateTime(_) => ChronoContentType::DateTime,
-            Self::NaiveDateTime(_) => ChronoContentType::NaiveDateTime,
-            Self::NaiveTime(_) => ChronoContentType::NaiveTime,
-            Self::NaiveDate(_) => ChronoContentType::NaiveDate,
+            Self::DateTime(_) => ChronoValueType::DateTime,
+            Self::NaiveDateTime(_) => ChronoValueType::NaiveDateTime,
+            Self::NaiveTime(_) => ChronoValueType::NaiveTime,
+            Self::NaiveDate(_) => ChronoValueType::NaiveDate,
         }
     }
 
@@ -262,26 +251,26 @@ impl ChronoContent {
         FixedOffset::east(0).ymd(1970, 1, 1).and_hms(0, 0, 0)
     }
 
-    pub fn default_of(default: DateTime<FixedOffset>, type_: ChronoContentType) -> Self {
+    pub fn default_of(default: DateTime<FixedOffset>, type_: ChronoValueType) -> Self {
         match type_ {
-            ChronoContentType::DateTime => Self::DateTime(default),
-            ChronoContentType::NaiveDateTime => Self::NaiveDateTime(default.naive_local()),
-            ChronoContentType::NaiveTime => Self::NaiveTime(default.time()),
-            ChronoContentType::NaiveDate => Self::NaiveDate(default.naive_local().date()),
+            ChronoValueType::DateTime => Self::DateTime(default),
+            ChronoValueType::NaiveDateTime => Self::NaiveDateTime(default.naive_local()),
+            ChronoValueType::NaiveTime => Self::NaiveTime(default.time()),
+            ChronoValueType::NaiveDate => Self::NaiveDate(default.naive_local().date()),
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
-pub enum ChronoContentType {
+pub enum ChronoValueType {
     NaiveDate,
     NaiveTime,
     NaiveDateTime,
     DateTime,
 }
 
-impl Default for ChronoContentType {
+impl Default for ChronoValueType {
     fn default() -> Self {
         Self::DateTime
     }
@@ -290,9 +279,9 @@ impl Default for ChronoContentType {
 #[derive(Debug, Clone, PartialEq)]
 pub struct DateTimeContent {
     pub format: String,
-    pub type_: ChronoContentType,
-    pub begin: Option<ChronoContent>,
-    pub end: Option<ChronoContent>,
+    pub type_: ChronoValueType,
+    pub begin: Option<ChronoValue>,
+    pub end: Option<ChronoValue>,
 }
 
 impl DateTimeContent {
@@ -301,26 +290,8 @@ impl DateTimeContent {
     }
 }
 
-impl Compile for DateTimeContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Model> {
-        let begin = self.begin.clone().unwrap_or(ChronoContent::default_of(
-            ChronoContent::origin(),
-            self.type_,
-        ));
-        let end = self
-            .end
-            .clone()
-            .unwrap_or(begin.clone() + Duration::weeks(52));
-        let rand_datetime = RandDateTime::new(begin..end, &self.format);
-        let model = Seed::new_with(rand_datetime).once();
-        Ok(Model::Primitive(PrimitiveModel::String(
-            StringModel::Chrono(model),
-        )))
-    }
-}
-
 pub mod datetime_content {
-    use super::{ChronoContent, ChronoContentType, DateTimeContent};
+    use super::{ChronoValue, ChronoValueType, DateTimeContent, Error};
     use anyhow::Result;
     use serde::{Deserialize, Serialize};
 
@@ -330,10 +301,10 @@ pub mod datetime_content {
     };
 
     #[derive(Debug)]
-    pub struct ChronoContentFormatter<'a>(&'a str, Option<ChronoContentType>);
+    pub struct ChronoValueFormatter<'a>(&'a str, Option<ChronoValueType>);
 
-    impl<'a> ChronoContentFormatter<'a> {
-        pub fn new_with(src: &'a str, hint: Option<ChronoContentType>) -> Self {
+    impl<'a> ChronoValueFormatter<'a> {
+        pub fn new_with(src: &'a str, hint: Option<ChronoValueType>) -> Self {
             Self(src, hint)
         }
 
@@ -341,7 +312,7 @@ pub mod datetime_content {
             Self::new_with(src, None)
         }
 
-        pub fn parse(&self, content: &str) -> Result<ChronoContent> {
+        pub fn parse(&self, content: &str) -> Result<ChronoValue> {
             debug!(
                 "parsing a chrono content from string '{}' ({:?})",
                 content, self
@@ -361,37 +332,35 @@ pub mod datetime_content {
 
             if let Some(hint) = self.1 {
                 match hint {
-                    ChronoContentType::DateTime => {
-                        Ok(ChronoContent::DateTime(parsed.to_datetime()?))
-                    }
-                    ChronoContentType::NaiveDateTime => Ok(ChronoContent::NaiveDateTime(
+                    ChronoValueType::DateTime => Ok(ChronoValue::DateTime(parsed.to_datetime()?)),
+                    ChronoValueType::NaiveDateTime => Ok(ChronoValue::NaiveDateTime(
                         parsed.to_naive_date()?.and_time(parsed.to_naive_time()?),
                     )),
-                    ChronoContentType::NaiveDate => {
-                        Ok(ChronoContent::NaiveDate(parsed.to_naive_date()?))
+                    ChronoValueType::NaiveDate => {
+                        Ok(ChronoValue::NaiveDate(parsed.to_naive_date()?))
                     }
-                    ChronoContentType::NaiveTime => {
-                        Ok(ChronoContent::NaiveTime(parsed.to_naive_time()?))
+                    ChronoValueType::NaiveTime => {
+                        Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?))
                     }
                 }
             } else {
                 parsed
                     .to_datetime()
-                    .map(|dt| ChronoContent::DateTime(dt))
+                    .map(|dt| ChronoValue::DateTime(dt))
                     .or_else(|err| {
                         debug!("a chrono content failed to parse as a datetime: {}", err);
                         parsed
                             .to_naive_date()
                             .and_then(|date| match parsed.to_naive_time() {
-                                Ok(time) => Ok(ChronoContent::NaiveDateTime(date.and_time(time))),
-                                Err(_) => Ok(ChronoContent::NaiveDate(date)),
+                                Ok(time) => Ok(ChronoValue::NaiveDateTime(date.and_time(time))),
+                                Err(_) => Ok(ChronoValue::NaiveDate(date)),
                             })
                             .or_else(|err| {
                                 debug!(
                                     "a chrono content failed to parse as a naive datetime: {}",
                                     err
                                 );
-                                Ok(ChronoContent::NaiveTime(parsed.to_naive_time()?))
+                                Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?))
                             })
                     })
             }
@@ -402,34 +371,34 @@ pub mod datetime_content {
             &self,
             opt: Option<String>,
             def: DateTime<FixedOffset>,
-            hint: ChronoContentType,
-        ) -> Result<ChronoContent> {
+            hint: ChronoValueType,
+        ) -> Result<ChronoValue> {
             match opt.map(|inner| self.parse(&inner)).transpose()? {
                 Some(inner) => Ok(inner),
                 None => {
-                    let default = ChronoContent::default_of(def, hint);
-                    let fmt = ChronoContentFormatter::new_with(self.0, None);
+                    let default = ChronoValue::default_of(def, hint);
+                    let fmt = ChronoValueFormatter::new_with(self.0, None);
                     fmt.parse(&fmt.format(&default)?)
                 }
             }
         }
 
-        pub fn format(&self, c: &ChronoContent) -> Result<String> {
+        pub fn format(&self, c: &ChronoValue) -> Result<String, Error> {
             use std::fmt::Write;
             let mut buf = String::new();
             let display = match c {
-                ChronoContent::DateTime(dt) => dt.format(self.0),
-                ChronoContent::NaiveDateTime(n_dt) => n_dt.format(self.0),
-                ChronoContent::NaiveTime(n_t) => n_t.format(self.0),
-                ChronoContent::NaiveDate(n_d) => n_d.format(self.0),
+                ChronoValue::DateTime(dt) => dt.format(self.0),
+                ChronoValue::NaiveDateTime(n_dt) => n_dt.format(self.0),
+                ChronoValue::NaiveTime(n_t) => n_t.format(self.0),
+                ChronoValue::NaiveDate(n_d) => n_d.format(self.0),
             };
             buf.write_fmt(format_args!("{}", display)).map_err(|err| {
-                failed!(
-                    target: Debug,
-                    "could not format {} with {}: {}",
-                    c,
-                    self.0,
-                    err
+                failed_crate!(
+		    target: Release,
+		    "could not format date time of type '{}' with '{}': {}",
+		    c.type_(),
+		    &self.0,
+		    err
                 )
             })?;
             buf.shrink_to_fit();
@@ -441,7 +410,7 @@ pub mod datetime_content {
     pub(super) struct SerdeDateTimeContent {
         format: String,
         #[serde(rename = "subtype")]
-        type_: Option<ChronoContentType>,
+        type_: Option<ChronoValueType>,
         begin: Option<String>,
         end: Option<String>,
     }
@@ -451,7 +420,7 @@ pub mod datetime_content {
             debug!("interpreting a shadow datetime content {:?}", self);
 
             let src = &self.format;
-            let fmt = ChronoContentFormatter::new_with(src, self.type_);
+            let fmt = ChronoValueFormatter::new_with(src, self.type_);
 
             let type_ = self.type_.unwrap_or_default();
             let begin = self
@@ -490,7 +459,7 @@ pub mod datetime_content {
         }
 
         pub(super) fn from_datetime_content(c: &DateTimeContent) -> Result<Self> {
-            let fmt = ChronoContentFormatter::new_with(&c.format, None);
+            let fmt = ChronoValueFormatter::new_with(&c.format, None);
             Ok(Self {
                 format: c.format.to_string(),
                 type_: Some(c.type_),
@@ -505,7 +474,7 @@ pub mod datetime_content {
     }
 }
 
-pub use datetime_content::ChronoContentFormatter;
+pub use datetime_content::ChronoValueFormatter;
 
 impl Serialize for DateTimeContent {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -532,24 +501,33 @@ impl<'de> Deserialize<'de> for DateTimeContent {
 }
 
 impl Compile for StringContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Model> {
-        match self {
-            StringContent::Pattern(regex_content) => {
-                let gen = Seed::new_with(regex_content.to_regex()).once().into_token();
-                Ok(Model::Primitive(PrimitiveModel::String(
-                    StringModel::Regex(gen),
-                )))
+    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Graph> {
+        let string_node = match self {
+            StringContent::Pattern(pattern) => RandomString::from(pattern.to_regex()).into(),
+            StringContent::Faker(FakerContent {
+                generator,
+                args,
+                locales,
+            }) => RandomString::from(RandFaker::new(
+                generator.clone(),
+                args.clone(),
+                locales.clone(),
+            )?)
+            .into(),
+            StringContent::DateTime(DateTimeContent {
+                begin,
+                end,
+                format,
+                type_,
+            }) => {
+                let begin = begin
+                    .clone()
+                    .unwrap_or(ChronoValue::default_of(ChronoValue::origin(), *type_));
+                let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
+                RandomDateTime::new(begin..end, &format).into()
             }
-            StringContent::Faker(faker_content) => faker_content.compile(compiler),
-            StringContent::DateTime(datetime_content) => datetime_content.compile(compiler),
-            StringContent::Categorical(categorical_content) => {
-                let gen = Seed::new_with(categorical_content.clone().into())
-                    .once()
-                    .into_token();
-                Ok(Model::Primitive(PrimitiveModel::String(
-                    StringModel::Categorical(gen),
-                )))
-            }
-        }
+            StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
+        };
+        Ok(Graph::String(string_node))
     }
 }

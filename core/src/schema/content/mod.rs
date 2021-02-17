@@ -20,11 +20,11 @@ mod r#bool;
 pub use self::r#bool::BoolContent;
 
 mod number;
-pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, Range};
+pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, RangeStep};
 
 mod string;
 pub use string::{
-    ChronoContent, ChronoContentFormatter, DateTimeContent, FakerContent, FakerContentArgument,
+    ChronoValue, ChronoValueFormatter, DateTimeContent, FakerContent, FakerContentArgument,
     StringContent,
 };
 
@@ -230,21 +230,21 @@ impl<'r> From<&'r Value> for Content {
             Value::Number(number_value) => {
                 let number_content = if number_value.is_f64() {
                     let value = number_value.as_f64().unwrap();
-                    NumberContent::F64(number_content::F64::Range(Range {
+                    NumberContent::F64(number_content::F64::Range(RangeStep {
                         low: value,
                         high: value + 1.0,
                         step: 1.,
                     }))
                 } else if number_value.is_u64() {
                     let value = number_value.as_u64().unwrap();
-                    NumberContent::U64(number_content::U64::Range(Range {
+                    NumberContent::U64(number_content::U64::Range(RangeStep {
                         low: value,
                         high: value + 1,
                         step: 1,
                     }))
                 } else if number_value.is_i64() {
                     let value = number_value.as_i64().unwrap();
-                    NumberContent::I64(number_content::I64::Range(Range {
+                    NumberContent::I64(number_content::I64::Range(RangeStep {
                         low: value,
                         high: value + 1,
                         step: 1,
@@ -301,7 +301,7 @@ impl Find<Content> for Content {
 }
 
 impl Compile for Content {
-    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Model> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph> {
         match self {
             Self::Object(object_content) => object_content.compile(compiler),
             Self::Bool(bool_content) => bool_content.compile(compiler),
@@ -310,13 +310,13 @@ impl Compile for Content {
             Self::Array(array_content) => array_content.compile(compiler),
             Self::SameAs(same_as_content) => same_as_content.compile(compiler),
             Self::OneOf(one_of_content) => one_of_content.compile(compiler),
-            Self::Null => Ok(Model::null()),
+            Self::Null => Ok(Graph::null()),
         }
     }
 }
 
 impl Compile for SameAsContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Model> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         compiler.get(self.ref_.clone())
     }
 }

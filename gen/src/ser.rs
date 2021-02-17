@@ -232,20 +232,16 @@ where
 pub mod tests {
     use super::*;
 
-    use rand::distributions::{Standard, Uniform};
-
-    use crate::value::{
-        tests::base_gen, IntoToken, IntoTokenGeneratorExt, Number, Primitive, Token,
-        TokenGenerator, TokenGeneratorExt,
-    };
-    use crate::{Constant, Generator, GeneratorExt, Seed};
+    use crate::value::tests::base_gen;
+    use crate::{Generator, GeneratorExt};
 
     #[test]
     fn serialize() {
         let mut rng = rand::thread_rng();
         for i in 0..10 {
             let mut gen = base_gen(i).aggregate();
-            let ser = OwnedSerializable::new(gen.complete(&mut rng));
+	    let next = gen.next(&mut rng).into_yielded().unwrap();
+            let ser = OwnedSerializable::new(next);
             let as_str = serde_json::to_string_pretty(&ser).unwrap();
             let as_value: serde_json::Value = serde_json::from_str(&as_str).unwrap();
             assert_eq!(

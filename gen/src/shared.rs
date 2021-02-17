@@ -1,10 +1,12 @@
-use crate::{Generator, GeneratorState, Rng};
+use crate::{Generator, GeneratorState};
 
 use std::{
     cell::RefCell,
     collections::{BTreeMap, VecDeque},
     rc::Rc,
 };
+
+use rand::Rng;
 
 impl<G> Generator for Rc<RefCell<G>>
 where
@@ -14,7 +16,7 @@ where
 
     type Return = G::Return;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         self.borrow_mut().next(rng)
     }
 }
@@ -75,7 +77,7 @@ where
         new_id
     }
 
-    fn next_for(&mut self, id: DependentId, rng: &mut Rng) -> GeneratorState<G::Yield, G::Return> {
+    fn next_for<R: Rng>(&mut self, id: DependentId, rng: &mut R) -> GeneratorState<G::Yield, G::Return> {
         self.routes
             .get_mut(&id)
             .unwrap()
@@ -133,7 +135,7 @@ where
         self.0.borrow_mut().register_from(id)
     }
 
-    fn next_for(&self, id: DependentId, rng: &mut Rng) -> GeneratorState<G::Yield, G::Return> {
+    fn next_for<R: Rng>(&self, id: DependentId, rng: &mut R) -> GeneratorState<G::Yield, G::Return> {
         self.0.borrow_mut().next_for(id, rng)
     }
 }
@@ -196,7 +198,7 @@ where
 
     type Return = G::Return;
 
-    fn next(&mut self, rng: &mut Rng) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         self.inner.next_for(self.id, rng)
     }
 }
@@ -206,35 +208,35 @@ pub mod tests {
     use super::*;
 
     use crate::GeneratorExt;
-    use crate::Seed;
+    use crate::generator::{Random, Once};
 
     #[test]
     fn shared() {
         let mut rng = rand::thread_rng();
 
-        let gen = Seed::new::<u16>().once();
+        let gen = Random::new::<u16>().once();
 
         let mut shared_1 = Shared::new(gen);
         let mut shared_2 = shared_1.clone();
 
-        for _ in (0..5) {
+        for _ in 0..5 {
             assert_eq!(shared_1.next(&mut rng), shared_2.next(&mut rng));
         }
 
         let mut left_next_5 = Vec::new();
-        for _ in (0..5) {
+        for _ in 0..5 {
             left_next_5.push(shared_1.next(&mut rng));
         }
 
         let mut right_next_5 = Vec::new();
-        for _ in (0..5) {
+        for _ in 0..5 {
             right_next_5.push(shared_2.next(&mut rng));
         }
 
-        let mut shared_3 = shared_1.clone();
+        let shared_3: Shared<Once<Random<u16>>> = shared_1.clone();
 
-        let left_next_5_after = shared_3.take(5).complete(&mut rng);
-        let right_next_5_after = shared_2.take(5).complete(&mut rng);
+        let left_next_5_after = shared_3.repeat(5).complete(&mut rng);
+        let right_next_5_after = shared_2.repeat(5).complete(&mut rng);
 
         assert_eq!(left_next_5, right_next_5);
 

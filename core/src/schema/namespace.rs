@@ -7,10 +7,9 @@ use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
 use super::inference::{MergeStrategy, OptionalMergeStrategy};
-use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
-use crate::gen::{Compile, Compiler, Model};
-
-use synth_gen::{value::IntoToken, Chain, TokenGeneratorExt};
+use super::{Name, suggest_closest, ArrayContent, Content, FieldRef, Find};
+use crate::compile::{Compile, Compiler};
+use crate::graph::{Graph, KeyValueOrNothing};
 
 #[allow(dead_code)]
 type JsonObject = Map<String, Value>;
@@ -151,17 +150,16 @@ impl Namespace {
 }
 
 impl Compile for Namespace {
-    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Model> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         // TODO: needs to wrap each top-level attribute in a variable size array model
-        let generator = self
+        let object_node = self
             .iter()
-            .map(|(name, content)| {
+            .map(|(name, field)| {
                 compiler
-                    .build(name.as_ref(), content)
-                    .map(|value| value.with_key(name.to_string().yield_token()))
+                    .build(name.as_ref(), field)
+                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
             })
-            .collect::<Result<Chain<_>>>()?
-            .into_map(None);
-        Ok(Model::Object(generator))
+            .collect::<Result<_>>()?;
+        Ok(Graph::Object(object_node))
     }
 }

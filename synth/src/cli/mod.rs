@@ -11,12 +11,10 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
-use synth_core::gen::Model;
+use synth_core::graph::Graph;
 use synth_core::schema::ValueKindExt;
 use synth_core::Name;
-use synth_gen::prelude::OwnedSerializable;
-use synth_gen::Generator;
-use synth_gen::GeneratorExt;
+use synth_gen::prelude::*;
 
 /// synth init
 /// synth import my_namespace from-file /a/path/to/some/file
@@ -116,7 +114,7 @@ impl Cli {
         let ns = self.store.get_ns(ns_path)?;
 
         let mut rng = rand::thread_rng();
-        let mut model = Model::from_namespace(&ns)?.aggregate();
+        let mut model = Graph::from_namespace(&ns)?.aggregate();
 
         fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
             match value {
@@ -135,7 +133,7 @@ impl Cli {
 
         while generated < target {
             let start_of_round = generated;
-            let serializable = OwnedSerializable::new(model.complete(&mut rng));
+            let serializable = OwnedSerializable::new(model.try_next_yielded(&mut rng)?);
             let mut value = match serde_json::to_value(&serializable)? {
                 Value::Object(map) => map,
                 _ => {

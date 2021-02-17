@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 
 use synth_core::{
     error::{Error, ErrorKind},
-    gen::Model,
+    graph::Graph,
     schema::{
         optionalise::{Optionalise, OptionaliseApi},
         s_override::{DefaultOverrideStrategy, OverrideStrategy},
@@ -226,7 +226,7 @@ impl Daemon {
         target: usize,
     ) -> Result<Value> {
         let mut rng = rand::thread_rng();
-        let mut model = Model::from_namespace(namespace)?.aggregate();
+        let mut model = Graph::from_namespace(namespace)?.aggregate();
 
         fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
             match value {
@@ -245,7 +245,7 @@ impl Daemon {
 
         while generated < target {
             let start_of_round = generated;
-            let serializable = OwnedSerializable::new(model.complete(&mut rng));
+            let serializable = OwnedSerializable::new(model.try_next_yielded(&mut rng)?);
             let mut value = match serde_json::to_value(&serializable)? {
                 Value::Object(map) => map,
                 _ => {

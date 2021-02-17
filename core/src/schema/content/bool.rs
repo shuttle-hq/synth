@@ -28,23 +28,19 @@ impl Default for BoolContent {
 }
 
 impl Compile for BoolContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Model> {
-        let bool_model = match self {
+    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Graph> {
+        let random_bool = match self {
             BoolContent::Frequency(p) => {
                 let distr = Bernoulli::new(*p).map_err(|err| {
                     failed!(target: Release, "invalid frequency: p = '{}'", p).context(err)
                 })?;
-                let seed = Seed::new_with(distr).once().into_token();
-                BoolModel::Bernoulli(seed)
+                RandomBool::Bernoulli(Random::new_with(distr))
             }
-            BoolContent::Constant(value) => BoolModel::Constant(value.yield_token()),
+            BoolContent::Constant(value) => RandomBool::Constant(Yield::wrap(*value)),
             BoolContent::Categorical(categorical_content) => {
-                let gen = Seed::new_with(categorical_content.clone().into())
-                    .once()
-                    .into_token();
-                BoolModel::Categorical(gen)
+                RandomBool::Categorical(Random::new_with(categorical_content.clone()))
             }
         };
-        Ok(Model::Primitive(PrimitiveModel::Bool(bool_model)))
+        Ok(Graph::Bool(random_bool.into()))
     }
 }

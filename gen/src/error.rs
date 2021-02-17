@@ -50,8 +50,8 @@ impl serde::de::Error for Error {
         T: Display,
     {
         Self::Deserialize {
-            msg: msg.to_string(),
-        }
+	    msg: msg.to_string()
+	}
     }
 }
 

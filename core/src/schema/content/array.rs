@@ -8,23 +8,11 @@ pub struct ArrayContent {
     pub content: Box<Content>,
 }
 
-use crate::gen::IntoCompleted;
-
 impl Compile for ArrayContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Model> {
-        let length = compiler
-            .build("length", self.length.as_ref())?
-            .deserialize::<usize>()
-            .exhaust();
-        let content = Rc::new(RefCell::new(compiler.build("content", &self.content)?));
-        let array = length.and_then_try(move |length| {
-            content
-                .clone()
-                .take(length)
-                .into_seq(Some(length))
-                .ok::<Result<(), _>>()
-        });
-        Ok(Model::Array(IntoCompleted::wrap(array).boxed()))
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
+	let length = compiler.build("length", self.length.as_ref())?;
+        let content = compiler.build("content", &self.content)?;
+	Ok(Graph::Array(ArrayNode::new_with(length, content)))
     }
 }
 

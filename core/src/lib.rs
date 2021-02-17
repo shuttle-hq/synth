@@ -30,4 +30,8 @@ pub use error::Error;
 pub mod schema;
 pub use schema::{Content, Name, Namespace};
 
-pub mod gen;
+pub mod graph;
+pub use graph::Graph;
+
+pub mod compile;
+pub use compile::{Compile, Compiler};
