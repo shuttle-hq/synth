@@ -42,9 +42,12 @@ pub type Rng = rand::rngs::ThreadRng;
 
 pub mod generator;
 pub use generator::{
-    dummy, random, FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, TryGenerator,
+    random, FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, TryGenerator,
     TryGeneratorExt,
 };
+
+#[cfg(feature = "faker")]
+pub use generator::dummy;
 
 pub mod prelude;
 
