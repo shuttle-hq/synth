@@ -42,7 +42,7 @@ use std::{net::SocketAddr, str::FromStr};
 use anyhow::Result;
 
 #[cfg(feature = "python")]
-use pyo3::{Python, PyResult};
+use pyo3::{PyResult, Python};
 
 #[macro_use]
 mod error;
@@ -117,6 +117,7 @@ struct Splash {
     synth_ver: String,
     synth_ref: String,
     synth_rev: String,
+    path: String,
     os: String,
     arch: String,
     mem: u64,
@@ -129,18 +130,16 @@ impl Splash {
             let gil = Python::acquire_gil();
             let py = gil.python();
             let sys = py.import("sys")?;
-            let version = sys.get("version")?
-                .extract::<String>()?
-		.replace("\n", "");
-	    let path = sys.get("path")?
-		.extract::<Vec<String>>()?
-		.join(":");
-	    let out: PyResult<_> = Ok((version, path));
-	    out
+            let version = sys.get("version")?.extract::<String>()?.replace("\n", "");
+            let path = sys.get("path")?.extract::<Vec<String>>()?.join(":");
+            let out: PyResult<_> = Ok((version, path));
+            out
         }?;
 
         #[cfg(not(feature = "python"))]
         let python_ver = { "disabled".bold().red().to_string() };
+
+        let path = std::env::var("PATH").unwrap_or("unknown".to_string());
 
         let synth_ver = env!("CARGO_PKG_VERSION").to_string();
 
@@ -154,10 +153,11 @@ impl Splash {
 
         Ok(Self {
             python_ver,
-	    python_path,
+            python_path,
             synth_ver,
             synth_ref,
             synth_rev,
+            path,
             os,
             arch,
             mem,
@@ -175,7 +175,8 @@ version     = {synth_ver}
 ref         = {synth_ref}
 rev         = {synth_rev}
 python      = {python_ver}
-python_path = {python_path}
+PYTHONPATH  = {python_path}
+PATH        = {path}
 target      = {os}
 arch        = {arch}
 threads     = {cpu}
@@ -184,8 +185,9 @@ mem         = {mem}
             synth_ver = self.synth_ver.blue().bold(),
             synth_ref = self.synth_ref.bold(),
             synth_rev = self.synth_rev.bold(),
+            path = self.path.bold(),
             python_ver = self.python_ver.bold(),
-	    python_path = self.python_path,
+            python_path = self.python_path,
             arch = self.arch.bold(),
             os = self.os.bold(),
             mem = self.mem,
@@ -199,6 +201,11 @@ mem         = {mem}
 async fn main() -> Result<()> {
     let args = Args::from_args();
 
+    init_logger(&args);
+
+    let splash = Splash::auto()?;
+    debug!("{}", splash);
+
     match args {
         Args::Serve(sa) => serve_daemon(sa).await,
         Args::Cli(cli_args) => Cli::try_from(cli_args)?.run().await,
@@ -206,11 +213,6 @@ async fn main() -> Result<()> {
 }
 
 async fn serve_daemon(args: ServeArgs) -> Result<()> {
-    init_remote_logger(&args);
-
-    let splash = Splash::auto()?;
-    debug!("{}", splash);
-
     let daemon = Arc::new(Daemon::new(args.data_directory.0)?);
 
     let server = Api::new_server(daemon)?;
@@ -234,21 +236,26 @@ async fn serve_daemon(args: ServeArgs) -> Result<()> {
     Ok(())
 }
 
-fn init_remote_logger(args: &ServeArgs) {
+fn init_logger(args: &Args) {
     let mut loggers = Vec::<Box<dyn log::Log>>::new();
 
     // Env logger
     let env_logger = env_logger::Builder::from_default_env().build();
     loggers.push(Box::new(env_logger));
 
-    // Zenduty Logger
-    if let Some(api_key) = &args.zenduty {
-        let zen_logger = Box::new(TargetLogger::new(
-            "remote".to_string(),
-            ZenDuty::new(api_key.clone()),
-        ));
-        loggers.push(zen_logger);
-    }
+    match args {
+        Args::Serve(ServeArgs {
+            zenduty: Some(api_key),
+            ..
+        }) => {
+            let zen_logger = Box::new(TargetLogger::new(
+                "remote".to_string(),
+                ZenDuty::new(api_key.clone()),
+            ));
+            loggers.push(zen_logger);
+        }
+        _ => (),
+    };
 
     CompositeLogger::init(loggers)
 }
