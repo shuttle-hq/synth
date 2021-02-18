@@ -2,6 +2,7 @@
   naersk
 , nix-gitignore
 , makeWrapper
+, wrapInEnv
 , stdenv
 , python
 , pythonPackages
@@ -49,26 +50,8 @@ let
     ] ++ darwinBuildInputs;
   };
   suffix = if release then "" else "-debug";
-in stdenv.mkDerivation {
+in wrapInEnv {
+  inherit pythonEnv;
+  drv = synthUnwrapped;
   name = "synth${suffix}-${version}";
-  inherit version;
-
-  src = synthUnwrapped;
-
-  buildInputs = [
-    makeWrapper
-    pythonEnv
-  ];
-
-  passthru = {
-    unwrapped = synthUnwrapped;
-    inherit pythonEnv;
-  };
-
-  installPhase = ''
-  mkdir -p $out/bin
-  makeWrapper "$src/bin/synth" "$out/bin/synth" \
-              --prefix PATH ":" "${pythonEnv}/bin" \
-              --prefix NIX_PYTHONPATH ":" "${pythonEnv}/lib/python3.7/site-packages"
-  '';
 }

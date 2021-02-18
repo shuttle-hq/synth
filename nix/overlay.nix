@@ -15,6 +15,38 @@ self: super: {
 
     nixBundle = (import sources.nix-bundle { nixpkgs = self; }).nix-bootstrap;
 
+    wrapInEnv = {
+      drv
+      , name
+      , pythonEnv
+    }: self.stdenv.mkDerivation {
+      inherit name;
+
+      version = drv.version;
+
+      src = drv;
+
+      buildInputs = [
+        self.makeWrapper
+        pythonEnv
+      ];
+
+      passthru = {
+        unwrapped = drv;
+        inherit pythonEnv;
+      };
+
+      installPhase = ''
+      mkdir -p $out/bin
+      for bin in $src/bin/*; do
+         bin_name=$(basename $bin)
+         makeWrapper "$src/bin/$bin_name" "$out/bin/$bin_name" \
+                     --prefix PATH ":" "${pythonEnv}/bin" \
+                     --prefix NIX_PYTHONPATH ":" "${pythonEnv}/lib/python3.7/site-packages"
+      done
+      '';
+    };
+
     mkWrappedToolchain = {
       name
       , buildInputs
@@ -56,6 +88,7 @@ self: super: {
 
   rustToolchain = self.synthPackages.rustToolchain;
   mkWrappedToolchain = self.synthPackages.mkWrappedToolchain;
+  wrapInEnv = self.synthPackages.wrapInEnv;
 
   python = self.synthPackages.python;
 
