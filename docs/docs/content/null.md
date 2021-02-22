@@ -1,35 +1,9 @@
-## Content Family: Nulls
-#### Content: Null
+The `null` generator type simply evaluates to the JSON [`null`](https://www.json.org/json-en.html) primitive.
 
-`Null` content is what is says on the tin. Synth will evaluate Null content into a JSON Null primitive.
+#### Example
 
-###### Example
-
-```json
-"my_null_field" : {
-    "type": "null"
+```json synth
+{
+   "type": "null"
 }
-```
-
-###### Example Output
-
-```json
-[
-    {
-      "my_null_field": null
-    },
-    {
-      "my_null_field": null
-    },
-    {
-      "my_null_field": null
-    },
-    {
-      "my_null_field": null
-    },
-    {
-      "my_null_field": null
-    }
-  ]
-
 ```

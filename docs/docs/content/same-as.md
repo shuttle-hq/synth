@@ -1,56 +1,55 @@
 ---
-id: same-as
 title: same_as
 ---
 
-## Content Family: SameAs
-#### Content: SameAs
+Synth's `same_as` generator type establishes a relation between two generators. It lets you re-use a value generated at
+a different level in say, an [`object`](/synth/content/object), at a different level in the same object. It is often
+used to specify foreign key relationships in complex datasets.
 
-`SameAs` content let's the value of one field follow the value of another field in the Schema.
+#### Example
 
-It can be used to specify datasets with foreign keys. It can also be used (in rarer cases) to create data which is semantically duplicated like in the example below.
-
-
-###### Example
-```json
-"field_a": {
-    "range": {
-        "high": 10,
-        "low": 0,
-        "step": 1
-    },
-    "subtype": "u64",
-    "type": "number"
-},
-"follow_a": {
+```json synth
+{
+  "type": "object",
+  "name": {
+    "type": "string",
+    "faker": {
+      "generator": "first_name"
+    }
+  },
+  "same_name": {
     "type": "same_as",
-    "ref": "transactions.content.field_a"
+    "ref": "name"
+  }
 }
 ```
 
-###### Example Output
-```json
-[
-    {
-      "field_a": 5,
-      "follow_a": 5
-    },
-    {
-      "field_a": 8,
-      "follow_a": 8
-    },
-    {
-      "field_a": 4,
-      "follow_a": 4
-    },
-    {
-      "field_a": 4,
-      "follow_a": 4
-    },
-    {
-      "field_a": 3,
-      "follow_a": 3
-    }
-  ]
+The `"ref"` field must point to another existing field. Complex objects can be traversed by using concatenating levels
+with a period `.`.
 
+#### Example
+
+```json synth
+{
+  "type": "object",
+  "address": {
+    "type": "object",
+    "street_name": {
+      "type": "string",
+      "faker": {
+        "generator": "street_name"
+      }
+    },
+    "zip_code": {
+      "type": "string",
+      "faker": {
+        "generator": "zipcode"
+      }
+    }
+  },
+  "same_zip_code": {
+    "type": "same_as",
+    "ref": "address.zip_code"
+  }
+}
 ```

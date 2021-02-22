@@ -1,6 +1,5 @@
 ---
-id: how-it-works
-title: How It Works
+title: How it works
 ---
 
 Synth's funcionality can be broken into 3 main parts:

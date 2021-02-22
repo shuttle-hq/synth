@@ -28,7 +28,7 @@ The key features of Synth are:
 
 ## Installation & Getting Started
 
-To get started quickly, check out the [docs](https://openquery-io.github.io/synth/installation)
+To get started quickly, check out the [docs](https://openquery-io.github.io/synth).
 
 ## Why Rust
 

@@ -1,36 +1,30 @@
-## Content Family: Array
+Synth's `array` type mirrors JSON's arrays. An `array` type requires the following fields:
 
-#### Content: Array
+- `"content"`: specifies the elements of the generated array. Allowed value is any of Synth's generator type.
+- `"length"`: specifies the length of the generated array. Allowed value is any of
+  Synth's [`number`](/synth/content/number) type with `"subtype": "u64"`.
 
-Arrays represent, well Arrays. 
+The example below generates arrays of credit card numbers with `3` to `10` elements.
 
-They are composed of two parts.
+#### Example
 
-1) The `content` of an Array. Array's in JSON are not bound to being of a specific type, the same is true in the Synth schema.
-
-2) The `length` of an Array. The length of an Array is actually also a Content node. This gives you flexbility - for example you can make the length of an array be a `Number::Range`
-
-The below example will generate an array of between 50 and 100 credit cards.
-
-###### Example
-```json
-"credit_cards" : {
+```json synth
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "subtype": "u64",
+    "range": {
+      "high": 10,
+      "low": 3,
+      "step": 1
+    }
+  },
   "content": {
     "type": "string",
     "faker": {
-      "generator": "credit_card_number",
-      "card_type": "amex"
+        "generator": "credit_card_number"
     }
-  },
-  "length": {
-      "range": {
-          "high": 100,
-          "low": 50,
-          "step": 1
-      },
-      "subtype": "u64",
-      "type": "number"
-  },
-  "type": "array"
+  }
 }
 ```

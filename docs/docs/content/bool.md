@@ -1,71 +1,29 @@
-## Content Family: Bool
+Synth's `bool` generator type generates one of two values `true` or `false`.
 
-#### Content: Bool::Probabilistic
+## Constant
 
-A probabilistic Boolean type of content which with a single parameter. A floating point number which represents the uniform probability of it being `true`
+A constant `bool` type. This will always evaluate to the specified value.
 
-###### Example
+#### Example
 
-```json
-"is_user_happy" : {
-    "frequency": 0.2,
-    "type": "bool"
+```json synth
+{
+  "type": "bool",
+  "constant": false
 }
 ```
 
-###### Example Output
+## Probabilistic
 
-```json
-[
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": true
-    }
-]
-```
+A probabilistic `bool` type. The `frequency` parameter (value between `0.` and `1.`) controls the probability of the
+generated value being `true`.
 
-#### Content: Bool::Constant
+#### Example
 
-A constant boolean type. This will always evaluate to either true or false.
-
-###### Example
-
-```json
-"is_user_happy" : {
-    "constant": false,
-    "type": "bool"
+```json synth
+{
+    "type": "bool",
+    "frequency": 0.5
 }
 ```
 
-###### Example Output
-
-```json
-[
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    },
-    {
-      "is_user_happy": false
-    }
-]
-```
