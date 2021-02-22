@@ -52,16 +52,17 @@ impl Cli {
     // }
 
     pub async fn run(&self) -> Result<()> {
-        match self.args {
+        match self.args.clone() {
             CliArgs::Generate {
-                ref namespace,
-                ref collection,
+                namespace,
+                collection,
                 size,
-            } => self.generate(namespace.clone(), collection.clone(), size),
+            } => self.generate(namespace, collection, size),
             CliArgs::Import {
-                ref namespace,
-                ref from,
-            } => self.import(namespace.clone(), from.clone()),
+                namespace,
+                collection,
+                from,
+            } => self.import(namespace, collection, from),
             CliArgs::Init {} => self.init(),
         }
     }
@@ -84,25 +85,51 @@ impl Cli {
         Path::new(".synth/config.toml").exists()
     }
 
-    fn import(&self, path: PathBuf, import_strategy: Option<SomeImportStrategy>) -> Result<()> {
+    fn import(
+        &self,
+        path: PathBuf,
+        collection: Option<Name>,
+        import_strategy: Option<SomeImportStrategy>,
+    ) -> Result<()> {
         if !self.workspace_initialised() {
             return Err(anyhow!(
                 "Workspace has not been initialised. To initialise the workspace run `synth init`."
             ));
         }
 
-        if self.store.ns_exists(&path) {
+        if !path.is_relative() {
             return Err(anyhow!(
-                "The namespace at `{}` already exists. Cannot import into an existing namespace.",
-                path.display()
-            ));
+		"The namespace path `{}` is absolute. Only paths relative to an initialised workspace root are accepted.",
+		path.display()
+	    ));
         }
 
-        let ns = import_strategy.unwrap_or_default().import()?;
-
-        self.store.save_ns_path(path, ns)?;
-
-        Ok(())
+        // TODO: If ns exists and no collection: break
+        // If collection and ns exists and collection exists: break
+        if let Some(collection) = collection {
+            if self.store.collection_exists(&path, &collection) {
+                return Err(anyhow!(
+                    "The collection `{}` already exists. Will not import into an existing collection.",
+		    Store::relative_collection_path(&path, &collection).display()
+		));
+            } else {
+                let content = import_strategy.unwrap_or_default().import_collection()?;
+                self.store
+                    .save_collection_path(&path, collection, content)?;
+                Ok(())
+            }
+        } else {
+            if self.store.ns_exists(&path) {
+                return Err(anyhow!(
+                    "The namespace at `{}` already exists. Will not import into an existing namespace.",
+                    path.display()
+		));
+            } else {
+                let ns = import_strategy.unwrap_or_default().import()?;
+                self.store.save_ns_path(path, ns)?;
+                Ok(())
+            }
+        }
     }
 
     fn generate(&self, ns_path: PathBuf, collection: Option<Name>, target: usize) -> Result<()> {
@@ -121,7 +148,7 @@ impl Cli {
                 Value::Array(vec) => Ok(vec),
                 _ => {
                     return Err(
-                        failed!(target: Release, Unspecified => "generated synthetic data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.kind()),
+                        failed!(target: Release, Unspecified => "generated data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.kind()),
                     )
                 }
             }
@@ -191,34 +218,42 @@ impl Cli {
     }
 }
 
-#[derive(StructOpt)]
+#[derive(StructOpt, Clone)]
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
 pub(crate) enum CliArgs {
-    #[structopt(about = "Generate data from a namespace")]
-    Generate {
-        #[structopt(
-            help = "the namespace directory from which to generate",
-            parse(from_os_str)
-        )]
-        namespace: PathBuf,
-        #[structopt(long, help = "the specific collection from which to generate")]
-        collection: Option<Name>,
-        #[structopt(long, help = "the number of samples", default_value = "1")]
-        size: usize,
-    },
-    #[structopt(about = "Create a namespace from a data source")]
+    #[structopt(about = "Create a new empty workspace in the current working directory")]
+    Init {},
+    #[structopt(about = "Create a new namespace from existing JSON data")]
     Import {
         #[structopt(
-            help = "the namespace directory into which to import",
+            help = "The namespace directory into which to import",
             parse(from_os_str)
         )]
         namespace: PathBuf,
         #[structopt(
             long,
-            help = "The location from which to import. Currently synth supports multiple import strategies. Importing directly from a database will be supported in future versions. \n\nImporting from a file: Currently we support importing from JSON files by specifying the path to the file: `/some/path/to/file.json`. \n\nImporting from standard input: Not specifying `from` will accept JSON files from stdin."
+            help = "The name of a collection into which the data will be imported"
+        )]
+        collection: Option<Name>,
+        #[structopt(
+            long,
+            help = "Path to a JSON file containing the data to import. If not specified, data will be read from stdin"
         )]
         from: Option<SomeImportStrategy>,
     },
-    #[structopt(about = "Initialise the workspace")]
-    Init {},
+    #[structopt(about = "Generate data for a namespace")]
+    Generate {
+        #[structopt(
+            help = "The namespace directory from which to generate",
+            parse(from_os_str)
+        )]
+        namespace: PathBuf,
+        #[structopt(
+            long,
+            help = "The name of a collection for which to generate data. If not specified, will generate data for all collections in the namespace"
+        )]
+        collection: Option<Name>,
+        #[structopt(long, default_value = "1")]
+        size: usize,
+    },
 }

@@ -15,6 +15,7 @@ use synth_core::{
         optionalise::{Optionalise, OptionaliseApi},
         s_override::{DefaultOverrideStrategy, OverrideStrategy},
         Content, FieldRef, Name, Namespace, ValueKindExt,
+	OptionalMergeStrategy
     },
 };
 use synth_gen::prelude::*;
@@ -409,7 +410,7 @@ impl Daemon {
             }
 
             let as_value = Value::from(documents);
-            namespace.try_update(&collection, &as_value)?;
+            namespace.try_update(OptionalMergeStrategy, &collection, &as_value)?;
             self.validate(namespace.as_ref()).context(anyhow!(
                 "while validating the inferred model prior to persisting it"
             ))?;

@@ -1,13 +1,17 @@
-use anyhow::Result;
-use serde_json::{Map, Value};
-use std::io::Read;
+use anyhow::{Result, Context};
+use serde_json::Value;
 use std::path::PathBuf;
 use std::str::FromStr;
-use synth_core::schema::Namespace;
-use synth_core::Name;
+use synth_core::schema::{MergeStrategy, Namespace, Content, OptionalMergeStrategy};
 
-pub(crate) trait ImportStrategy {
-    fn import(self) -> Result<Namespace>;
+pub(crate) trait ImportStrategy: Sized {
+    fn import(self) -> Result<Namespace> {
+        ns_from_value(self.into_value()?)
+    }
+    fn import_collection(self) -> Result<Content> {
+        collection_from_value(&self.into_value()?)
+    }
+    fn into_value(self) -> Result<Value>;
 }
 
 #[derive(Clone, Debug)]
@@ -55,60 +59,63 @@ pub(crate) struct FileImportStrategy {
 pub(crate) struct StdinImportStrategy {}
 
 impl ImportStrategy for SomeImportStrategy {
-    fn import(self) -> Result<Namespace> {
+    fn into_value(self) -> Result<Value> {
         match self {
-            SomeImportStrategy::FromFile(fis) => fis.import(),
-            SomeImportStrategy::FromPostgres(pis) => pis.import(),
-            SomeImportStrategy::StdinImportStrategy(sis) => sis.import(),
+            SomeImportStrategy::FromFile(fis) => fis.into_value(),
+            SomeImportStrategy::FromPostgres(pis) => pis.into_value(),
+            SomeImportStrategy::StdinImportStrategy(sis) => sis.into_value(),
         }
     }
 }
 
 impl ImportStrategy for FileImportStrategy {
-    fn import(self) -> Result<Namespace> {
-        let buff = std::fs::read_to_string(self.from_file)?;
-        let collections: Map<String, Value> = serde_json::from_str(&buff)?;
-        ns_from_json_object(collections)
+    fn into_value(self) -> Result<Value> {
+        Ok(serde_json::from_reader(std::fs::File::open(
+            self.from_file,
+        )?)?)
     }
 }
 
 impl ImportStrategy for PostgresImportStrategy {
-    fn import(self) -> Result<Namespace> {
+    fn into_value(self) -> Result<Value> {
         unimplemented!("Postgres is not supported yet")
     }
 }
 
 impl ImportStrategy for StdinImportStrategy {
-    fn import(self) -> Result<Namespace> {
-        let mut buff = String::new();
-        std::io::stdin().read_to_string(&mut buff)?;
-        let collections: Map<String, Value> = serde_json::from_str(&buff)?;
-        ns_from_json_object(collections)
+    fn into_value(self) -> Result<Value> {
+        Ok(serde_json::from_reader(std::io::stdin())?)
     }
 }
 
-fn ns_from_json_object(collections: Map<String, Value>) -> Result<Namespace> {
-    let mut ns = Namespace::default();
-    for (name, collection) in collections {
-        let name = &Name::from_str(&name)?;
-        match &collection {
-            Value::Array(values) => {
-                ns.create_collection(
-                    name,
-                    values.get(0).ok_or(anyhow!(
-                        "Collection `{}` is empty. Failed to instantiate.",
-                        name
-                    ))?,
-                )?;
-                ns.try_update(name, &collection)?;
-            }
-            unacceptable_variant => {
-                return Err(anyhow!(
-                    "Was expecting a collection, instead got `{}`",
-                    unacceptable_variant
-                ))
-            }
+fn collection_from_value(value: &Value) -> Result<Content> {
+    match value {
+        Value::Array(values) => {
+            let fst = values.get(0).unwrap_or(&Value::Null);
+            let mut as_content = Namespace::collection(&fst);
+            OptionalMergeStrategy.try_merge(&mut as_content, value)?;
+            Ok(as_content)
         }
+        unacceptable => Err(anyhow!(
+            "Was expecting a collection, instead got `{}`",
+            unacceptable
+        )),
     }
-    Ok(ns)
+}
+
+fn ns_from_value(value: Value) -> Result<Namespace> {
+    match value {
+        Value::Object(object) => object
+            .into_iter()
+            .map(|(name, value)| {
+                collection_from_value(&value)
+                    .and_then(|content| Ok((name.parse()?, content)))
+                    .context(anyhow!("While importing the collection `{}`", name))
+            })
+            .collect(),
+        unacceptable => Err(anyhow!(
+            "Was expecting an object, instead got `{}`",
+            unacceptable
+        )),
+    }
 }

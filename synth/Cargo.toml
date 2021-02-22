@@ -58,5 +58,3 @@ synth-core = { path = "../core", features = [ "python" ] }
 synth-gen = { path = "../gen" }
 
 pyo3 = { version = "0.12.1", optional = true }
-
-dialoguer = "0.7.1"

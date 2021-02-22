@@ -1,8 +1,7 @@
 use anyhow::{Context, Result};
-use dialoguer::Confirm;
 use lazy_static::lazy_static;
 use std::fs::DirEntry;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use synth_core::schema::{Content, Name, Namespace};
 
@@ -19,10 +18,6 @@ struct Underlying {
 impl Underlying {
     fn extension(&self) -> &str {
         &self.file_ext
-    }
-
-    fn format_filename(&self, filename: &str) -> String {
-        format!("{}.{}", filename, self.extension())
     }
 }
 
@@ -50,8 +45,27 @@ impl Store {
         Self { path }
     }
 
-    pub fn ns_exists(&self, path: &PathBuf) -> bool {
-        path.exists()
+    fn ns_path(&self, namespace: &Path) -> PathBuf {
+        self.path.join(namespace)
+    }
+
+    pub fn relative_collection_path(namespace: &Path, collection: &Name) -> PathBuf {
+        namespace
+            .join(collection.to_string())
+            .with_extension(UNDERLYING.extension())
+    }
+
+    fn collection_path(&self, namespace: &Path, collection: &Name) -> PathBuf {
+        self.path
+            .join(Self::relative_collection_path(namespace, collection))
+    }
+
+    pub fn ns_exists(&self, namespace: &Path) -> bool {
+        self.ns_path(namespace).exists()
+    }
+
+    pub fn collection_exists(&self, namespace: &Path, collection: &Name) -> bool {
+        self.collection_path(namespace, collection).exists()
     }
 
     /// Get a namespace given it's directory path
@@ -73,34 +87,28 @@ impl Store {
         Ok(ns)
     }
 
+    pub fn save_collection_path(
+        &self,
+        ns_path: &Path,
+        collection: Name,
+        content: Content,
+    ) -> Result<()> {
+        let abs_ns_path = self.ns_path(ns_path);
+        std::fs::create_dir_all(&abs_ns_path)?;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(self.collection_path(ns_path, &collection))?;
+        serde_json::to_writer_pretty(&mut file, &content)?;
+        Ok(())
+    }
+
     /// Save a namespace given it's directory path
     pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Namespace) -> Result<()> {
-        let mut collections = vec![];
-        for (collection_name, collection) in namespace.collections.iter() {
-            let collection_file_name = UNDERLYING.format_filename(&collection_name.to_string());
-            let collection_path = ns_path.clone().join(collection_file_name);
-            collections.push((collection_path, serde_json::to_string_pretty(collection)?))
-        }
-
-        if ns_path.exists() {
-            // If the directory exists, warn the user that we are about to delete files in their FS
-            // TODO for some reason this is not playing nice with the `wait_for_newline` option
-            // Even without newline option the prompt is getting printed twice
-            if !Confirm::new()
-                //.wait_for_newline(true)
-                .with_prompt(format!("To create the namespace, the directory `{}` and all of it's contents will be permanently deleted. Are you sure you want to perform this operation?", ns_path.display()))
-                .interact()
-                .unwrap() // unwrap here because the user can ctrl-c or something like that
-            {
-                // TODO Maybe an error here? Not sure tbh...
-                std::process::exit(1);
-            }
-        }
-
-        let _ = std::fs::remove_dir_all(ns_path.clone()).map_err(|_| trace!("Nothing to delete."));
-        let _ = std::fs::create_dir_all(ns_path.clone())?;
-        for (collection_path, collection) in collections {
-            std::fs::write(collection_path, collection)?;
+        let abs_ns_path = self.ns_path(&ns_path);
+        std::fs::create_dir_all(&abs_ns_path)?;
+        for (name, content) in namespace {
+            self.save_collection_path(&ns_path, name, content)?;
         }
         Ok(())
     }

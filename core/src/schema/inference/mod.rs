@@ -345,7 +345,7 @@ pub mod tests {
         assert!(ns
             .accepts(&collection_name, &user_no_address_as_array)
             .is_err());
-        ns.try_update(&collection_name, &user_no_address_as_array)
+        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
             .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
@@ -379,9 +379,9 @@ pub mod tests {
         let mut ns = Namespace::default();
         ns.create_collection(&collection_name, &user_no_last_name)
             .unwrap();
-        ns.try_update(&collection_name, &user_no_address_as_array)
+        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
             .unwrap();
-        ns.try_update(&collection_name, &user_no_address_as_array)
+        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
             .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
@@ -424,7 +424,7 @@ pub mod tests {
         let mut ns = Namespace::default();
         ns.create_collection(&collection_name, &user_no_last_name)
             .unwrap();
-        ns.try_update(&collection_name, &user_no_address_as_array)
+        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
             .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)

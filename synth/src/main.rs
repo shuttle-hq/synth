@@ -101,6 +101,7 @@ pub(crate) enum Args {
     #[structopt(flatten)]
     Cli(CliArgs),
 }
+
 #[derive(StructOpt)]
 pub(crate) struct ServeArgs {
     #[structopt(short, long, default_value = "0.0.0.0:8182")]

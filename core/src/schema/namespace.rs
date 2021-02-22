@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
-use super::inference::{MergeStrategy, OptionalMergeStrategy};
+use super::inference::MergeStrategy;
 use super::{Name, suggest_closest, ArrayContent, Content, FieldRef, Find};
 use crate::compile::{Compile, Compiler};
 use crate::graph::{Graph, KeyValueOrNothing};
@@ -60,10 +60,14 @@ impl Namespace {
         self.collections.keys()
     }
 
-    pub fn try_update(&mut self, name: &Name, value: &Value) -> Result<()> {
+    pub fn try_update<M: MergeStrategy<Content, Value>>(
+        &mut self,
+        strategy: M,
+        name: &Name,
+        value: &Value,
+    ) -> Result<()> {
         let collection = self.get_collection_mut(name)?;
-        // TODO put inference_strategy in the namespace engine
-        OptionalMergeStrategy.try_merge(collection, value)?;
+        strategy.try_merge(collection, value)?;
         Ok(())
     }
 
@@ -72,23 +76,27 @@ impl Namespace {
     }
 
     pub fn put_collection(&mut self, name: &Name, content: Content) -> Result<()> {
-        // TODO collection exists
-        self.collections.insert(name.clone(), content);
-        Ok(())
-    }
-
-    pub fn create_collection(&mut self, name: &Name, value: &Value) -> Result<()> {
-        let as_content = Content::Array(ArrayContent {
-            length: Box::new(Content::from(&Value::from(1))),
-            content: Box::new(value.into()),
-        });
-        if let Some(_) = self.collections.insert(name.clone(), as_content) {
-            return Err(failed!(
+        if let Some(_) = self.collections.insert(name.clone(), content) {
+            Err(failed!(
                 target: Release,
                 "collection already exists: {}",
                 name
-            ));
+            ))
+        } else {
+            Ok(())
         }
+    }
+
+    pub fn collection(value: &Value) -> Content {
+        Content::Array(ArrayContent {
+            length: Box::new(Content::from(&Value::from(1))),
+            content: Box::new(value.into()),
+        })
+    }
+
+    pub fn create_collection(&mut self, name: &Name, value: &Value) -> Result<()> {
+        let as_content = Self::collection(value);
+        self.put_collection(name, as_content)?;
         Ok(())
     }
 
@@ -130,7 +138,7 @@ impl Namespace {
             .context(format!("in a collection: '{}'", collection))
     }
 
-    fn get_collection_mut(&mut self, name: &Name) -> Result<&mut Content> {
+    pub fn get_collection_mut(&mut self, name: &Name) -> Result<&mut Content> {
         let suggest = suggest_closest(self.collections.keys(), name.as_ref()).unwrap_or_default();
         if let Some(collection) = self.collections.get_mut(name) {
             Ok(collection)
