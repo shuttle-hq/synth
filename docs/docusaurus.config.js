@@ -10,7 +10,7 @@ module.exports = {
     projectName: 'synth', // Usually your repo name.
     themeConfig: {
         navbar: {
-            title: 'Docs',
+            title: 'Synth',
             logo: {
                 alt: 'Synth',
                 src: 'img/getsynth_identicon.png',

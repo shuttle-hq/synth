@@ -1,5 +1,5 @@
 ---
-title: An hello world
+title: Hello world
 ---
 
 After installing the Synth CLI, the next step is to create a *workspace*. Workspaces are directories in your filesystem
