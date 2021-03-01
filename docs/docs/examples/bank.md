@@ -278,22 +278,22 @@ first.
 ``` 
 
 There is quite a bit going on here, so let's break it down. This file represents a schema for
-a [`collection`](/getting_started/core-concepts). Collections are [Array::Array](/content/array.md)s under the hood and so they
+a [`collection`](/getting_started/core-concepts). Collections are [array](/content/array.md)s under the hood and so they
 have 2 fields.
 
 1) The `content` of an Array. This can be any valid JSON, but since `bank_db` originates from a SQL database with column
    names and so on, it is a JSON object.
 
 2) The `length` of an Array. The length of an Array is actually also a Content node. This gives you flexibility - for
-   example you can make the length of an array be a `Number::Range`
+   example you can make the length of an array be a `number::range`
 
 For more information on how to compose schemas, see the [Schema](/getting_started/schema.md) page.
 
 ### Tweaking Individual Fields
 
-Reading through the schema, we can see that Synth inferred `id` as being a `Number::Range`.
+Reading through the schema, we can see that Synth inferred `id` as being a `number::range`.
 
-What we actually need, is for `id` to be a monotonically increasing [`Number::Id`](/content/number.md) type starting
+What we actually need, is for `id` to be a monotonically increasing [`number::id`](/content/number.md) type starting
 at `0`.
 
 ```json synth
@@ -322,7 +322,7 @@ we are dealing with currencies. So let's replace the `amount` field:
 ```
 
 Next, we see Synth detected the `timestamp` field as a string following a random pattern. Consulting the documentation
-it should be a [String::DateTime](/content/string).
+it should be a [string::date_time](/content/string).
 
 ```json synth
 {
@@ -336,7 +336,7 @@ it should be a [String::DateTime](/content/string).
 ```
 
 The `user_id` field should point to a valid entry in the `users` collection, so let's use
-the [SameAs::SameAs](/content/same-as) content type to express this foreign key relationship.
+the [same_as](/content/same-as) content type to express this foreign key relationship.
 
 ```json
 {
@@ -346,8 +346,8 @@ the [SameAs::SameAs](/content/same-as) content type to express this foreign key 
 ```
 
 Finally, the `currency` field should reflect the real currencies that the bank supports. We could use
-the [String::Faker](/content/string) support `currency_code` generator to do this, but the bank only supports `USD`
-, `GBP` and `EUR`. So she uses a [String::Categorical](/content/string)  instead. Roughly 80% of transactions are
+the [string::faker](/content/string) support `currency_code` generator to do this, but the bank only supports `USD`
+, `GBP` and `EUR`. So she uses a [string::categorical](/content/string)  instead. Roughly 80% of transactions are
 in `USD` so let's assign a higher probability to that variant.
 
 ```json synth

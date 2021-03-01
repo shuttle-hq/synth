@@ -68,14 +68,14 @@ see the [String](/content/string.md) docs.
 
 ### Writing Synth Schemas
 
-`Schema` nodes have different fields depending on the type of node. This makes sense, if you are generating `id`s,
-you're going to want to specify different parameters to if you are generating `String::DateTime`s.
+`Schema` nodes have different fields depending on the type of node. This makes sense, if you are generating Id's,
+you're going to want to specify different parameters to if you are generating a date or a time.
 
 However, all `Schema` nodes follow a similar template.
 
 - There is a boolean `optional` field, which tells Synth if a field is nullable or not.
-- Next there is a `type` field, which specifies which top-level `Schema` type the node is (`String`, `Number`, `Bool`
-  etc.). Fields can often have a `subtype` which disambiguates certain types (for example is a `Number` a float `f64` or
+- Next there is a `type` field, which specifies which top-level `Schema` type the node is (`string`, `number`, `bool`
+  etc.). Fields can often have a `subtype` which disambiguates certain types (for example is a `number` a float `f64` or
   an unsigned integer `u64`.)
 - Finally, `Schema` nodes can have 0 or more fields which are specific to that node type. For more information refer to
   the documentation for that type.
