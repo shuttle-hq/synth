@@ -9,6 +9,10 @@ module.exports = {
     organizationName: 'openquery-io', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
     themeConfig: {
+        algolia: {
+            apiKey: 'b0583a1f7732cee4e8c80f4a86adf57c',
+            indexName: 'synth',
+        },
         navbar: {
             title: 'Synth',
             logo: {
