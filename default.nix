@@ -34,7 +34,7 @@ let
     preferLocalBuild = true;
 
     # To help with tests on MacOS
-    NIX_PYTHONPATH = "${pythonEnv}/lib/python3.7/site-packages";
+    NIX_PYTHONPATH = "${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages";
 
     doCheck = true;
 

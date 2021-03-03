@@ -8,7 +8,7 @@ with pkgs; mkShell {
     rustToolchain.rust
   ] ++ synth.unwrapped.buildInputs;
 
-  shellHook = ''
-  export NIX_PYTHONPATH=${synth.pythonEnv}/lib/python3.7/site-packages:$NIX_PYTHONPATH
+  shellHook = with synth; ''
+  export NIX_PYTHONPATH=${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages:$NIX_PYTHONPATH
   '';
 }

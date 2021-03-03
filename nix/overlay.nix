@@ -4,11 +4,11 @@
 self: super: {
   synthPackages = {
     rustToolchain = super.rustChannelOf {
-      date = "2020-12-20";
+      date = "2021-02-15";
       channel = "nightly";
     };
 
-    python = super.python37;
+    python = super.python38;
     pythonPackages = pp: with pp; [
       faker
     ];
@@ -42,7 +42,7 @@ self: super: {
          bin_name=$(basename $bin)
          makeWrapper "$src/bin/$bin_name" "$out/bin/$bin_name" \
                      --prefix PATH ":" "${pythonEnv}/bin" \
-                     --prefix NIX_PYTHONPATH ":" "${pythonEnv}/lib/python3.7/site-packages"
+                     --prefix NIX_PYTHONPATH ":" "${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages"
       done
       '';
     };
