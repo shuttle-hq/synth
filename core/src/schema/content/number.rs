@@ -4,8 +4,8 @@ use super::Categorical;
 use num::Zero;
 use serde::{
     de::{Deserialize, Deserializer},
-	ser::{Serializer},
-	Serialize
+    ser::Serializer,
+    Serialize,
 };
 
 #[derive(Clone, Copy)]
@@ -46,20 +46,17 @@ impl NumberKindExt for Number {
 // Generate a snake case version of NumberContent variant
 // name via `serde`. We use this hack because `serde` case
 // conversion functions are internal
-macro_rules! serde_convert_case{
-    ($identifier:ident,$case:expr)=>{
-        {
-            #[derive(Serialize)]
-            #[serde(rename_all = $case)]
-            enum SnakeCaseHelper {
-                $identifier
-            }
-            // Safety: since we derive `Serialize`, unwrap() shouldn't panic
-            // for any identifier that doesn't brake `enum` compilation
-            serde_json::to_value(&SnakeCaseHelper::$identifier)
-                        .unwrap()
+macro_rules! serde_convert_case {
+    ($identifier:ident,$case:expr) => {{
+        #[derive(Serialize)]
+        #[serde(rename_all = $case)]
+        enum SnakeCaseHelper {
+            $identifier,
         }
-    }
+        // Safety: since we derive `Serialize`, unwrap() shouldn't panic
+        // for any identifier that doesn't brake `enum` compilation
+        serde_json::to_value(&SnakeCaseHelper::$identifier).unwrap()
+    }};
 }
 
 macro_rules! number_content {
@@ -165,7 +162,7 @@ macro_rules! number_content {
 	    )*
 	}
 
-	#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+	#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 	#[serde(deny_unknown_fields)]
     pub struct Id {
         #[serde(default)]
@@ -477,7 +474,11 @@ pub mod tests {
         let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
         assert_eq!(
             number_content,
-            NumberContent::I64(number_content::I64::Range(RangeStep{low: -10, high: 4, step: 1}))
+            NumberContent::I64(number_content::I64::Range(RangeStep {
+                low: -10,
+                high: 4,
+                step: 1
+            }))
         );
         // U64
         let number_content_as_json = json!(
@@ -492,7 +493,11 @@ pub mod tests {
         let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
         assert_eq!(
             number_content,
-            NumberContent::U64(number_content::U64::Range(RangeStep{low: 1, high: 4, step: 1}))
+            NumberContent::U64(number_content::U64::Range(RangeStep {
+                low: 1,
+                high: 4,
+                step: 1
+            }))
         );
         // F64
         let number_content_as_json = json!(
@@ -507,11 +512,15 @@ pub mod tests {
         let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
         assert_eq!(
             number_content,
-            NumberContent::F64(number_content::F64::Range(RangeStep{low: 274.4, high: 6597.5, step: 0.1}))
+            NumberContent::F64(number_content::F64::Range(RangeStep {
+                low: 274.4,
+                high: 6597.5,
+                step: 0.1
+            }))
         );
     }
 
-   #[test]
+    #[test]
     fn test_number_content_subtype() {
         let number_content_as_json = json!(
             {

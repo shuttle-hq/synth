@@ -10,17 +10,16 @@ use anyhow::{Context, Result};
 
 use synth_core::{
     error::{Error, ErrorKind},
-    graph::Graph,
     schema::{
         optionalise::{Optionalise, OptionaliseApi},
         s_override::{DefaultOverrideStrategy, OverrideStrategy},
-        Content, FieldRef, Name, Namespace, ValueKindExt,
-	OptionalMergeStrategy
+        Content, FieldRef, Name, Namespace, OptionalMergeStrategy,
     },
 };
-use synth_gen::prelude::*;
 
 use crate::index::Index;
+use crate::sampler::Sampler;
+use std::convert::TryFrom;
 
 pub type Document = Value;
 
@@ -226,79 +225,8 @@ impl Daemon {
         collection: Option<Name>,
         target: usize,
     ) -> Result<Value> {
-        let mut rng = rand::thread_rng();
-        let mut model = Graph::from_namespace(namespace)?.aggregate();
-
-        fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
-            match value {
-                Value::Array(vec) => Ok(vec),
-                _ => {
-                    return Err(
-                        failed!(target: Release, Unspecified => "generated synthetic data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.kind()),
-                    )
-                }
-            }
-        }
-
-        let mut generated = 0;
-
-        let mut out = HashMap::new();
-
-        while generated < target {
-            let start_of_round = generated;
-            let serializable = OwnedSerializable::new(model.try_next_yielded(&mut rng)?);
-            let mut value = match serde_json::to_value(&serializable)? {
-                Value::Object(map) => map,
-                _ => {
-                    return Err(
-                        failed!(target: Release, Unspecified => "generated synthetic data is not a namespace"),
-                    )
-                }
-            };
-
-            if let Some(name) = collection.as_ref() {
-                let collection_value = value.remove(name.as_ref()).ok_or(failed!(
-                    target: Release,
-                    "generated namespace does not have a collection '{}'",
-                    name
-                ))?;
-                let vec = value_as_array(name.as_ref(), collection_value)?;
-                generated += vec.len();
-                out.entry(name.to_string())
-                    .or_insert_with(|| Vec::new())
-                    .extend(vec);
-            } else {
-                value.into_iter().try_for_each(|(collection, value)| {
-                    value_as_array(&collection, value).and_then(|vec| {
-                        generated += vec.len();
-                        out.entry(collection)
-                            .or_insert_with(|| Vec::new())
-                            .extend(vec);
-                        Ok(())
-                    })
-                })?;
-            }
-
-            if generated == start_of_round {
-                warn!(
-                    "could not generate the required target number of samples of {}",
-                    target
-                );
-                break;
-            }
-        }
-
-        let as_value = if let Some(name) = collection.as_ref() {
-            let array = out.remove(name.as_ref()).unwrap_or_default();
-            Value::Array(array)
-        } else {
-            out.into_iter()
-                .map(|(collection, values)| (collection, Value::Array(values)))
-                .collect::<Map<String, Value>>()
-                .into()
-        };
-
-        Ok(as_value)
+        let value_generator = Sampler::try_from(namespace)?;
+        value_generator.sample(collection, target)
     }
 
     /// Test runs the model generated from the `Namespace` E2E.

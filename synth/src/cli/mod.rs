@@ -1,24 +1,22 @@
+mod export;
 mod import;
+mod postgres;
+mod stdf;
 mod store;
 
+use crate::cli::export::SomeExportStrategy;
+use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::import::SomeImportStrategy;
 use crate::cli::store::Store;
 use anyhow::Result;
-use serde_json::{Map, Value};
-use std::collections::HashMap;
+
 use std::convert::TryFrom;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
-use synth_core::graph::Graph;
-use synth_core::schema::ValueKindExt;
-use synth_core::Name;
-use synth_gen::prelude::*;
 
-/// synth init
-/// synth import my_namespace from-file /a/path/to/some/file
-/// synth generate my_namespace/
+use synth_core::Name;
 
 impl TryFrom<CliArgs> for Cli {
     type Error = anyhow::Error;
@@ -41,28 +39,19 @@ impl Cli {
         })
     }
 
-    // Use this later. this probably introduces more complexity than it help rn
-    // fn check_initialised<F: FnOnce() -> Result<()>>(&self, f: F) -> Result<()> {
-    //     if !self.workspace_initialised() {
-    //         return Err(anyhow!(
-    //             "Workspace has not been initialised. Run `synth init` to initialise the workspace."
-    //         ));
-    //     }
-    //     f()
-    // }
-
-    pub async fn run(&self) -> Result<()> {
-        match self.args.clone() {
+    pub async fn run(self) -> Result<()> {
+        match self.args {
             CliArgs::Generate {
-                namespace,
-                collection,
+                ref namespace,
+                ref collection,
                 size,
-            } => self.generate(namespace, collection, size),
+                ref to,
+            } => self.generate(namespace.clone(), collection.clone(), size, to.clone()),
             CliArgs::Import {
-                namespace,
-                collection,
-                from,
-            } => self.import(namespace, collection, from),
+                ref namespace,
+                ref collection,
+                ref from,
+            } => self.import(namespace.clone(), collection.clone(), from.clone()),
             CliArgs::Init {} => self.init(),
         }
     }
@@ -113,7 +102,9 @@ impl Cli {
 		    Store::relative_collection_path(&path, &collection).display()
 		));
             } else {
-                let content = import_strategy.unwrap_or_default().import_collection()?;
+                let content = import_strategy
+                    .unwrap_or_default()
+                    .import_collection(&collection)?;
                 self.store
                     .save_collection_path(&path, collection, content)?;
                 Ok(())
@@ -132,98 +123,49 @@ impl Cli {
         }
     }
 
-    fn generate(&self, ns_path: PathBuf, collection: Option<Name>, target: usize) -> Result<()> {
+    fn generate(
+        &self,
+        ns_path: PathBuf,
+        collection: Option<Name>,
+        target: usize,
+        to: Option<SomeExportStrategy>,
+    ) -> Result<()> {
         if !self.workspace_initialised() {
             return Err(anyhow!(
                 "Workspace has not been initialised. To initialise the workspace run `synth init`."
             ));
         }
-        let ns = self.store.get_ns(ns_path)?;
+        let namespace = self.store.get_ns(ns_path)?;
 
-        let mut rng = rand::thread_rng();
-        let mut model = Graph::from_namespace(&ns)?.aggregate();
-
-        fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
-            match value {
-                Value::Array(vec) => Ok(vec),
-                _ => {
-                    return Err(
-                        failed!(target: Release, Unspecified => "generated data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.kind()),
-                    )
-                }
-            }
-        }
-
-        let mut generated = 0;
-
-        let mut out = HashMap::new();
-
-        while generated < target {
-            let start_of_round = generated;
-            let serializable = OwnedSerializable::new(model.try_next_yielded(&mut rng)?);
-            let mut value = match serde_json::to_value(&serializable)? {
-                Value::Object(map) => map,
-                _ => {
-                    return Err(
-                        failed!(target: Release, Unspecified => "generated synthetic data is not a namespace"),
-                    )
-                }
-            };
-
-            if let Some(name) = collection.as_ref() {
-                let collection_value = value.remove(name.as_ref()).ok_or(failed!(
-                    target: Release,
-                    "generated namespace does not have a collection '{}'",
-                    name
-                ))?;
-                let vec = value_as_array(name.as_ref(), collection_value)?;
-                generated += vec.len();
-                out.entry(name.to_string())
-                    .or_insert_with(|| Vec::new())
-                    .extend(vec);
-            } else {
-                value.into_iter().try_for_each(|(collection, value)| {
-                    value_as_array(&collection, value).and_then(|vec| {
-                        generated += vec.len();
-                        out.entry(collection)
-                            .or_insert_with(|| Vec::new())
-                            .extend(vec);
-                        Ok(())
-                    })
-                })?;
-            }
-
-            if generated == start_of_round {
-                warn!(
-                    "could not generate the required target number of samples of {}",
-                    target
-                );
-                break;
-            }
-        }
-
-        let as_value = if let Some(name) = collection.as_ref() {
-            let array = out.remove(name.as_ref()).unwrap_or_default();
-            Value::Array(array)
-        } else {
-            out.into_iter()
-                .map(|(collection, values)| (collection, Value::Array(values)))
-                .collect::<Map<String, Value>>()
-                .into()
+        let params = ExportParams {
+            namespace,
+            collection_name: collection,
+            target,
         };
 
-        println!("{}", as_value);
-
-        Ok(())
+        to.unwrap_or_default().export(params)
     }
 }
 
-#[derive(StructOpt, Clone)]
+#[derive(StructOpt)]
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
 pub(crate) enum CliArgs {
-    #[structopt(about = "Create a new empty workspace in the current working directory")]
+    #[structopt(about = "Initialise the workspace")]
     Init {},
-    #[structopt(about = "Create a new namespace from existing JSON data")]
+    #[structopt(about = "Generate data from a namespace")]
+    Generate {
+        #[structopt(
+            help = "the namespace directory from which to generate",
+            parse(from_os_str)
+        )]
+        namespace: PathBuf,
+        #[structopt(long, help = "the specific collection from which to generate")]
+        collection: Option<Name>,
+        #[structopt(long, help = "the number of samples", default_value = "1")]
+        size: usize,
+        #[structopt(long, help = "the number of samples")]
+        to: Option<SomeExportStrategy>,
+    },
     Import {
         #[structopt(
             help = "The namespace directory into which to import",
@@ -240,20 +182,5 @@ pub(crate) enum CliArgs {
             help = "Path to a JSON file containing the data to import. If not specified, data will be read from stdin"
         )]
         from: Option<SomeImportStrategy>,
-    },
-    #[structopt(about = "Generate data for a namespace")]
-    Generate {
-        #[structopt(
-            help = "The namespace directory from which to generate",
-            parse(from_os_str)
-        )]
-        namespace: PathBuf,
-        #[structopt(
-            long,
-            help = "The name of a collection for which to generate data. If not specified, will generate data for all collections in the namespace"
-        )]
-        collection: Option<Name>,
-        #[structopt(long, default_value = "1")]
-        size: usize,
     },
 }

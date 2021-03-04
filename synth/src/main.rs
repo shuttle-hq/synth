@@ -65,6 +65,7 @@ use crate::cli::{Cli, CliArgs};
 pub use index::Index;
 use std::convert::TryFrom;
 
+mod sampler;
 pub mod store;
 
 include!(concat!(env!("OUT_DIR"), "/meta.rs"));

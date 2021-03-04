@@ -16,7 +16,7 @@
 , release ? true
 }:
 let
-  version = "0.3.2";
+  version = "0.3.3";
   darwinBuildInputs =
     stdenv.lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk.frameworks; [
       libiconv

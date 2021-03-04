@@ -43,6 +43,10 @@ impl RegexContent {
         self.1.clone()
     }
 
+    pub fn pattern(pattern: String) -> Result<Self, RegexError> {
+        Self::compile(pattern, 1)
+    }
+
     pub fn compile(pattern: String, max_repeat: u32) -> Result<Self, RegexError> {
         let rand_regex = RandRegex::compile(pattern.as_str(), max_repeat)?;
         Ok(Self(pattern, rand_regex))

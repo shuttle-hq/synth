@@ -1,14 +1,18 @@
-use anyhow::{Result, Context};
+use crate::cli::postgres::PostgresImportStrategy;
+use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
+use anyhow::{Context, Result};
 use serde_json::Value;
 use std::path::PathBuf;
 use std::str::FromStr;
-use synth_core::schema::{MergeStrategy, Namespace, Content, OptionalMergeStrategy};
+use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
+use synth_core::schema::Namespace;
+use synth_core::{Content, Name};
 
 pub(crate) trait ImportStrategy: Sized {
     fn import(self) -> Result<Namespace> {
         ns_from_value(self.into_value()?)
     }
-    fn import_collection(self) -> Result<Content> {
+    fn import_collection(self, _name: &Name) -> Result<Content> {
         collection_from_value(&self.into_value()?)
     }
     fn into_value(self) -> Result<Value>;
@@ -36,6 +40,13 @@ impl FromStr for SomeImportStrategy {
     /// We assume that these can be unambiguously identified for now.
     /// For example, `postgres://...` is not going to be a file on the FS
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // for postgres, `postgres` or `postgresql` are fine
+        if s.starts_with("postgres") {
+            return Ok(SomeImportStrategy::FromPostgres(PostgresImportStrategy {
+                uri: s.to_string(),
+            }));
+        }
+
         if let Ok(path) = PathBuf::from_str(s) {
             return Ok(SomeImportStrategy::FromFile(FileImportStrategy {
                 from_file: path,
@@ -45,46 +56,27 @@ impl FromStr for SomeImportStrategy {
     }
 }
 
-#[derive(Clone, Debug)]
-pub(crate) struct PostgresImportStrategy {
-    uri: String,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct FileImportStrategy {
-    from_file: PathBuf,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct StdinImportStrategy {}
-
 impl ImportStrategy for SomeImportStrategy {
+    fn import(self) -> Result<Namespace> {
+        match self {
+            SomeImportStrategy::FromFile(fis) => fis.import(),
+            SomeImportStrategy::FromPostgres(pis) => pis.import(),
+            SomeImportStrategy::StdinImportStrategy(sis) => sis.import(),
+        }
+    }
+    fn import_collection(self, name: &Name) -> Result<Content> {
+        match self {
+            SomeImportStrategy::FromFile(fis) => fis.import_collection(name),
+            SomeImportStrategy::FromPostgres(pis) => pis.import_collection(name),
+            SomeImportStrategy::StdinImportStrategy(sis) => sis.import_collection(name),
+        }
+    }
     fn into_value(self) -> Result<Value> {
         match self {
             SomeImportStrategy::FromFile(fis) => fis.into_value(),
             SomeImportStrategy::FromPostgres(pis) => pis.into_value(),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.into_value(),
         }
-    }
-}
-
-impl ImportStrategy for FileImportStrategy {
-    fn into_value(self) -> Result<Value> {
-        Ok(serde_json::from_reader(std::fs::File::open(
-            self.from_file,
-        )?)?)
-    }
-}
-
-impl ImportStrategy for PostgresImportStrategy {
-    fn into_value(self) -> Result<Value> {
-        unimplemented!("Postgres is not supported yet")
-    }
-}
-
-impl ImportStrategy for StdinImportStrategy {
-    fn into_value(self) -> Result<Value> {
-        Ok(serde_json::from_reader(std::io::stdin())?)
     }
 }
 

@@ -1,11 +1,14 @@
+use std::collections::VecDeque;
 use std::iter::{Chain, IntoIterator, Once};
 use std::str::FromStr;
-use std::collections::VecDeque;
 
 use anyhow::Result;
 use regex::Regex;
+use serde::{
+    de::{self, Error as DeError},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use serde_json::Value;
-use serde::{de::{self, Error as DeError}, Deserializer, Deserialize, Serialize, Serializer};
 
 #[allow(unused_macros)]
 macro_rules! from_json {
