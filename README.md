@@ -1,34 +1,149 @@
 <p align=center>
-  <img height="128px" src="https://cdn.discordapp.com/icons/803236282088161321/fff7943ed3e3d656a4fb1fdb603d7e5d.png?size=128"/>
+  <img height="128px" src="docs/static/img/getsynth_identicon.png"/>
 </p>
 <p align=center>
-  A declarative synthetic data engine for semi-structured data.
+  The Declarative Data Generator
 </p>
 <br>
 <p align=center>
+  <a href="https://openquery-io.github.io/synth"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
   <a href="https://github.com/openquery-io/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
   <a href="https://github.com/openquery-io/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
-  <a href="https://github.com/openquery-io/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/openquery-io/synth/docs"/></a>
+  <a href="https://github.com/openquery-io/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/openquery-io/synth/synth%20public%20cachix"/></a>
   <a href="https://discord.gg/wwJVAFKKkq"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
   <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/openquery-io/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
 </p>
 
 ------
 
-Synth is a tool for generating realistic looking and anonymized synthetic data. Synth is database agnostic and can scale to millions of rows of data.
+Synth is a tool for generating realistic data using a declarative data model. Synth is database agnostic and can scale to millions of rows of data.
+
+## Why Synth
+
+Synth answers a simple question. There are so many ways to consume data, why are there no frameworks for *generating* data?
+
+Synth provides a robust, declarative framework for specifying constraint based data generation, solving the following problems developers face on the regular:
+
+1. You're creating an App from scratch and have no way to populate your fresh schema with correct, realistic data.
+2. You're doing integration testing / QA on **production** data, but you know it is bad practice, and you really should not be doing that.
+3. You want to see how your system will scale if your database suddenly has 10x the amount of data.
+
+Synth solves exactly these problems with a flexible declarative data model which you can version control in git, peer review, and automate.
+
+## Key Features
 
 The key features of Synth are:
-- **Synthetic Data as Code**: Data generation is described using a configuration language allowing you to specify your entire data model as code. Synthetic data as code enables you to peer review, version control and automate your synthetic data generation.
- 
-- **Data Inference**: Synth can ingest data from your primary data source and infer the structure of the data. Understanding the relationships, distributions and types of the underlying dataset.
 
-- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases. 
+- **Data as Code**: Data generation is described using a declarative configuration language allowing you to specify your entire data model as code.
+
+- **Import from Existing Sources**: Synth can import data from existing sources and automatically create data models. Synth currently has Alpha support for Postgres!
+ 
+- **Data Inference**: While ingesting data, Synth automatically infers the relations, distributions and types of the dataset.
+
+- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.  
  
 - **Semantic Data Types**: Synth integrates with the (amazing) Python [Faker](https://pypi.org/project/Faker/) library, supporting generation of thousands of semantic types (e.g. credit card numbers, email addresses etc.) as well as locales.
 
 ## Installation & Getting Started
 
 To get started quickly, check out the [docs](https://openquery-io.github.io/synth).
+
+## Examples
+
+### Building a data model from scratch
+
+To start generating data without having a source to import from, you need to first initialise a workspace using `synth init`:
+
+```bash
+$ mkdir workspace && cd workspace && synth init
+```
+
+Inside the workspace we'll create a namespace for our data model and call it `my_app`:
+
+```bash
+$ mkdir my_app
+```
+
+Next let's create a `users` collection using Synth's configuration language, and put it into `my_app/users.json`:
+
+```json
+{
+    "type": "array",
+    "length": {
+        "type": "number",
+        "constant": 1
+    },
+    "content": {
+        "type": "object",
+        "id": {
+            "type": "number",
+            "id": {}
+        },
+        "email": {
+            "type": "string",
+            "faker": {
+                "generator": "email"
+            }
+        },
+        "joined_on": {
+            "type": "string",
+            "date_time": {
+                "format": "%Y-%m-%d",
+                "subtype": "naive_date",
+                "begin": "2010-01-01",
+                "end": "2020-01-01"
+            }
+        }
+    }
+}
+```
+
+Finally, generate data using the `synth generate` command:
+
+```bash
+$ synth generate my_app/ --size 2 | jq
+{
+  "users": [
+    {
+      "email": "patricia40@jordan.com",
+      "id": 1,
+      "joined_on": "2014-12-14"
+    },
+    {
+      "email": "benjamin00@yahoo.com",
+      "id": 2,
+      "joined_on": "2013-04-06"
+    }
+  ]
+}
+```
+
+
+### Building a data model from Postgres
+
+If you have an existing database, Synth can create the data model for you by importing data  from your database.
+
+To get started, initialise your Synth workspace locally:
+
+```bash
+$ mkdir synth_workspace && cd synth_workspace && synth init
+```
+
+Then use the `synth import` command to build a data model from your Postgres database:
+
+```bash
+$ synth import tpch --from postgres://user:pass@localhost:5432/tpch
+Building customer collection...
+Building primary keys...
+Building foreign keys...
+Ingesting data for table customer...  10 rows done.
+```
+
+Finally, generate data into another instance of Postgres:
+
+```bash
+$ synth generate tpch --to postgres://user:pass@localhost:5433/tpch
+```
 
 ## Why Rust
 
