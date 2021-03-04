@@ -190,5 +190,5 @@ And the second, the `users` collection:
 
 ### What's next
 
-The [generators reference](/content/null) in this documentation is the best place to become familiar with all the
+The [generators reference](/content/null.md) in this documentation is the best place to become familiar with all the
 different variants of schema nodes. This will let you write schemas for any of the data you might need.

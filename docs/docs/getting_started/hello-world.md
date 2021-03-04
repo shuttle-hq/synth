@@ -57,8 +57,10 @@ $ synth generate my_namespace/
 and you should see an output very close to the output of the above snippet.
 
 ## Where to go from here
-* Take a look at the exhaustive [generators reference](/content/null).
-* Go into how Synth works by looking at the [core concepts](core-concepts) and the Synth [schema](schema) format.
-* For more complex real life examples, see the [examples](/examples/bank) section.
+* Take a look at the exhaustive [generators reference](/content/null.md).
+* Go into how Synth works by looking at the [core concepts][core-concepts] and the Synth [schema][schema] format.
+* For more complex real life examples, see the [examples][examples] section.
 
-[schema]: schema
+[schema]: schema.md
+[core-concepts]: core-concepts.md
+[examples]: examples/bank.md
