@@ -6,7 +6,7 @@ import Tabs from '@theme/Tabs'; import TabItem from '@theme/TabItem';
 
 <Tabs defaultValue="linux"
 values={[
-{label: 'Linux', value: 'linux'}, {label: 'macOS', value: 'mac'}, {label: 'Compile from source', value: 'cargo'}, {label: 'GCP Cloud Shell', value: 'gcp_shell'},
+{label: 'Linux', value: 'linux'}, {label: 'macOS', value: 'mac'}, {label: 'Compile from source', value: 'cargo'}, {label: 'Nix', value: 'nix'}, {label: 'GCP Cloud Shell', value: 'gcp_shell'},
 ]}>
 
 <TabItem value='linux'>
@@ -21,6 +21,31 @@ curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
 The binary distribution is only compatible with `python-3.8`. If you happen to be running a different version of Python, you may have to build `synth` from source.
 :::
 	
+</TabItem>
+
+<TabItem value='nix'>
+
+If you happen to be running the [Nix](https://nixos.org/download.html#nix-quick-install) package manager or if you're on [NixOS](https://nixos.org/), you can use our automated Nix packaging that will set everything up for you (including `Python` dependencies and other runtime requirements).
+
+:::note
+We recommend you add [getsynth.cachix.org](https://app.cachix.org/cache/getsynth) to your list of binary caches. This will speed up your installation considerably by downloading [GitHub Actions build artifacts](https://github.com/openquery-io/synth/actions/workflows/cachix.yml) instead of compiling everything locally.
+:::
+
+To install the latest released version of `synth` with `nix >= 2.4`, run:
+
+```bash
+nix-env -i -f https://github.com/openquery-io/synth/releases/latest/download/install-nix
+```
+
+For versions of `nix < 2.4`, run:
+
+```bash
+SYNTH_TMP=$(mktemp); \
+	curl -L --output - https://github.com/openquery-io/synth/releases/latest/download/install-nix |\
+	tar -xO > $SYNTH_TMP; \
+	nix-env -i -f $SYNTH_TMP
+```
+
 </TabItem>
 
 <TabItem value='cargo'>
