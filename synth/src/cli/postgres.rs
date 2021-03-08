@@ -107,7 +107,9 @@ impl ImportStrategy for PostgresImportStrategy {
         let mut client =
             Client::connect(&self.uri, postgres::tls::NoTls).expect("Failed to connect");
 
-        let catalog = "tpch"; // TODO
+        let catalog = self.uri.split("/").last().ok_or(anyhow!(
+            "Cannot import data. No catalog specified in the uri"
+        ))?;
 
         let query ="SELECT table_name FROM information_schema.tables where table_catalog = $1 and table_schema = 'public' and table_type = 'BASE TABLE'";
 
