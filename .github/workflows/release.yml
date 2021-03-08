@@ -16,11 +16,22 @@ jobs:
         os:
         - ubuntu-latest
         - macos-latest
+        # Build for these versions to force backward compat with certain
+        # toolchains (GLIBC < 2.29 in case of ubuntu-18.04)
+        - ubuntu-18.04
+        - macos-10.15
+        py:
+        - 3.7
+        - 3.8
+        - 3.9
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.py }}
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo +nightly build --release
@@ -28,7 +39,7 @@ jobs:
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
       with:
-        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
+        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-py${{ matrix.py }}-x86_64
         path: target/release/synth.tar.gz
 
   release:
@@ -105,7 +116,7 @@ jobs:
       uses: dawidd6/action-get-tag@v1
     - uses: actions/download-artifact@v2
       with:
-        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
+        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-py${{ matrix.py }}-x86_64
         path: ./
     - run: ls
     - name: Upload Release Asset
@@ -116,5 +127,5 @@ jobs:
       with:
         upload_url: ${{ steps.release.outputs.upload_url }} 
         asset_path: ./synth.tar.gz
-        asset_name: synth-${{ matrix.os }}-x86_64.tar.gz
+        asset_name: synth-${{ matrix.os }}-py${{ matrix.py }}-x86_64
         asset_content_type: application/octet-stream
