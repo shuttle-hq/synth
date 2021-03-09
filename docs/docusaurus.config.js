@@ -38,6 +38,11 @@ module.exports = {
                     label: 'Generators',
                     position: 'left',
                 },
+		{
+		    to: 'blog',
+		    label: 'Blog',
+		    position: 'left'
+		},
                 {
                     href: 'https://github.com/openquery-io/synth',
                     label: 'GitHub',
