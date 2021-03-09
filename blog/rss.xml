@@ -4,14 +4,21 @@
         <title>Synth - Documentation Blog</title>
         <link>https://openquery-io.github.io/synth/blog</link>
         <description>Synth - Documentation Blog</description>
-        <lastBuildDate>Tue, 03 Aug 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 09 Mar 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <item>
+            <title><![CDATA[How to Create PostgreSQL Test Data]]></title>
+            <link>https://openquery-io.github.io/synth/synth/blog/2021/03/09/postgres-data-gen</link>
+            <guid>How to Create PostgreSQL Test Data</guid>
+            <pubDate>Tue, 09 Mar 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[This post covers three different ways to generate test data for your Postgres database]]></description>
+        </item>
+        <item>
             <title><![CDATA[Create realistic test data for your web app]]></title>
-            <link>https://openquery-io.github.io/synth/synth/blog/2021/08/03/mern</link>
+            <link>https://openquery-io.github.io/synth/synth/blog/2021/03/08/mern</link>
             <guid>Create realistic test data for your web app</guid>
-            <pubDate>Tue, 03 Aug 2021 00:00:00 GMT</pubDate>
+            <pubDate>Mon, 08 Mar 2021 00:00:00 GMT</pubDate>
             <description><![CDATA[In this post we're going to explore how we can solve the problem of test data generation using our open-source project, Synth! Synth is a state-of-the-art declarative data generator - you tell Synth what you want your data to look like and Synth will generate that data for you.]]></description>
         </item>
     </channel>

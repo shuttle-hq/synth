@@ -2,16 +2,23 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://openquery-io.github.io/synth/blog</id>
     <title>Synth - Documentation Blog</title>
-    <updated>2021-08-03T00:00:00.000Z</updated>
+    <updated>2021-03-09T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://openquery-io.github.io/synth/blog"/>
     <subtitle>Synth - Documentation Blog</subtitle>
     <icon>https://openquery-io.github.io/synth/img/getsynth_favicon.png</icon>
     <entry>
+        <title type="html"><![CDATA[How to Create PostgreSQL Test Data]]></title>
+        <id>How to Create PostgreSQL Test Data</id>
+        <link href="https://openquery-io.github.io/synth/synth/blog/2021/03/09/postgres-data-gen"/>
+        <updated>2021-03-09T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This post covers three different ways to generate test data for your Postgres database]]></summary>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[Create realistic test data for your web app]]></title>
         <id>Create realistic test data for your web app</id>
-        <link href="https://openquery-io.github.io/synth/synth/blog/2021/08/03/mern"/>
-        <updated>2021-08-03T00:00:00.000Z</updated>
+        <link href="https://openquery-io.github.io/synth/synth/blog/2021/03/08/mern"/>
+        <updated>2021-03-08T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this post we're going to explore how we can solve the problem of test data generation using our open-source project, Synth! Synth is a state-of-the-art declarative data generator - you tell Synth what you want your data to look like and Synth will generate that data for you.]]></summary>
     </entry>
 </feed>
