@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[12],{82:function(e){e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Create realistic test data for your web app","permalink":"/synth/blog/2021/08/03/mern"}]}')}}]);
