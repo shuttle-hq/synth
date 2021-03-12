@@ -159,7 +159,10 @@ impl Cli {
                 "Workspace has not been initialised. To initialise the workspace run `synth init`."
             ));
         }
-        let namespace = self.store.get_ns(ns_path)?;
+        let namespace = self
+            .store
+            .get_ns(ns_path)
+            .context("Unable to open the namespace")?;
 
         let params = ExportParams {
             namespace,

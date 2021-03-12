@@ -72,7 +72,10 @@ impl Store {
     pub fn get_ns(&self, ns_path: PathBuf) -> Result<Namespace> {
         let mut ns = Namespace::default();
 
-        for entry in ns_path.read_dir()? {
+        for entry in ns_path
+            .read_dir()
+            .context(format!("At path {:?}", ns_path))?
+        {
             let entry = entry?;
             if let Some(file_ext) = entry.path().extension() {
                 if file_ext == UNDERLYING.extension() {
