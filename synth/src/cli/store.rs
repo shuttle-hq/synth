@@ -131,7 +131,9 @@ impl Store {
             file_name
         ))?;
         let collection_file_content = std::fs::read_to_string(dir_entry.path())?;
-        let collection = UNDERLYING.parse(&collection_file_content)?;
+        let collection = UNDERLYING
+            .parse(&collection_file_content)
+            .context(format!("At file {:?}", dir_entry.path()))?;
         return Ok((Name::from_str(collection_name)?, collection));
     }
 }
