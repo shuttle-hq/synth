@@ -9,7 +9,7 @@ use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::import::SomeImportStrategy;
 use crate::cli::store::Store;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
 use std::fs::File;
@@ -63,9 +63,33 @@ impl Cli {
                 std::process::exit(1)
             }
             false => {
-                let _ = std::fs::create_dir(".synth"); // Ignore error here. It could be that the directory exists but not the config file
-                File::create(".synth/config.toml")?;
-                Ok(())
+                let workspace_dir = ".synth";
+                let base_path = std::fs::canonicalize(".")?;
+                let result = std::fs::create_dir(workspace_dir).context(format!(
+                    "Failed to initialize workspace at: {}",
+                    base_path.join(workspace_dir).to_str().unwrap()
+                ));
+                let config_path = ".synth/config.toml";
+                match result {
+                    Ok(()) => {
+                        File::create(config_path).context(format!(
+                            "Failed to initialize workspace at: {}",
+                            base_path.join(config_path).to_str().unwrap()
+                        ))?;
+                        Ok(())
+                    }
+                    Err(ref e)
+                        if e.downcast_ref::<std::io::Error>().unwrap().kind()
+                            == std::io::ErrorKind::AlreadyExists =>
+                    {
+                        File::create(config_path).context(format!(
+                            "Failed to initialize workspace at: {}",
+                            base_path.join(config_path).to_str().unwrap()
+                        ))?;
+                        Ok(())
+                    }
+                    _ => result,
+                }
             }
         }
     }
