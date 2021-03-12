@@ -161,7 +161,7 @@ impl Cli {
         }
         let namespace = self
             .store
-            .get_ns(ns_path)
+            .get_ns(ns_path.clone())
             .context("Unable to open the namespace")?;
 
         let params = ExportParams {
@@ -170,7 +170,7 @@ impl Cli {
             target,
         };
 
-        to.unwrap_or_default().export(params)
+        to.unwrap_or_default().export(params).context(format!("At namespace {:?}", ns_path))
     }
 }
 
