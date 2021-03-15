@@ -36,11 +36,55 @@ install_based_on_os() {
     case "$(uname)" in
         "Linux")
             HOME_LOCAL_BIN="$HOME/.local/bin"
-            install_from_bin_package "synth-ubuntu-latest-x86_64.tar.gz"
+
+	    # Assuming [ ${GLIBC_MAJOR} -e 2 ]...
+	    GLIBC_MINOR=$(ldd --version 2>/dev/null | head -n1 | grep -o -e "[0-9]\{2\}$")
+
+	    if [ ! ${GLIBC_MINOR} ]; then
+		die "Could not determine local version of glibc"
+	    fi
+
+	    if [ ${GLIBC_MINOR} -lt 29 ]; then
+		if [ ${GLIBC_MINOR} -lt 27 ]; then
+		    die "Sorry, this installer does not support versions of glibc < 2.27"
+		fi
+		os="18.04"
+	    else
+		os="latest"
+	    fi
+
+	    PY_MINOR=$(python3 --version 2>/dev/null | grep -o -e "[0-9]" | sed "2q;d")
+
+	    if [ ! ${PY_MINOR} ]; then
+		die "Could not determine your Python version"
+	    fi
+
+	    if [ ${PY_MINOR} -lt 7 -o ${PY_MINOR} -gt 9 ]; then
+		die "Sorry, this installer does not support versions of Python != 3.7,3.8,3.9"
+	    else
+		py="3.${PY_MINOR}"
+	    fi
+
+            install_from_bin_package "synth-ubuntu-${os}-py${py}-x86_64.tar.gz"
             ;;
         "Darwin")
             HOME_LOCAL_BIN="/usr/local/bin"
-            install_from_bin_package "synth-macos-latest-x86_64.tar.gz"
+
+	    os="latest"
+
+	    PY_MINOR=$(python3 --version 2>/dev/null | grep -o -e "[0-9]" | sed "2q;d")
+
+	    if [ ! ${PY_MINOR} ]; then
+		die "Could not determine your Python version"
+	    fi
+
+	    if [ ${PY_MINOR} -lt 7 -o ${PY_MINOR} -gt 9 ]; then
+		die "Sorry, this installer does not support versions of Python != 3.7,3.8,3.9"
+	    else
+		py="3.${PY_MINOR}"
+	    fi
+
+            install_from_bin_package  "synth-macos-${os}-py${py}-x86_64.tar.gz"
             ;;
         *)
             die "Sorry, this installer does not support your operating system: $(uname)."
@@ -90,7 +134,7 @@ install_from_bin_package() {
 
     if ! on_path "$BIN_DST_DIR"; then
         info "\n\n${RED}WARNING${RESET}: It looks like '$BIN_DST_DIR' is not on your PATH! You will not be able to invoke synth from the terminal by its name."
-        info "  You can add it to your PATH by adding following line into your profile file (~/.profile or ~/.zshrc or ~/.bash_profile or some other, depending on which shell you use):"
+        info "  You can add it to your PATH by adding following line into your profile file (~/.profile or ~/.zshrc or ~/.bash_profile or some other, depending on which shell you use):\n"
         info "  ${BOLD}"'export PATH=$PATH:'"$BIN_DST_DIR${RESET}"
     fi
 }
