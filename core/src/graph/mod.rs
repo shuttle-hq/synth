@@ -565,6 +565,41 @@ pub mod tests {
     }
 
     #[test]
+    fn fail_on_generator_error() {
+        let schema: Namespace = from_json!({
+            "users": {
+        "type": "array",
+        "length": {
+            "type": "number",
+            "subtype": "u64",
+            "constant": 10
+        },
+        "content": {
+            "type": "object",
+            "credit_card": {
+            "type": "string",
+            "faker": {
+                "generator": "invalid_generator_name",
+                "card_type": "amex"
+            }
+            },
+        }
+            }
+        });
+
+        let mut rng = rand::thread_rng();
+
+        let mut model = Graph::from_namespace(&schema)
+            .unwrap()
+            .inspect(|yielded| {
+                println!("{:?}", yielded);
+            })
+            .try_aggregate();
+
+        assert!(model.try_next_yielded(&mut rng).is_err());
+    }
+
+    #[test]
     fn test_schema_compiles_and_generates() {
         let mut model = Graph::from_namespace(&USER_NAMESPACE).unwrap().aggregate();
         let mut rng = rand::thread_rng();

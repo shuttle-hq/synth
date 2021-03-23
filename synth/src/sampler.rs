@@ -6,7 +6,6 @@ use synth_core::schema::ValueKindExt;
 use synth_core::Graph;
 use synth_core::{Name, Namespace};
 use synth_gen::prelude::*;
-use synth_gen::GeneratorExt;
 
 pub(crate) struct Sampler {
     graph: Graph,
@@ -26,7 +25,7 @@ impl Sampler {
         }
 
         let mut rng = rand::thread_rng();
-        let mut model = self.graph.aggregate();
+        let mut model = self.graph.try_aggregate();
 
         let mut generated = 0;
         let mut out = HashMap::new();

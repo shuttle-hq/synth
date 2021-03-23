@@ -154,6 +154,14 @@ where
             output: None,
         }
     }
+
+    fn try_aggregate(self) -> TryAggregate<Self>
+    {
+        TryAggregate {
+            inner: self,
+            output: None,
+        }
+    }
 }
 
 impl<TG> TryGeneratorExt for TG where TG: TryGenerator {}
@@ -271,6 +279,51 @@ where
                     }
                     Ok(r) => GeneratorState::Complete(O::Return::from_ok(r)),
                 },
+            }
+        }
+    }
+}
+
+/// This struct is created by the
+/// [`try_aggregate`](crate::TryGeneratorExt::try_aggregate) method on
+/// [`TryGenerator`](crate::TryGenerator).
+pub struct TryAggregate<TG>
+where
+    TG: TryGenerator
+{
+    inner: TG,
+    output: Option<TG::Return>
+}
+
+impl<TG> Generator for TryAggregate<TG>
+where
+    TG: TryGenerator
+{
+    type Yield = Vec<TG::Yield>;
+    type Return = TG::Return;
+
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        if let Some(r) = std::mem::replace(&mut self.output, None) {
+            GeneratorState::Complete(r)
+        } else {
+            let mut out = Vec::new();
+            loop {
+                match self.inner.try_next(rng) {
+                    GeneratorState::Yielded(y) => out.push(y),
+                    GeneratorState::Complete(r) => {
+                        self.output = Some(r);
+                        break;
+                    }
+                }
+            }
+            match std::mem::replace(&mut self.output, None).unwrap().into_result() {
+                Ok(v) => {
+                    self.output = Some(TG::Return::from_ok(v));
+                    GeneratorState::Yielded(out)
+                },
+                Err(e) => {
+                    GeneratorState::Complete(TG::Return::from_error(e))
+                }
             }
         }
     }
