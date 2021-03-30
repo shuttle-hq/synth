@@ -8,7 +8,11 @@ module.exports = {
     favicon: 'img/getsynth_favicon.png',
     organizationName: 'openquery-io', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
+        plugins: [require.resolve('docusaurus-plugin-fathom')],
     themeConfig: {
+        fathomAnalytics: {
+            siteId: 'ASXTKXUJ',
+        },
         algolia: {
             apiKey: 'b0583a1f7732cee4e8c80f4a86adf57c',
             indexName: 'synth',
