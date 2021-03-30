@@ -110,6 +110,7 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
             }
             StringContent::DateTime(date_time_content) => self.try_merge(date_time_content, value),
             StringContent::Faker(_) => Ok(()),
+            StringContent::Serialized(_) => Ok(()), // we can probably do better here
         }
     }
 }
@@ -345,8 +346,12 @@ pub mod tests {
         assert!(ns
             .accepts(&collection_name, &user_no_address_as_array)
             .is_err());
-        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
-            .unwrap();
+        ns.try_update(
+            OptionalMergeStrategy,
+            &collection_name,
+            &user_no_address_as_array,
+        )
+        .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
             .is_ok());
@@ -379,10 +384,18 @@ pub mod tests {
         let mut ns = Namespace::default();
         ns.create_collection(&collection_name, &user_no_last_name)
             .unwrap();
-        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
-            .unwrap();
-        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
-            .unwrap();
+        ns.try_update(
+            OptionalMergeStrategy,
+            &collection_name,
+            &user_no_address_as_array,
+        )
+        .unwrap();
+        ns.try_update(
+            OptionalMergeStrategy,
+            &collection_name,
+            &user_no_address_as_array,
+        )
+        .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
             .is_ok());
@@ -424,8 +437,12 @@ pub mod tests {
         let mut ns = Namespace::default();
         ns.create_collection(&collection_name, &user_no_last_name)
             .unwrap();
-        ns.try_update(OptionalMergeStrategy, &collection_name, &user_no_address_as_array)
-            .unwrap();
+        ns.try_update(
+            OptionalMergeStrategy,
+            &collection_name,
+            &user_no_address_as_array,
+        )
+        .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
             .is_ok());

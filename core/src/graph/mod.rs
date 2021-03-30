@@ -455,6 +455,19 @@ pub mod tests {
                 "step": 0.1
             }
             },
+            "serialized_nonce": {
+            "type" : "string",
+            "serialized" : {
+                "serializer" : "json",
+                 "content" : {
+                 "type" : "object",
+                 "nonce" : {
+                     "type" : "string",
+                     "pattern" : "[A-Z a-z 0-9]+",
+                }
+                }
+             }
+            },
         }
             }
         });
@@ -481,6 +494,7 @@ pub mod tests {
             currency: String,
             timestamp: String,
             amount: f64,
+            serialized_nonce: String,
         }
 
         #[allow(dead_code)]
@@ -556,6 +570,8 @@ pub mod tests {
                     *currencies.get(&transaction.username).unwrap()
                 );
                 *counts.entry(transaction.username).or_insert(0) += 1;
+
+                assert!(serde_json::to_value(transaction.serialized_nonce).is_ok());
             }
 
             for value in counts.values() {

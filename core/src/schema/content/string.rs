@@ -10,6 +10,7 @@ pub enum StringContent {
     Faker(FakerContent),
     DateTime(DateTimeContent),
     Categorical(Categorical<String>),
+    Serialized(SerializedContent),
 }
 
 impl StringContent {
@@ -19,6 +20,7 @@ impl StringContent {
             Self::Faker(faker) => faker.kind(),
             Self::DateTime(date_time) => date_time.kind(),
             Self::Categorical(_) => "categorical",
+            Self::Serialized(_) => "serialized",
         }
     }
 }
@@ -174,6 +176,18 @@ impl ToPyObject for FakerContentArgument {
             _ => unreachable!(), // would not be constructed
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+#[serde(tag = "serializer")]
+pub enum SerializedContent {
+    JSON(JsonContent),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct JsonContent {
+    content: Box<Content>,
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
@@ -398,11 +412,11 @@ pub mod datetime_content {
             };
             buf.write_fmt(format_args!("{}", display)).map_err(|err| {
                 failed_crate!(
-		    target: Release,
-		    "could not format date time of type '{}' with '{}': {}",
-		    c.type_(),
-		    &self.0,
-		    err
+                    target: Release,
+                    "could not format date time of type '{}' with '{}': {}",
+                    c.type_(),
+                    &self.0,
+                    err
                 )
             })?;
             buf.shrink_to_fit();
@@ -478,6 +492,7 @@ pub mod datetime_content {
     }
 }
 
+use crate::graph::string::Serialized;
 pub use datetime_content::ChronoValueFormatter;
 
 impl Serialize for DateTimeContent {
@@ -505,7 +520,7 @@ impl<'de> Deserialize<'de> for DateTimeContent {
 }
 
 impl Compile for StringContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Graph> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph> {
         let string_node = match self {
             StringContent::Pattern(pattern) => RandomString::from(pattern.to_regex()).into(),
             StringContent::Faker(FakerContent {
@@ -531,6 +546,12 @@ impl Compile for StringContent {
                 RandomDateTime::new(begin..end, &format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
+            StringContent::Serialized(sc) => match sc {
+                SerializedContent::JSON(serialized_json_content) => {
+                    let inner = serialized_json_content.content.compile(compiler)?;
+                    RandomString::from(Serialized::new_json(inner)).into()
+                }
+            },
         };
         Ok(Graph::String(string_node))
     }

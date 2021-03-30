@@ -6,21 +6,31 @@ pub mod date_time;
 pub use date_time::RandomDateTime;
 
 pub mod faker;
+pub mod serialized;
+
 pub use faker::RandFaker;
+pub use serialized::Serialized;
 
 derive_generator! {
     yield String,
     return Result<String, Error>,
     pub enum RandomString {
-	Regex(OnceInfallible<Random<String, RandRegex>>),
-	Faker(TryOnce<RandFaker>),
-	Categorical(OnceInfallible<Random<String, Categorical<String>>>)
+        Regex(OnceInfallible<Random<String, RandRegex>>),
+        Faker(TryOnce<RandFaker>),
+        Serialized(TryOnce<Serialized>)
+        Categorical(OnceInfallible<Random<String, Categorical<String>>>)
     }
 }
 
 impl From<RandFaker> for RandomString {
     fn from(faker: RandFaker) -> Self {
         Self::Faker(faker.try_once())
+    }
+}
+
+impl From<Serialized> for RandomString {
+    fn from(serialized: Serialized) -> Self {
+        Self::Serialized(serialized.try_once())
     }
 }
 
@@ -40,8 +50,8 @@ derive_generator! {
     yield Token,
     return Result<Value, Error>,
     pub enum StringNode {
-	String(Valuize<Tokenizer<RandomString>, String>),
-	DateTime(Valuize<Tokenizer<RandomDateTime>, ChronoValue>)
+    String(Valuize<Tokenizer<RandomString>, String>),
+    DateTime(Valuize<Tokenizer<RandomDateTime>, ChronoValue>)
     }
 }
 
@@ -53,6 +63,10 @@ impl From<RandomString> for StringNode {
 
 impl From<RandomDateTime> for StringNode {
     fn from(value: RandomDateTime) -> Self {
-        Self::DateTime(value.into_token().map_complete(value_from_ok::<ChronoValue>))
+        Self::DateTime(
+            value
+                .into_token()
+                .map_complete(value_from_ok::<ChronoValue>),
+        )
     }
 }

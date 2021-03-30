@@ -108,6 +108,38 @@ Accepted values for the `"date_time"` key are objects with the following keys:
 }
 ```
 
+## serialized
+
+`serialized` is a variant of the `string` generator type which serializes the output of a child generator into a string.
+
+`serialized` has 2 fields,
+- `serializer`: The serializer to be used (currently only `json`)
+- `content`: The content to be serialized. This can be any valid Synth generator
+
+
+
+#### Example
+
+```json synth
+{
+    "type": "string",
+    "serialized": {
+        "serializer": "json",
+        "content": {
+            "type": "object",
+            "username": {
+                "type": "string",
+                "faker": {
+                    "generator": "name"
+                }
+            }
+        }
+    }
+}
+```
+
+
+
 ## categorical
 
 A `categorical` is a variant of the `string` generator type that generates values from a finite set of user-defined
