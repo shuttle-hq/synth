@@ -1,7 +1,7 @@
 use fs2::FileExt;
-use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use std::fmt::Formatter;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};

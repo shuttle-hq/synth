@@ -2,9 +2,9 @@ use super::prelude::*;
 
 use rand::distributions::uniform::SampleUniform;
 
-use num::{One, Zero, CheckedAdd};
+use num::{CheckedAdd, One, Zero};
 
-use std::ops::{Add, Sub, Rem};
+use std::ops::{Add, Rem, Sub};
 
 pub struct UniformRangeStep<N>(RangeStep<N>);
 
@@ -31,12 +31,12 @@ where
     N: Zero + Add<Output = N> + Sub<Output = N> + Rem<Output = N> + SampleUniform + Copy,
 {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> N {
-	let low = self.0.low;
-	let high = self.0.high;
-	let step = self.0.step;
+        let low = self.0.low;
+        let high = self.0.high;
+        let step = self.0.step;
 
-	let temp: N = rng.gen_range(N::zero(), high - low);
-	low + temp - (temp % step)
+        let temp: N = rng.gen_range(N::zero(), high - low);
+        low + temp - (temp % step)
     }
 }
 
@@ -47,56 +47,56 @@ pub struct Incrementing<N = i64> {
 
 impl<N> Incrementing<N>
 where
-    N: Zero + One
+    N: Zero + One,
 {
     pub fn new() -> Self {
-	Self {
-	    count: N::zero(),
-	    step: N::one()
-	}
+        Self {
+            count: N::zero(),
+            step: N::one(),
+        }
     }
 }
 
 impl<N> Incrementing<N>
 where
-    N: One
+    N: One,
 {
     pub fn new_at(start_at: N) -> Self {
-	Self {
-	    count: start_at,
-	    step: N::one()
-	}
+        Self {
+            count: start_at,
+            step: N::one(),
+        }
     }
 }
 
 impl<N> Incrementing<N> {
     pub fn new_at_by(start_at: N, step: N) -> Self {
-	Self {
-	    count: start_at,
-	    step
-	}
+        Self {
+            count: start_at,
+            step,
+        }
     }
 }
 
 impl<N> Generator for Incrementing<N>
 where
-    N: CheckedAdd + Copy
+    N: CheckedAdd + Copy,
 {
     type Yield = N;
 
     type Return = Result<Never, Error>;
 
     fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-	match self.count.checked_add(&self.step) {
-	    Some(next) => {
-		self.count = next;
-		GeneratorState::Yielded(next)
-	    },
-	    None => GeneratorState::Complete(Err(failed_crate!(
-		target: Release,
-		"incrementing generator overflowed: try using a larger type"
-	    )))
-	}
+        match self.count.checked_add(&self.step) {
+            Some(next) => {
+                self.count = next;
+                GeneratorState::Yielded(next)
+            }
+            None => GeneratorState::Complete(Err(failed_crate!(
+                target: Release,
+                "incrementing generator overflowed: try using a larger type"
+            ))),
+        }
     }
 }
 
@@ -127,7 +127,7 @@ macro_rules! number_node {
 		}
 	    }
 	)*
-	    
+
 	$(
 	    impl $rand {
 		pub fn $new_range(range: RangeStep<$ty>) -> Result<Self, anyhow::Error> {

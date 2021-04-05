@@ -3,7 +3,7 @@ use std::{
     marker::PhantomData,
 };
 
-use crate::{Never, GeneratorState};
+use crate::{GeneratorState, Never};
 
 #[cfg(feature = "shared")]
 use crate::Shared;
@@ -60,10 +60,10 @@ pub trait GeneratorExt: Generator + Sized {
     }
 
     fn infallible<E>(self) -> Infallible<Self, E> {
-	Infallible {
-	    inner: self,
-	    _error: PhantomData
-	}
+        Infallible {
+            inner: self,
+            _error: PhantomData,
+        }
     }
 
     /// Apply a closure to the values returned by `self`.
@@ -230,12 +230,12 @@ impl<T> GeneratorExt for T where T: Generator {}
 /// [`Generator`](crate::Generator).
 pub struct Infallible<G, E> {
     inner: G,
-    _error: PhantomData<E>
+    _error: PhantomData<E>,
 }
 
 impl<G, E> Generator for Infallible<G, E>
 where
-    G: Generator
+    G: Generator,
 {
     type Yield = G::Yield;
 
@@ -243,9 +243,9 @@ where
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
-	    GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
-	    GeneratorState::Complete(c) => GeneratorState::Complete(Ok(c))
-	}
+            GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
+            GeneratorState::Complete(c) => GeneratorState::Complete(Ok(c)),
+        }
     }
 }
 
@@ -1032,9 +1032,7 @@ pub mod tests {
     #[test]
     fn and_then() {
         let (seed, mut rng) = prime(42);
-        let mut subject = seed
-            .once()
-            .and_then(|value| Yield::wrap(value - 42).once());
+        let mut subject = seed.once().and_then(|value| Yield::wrap(value - 42).once());
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(42));
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(0));
     }
@@ -1090,7 +1088,7 @@ pub mod tests {
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(42));
         assert_eq!(
             subject.next(&mut rng),
-	    GeneratorState::Complete(vec![42, 42])
+            GeneratorState::Complete(vec![42, 42])
         );
     }
 

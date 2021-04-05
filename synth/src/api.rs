@@ -2,7 +2,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::Result;
-use tide::{Body, ParamError, Request, Response, Result as TideResult, Server, StatusCode};
+use tide::{Body, Request, Response, Result as TideResult, Server, StatusCode};
 
 use crate::{
     daemon::{
@@ -20,16 +20,12 @@ use crate::{
 use synth_core::Name;
 
 #[inline]
-fn get_optional<R>(req: &Request<Api>, param: &str) -> TideResult<Option<R>>
-where
-    R: FromStr,
-    <R as FromStr>::Err: std::error::Error + Send + Sync + 'static,
-{
+fn get_optional(req: &Request<Api>, param: &str) -> TideResult<Option<Name>> {
     req.param(param)
-        .map(|value| Some(value))
-        .or_else(|e| match e {
-            ParamError::NotFound(_) => Ok(None),
-            otherwise => Err(otherwise.into()),
+        .and_then(|value| Ok(Some(FromStr::from_str(value)?)))
+        .or_else(|e| match e.status() {
+            StatusCode::NotFound => Ok(None),
+            _ => Err(e.into()),
         })
 }
 
@@ -39,8 +35,8 @@ pub struct Api {
 }
 
 async fn delete_collection(req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
-    let collection: Name = req.param("collection")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
+    let collection: Name = FromStr::from_str(req.param("collection")?)?;
 
     let daemon_req = DeleteCollectionRequest {
         namespace,
@@ -52,7 +48,7 @@ async fn delete_collection(req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn delete_namespace(req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
 
     let body: DeleteNamespaceRequestBody = req.query()?;
 
@@ -63,7 +59,7 @@ async fn delete_namespace(req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn rollback_namespace(req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
 
     let body: RollbackNamespaceRequestBody = req.query()?;
 
@@ -74,8 +70,8 @@ async fn rollback_namespace(req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn put_documents(mut req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
-    let collection: Name = req.param("collection")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
+    let collection: Name = FromStr::from_str(req.param("collection")?)?;
 
     let body: PutDocumentsRequestBody = req.body_json().await?;
 
@@ -98,7 +94,7 @@ async fn put_documents(mut req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn get_documents(req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
     let collection: Option<Name> = get_optional(&req, "collection")?;
 
     let body: GetDocumentsSampleRequestBody = req.query()?;
@@ -130,7 +126,7 @@ async fn get_namespaces(req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn delete_override(req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
 
     let body: DeleteOverrideRequestBody = req.query()?;
 
@@ -142,7 +138,7 @@ async fn delete_override(req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn put_override(mut req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
 
     let query: PutOverrideRequestQuery = req.query()?;
 
@@ -167,7 +163,7 @@ async fn put_override(mut req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn put_optionalise(mut req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
 
     let body: PutOptionaliseRequestBody = req.body_json().await?;
 
@@ -186,7 +182,7 @@ async fn put_optionalise(mut req: Request<Api>) -> TideResult<Response> {
 }
 
 async fn get_schema(req: Request<Api>) -> TideResult<Response> {
-    let namespace: Name = req.param("namespace")?;
+    let namespace: Name = FromStr::from_str(req.param("namespace")?)?;
 
     let query: GetSchemaRequestQuery = req.query()?;
 

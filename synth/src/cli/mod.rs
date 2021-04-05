@@ -170,7 +170,9 @@ impl Cli {
             target,
         };
 
-        to.unwrap_or_default().export(params).context(format!("At namespace {:?}", ns_path))
+        to.unwrap_or_default()
+            .export(params)
+            .context(format!("At namespace {:?}", ns_path))
     }
 }
 

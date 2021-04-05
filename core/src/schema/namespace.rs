@@ -7,7 +7,7 @@ use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
 use super::inference::MergeStrategy;
-use super::{Name, suggest_closest, ArrayContent, Content, FieldRef, Find};
+use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::compile::{Compile, Compiler};
 use crate::graph::{Graph, KeyValueOrNothing};
 

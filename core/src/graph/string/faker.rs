@@ -105,12 +105,12 @@ impl Generator for RandFaker {
     fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         let gil = Python::acquire_gil();
         match self.generate::<String>(gil.python()) {
-	    Ok(output) => GeneratorState::Yielded(output),
-	    Err(err) => GeneratorState::Complete(Err(failed_crate!(
-		target: Release,
-		"a call to faker failed: {}",
-		err
-	    )))
-	}
+            Ok(output) => GeneratorState::Yielded(output),
+            Err(err) => GeneratorState::Complete(Err(failed_crate!(
+                target: Release,
+                "a call to faker failed: {}",
+                err
+            ))),
+        }
     }
 }
