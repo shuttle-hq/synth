@@ -139,7 +139,7 @@ impl Splash {
         }?;
 
         #[cfg(not(feature = "python"))]
-        let python_ver = { "disabled".bold().red().to_string() };
+        let (python_ver, python_path) = ("disabled".bold().red().to_string(), String::new()) ;
 
         let path = std::env::var("PATH").unwrap_or("unknown".to_string());
 
