@@ -69,7 +69,7 @@ impl Store {
     }
 
     /// Get a namespace given it's directory path
-    pub fn get_ns(&self, ns_path: PathBuf) -> Result<Namespace> {
+    pub fn get_ns(&self, ns_path: &Path) -> Result<Namespace> {
         let mut ns = Namespace::default();
 
         for entry in ns_path
@@ -154,7 +154,7 @@ pub mod tests {
         let name = Name::from_str("users").unwrap();
         store.save_ns(name.clone(), ns.clone())?;
 
-        let saved_ns = store.get_ns(path.join("users"))?;
+        let saved_ns = store.get_ns(&path.join("users"))?;
         assert_eq!(saved_ns, ns);
         Ok(())
     }
