@@ -10,7 +10,7 @@
   <a href="https://github.com/openquery-io/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
   <a href="https://github.com/openquery-io/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
   <a href="https://github.com/openquery-io/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/openquery-io/synth/synth%20public%20cachix"/></a>
-  <a href="https://discord.gg/wwJVAFKKkq"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
+  <a href="https://discord.gg/H33rRDTm3p"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
   <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/openquery-io/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
 </p>
 
@@ -155,7 +155,7 @@ If you would like to learn more, or you would like support for your use-case, fe
 
 If your query is more sensitive, you can email [opensource@getsynth.com](mailto:opensource@getsynth.com) and we'll happily chat about your usecase.
 
-If you intend on using Synth, we would recommend joining our growing [Discord](https://discord.gg/wwJVAFKKkq) community.
+If you intend on using Synth, we would recommend joining our growing [Discord](https://discord.gg/H33rRDTm3p) community.
 
 ## About Us
 
