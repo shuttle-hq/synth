@@ -60,11 +60,10 @@ impl<'a> StructuredState<'a> {
 
     fn insert(&mut self, name: String, state: CompilerState<'a>) -> Option<CompilerState<'a>> {
         if self.children.contains_key(&name) {
-            let (idx, _) = self
+            let idx = self
                 .ordering
                 .iter()
-                .enumerate()
-                .find(|(_, value)| **value == name)
+                .position(|value| *value == name)
                 .unwrap();
             self.ordering.remove(idx);
         }
