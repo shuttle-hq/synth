@@ -190,7 +190,7 @@ pub struct JsonContent {
     content: Box<Content>,
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub enum ChronoValue {
     NaiveDate(NaiveDate),
     NaiveTime(NaiveTime),
@@ -539,10 +539,9 @@ impl Compile for StringContent {
                 format,
                 type_,
             }) => {
-                let begin = begin
-                    .clone()
-                    .unwrap_or(ChronoValue::default_of(ChronoValue::origin(), *type_));
-                let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
+                let begin =
+                    begin.unwrap_or_else(|| ChronoValue::default_of(ChronoValue::origin(), *type_));
+                let end = end.unwrap_or(begin + Duration::weeks(52));
                 RandomDateTime::new(begin..end, &format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
