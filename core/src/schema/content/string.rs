@@ -240,12 +240,12 @@ impl ChronoValue {
         }
     }
 
-    pub fn delta_to(&self, other: &Self) -> Option<StdDuration> {
+    pub fn delta_to(self, other: Self) -> Option<StdDuration> {
         let res = match (self, other) {
-            (Self::NaiveDate(left), Self::NaiveDate(right)) => Some(*right - *left),
-            (Self::NaiveTime(left), Self::NaiveTime(right)) => Some(*right - *left),
-            (Self::NaiveDateTime(left), Self::NaiveDateTime(right)) => Some(*right - *left),
-            (Self::DateTime(left), Self::DateTime(right)) => Some(*right - *left),
+            (Self::NaiveDate(left), Self::NaiveDate(right)) => Some(right - left),
+            (Self::NaiveTime(left), Self::NaiveTime(right)) => Some(right - left),
+            (Self::NaiveDateTime(left), Self::NaiveDateTime(right)) => Some(right - left),
+            (Self::DateTime(left), Self::DateTime(right)) => Some(right - left),
             _ => None,
         };
         // @brokad: this may blow up in some edge cases

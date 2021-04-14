@@ -34,9 +34,10 @@ impl UniformSampler for UniformChronoValue {
     {
         // safe because it has been asserted by rand API contract that
         // high >= low, which implies same variant of ChronoValue
-        let delta = low.borrow().delta_to(high.borrow()).unwrap();
+        let low = low.borrow();
+        let delta = low.delta_to(*high.borrow()).unwrap();
         let inner = UniformDuration::new(StdDuration::default(), delta);
-        UniformChronoValue(low.borrow().clone(), inner)
+        UniformChronoValue(*low, inner)
     }
 
     fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
@@ -44,9 +45,10 @@ impl UniformSampler for UniformChronoValue {
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        let delta = low.borrow().delta_to(high.borrow()).unwrap();
+        let low = low.borrow();
+        let delta = low.delta_to(*high.borrow()).unwrap();
         let inner = UniformDuration::new_inclusive(StdDuration::default(), delta);
-        UniformChronoValue(low.borrow().clone(), inner)
+        UniformChronoValue(*low, inner)
     }
 
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
