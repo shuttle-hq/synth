@@ -9,11 +9,12 @@ use std::convert::TryFrom;
 
 use crate::sampler::Sampler;
 use std::str::FromStr;
+use synth_core::graph::prelude::VariantContent;
 use synth_core::schema::number_content::*;
 use synth_core::schema::{
     ArrayContent, BoolContent, ChronoValueType, DateTimeContent, FieldContent, FieldRef, Id,
-    Namespace, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep, RegexContent,
-    SameAsContent, StringContent,
+    Namespace, NumberContent, ObjectContent, OneOfContent, OptionalMergeStrategy, RangeStep,
+    RegexContent, SameAsContent, StringContent,
 };
 use synth_core::{Content, Name};
 
@@ -64,30 +65,46 @@ impl PostgresExportStrategy {
         // If we have foreign key constraints we need to traverse the tree and
         // figure out insertion order
         // We basically need something like an InsertionStrategy where we have a DAG of insertions
+        let batch_size = 1000;
 
-        for row in collection {
-            let row_obj = row
-                .as_object()
-                .expect("This is always an object (sampler contract)");
+        let column_names = collection
+            .get(0)
+            .expect("Collection should not be empty")
+            .as_object()
+            .expect("This is always an object (sampler contract)")
+            .keys()
+            .map(|s| s.clone())
+            .collect::<Vec<String>>()
+            .join(",");
 
-            let column_names = row_obj
-                .keys()
-                .map(|s| s.clone())
-                .collect::<Vec<String>>()
-                .join(",");
-
-            let values = row_obj
-                .values()
-                .map(|v| v.to_string().replace("\"", "'"))
-                .collect::<Vec<String>>()
-                .join(",");
-
-            let query: &str = &format!(
-                "INSERT INTO {} ({}) VALUES ({});",
-                collection_name, column_names, values
+        for rows in collection.chunks(batch_size) {
+            let mut query = format!(
+                "INSERT INTO {} ({}) VALUES \n",
+                collection_name, column_names
             );
 
-            if let Err(err) = client.query(query, &[]) {
+            for (i, row) in rows.iter().enumerate() {
+                let row_obj = row
+                    .as_object()
+                    .expect("This is always an object (sampler contract)");
+
+                let values = row_obj
+                    .values()
+                    .map(|v| v.to_string().replace("'", "''")) // two single quotes are the standard way to escape double quotes
+                    .map(|v| v.to_string().replace("\"", "'")) // values in the object have quotes around them by default.
+                    .collect::<Vec<String>>()
+                    .join(",");
+
+                // We should be using some form of a prepared statement here.
+                // It is not clear how this would work for our batch inserts...
+                if i == rows.len() - 1 {
+                    query.push_str(&format!("({});\n", values));
+                } else {
+                    query.push_str(&format!("({}),\n", values));
+                }
+            }
+
+            if let Err(err) = client.query(query.as_str(), &[]) {
                 println!("Error at: {}", query);
                 return Err(err.into());
             }
@@ -392,8 +409,8 @@ impl From<Vec<ColumnInfo>> for Collection {
         Collection {
             collection: Content::Array(ArrayContent {
                 length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep {
-                    low: 0,
-                    high: 1,
+                    low: 1,
+                    high: 2,
                     step: 1,
                 })))),
                 content: Box::new(Content::Object(collection)),
@@ -405,7 +422,7 @@ impl From<Vec<ColumnInfo>> for Collection {
 // Type conversions: https://docs.rs/postgres-types/0.2.0/src/postgres_types/lib.rs.html#360
 impl From<ColumnInfo> for FieldContent {
     fn from(column: ColumnInfo) -> Self {
-        let content = match column.udt_name.as_ref() {
+        let mut content = match column.udt_name.as_ref() {
             "bool" => Content::Bool(BoolContent::default()),
             "oid" => {
                 unimplemented!()
@@ -469,8 +486,21 @@ impl From<ColumnInfo> for FieldContent {
             })),
             _ => unimplemented!("We haven't implemented a converter for {}", column.udt_name),
         };
+
+        // This happens because an `optional` field in a Synth schema
+        // won't show up as a key during generation. Whereas what we
+        // want instead is a null field.
+        if column.is_nullable {
+            content = Content::OneOf(OneOfContent {
+                variants: vec![
+                    VariantContent::new(content),
+                    VariantContent::new(Content::Null),
+                ],
+            })
+        }
+
         FieldContent {
-            optional: column.is_nullable,
+            optional: false,
             content: Box::new(content),
         }
     }
