@@ -16,12 +16,13 @@
 , release ? true
 }:
 let
-  version = "0.3.3";
+  version = "0.3.4";
   darwinBuildInputs =
     stdenv.lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk.frameworks; [
       libiconv
       IOKit
       Security
+      AppKit
     ]);
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
   pythonEnv = python.withPackages pythonPackages;

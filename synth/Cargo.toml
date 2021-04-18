@@ -1,6 +1,6 @@
 [package]
 name = "synth"
-version = "0.3.3"
+version = "0.3.4"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>"
@@ -63,3 +63,4 @@ dialoguer = "0.7.1"
 
 postgres = { version = "0.19.0", features = ["with-chrono-0_4"] }
 rust_decimal = { version = "1.10.3", features = ["db-postgres"] }
+indicatif = "0.15.0"

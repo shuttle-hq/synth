@@ -1,4 +1,5 @@
 use anyhow::Result;
+use indicatif::{ProgressBar, ProgressStyle};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -12,6 +13,14 @@ pub(crate) struct Sampler {
 }
 
 impl Sampler {
+    fn sampler_progress_bar(target: u64) -> ProgressBar {
+        let bar = ProgressBar::new(target as u64);
+        let style = ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {wide_bar} {pos}/{len} generated ({eta} remaining)");
+        bar.set_style(style);
+        bar
+    }
+
     pub(crate) fn sample(self, collection_name: Option<Name>, target: usize) -> Result<Value> {
         fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
             match value {
@@ -29,6 +38,8 @@ impl Sampler {
 
         let mut generated = 0;
         let mut out = HashMap::new();
+
+        let progress_bar = Self::sampler_progress_bar(target as u64);
 
         while generated < target {
             let start_of_round = generated;
@@ -72,7 +83,11 @@ impl Sampler {
                 );
                 break;
             }
+
+            progress_bar.set_position(generated as u64);
         }
+
+        progress_bar.finish();
 
         let as_value = if let Some(name) = collection_name.as_ref() {
             let array = out.remove(name.as_ref()).unwrap_or_default();
