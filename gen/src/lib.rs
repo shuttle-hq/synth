@@ -138,6 +138,13 @@ impl<Y, R> GeneratorState<Y, R> {
             Err(Error::custom("unexpected EOF"))
         }
     }
+
+    pub fn as_ref(&self) -> GeneratorState<&Y, &R> {
+        match *self {
+            GeneratorState::Yielded(ref y) => GeneratorState::Yielded(y),
+            GeneratorState::Complete(ref r) => GeneratorState::Complete(r),
+        }
+    }
 }
 
 impl<Y, R, E> GeneratorState<Y, Result<R, E>> {

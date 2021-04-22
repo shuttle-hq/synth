@@ -3,7 +3,7 @@ use std::{
     marker::PhantomData,
 };
 
-use crate::{Never, GeneratorState};
+use crate::{GeneratorState, Never};
 
 #[cfg(feature = "shared")]
 use crate::Shared;
@@ -18,6 +18,7 @@ use fake::Dummy as FakerDummy;
 
 pub mod r#try;
 pub use r#try::*;
+use std::collections::VecDeque;
 
 /// The core trait of this crate.
 ///
@@ -60,10 +61,10 @@ pub trait GeneratorExt: Generator + Sized {
     }
 
     fn infallible<E>(self) -> Infallible<Self, E> {
-	Infallible {
-	    inner: self,
-	    _error: PhantomData
-	}
+        Infallible {
+            inner: self,
+            _error: PhantomData,
+        }
     }
 
     /// Apply a closure to the values returned by `self`.
@@ -221,6 +222,13 @@ pub trait GeneratorExt: Generator + Sized {
             ret: None,
         }
     }
+
+    fn peekable(self) -> Peek<Self> {
+        Peek {
+            inner: self,
+            buffer: Default::default(),
+        }
+    }
 }
 
 impl<T> GeneratorExt for T where T: Generator {}
@@ -230,12 +238,12 @@ impl<T> GeneratorExt for T where T: Generator {}
 /// [`Generator`](crate::Generator).
 pub struct Infallible<G, E> {
     inner: G,
-    _error: PhantomData<E>
+    _error: PhantomData<E>,
 }
 
 impl<G, E> Generator for Infallible<G, E>
 where
-    G: Generator
+    G: Generator,
 {
     type Yield = G::Yield;
 
@@ -243,9 +251,9 @@ where
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
-	    GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
-	    GeneratorState::Complete(c) => GeneratorState::Complete(Ok(c))
-	}
+            GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
+            GeneratorState::Complete(c) => GeneratorState::Complete(Ok(c)),
+        }
     }
 }
 
@@ -993,6 +1001,60 @@ where
     }
 }
 
+/// A wrapper that allows peeking at the next (upcoming) value of a
+/// generator without consuming it.
+///
+/// This `struct` is created by the
+/// [`peekable`](crate::GeneratorExt::peekable) method on
+/// [`Generator`](crate::Generator).
+pub struct Peek<G: Generator> {
+    inner: G,
+    buffer: VecDeque<GeneratorState<G::Yield, G::Return>>,
+}
+
+impl<G> Generator for Peek<G>
+where
+    G: Generator,
+{
+    type Yield = G::Yield;
+
+    type Return = G::Return;
+
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        if let Some(next) = self.buffer.pop_front() {
+            next
+        } else {
+            self.inner.next(rng)
+        }
+    }
+}
+
+impl<G> PeekableGenerator for Peek<G>
+where
+    G: Generator,
+{
+    fn peek<R: Rng>(&mut self, rng: &mut R) -> &GeneratorState<G::Yield, G::Return> {
+        let next = self.inner.next(rng);
+        self.buffer.push_back(next);
+        self.buffer.back().unwrap()
+    }
+
+    fn peek_next<R: Rng>(&mut self, rng: &mut R) -> &GeneratorState<G::Yield, G::Return> {
+        if self.buffer.is_empty() {
+            let next = self.inner.next(rng);
+            self.buffer.push_back(next);
+        }
+        self.buffer.front().unwrap()
+    }
+}
+
+/// A [`Generator`](crate::Generator) that allows for peeking at the
+/// upcoming values without consuming them.
+pub trait PeekableGenerator: Generator {
+    fn peek<R: Rng>(&mut self, rng: &mut R) -> &GeneratorState<Self::Yield, Self::Return>;
+    fn peek_next<R: Rng>(&mut self, rng: &mut R) -> &GeneratorState<Self::Yield, Self::Return>;
+}
+
 /// A convenience generator that is equivalent to
 /// `Yield::wrap(...).once()`
 pub type Just<C> = Once<Yield<C, Never>>;
@@ -1032,9 +1094,7 @@ pub mod tests {
     #[test]
     fn and_then() {
         let (seed, mut rng) = prime(42);
-        let mut subject = seed
-            .once()
-            .and_then(|value| Yield::wrap(value - 42).once());
+        let mut subject = seed.once().and_then(|value| Yield::wrap(value - 42).once());
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(42));
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(0));
     }
@@ -1090,7 +1150,7 @@ pub mod tests {
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(42));
         assert_eq!(
             subject.next(&mut rng),
-	    GeneratorState::Complete(vec![42, 42])
+            GeneratorState::Complete(vec![42, 42])
         );
     }
 
@@ -1132,5 +1192,33 @@ pub mod tests {
         for item in buf {
             assert!(item != gen.next(&mut rng))
         }
+    }
+
+    #[test]
+    fn peek() {
+        impl<T> Generator for Vec<T> {
+            type Yield = T;
+            type Return = Never;
+
+            fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+                match self.pop() {
+                    None => unreachable!(),
+                    Some(v) => GeneratorState::Yielded(v),
+                }
+            }
+        }
+        let gen = vec![1, 2, 3];
+        let mut rng = rand::thread_rng();
+        let mut peekable = gen.peekable();
+        assert_eq!(&GeneratorState::Yielded(3), peekable.peek(&mut rng));
+        assert_eq!(&GeneratorState::Yielded(2), peekable.peek(&mut rng));
+        assert_eq!(&GeneratorState::Yielded(1), peekable.peek(&mut rng));
+        assert_eq!(&GeneratorState::Yielded(3), peekable.peek_next(&mut rng));
+        assert_eq!(GeneratorState::Yielded(3), peekable.next(&mut rng));
+        assert_eq!(&GeneratorState::Yielded(2), peekable.peek_next(&mut rng));
+        assert_eq!(&GeneratorState::Yielded(2), peekable.peek_next(&mut rng));
+        assert_eq!(GeneratorState::Yielded(2), peekable.next(&mut rng));
+        assert_eq!(&GeneratorState::Yielded(1), peekable.peek_next(&mut rng));
+        assert_eq!(GeneratorState::Yielded(1), peekable.next(&mut rng));
     }
 }

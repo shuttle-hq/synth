@@ -22,6 +22,8 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_json;
 
+extern crate humantime_serde;
+
 #[macro_use]
 pub mod error;
 pub use error::Error;

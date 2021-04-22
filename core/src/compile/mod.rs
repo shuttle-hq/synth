@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::iter::{DoubleEndedIterator, FromIterator, IntoIterator};
 
-use synth_gen::prelude::*;
 use anyhow::{Context, Result};
 use colored::Colorize;
+use synth_gen::prelude::*;
 
 mod utils;
 pub use utils::{Cursored, Driver, GeneratorOutput, Scoped, View};
@@ -491,21 +491,18 @@ pub struct NamespaceCompiler<'a> {
 
 impl<'a> NamespaceCompiler<'a> {
     pub fn new_at(state: CompilerState<'a>) -> Self {
-	let vtable = Symbols::new();
-	Self {
-	    state,
-	    vtable
-	}
+        let vtable = Symbols::new();
+        Self { state, vtable }
     }
 
     pub fn new(namespace: &'a Namespace) -> Self {
         let state = CompilerState::namespace(namespace);
-	Self::new_at(state)
+        Self::new_at(state)
     }
 
     pub fn new_flat(content: &'a Content) -> Self {
-	let state = CompilerState::content(content);
-	Self::new_at(state)
+        let state = CompilerState::content(content);
+        Self::new_at(state)
     }
 
     pub fn compile(mut self) -> Result<Graph> {
@@ -589,7 +586,9 @@ impl<'a> NamespaceCompiler<'a> {
             };
 
             stage_2!("{}: building", next_scope);
-            let mut model = content_compiler.compile()?;
+            let mut model = content_compiler
+                .compile()
+                .context(format!("at `{}`", &next_scope))?;
             stage_2!("{}: done", next_scope);
 
             if let Ok(locals) = self.vtable.get(&next_scope) {

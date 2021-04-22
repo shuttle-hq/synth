@@ -42,10 +42,12 @@ pub use categorical::{Categorical, CategoricalType};
 
 pub use number::Id;
 pub mod prelude;
+pub(crate) mod series;
 
 use prelude::*;
 
 use super::FieldRef;
+use crate::schema::content::series::SeriesContent;
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -95,6 +97,7 @@ pub enum Content {
     Object(ObjectContent),
     SameAs(SameAsContent),
     OneOf(OneOfContent),
+    Series(SeriesContent),
 }
 
 impl Content {
@@ -189,6 +192,7 @@ impl Content {
             Content::Object(_) => "object",
             Content::SameAs(_) => "same_as",
             Content::OneOf(_) => "one_of",
+            Content::Series(_) => "series",
         }
     }
 }
@@ -310,6 +314,7 @@ impl Compile for Content {
             Self::Array(array_content) => array_content.compile(compiler),
             Self::SameAs(same_as_content) => same_as_content.compile(compiler),
             Self::OneOf(one_of_content) => one_of_content.compile(compiler),
+            Self::Series(series_content) => series_content.compile(compiler),
             Self::Null => Ok(Graph::null()),
         }
     }

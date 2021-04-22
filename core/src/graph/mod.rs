@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::ops::Try;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use synth_gen::prelude::*;
 use synth_gen::value::{Token, Tokenizer};
@@ -80,6 +80,9 @@ pub mod object;
 pub use object::{KeyValueOrNothing, ObjectNode};
 
 pub mod one_of;
+pub(crate) mod series;
+
+use crate::graph::series::SeriesNode;
 pub use one_of::OneOfNode;
 
 pub type JustToken<T> = Tokenizer<Just<T>>;
@@ -238,12 +241,11 @@ derive_generator!(
         String(StringNode),
         Object(ObjectNode),
         Array(ArrayNode),
-
         OneOf(OneOfNode),
-
         Driver(Driver<Graph>),
         View(Unwrapped<View<Graph>>),
         Scoped(Scoped<Graph>),
+        Series(SeriesNode),
     }
 );
 
@@ -314,7 +316,9 @@ impl Graph {
     }
 
     pub fn from_namespace(ns: &Namespace) -> Result<Self> {
-        NamespaceCompiler::new(ns).compile()
+        NamespaceCompiler::new(ns)
+            .compile()
+            .context("while compiling the namespace")
     }
 }
 
