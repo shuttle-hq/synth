@@ -9,7 +9,7 @@ use std::convert::TryFrom;
 
 use crate::sampler::Sampler;
 use std::str::FromStr;
-use synth_core::graph::prelude::VariantContent;
+use synth_core::graph::prelude::{Uuid, VariantContent};
 use synth_core::schema::number_content::*;
 use synth_core::schema::{
     ArrayContent, BoolContent, ChronoValueType, DateTimeContent, FieldContent, FieldRef, Id,
@@ -484,6 +484,7 @@ impl From<ColumnInfo> for FieldContent {
                 begin: None,
                 end: None,
             })),
+            "uuid" => Content::String(StringContent::Uuid(Uuid)),
             _ => unimplemented!("We haven't implemented a converter for {}", column.udt_name),
         };
 

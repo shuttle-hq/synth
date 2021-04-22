@@ -111,6 +111,7 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
             StringContent::DateTime(date_time_content) => self.try_merge(date_time_content, value),
             StringContent::Faker(_) => Ok(()),
             StringContent::Serialized(_) => Ok(()), // we can probably do better here
+            StringContent::Uuid(_) => Ok(()),
         }
     }
 }

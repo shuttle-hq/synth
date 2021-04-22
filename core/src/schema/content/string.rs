@@ -1,5 +1,4 @@
 use super::prelude::*;
-
 use super::Categorical;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -11,7 +10,11 @@ pub enum StringContent {
     DateTime(DateTimeContent),
     Categorical(Categorical<String>),
     Serialized(SerializedContent),
+    Uuid(Uuid),
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct Uuid;
 
 impl StringContent {
     pub fn kind(&self) -> &str {
@@ -21,6 +24,7 @@ impl StringContent {
             Self::DateTime(date_time) => date_time.kind(),
             Self::Categorical(_) => "categorical",
             Self::Serialized(_) => "serialized",
+            Self::Uuid(_) => "uuid",
         }
     }
 }
@@ -552,6 +556,7 @@ impl Compile for StringContent {
                     RandomString::from(Serialized::new_json(inner)).into()
                 }
             },
+            StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
         Ok(Graph::String(string_node))
     }

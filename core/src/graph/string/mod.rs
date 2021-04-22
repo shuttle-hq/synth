@@ -7,7 +7,9 @@ pub use date_time::RandomDateTime;
 
 pub mod faker;
 pub mod serialized;
+pub mod uuid;
 
+pub use self::uuid::UuidGen;
 pub use faker::RandFaker;
 pub use serialized::Serialized;
 
@@ -19,6 +21,7 @@ derive_generator! {
         Faker(TryOnce<RandFaker>),
         Serialized(TryOnce<Serialized>)
         Categorical(OnceInfallible<Random<String, Categorical<String>>>)
+        Uuid(OnceInfallible<UuidGen>)
     }
 }
 
@@ -43,6 +46,12 @@ impl From<RandRegex> for RandomString {
 impl From<Categorical<String>> for RandomString {
     fn from(cat: Categorical<String>) -> Self {
         Self::Categorical(Random::new_with(cat).infallible().try_once())
+    }
+}
+
+impl From<UuidGen> for RandomString {
+    fn from(uuid: UuidGen) -> Self {
+        Self::Uuid(uuid.infallible().try_once())
     }
 }
 
