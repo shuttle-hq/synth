@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[13],{83:function(t){t.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"How to Create PostgreSQL Test Data","permalink":"/synth/blog/2021/03/09/postgres-data-gen"},{"title":"Create realistic test data for your web app","permalink":"/synth/blog/2021/03/08/mern"}]}')}}]);
