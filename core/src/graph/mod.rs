@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::ops::Try;
 
 use anyhow::{Context, Result};
@@ -182,7 +182,7 @@ derive_from! {
     Number(Number),
     String(String),
     DateTime(ChronoValue),
-    Object(HashMap<String, Value>),
+    Object(BTreeMap<String, Value>),
     Array(Vec<Value>),
     }
 }

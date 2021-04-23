@@ -1,25 +1,26 @@
 use super::prelude::*;
+use std::collections::BTreeMap;
 
-pub trait CategoricalType: Eq + Hash + Clone + FromStr {}
+pub trait CategoricalType: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
 
-impl<T> CategoricalType for T where T: Eq + Hash + Clone + FromStr {}
+impl<T> CategoricalType for T where T: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(from = "CategoricalShadow<T>")]
 pub struct Categorical<T: CategoricalType> {
     #[serde(flatten)]
-    pub(crate) seen: HashMap<T, u64>,
+    pub(crate) seen: BTreeMap<T, u64>,
     #[serde(skip_serializing)]
     pub(crate) total: u64,
 }
 
-fn categorical_map_de<'de, D, T>(deserializer: D) -> Result<HashMap<T, u64>, D::Error>
+fn categorical_map_de<'de, D, T>(deserializer: D) -> Result<BTreeMap<T, u64>, D::Error>
 where
     T: CategoricalType,
     D: Deserializer<'de>,
 {
-    let hm_string_keys: HashMap<String, u64> = HashMap::deserialize(deserializer)?;
-    let mut hm_final: HashMap<T, u64> = HashMap::new();
+    let hm_string_keys: BTreeMap<String, u64> = BTreeMap::deserialize(deserializer)?;
+    let mut hm_final: BTreeMap<T, u64> = BTreeMap::new();
     for (k, v) in hm_string_keys {
         hm_final.insert(
             k.parse()
@@ -55,7 +56,7 @@ impl<T: CategoricalType> Categorical<T> {
 struct CategoricalShadow<T: CategoricalType> {
     #[serde(deserialize_with = "categorical_map_de")]
     #[serde(flatten)]
-    seen: HashMap<T, u64>,
+    seen: BTreeMap<T, u64>,
 }
 
 impl<T: CategoricalType> From<CategoricalShadow<T>> for Categorical<T> {

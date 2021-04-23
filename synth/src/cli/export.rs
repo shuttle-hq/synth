@@ -14,6 +14,7 @@ pub(crate) struct ExportParams {
     pub(crate) namespace: Namespace,
     pub(crate) collection_name: Option<Name>,
     pub(crate) target: usize,
+    pub(crate) seed: u64,
 }
 
 #[derive(Clone, Debug)]

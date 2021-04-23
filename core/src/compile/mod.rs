@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::iter::{DoubleEndedIterator, FromIterator, IntoIterator};
 
 use anyhow::{Context, Result};
@@ -42,7 +42,7 @@ pub trait Compile {
 }
 
 pub struct StructuredState<'a> {
-    children: HashMap<String, CompilerState<'a>>,
+    children: BTreeMap<String, CompilerState<'a>>,
     ordering: Vec<String>,
 }
 
@@ -84,7 +84,7 @@ impl<'a> std::iter::Extend<(String, CompilerState<'a>)> for StructuredState<'a> 
 impl<'a> Default for StructuredState<'a> {
     fn default() -> Self {
         Self {
-            children: HashMap::new(),
+            children: BTreeMap::new(),
             ordering: Vec::new(),
         }
     }
@@ -94,7 +94,7 @@ pub mod structured_state {
     use super::*;
 
     pub struct IntoIter<'a> {
-        children: HashMap<String, CompilerState<'a>>,
+        children: BTreeMap<String, CompilerState<'a>>,
         iter: std::vec::IntoIter<String>,
     }
 
@@ -236,7 +236,7 @@ pub struct CompilerState<'a> {
     src: Source<'a>,
     compiled: OutputState<Graph>,
     scope: StructuredState<'a>,
-    refs: HashSet<Scope>,
+    refs: BTreeSet<Scope>,
 }
 
 impl<'a> std::iter::Extend<(String, CompilerState<'a>)> for CompilerState<'a> {
@@ -246,7 +246,7 @@ impl<'a> std::iter::Extend<(String, CompilerState<'a>)> for CompilerState<'a> {
     }
 }
 
-#[derive(Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Scope(VecDeque<String>);
 
 impl std::fmt::Display for Scope {
@@ -400,7 +400,7 @@ impl<'a> CompilerState<'a> {
             src: source,
             compiled: OutputState::default(),
             scope: StructuredState::default(),
-            refs: HashSet::default(),
+            refs: BTreeSet::default(),
         }
     }
 
@@ -566,7 +566,7 @@ impl<'a> NamespaceCompiler<'a> {
                 continue;
             }
 
-            let mut drivers = HashMap::new();
+            let mut drivers = BTreeMap::new();
 
             let ctx = self
                 .vtable
@@ -641,7 +641,7 @@ impl<'a> NamespaceCompiler<'a> {
 pub struct ContentCompiler<'c, 'a: 'c> {
     scope: Scope,
     cursor: &'c mut CompilerState<'a>,
-    drivers: &'c mut HashMap<Scope, Driver<Graph>>,
+    drivers: &'c mut BTreeMap<Scope, Driver<Graph>>,
     vtable: &'c mut Symbols,
 }
 
@@ -700,14 +700,14 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
 }
 
 pub struct ReferenceFactory<G: Generator> {
-    issued: HashSet<Scope>,
+    issued: BTreeSet<Scope>,
     src: Option<Cursored<G>>,
 }
 
 impl<G: Generator> Default for ReferenceFactory<G> {
     fn default() -> Self {
         Self {
-            issued: HashSet::new(),
+            issued: BTreeSet::new(),
             src: None,
         }
     }
@@ -740,7 +740,7 @@ where
 }
 
 pub struct LocalTable<G: Generator> {
-    locals: HashMap<Scope, ReferenceFactory<G>>,
+    locals: BTreeMap<Scope, ReferenceFactory<G>>,
 }
 
 impl<G> Default for LocalTable<G>
@@ -749,7 +749,7 @@ where
 {
     fn default() -> Self {
         Self {
-            locals: HashMap::new(),
+            locals: BTreeMap::new(),
         }
     }
 }
@@ -760,14 +760,14 @@ where
     GeneratorOutput<G>: Clone,
 {
     /// @brokad: fix panic
-    fn extract(&self) -> HashMap<Scope, Cursored<G>> {
+    fn extract(&self) -> BTreeMap<Scope, Cursored<G>> {
         self.locals
             .iter()
             .map(|(scope, factory)| (scope.clone(), factory.src.as_ref().unwrap().clone()))
             .collect()
     }
 
-    fn closure(&self, what: &Scope) -> HashSet<Scope> {
+    fn closure(&self, what: &Scope) -> BTreeSet<Scope> {
         let what_root = what.root();
         self.locals
             .iter()
@@ -850,8 +850,8 @@ where
 }
 
 pub struct Symbols<G: Generator = Graph> {
-    flattened: HashSet<Scope>,
-    storage: HashMap<Scope, LocalTable<G>>,
+    flattened: BTreeSet<Scope>,
+    storage: BTreeMap<Scope, LocalTable<G>>,
 }
 
 impl<G> Symbols<G>
@@ -861,8 +861,8 @@ where
 {
     fn new() -> Self {
         Self {
-            flattened: HashSet::new(),
-            storage: HashMap::new(),
+            flattened: BTreeSet::new(),
+            storage: BTreeMap::new(),
         }
     }
 

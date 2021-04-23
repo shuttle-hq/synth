@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::Value, Map};
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
@@ -17,11 +17,11 @@ type JsonObject = Map<String, Value>;
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Namespace {
     #[serde(flatten)]
-    pub collections: HashMap<Name, Content>,
+    pub collections: BTreeMap<Name, Content>,
 }
 
-impl AsRef<HashMap<Name, Content>> for Namespace {
-    fn as_ref(&self) -> &HashMap<Name, Content> {
+impl AsRef<BTreeMap<Name, Content>> for Namespace {
+    fn as_ref(&self) -> &BTreeMap<Name, Content> {
         &self.collections
     }
 }
@@ -29,7 +29,7 @@ impl AsRef<HashMap<Name, Content>> for Namespace {
 impl IntoIterator for Namespace {
     type Item = (Name, Content);
 
-    type IntoIter = std::collections::hash_map::IntoIter<Name, Content>;
+    type IntoIter = std::collections::btree_map::IntoIter<Name, Content>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.collections.into_iter()

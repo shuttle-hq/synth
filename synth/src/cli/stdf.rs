@@ -21,7 +21,7 @@ pub(crate) struct StdoutExportStrategy {}
 impl ExportStrategy for StdoutExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
         let generator = Sampler::try_from(&params.namespace)?;
-        let values = generator.sample(params.collection_name, params.target)?;
+        let values = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
         println!("{}", values);
         Ok(())
     }

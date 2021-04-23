@@ -67,7 +67,7 @@ pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<boo
         .map_err(|e| D::Error::custom(format!("not a boolean: {}", e)))
 }
 
-#[derive(Hash, PartialEq, Eq, Debug, Clone)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Ord, PartialOrd)]
 pub struct Name(String);
 
 impl Name {
@@ -517,7 +517,7 @@ pub mod tests {
     #[allow(unused_macros)]
     macro_rules! hashmap {
 	($( $key: expr => $val: expr ),*) => {{
-            let mut map = ::std::collections::HashMap::new();
+            let mut map = ::std::collections::BTreeMap::new();
             $( map.insert($key, $val); )*
 		map
 	}}

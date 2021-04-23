@@ -57,7 +57,9 @@ If there is a misconfiguration in your schema (for example referring to a field 
 
 - `--collection <collection>` - Specify a specific collection in a namespace if you don't want to generate data from all collections.  
 - `--size <size>` - The number of elements which should be generated per collection. This number is not guaranteed, it serves as a lower bound.
-
+- `--to <uri>` - The generation destination. If unspecified, generation defaults to stdout.
+- `--seed <seed>` - An unsigned 64 bit integer seed to be used as a seed for generation. Defaults to 0 if unspecified.
+- `--random` - A flag which toggles generation with a random seed. This cannot be used with --seed.
 ---
 
 ### Command: serve

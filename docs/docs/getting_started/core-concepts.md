@@ -93,3 +93,8 @@ You can use the `synth import` command to import data into a namespace.
 Not only will Synth automatically *derive* the Schema for you, inferring the types and topology of the content graph.
 Synth will also automatically adjust the Schema as new information is ingested.
 
+## Seeding Generation
+
+Synth generates random data in a determinstic fashion. Running `synth generate` multiple times should yield the same output. Synth can also be seeded using `--seed` flag which takes an unsigned 64-bit integer as a parameter. If a seed is not specified, the seed will default to `0`.
+
+The `--random` flag can be used to generate using a random seed.

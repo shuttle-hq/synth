@@ -16,6 +16,7 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
+use rand::RngCore;
 use synth_core::Name;
 
 impl TryFrom<CliArgs> for Cli {
@@ -39,6 +40,18 @@ impl Cli {
         })
     }
 
+    fn derive_seed(random: bool, seed: Option<u64>) -> Result<u64> {
+        if random && seed.is_some() {
+            return Err(anyhow!(
+                "Cannot have the --random flag and --seed specified at the same time."
+            ));
+        }
+        match random {
+            true => Ok(rand::thread_rng().next_u64()),
+            false => Ok(seed.unwrap_or(0)),
+        }
+    }
+
     pub async fn run(self) -> Result<()> {
         match self.args {
             CliArgs::Generate {
@@ -46,7 +59,15 @@ impl Cli {
                 ref collection,
                 size,
                 ref to,
-            } => self.generate(namespace.clone(), collection.clone(), size, to.clone()),
+                seed,
+                random,
+            } => self.generate(
+                namespace.clone(),
+                collection.clone(),
+                size,
+                to.clone(),
+                Self::derive_seed(random, seed)?,
+            ),
             CliArgs::Import {
                 ref namespace,
                 ref collection,
@@ -153,6 +174,7 @@ impl Cli {
         collection: Option<Name>,
         target: usize,
         to: Option<SomeExportStrategy>,
+        seed: u64,
     ) -> Result<()> {
         if !self.workspace_initialised() {
             return Err(anyhow!(
@@ -168,9 +190,12 @@ impl Cli {
             namespace,
             collection_name: collection,
             target,
+            seed,
         };
 
-        to.unwrap_or_default().export(params).context(format!("At namespace {:?}", ns_path))
+        to.unwrap_or_default()
+            .export(params)
+            .context(format!("At namespace {:?}", ns_path))
     }
 }
 
@@ -190,8 +215,18 @@ pub(crate) enum CliArgs {
         collection: Option<Name>,
         #[structopt(long, help = "the number of samples", default_value = "1")]
         size: usize,
-        #[structopt(long, help = "the number of samples")]
+        #[structopt(long, help = "the generation destination")]
         to: Option<SomeExportStrategy>,
+        #[structopt(
+            long,
+            help = "an unsigned 64 bit integer seed to be used as a seed for generation"
+        )]
+        seed: Option<u64>,
+        #[structopt(
+            long,
+            help = "generation will use a random seed - this cannot be used with --seed"
+        )]
+        random: bool,
     },
     Import {
         #[structopt(
@@ -210,4 +245,17 @@ pub(crate) enum CliArgs {
         )]
         from: Option<SomeImportStrategy>,
     },
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    #[test]
+    fn test_derive_seed() {
+        assert_eq!(Cli::derive_seed(false, None).unwrap(), 0);
+        assert_eq!(Cli::derive_seed(false, Some(5)).unwrap(), 5);
+        assert!(Cli::derive_seed(true, Some(5)).is_err());
+        assert!(Cli::derive_seed(true, None).is_ok());
+    }
 }

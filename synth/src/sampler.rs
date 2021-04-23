@@ -1,7 +1,8 @@
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
+use rand::SeedableRng;
 use serde_json::{Map, Value};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::ValueKindExt;
 use synth_core::Graph;
@@ -22,6 +23,15 @@ impl Sampler {
     }
 
     pub(crate) fn sample(self, collection_name: Option<Name>, target: usize) -> Result<Value> {
+        self.sample_seeded(collection_name, target, 0)
+    }
+
+    pub(crate) fn sample_seeded(
+        self,
+        collection_name: Option<Name>,
+        target: usize,
+        seed: u64,
+    ) -> Result<Value> {
         fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
             match value {
                 Value::Array(vec) => Ok(vec),
@@ -33,11 +43,11 @@ impl Sampler {
             }
         }
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
         let mut model = self.graph.try_aggregate();
 
         let mut generated = 0;
-        let mut out = HashMap::new();
+        let mut out = BTreeMap::new();
 
         let progress_bar = Self::sampler_progress_bar(target as u64);
 

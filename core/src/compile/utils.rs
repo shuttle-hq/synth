@@ -1,7 +1,7 @@
 use synth_gen::prelude::*;
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::ops::Range;
 use std::rc::Rc;
 
@@ -18,7 +18,7 @@ struct UniqueRange<Idx> {
     range: Range<Idx>,
 }
 
-impl Eq for UniqueRange<usize> { }
+impl Eq for UniqueRange<usize> {}
 
 impl PartialEq for UniqueRange<usize> {
     fn eq(&self, other: &Self) -> bool {
@@ -44,7 +44,7 @@ struct UniqueMarker {
     marker: Marker,
 }
 
-impl Eq for UniqueMarker { }
+impl Eq for UniqueMarker {}
 
 impl PartialEq for UniqueMarker {
     fn eq(&self, other: &Self) -> bool {
@@ -409,8 +409,8 @@ where
 }
 
 pub struct Scoped<G: Generator> {
-    pub(super) cursors: HashMap<Scope, Cursored<G>>,
-    pub(super) drivers: HashMap<Scope, Driver<G>>,
+    pub(super) cursors: BTreeMap<Scope, Cursored<G>>,
+    pub(super) drivers: BTreeMap<Scope, Driver<G>>,
     pub(super) order: Vec<Scope>,
     pub(super) src: Box<G>,
     pub(super) is_complete: bool,
@@ -487,13 +487,14 @@ pub mod tests {
                 view.next(&mut rng);
             }
             assert!(
-                (threshold > 0 && driver.src.deref().borrow().buf.len() < initial_buf_len) ||
-                (threshold == 0 && driver.src.deref().borrow().buf.len() == initial_buf_len)
+                (threshold > 0 && driver.src.deref().borrow().buf.len() < initial_buf_len)
+                    || (threshold == 0 && driver.src.deref().borrow().buf.len() == initial_buf_len)
             );
         }
         // Multiple views
         for threshold in vec![0, 1, 10] {
-            struct TestView<G> where
+            struct TestView<G>
+            where
                 G: Generator,
             {
                 view: Rc<RefCell<View<G>>>,
@@ -521,13 +522,20 @@ pub mod tests {
             while view_pos.len() > 0 {
                 let i: usize = (rng.next_u32() as usize) % view_pos.len();
                 view_pos[i].pos += 1;
-                view_pos[i].borrow_mut().view.deref().borrow_mut().next(&mut rng);
+                view_pos[i]
+                    .borrow_mut()
+                    .view
+                    .deref()
+                    .borrow_mut()
+                    .next(&mut rng);
                 if view_pos[i].borrow().pos >= driver.src.deref().borrow().buf.len() - threshold {
                     view_pos.remove(i);
                 }
             }
-            assert!((threshold > 0 && driver.src.deref().borrow().buf.len() < initial_buf_len) ||
-                    (threshold == 0 && driver.src.deref().borrow().buf.len() == initial_buf_len));
+            assert!(
+                (threshold > 0 && driver.src.deref().borrow().buf.len() < initial_buf_len)
+                    || (threshold == 0 && driver.src.deref().borrow().buf.len() == initial_buf_len)
+            );
         }
     }
 }

@@ -63,13 +63,16 @@ impl RandFaker {
         format!("_{}", uuid::Uuid::new_v4().to_simple().to_string())
     }
 
-    fn generate<'p, R>(&self, python: Python<'p>) -> PyResult<R>
+    fn generate<'p, R>(&self, python: Python<'p>, seed: u64) -> PyResult<R>
     where
         R: FromPyObject<'p>,
     {
         let faker_instance = python
             .import("__main__")
             .and_then(|main| main.getattr(&self.faker_instance_name))?;
+        // Try seeding here
+        let faker_class = python.import("faker")?.get("Faker")?;
+        faker_class.call_method("seed", (seed.to_object(python),), None)?;
         faker_instance
             .call_method(
                 &self.generator,
@@ -102,15 +105,15 @@ impl Generator for RandFaker {
 
     type Return = Result<Never, Error>;
 
-    fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         let gil = Python::acquire_gil();
-        match self.generate::<String>(gil.python()) {
-	    Ok(output) => GeneratorState::Yielded(output),
-	    Err(err) => GeneratorState::Complete(Err(failed_crate!(
-		target: Release,
-		"a call to faker failed: {}",
-		err
-	    )))
-	}
+        match self.generate::<String>(gil.python(), rng.next_u64()) {
+            Ok(output) => GeneratorState::Yielded(output),
+            Err(err) => GeneratorState::Complete(Err(failed_crate!(
+                target: Release,
+                "a call to faker failed: {}",
+                err
+            ))),
+        }
     }
 }

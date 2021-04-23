@@ -1,10 +1,11 @@
 use super::prelude::*;
+use std::collections::BTreeMap;
 use std::ops::Not;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ObjectContent {
     #[serde(flatten)]
-    pub fields: HashMap<String, FieldContent>,
+    pub fields: BTreeMap<String, FieldContent>,
 }
 
 impl ObjectContent {
@@ -93,7 +94,7 @@ impl FieldContent {
 impl Default for ObjectContent {
     fn default() -> Self {
         Self {
-            fields: HashMap::new(),
+            fields: BTreeMap::new(),
         }
     }
 }
