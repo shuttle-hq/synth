@@ -6,6 +6,7 @@ authors = [
   "Christos Hadjiaslanis <christos@getsynth.com>"
 ]
 edition = "2018"
+license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,7 +20,7 @@ shared = [ ]
 
 [dependencies]
 serde = { version = "1.0", features = [ "derive" ] }
-rand = "0.7.3"
+rand = "0.8.3"
 
 fake = { version = "2.2.3", optional = true }
 

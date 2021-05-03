@@ -2247,11 +2247,11 @@ dependencies = [
 
 [[package]]
 name = "rand_regex"
-version = "0.14.2"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "298da99bfdb1ec93dccb8b7b5196c9d7beea625fa293761f2df416015bea2da3"
+checksum = "8b2a9fe2d7d9eeaf3279d1780452a5bbd26b31b27938787ef1c3e930d1e9cfbd"
 dependencies = [
- "rand 0.7.3",
+ "rand 0.8.3",
  "regex-syntax",
 ]
 
@@ -2755,7 +2755,7 @@ dependencies = [
  "postgres",
  "pyo3",
  "quote",
- "rand 0.7.3",
+ "rand 0.8.3",
  "regex",
  "reqwest",
  "rust_decimal",
@@ -2788,7 +2788,7 @@ dependencies = [
  "num",
  "num_cpus",
  "pyo3",
- "rand 0.7.3",
+ "rand 0.8.3",
  "rand_regex",
  "rayon",
  "regex",
@@ -2808,7 +2808,7 @@ version = "0.4.0"
 dependencies = [
  "anyhow",
  "fake",
- "rand 0.7.3",
+ "rand 0.8.3",
  "serde",
  "serde_json",
 ]

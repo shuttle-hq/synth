@@ -71,7 +71,7 @@ impl<T: CategoricalType> From<CategoricalShadow<T>> for Categorical<T> {
 
 impl<T: CategoricalType> Distribution<T> for Categorical<T> {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> T {
-        let f = rng.gen_range(0.0, 1.0);
+        let f = rng.gen_range(0.0..1.0);
         let mut index = (f * self.total as f64).floor() as i64;
         for (k, v) in self.seen.iter() {
             index -= *v as i64;

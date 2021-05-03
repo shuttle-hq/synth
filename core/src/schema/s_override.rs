@@ -28,7 +28,7 @@ impl<'t> OverrideStrategy for DefaultOverrideStrategy<'t> {
 
         debug!(
             "merged value={}",
-            serde_json::to_string(&serialized).unwrap_or("{unknown}".to_string())
+            serde_json::to_string(&serialized).unwrap_or_else(|_| "{unknown}".to_string())
         );
 
         *content = serde_json::from_value(serialized)?;
@@ -39,7 +39,7 @@ impl<'t> OverrideStrategy for DefaultOverrideStrategy<'t> {
         let parent = self
             .at
             .parent()
-            .ok_or(failed!(target: Release, "attempted to delete a collection"))?;
+            .ok_or_else(|| failed!(target: Release, "attempted to delete a collection"))?;
         // SAFETY: `last` panics only if `fields` not empty, but guaranteed here
         let child = self.at.last();
         let parent_node = ns.get_s_node_mut(&parent)?;
@@ -60,7 +60,7 @@ impl<'t> OverrideStrategy for DefaultOverrideStrategy<'t> {
 	    Content::Object(ObjectContent { fields }) => {
 		fields
 		    .remove(&child)
-		    .ok_or(failed!(target: Release, "field '{}' not a member of '{}'", child, parent))?;
+		    .ok_or_else(|| failed!(target: Release, "field '{}' not a member of '{}'", child, parent))?;
 		Ok(())
 	    },
 	    otherwise => Err(failed!(target: Release, "the element referred to by a delete operation needs to be contained inside a 'one_of' or an 'object'; instead we have a '{}'", otherwise))

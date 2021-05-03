@@ -17,8 +17,8 @@ fn git_data(repo_src: PathBuf) -> Result<(String, String), Box<dyn std::error::E
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let repo_src = PathBuf::from(&env::var("SYNTH_SRC").unwrap_or("./.".to_string()));
-    let (oid, shortname) = git_data(repo_src).unwrap_or(("unknown".to_string(), "unknown".to_string()));
+    let repo_src = PathBuf::from(&env::var("SYNTH_SRC").unwrap_or_else(|_| "./.".to_string()));
+    let (oid, shortname) = git_data(repo_src).unwrap_or_else(|_| ("unknown".to_string(), "unknown".to_string()));
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let mut f = File::create(format!("{}/meta.rs", env::var("OUT_DIR").unwrap()))?;
@@ -26,10 +26,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &mut f,
         "{}",
         quote! {
-        const META_OID: &'static str = #oid;
-        const META_SHORTNAME: &'static str = #shortname;
-        const META_OS: &'static str = #os;
-        const META_ARCH: &'static str = #arch;
+        const META_OID: &str = #oid;
+        const META_SHORTNAME: &str = #shortname;
+        const META_OS: &str = #os;
+        const META_ARCH: &str = #arch;
         }
     )?;
     Ok(())

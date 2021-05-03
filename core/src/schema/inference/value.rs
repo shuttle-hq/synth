@@ -51,7 +51,7 @@ impl Squashables {
         }
     }
 
-    fn to_object(self) -> Result<Object> {
+    fn into_object(self) -> Result<Object> {
         let mut has_optional = None;
         let content = match self {
             Self::Content(content) => content,
@@ -99,7 +99,7 @@ impl MergeStrategy<Object, Object> for ValueMergeStrategy {
                         left.kind(),
                         right.kind()
                     );
-                    let mut candidate = right.to_object()?;
+                    let mut candidate = right.into_object()?;
                     if master.contains_key("optional") && !candidate.contains_key("optional") {
                         candidate.insert(
                             "optional".to_string(),
