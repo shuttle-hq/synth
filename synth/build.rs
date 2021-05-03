@@ -5,9 +5,6 @@ use std::path::PathBuf;
 
 use git2::Repository;
 
-#[macro_use]
-extern crate quote;
-
 fn git_data(repo_src: PathBuf) -> Result<(String, String), Box<dyn std::error::Error>> {
     let repo = Repository::open(repo_src)?;
     let head = repo.head()?;
@@ -24,13 +21,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut f = File::create(format!("{}/meta.rs", env::var("OUT_DIR").unwrap()))?;
     write!(
         &mut f,
-        "{}",
-        quote! {
-        const META_OID: &str = #oid;
-        const META_SHORTNAME: &str = #shortname;
-        const META_OS: &str = #os;
-        const META_ARCH: &str = #arch;
-        }
+        r#"const META_OID: &str = "{}";
+        const META_SHORTNAME: &str = "{}";
+        const META_OS: &str = "{}";
+        const META_ARCH: &str = "{}";"#,
+        oid,
+        shortname,
+        os,
+        arch,
     )?;
     Ok(())
 }

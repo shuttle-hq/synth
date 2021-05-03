@@ -2754,7 +2754,6 @@ dependencies = [
  "num_cpus",
  "postgres",
  "pyo3",
- "quote",
  "rand 0.8.3",
  "regex",
  "reqwest",
