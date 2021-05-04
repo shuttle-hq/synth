@@ -82,8 +82,8 @@ impl Error {
         }
 
         if let Some(error) = error.downcast_ref::<serde_json::Error>() {
-            let crate_error: Error = error.clone().into();
-            return crate_error.clone();
+            let crate_error: Error = error.into();
+            return crate_error;
         }
 
         Error::unspecified(error.to_string())
@@ -161,18 +161,18 @@ generate_error_variants!(
     }
 );
 
-impl Into<tide::StatusCode> for ErrorKind {
-    fn into(self) -> tide::StatusCode {
-        match self {
-            Self::NotFound => tide::StatusCode::NotFound,
-            Self::BadRequest => tide::StatusCode::BadRequest,
-            Self::Serialization | Self::Compilation | Self::Unspecified => {
-                tide::StatusCode::InternalServerError
+impl From<ErrorKind> for tide::StatusCode {
+    fn from(kind: ErrorKind) -> Self {
+        match kind {
+            ErrorKind::NotFound => Self::NotFound,
+            ErrorKind::BadRequest => Self::BadRequest,
+            ErrorKind::Serialization | ErrorKind::Compilation | ErrorKind::Unspecified => {
+                Self::InternalServerError
             }
-            Self::Inference => tide::StatusCode::BadRequest,
-            Self::Override => tide::StatusCode::BadRequest,
-            Self::Optionalise => tide::StatusCode::BadRequest,
-            Self::Conflict => tide::StatusCode::Conflict,
+            ErrorKind::Inference => Self::BadRequest,
+            ErrorKind::Override => Self::BadRequest,
+            ErrorKind::Optionalise => Self::BadRequest,
+            ErrorKind::Conflict => Self::Conflict,
         }
     }
 }

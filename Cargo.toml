@@ -4,3 +4,6 @@ members = [
   "core",
   "synth",
 ]
+
+# blocked by diesel error for now.
+#resolver = "2"

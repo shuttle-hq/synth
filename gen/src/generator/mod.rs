@@ -773,7 +773,7 @@ where
             if self.inners.is_empty() {
                 GeneratorState::Complete(None)
             } else {
-                let idx = rng.gen_range(0, self.inners.len());
+                let idx = rng.gen_range(0..self.inners.len());
                 self.cursor = Some((idx, Box::new(self.inners.remove(idx))));
                 self.next(rng)
             }

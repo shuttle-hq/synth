@@ -57,7 +57,7 @@ impl ValueKindExt for Value {
     }
 }
 
-const NAME_RE: &'static str = "[A-Za-z_0-9]+";
+const NAME_RE: &str = "[A-Za-z_0-9]+";
 
 #[allow(dead_code)]
 pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<bool, D::Error> {

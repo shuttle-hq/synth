@@ -28,14 +28,14 @@ impl<N: PartialOrd + Zero + Display> TryFrom<RangeStep<N>> for UniformRangeStep<
 
 impl<N> Distribution<N> for UniformRangeStep<N>
 where
-    N: Zero + Add<Output = N> + Sub<Output = N> + Rem<Output = N> + SampleUniform + Copy,
+    N: Zero + Add<Output = N> + Sub<Output = N> + Rem<Output = N> + SampleUniform + Copy + PartialOrd,
 {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> N {
         let low = self.0.low;
         let high = self.0.high;
         let step = self.0.step;
 
-        let temp: N = rng.gen_range(N::zero(), high - low);
+        let temp: N = rng.gen_range(N::zero()..(high - low));
         low + temp - (temp % step)
     }
 }

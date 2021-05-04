@@ -80,7 +80,7 @@ impl MergeStrategy<BoolContent, bool> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut BoolContent, value: &bool) -> Result<()> {
         match master {
             BoolContent::Categorical(boolean_categorical) => {
-                boolean_categorical.push(value.clone());
+                boolean_categorical.push(*value);
                 Ok(())
             }
             BoolContent::Constant(val) => {
@@ -178,7 +178,7 @@ impl MergeStrategy<DateTimeContent, String> for OptionalMergeStrategy {
 
         if let Some(end) = master.end.as_mut() {
             if *end < candidate {
-                *end = candidate.clone();
+                *end = candidate;
             }
         } else {
             master.end = Some(candidate);
