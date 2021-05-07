@@ -45,3 +45,23 @@ Values of objects can be made *optional* by specifying the `"optional": true` at
   }
 }
 ```
+
+If a field should have the name `"type"`, this would clash with the predefined object attribute of the same name.
+This can be worked around by changing the name to `"type_"`. The additional underscore will be removed in the
+generated values.
+
+#### Example
+
+```json synth
+{
+  "type": "object",
+  "type_": {
+    "type": "string",
+    "categorical": {
+      "user": 90,
+      "contributor": 8,
+      "admin": 2
+    }
+  }
+}
+```

@@ -371,75 +371,80 @@ pub mod tests {
             "type": "object",
             "user_id": {
                 "type": "number",
-        "subtype": "u64",
-        "range": {
-            "low": 0,
-            "high": 1_000_000,
-            "step": 1
-        }
+                "subtype": "u64",
+                "range": {
+                    "low": 0,
+                    "high": 1_000_000,
+                    "step": 1
+                }
+            },
+            "type_": { // checks the underscore hack
+                "type": "string",
+                "pattern": "user|contributor|maintainer"
             },
             "first_name": {
-        "type": "string",
-        "faker": {
-            "generator": "first_name"
-        }
+                "type": "string",
+                "faker": {
+                    "generator": "first_name"
+                }
             },
             "last_name": {
-        "type": "string",
-        "faker": {
-            "generator": "last_name"
-        }
+                "type": "string",
+                "faker": {
+                    "generator": "last_name"
+                }
             },
             "address": {
-        "type": "object",
-        "postcode": {
-            "type": "string",
-            "pattern": "[A-Z]{1}[a-z]{3,6}"
-        },
-        "country": {
-            "optional": true,
-            "type": "string",
-            "faker": {
-            "generator": "country_code",
-            "representation": "alpha-2"
-            }
-        },
-        "numbers": {
-            "type": "number",
-            "subtype": "u64",
-            "range": {
-            "low": 0,
-            "high": 1_000_000,
-            "step": 1
-            }
-        }
+                "type": "object",
+                "postcode": {
+                    "type": "string",
+                    "pattern": "[A-Z]{1}[a-z]{3,6}"
+                },
+                "country": {
+                    "optional": true,
+                    "type": "string",
+                    "faker": {
+                        "generator": "country_code",
+                        "representation": "alpha-2"
+                    }
+                },
+                "numbers": {
+                    "type": "number",
+                    "subtype": "u64",
+                    "range": {
+                        "low": 0,
+                        "high": 1_000_000,
+                        "step": 1
+                    }
+                }
             },
             "friends": {
-        "type": "array",
-        "length": {
-            "type": "number",
-            "subtype": "u64",
-            "constant": 100
-        },
-        "content": {
-            "type": "one_of",
-            "variants": [ {
-            "type": "string",
-            "pattern": "[A-Z]{1}[a-z]{3,6}"
-            }, {
-            "type": "number",
-            "subtype": "f64",
-            "range": {
+                "type": "array",
+                "length": {
+                    "type": "number",
+                    "subtype": "u64",
+                    "constant": 100
+                },
+                "content": {
+                    "type": "one_of",
+                    "variants": [ {
+                        "type": "string",
+                        "pattern": "[A-Z]{1}[a-z]{3,6}"
+                    }, {
+                        "type": "number",
+                        "subtype": "f64",
+                        "range": {
                             "low": -75.2,
                             "high": -11,
                             "step": 0.1
-            }
-            } ]
-        }
+                        }
+                    } ]
+                }
             }
         });
         static ref USER: serde_json::Value = json!({
             "user_id" : 123,
+            "type": "user",
             "first_name" : "John",
             "last_name": "Smith",
             "address" : {
@@ -452,6 +457,7 @@ pub mod tests {
 
     #[test]
     fn user_schema_accepts() {
+        println!("{:#?}", *USER_SCHEMA);
         USER_SCHEMA.accepts(&USER).unwrap()
     }
 
@@ -459,6 +465,7 @@ pub mod tests {
     fn user_schema_declined_extra_field() {
         let user = json!({
             "user_id" : 123,
+            "type" : "contributor",
             "first_name" : "John",
             "last_name": "Smith",
             "address" : {
@@ -476,6 +483,7 @@ pub mod tests {
     fn user_schema_declined_missing_field() {
         let user = json!({
             "user_id" : 123,
+            "type" : "maintainer",
             "first_name" : "John",
             "last_name": "Smith",
             "address" : {
@@ -492,6 +500,7 @@ pub mod tests {
     fn user_schema_declined_bad_array() {
         let user = json!({
             "user_id" : 123,
+            "type" : "user",
             "first_name" : "John",
             "last_name": "Smith",
             "address" : {

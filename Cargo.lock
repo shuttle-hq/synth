@@ -2736,7 +2736,7 @@ dependencies = [
 
 [[package]]
 name = "synth"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "anyhow",
  "async-std",
@@ -2773,7 +2773,7 @@ dependencies = [
 
 [[package]]
 name = "synth-core"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "anyhow",
  "bimap",

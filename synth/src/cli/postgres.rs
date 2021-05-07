@@ -1,8 +1,8 @@
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
-use postgres::{Client, Row};
+use postgres::{Client, Column, Row};
 use rust_decimal::prelude::ToPrimitive;
 use serde_json::{Map, Number, Value};
 use std::convert::TryFrom;
@@ -240,7 +240,7 @@ impl ImportStrategy for PostgresImportStrategy {
                 .expect("Failed to retrieve data");
             println!(" {} rows done.", data.len());
 
-            let values: Values = Values::try_from(data)?;
+            let values: Values = Values::try_from(data).context(format!("at table {}", table))?;
 
             namespace.try_update(
                 OptionalMergeStrategy,
@@ -313,49 +313,55 @@ impl TryFrom<Vec<Row>> for Values {
                     .columns()
                     .get(i)
                     .expect("Cannot go out of range here since iterator is bound by length");
-                let value = match column.type_().name() {
-                    "bool" => Value::Bool(row.get(i)),
-                    "oid" => {
-                        unimplemented!()
-                    }
-                    "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
-                        Value::String(row.get(i))
-                    }
-                    "int2" => Value::Number(Number::from(row.get::<_, i16>(i))),
-                    "int4" => Value::Number(Number::from(row.get::<_, i32>(i))),
-                    "int8" => Value::Number(Number::from(row.get::<_, i64>(i))),
-                    "float4" => Value::Number(
-                        Number::from_f64(row.get(i))
-                            .expect("Cloud not convert to f64. Value was NaN."),
-                    ),
-                    "float8" => Value::Number(
-                        Number::from_f64(row.get(i))
-                            .expect("Cloud not convert to f64. Value was NaN."),
-                    ),
-                    "numeric" => {
-                        let as_decimal: rust_decimal::Decimal = row.get(i);
-                        Value::Number(
-                            Number::from_f64(
-                                as_decimal
-                                    .to_f64()
-                                    .expect("Could not convert decimal to f64 for reasons todo"),
-                            )
-                            .expect("Cloud not convert to f64. Value was NaN."),
-                        )
-                    }
-                    "timestampz" => Value::String(row.get(i)),
-                    "timestamp" => Value::String(row.get(i)),
-                    "date" => Value::String(format!("{}", row.get::<_, chrono::NaiveDate>(i))),
-                    _ => {
-                        unimplemented!("We haven't implemented a converter for {}", column.name())
-                    }
-                };
+                let value = try_match_value(&row, i, column).unwrap_or(Value::Null);
                 obj_content.insert(column.name().to_string(), value);
             }
             values.push(Value::Object(obj_content));
         }
         Ok(Values(values))
     }
+}
+
+fn try_match_value(row: &Row, i: usize, column: &Column) -> Result<Value> {
+    let value = match column.type_().name() {
+        "bool" => Value::Bool(row.try_get(i)?),
+        "oid" => {
+            unimplemented!()
+        }
+        "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
+            Value::String(row.try_get(i)?)
+        }
+        "int2" => Value::Number(Number::from(row.try_get::<_, i16>(i)?)),
+        "int4" => Value::Number(Number::from(row.try_get::<_, i32>(i)?)),
+        "int8" => Value::Number(Number::from(row.try_get::<_, i64>(i)?)),
+        "float4" => Value::Number(
+            Number::from_f64(row.try_get(i)?).expect("Cloud not convert to f64. Value was NaN."),
+        ),
+        "float8" => Value::Number(
+            Number::from_f64(row.try_get(i)?).expect("Cloud not convert to f64. Value was NaN."),
+        ),
+        "numeric" => {
+            let as_decimal: rust_decimal::Decimal = row.try_get(i)?;
+            Value::Number(
+                Number::from_f64(
+                    as_decimal
+                        .to_f64()
+                        .expect("Could not convert decimal to f64 for reasons todo"),
+                )
+                .expect("Cloud not convert to f64. Value was NaN."),
+            )
+        }
+        "timestampz" => Value::String(row.try_get(i)?),
+        "timestamp" => Value::String(row.try_get(i)?),
+        "date" => Value::String(format!("{}", row.try_get::<_, chrono::NaiveDate>(i)?)),
+        _ => {
+            return Err(anyhow!(
+                "Could not convert value. Converter not implemented for {}",
+                column.type_().name()
+            ));
+        }
+    };
+    Ok(value)
 }
 
 impl TryFrom<postgres::Row> for ForeignKey {

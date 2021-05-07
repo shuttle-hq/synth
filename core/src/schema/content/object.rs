@@ -1,11 +1,66 @@
 use super::prelude::*;
+use std::borrow::Cow;
 use std::collections::BTreeMap;
+use std::fmt;
 use std::ops::Not;
+use serde::{ser::{Serialize, Serializer, SerializeMap}, de::{Deserialize, Deserializer, MapAccess}};
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ObjectContent {
-    #[serde(flatten)]
     pub fields: BTreeMap<String, FieldContent>,
+}
+
+fn add_type_underscore(key: &str) -> Cow<str> {
+    if key.starts_with("type") && key[4..].bytes().all(|b| b == b'_') {
+        Cow::Owned(key.to_string() + "_")
+    } else {
+        Cow::Borrowed(key)
+    }
+}
+
+fn remove_type_underscore(mut key: String) -> String {
+    if key.starts_with("type_") && key[5..].bytes().all(|b| b == b'_') {
+        key.truncate(key.len() - 1);
+    }
+    key
+}
+
+impl Serialize for ObjectContent {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut map = serializer.serialize_map(Some(self.fields.len()))?;
+        for (k, v) in &self.fields {
+            map.serialize_entry(&add_type_underscore(k), v)?;
+        }
+        map.end()
+    }
+}
+
+struct ObjectContentVisitor;
+
+impl<'de> Visitor<'de> for ObjectContentVisitor {
+    type Value = ObjectContent;
+    
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "an object's contents")
+    }
+
+    fn visit_map<M: MapAccess<'de>>(self, mut access: M) -> Result<Self::Value, M::Error> {
+        let mut fields = BTreeMap::new();
+        while let Some((key, value)) = access.next_entry()? {
+            let key: String = key;
+            if fields.contains_key(&key) {
+                return Err(serde::de::Error::custom(format!("duplicate field: {}", &key)));
+            }
+            fields.insert(remove_type_underscore(key), value);
+        }
+        Ok(ObjectContent { fields })
+    }
+}
+
+impl<'de> Deserialize<'de> for ObjectContent {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_map(ObjectContentVisitor)
+    }
 }
 
 impl ObjectContent {
