@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[42],{112:function(n){n.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"beginners-guide","name":"beginners guide","count":2,"permalink":"/synth/blog/tags/beginners-guide"}')}}]);
