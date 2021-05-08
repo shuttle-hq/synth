@@ -3,6 +3,7 @@ mod import;
 mod postgres;
 mod stdf;
 mod store;
+mod telemetry;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
@@ -11,32 +12,44 @@ use crate::cli::import::SomeImportStrategy;
 use crate::cli::store::Store;
 use anyhow::{Context, Result};
 
-use std::convert::TryFrom;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
+use crate::cli::telemetry::TelemetryClient;
 use rand::RngCore;
 use synth_core::Name;
-
-impl TryFrom<CliArgs> for Cli {
-    type Error = anyhow::Error;
-    fn try_from(args: CliArgs) -> Result<Self> {
-        Cli::new(args)
-    }
-}
 
 pub(crate) struct Cli {
     store: Store,
     args: CliArgs,
+    telemetry: TelemetryClient,
+}
+
+fn with_telemetry<F: FnOnce() -> Result<T>, T>(
+    command: &str,
+    tel_client: &TelemetryClient,
+    func: F,
+) -> Result<T> {
+    match func() {
+        Ok(t) => {
+            let _ = tel_client.success(command);
+            Ok(t)
+        }
+        Err(e) => {
+            let _ = tel_client.failed(command);
+            Err(e)
+        }
+    }
 }
 
 impl Cli {
     /// this is going to get confusing with `init` command
-    pub(crate) fn new(args: CliArgs) -> Result<Self> {
+    pub(crate) fn new(args: CliArgs, version: String, os: String) -> Result<Self> {
         Ok(Self {
             store: Store::init()?,
             args,
+            telemetry: TelemetryClient::new(version, os),
         })
     }
 
@@ -61,19 +74,45 @@ impl Cli {
                 ref to,
                 seed,
                 random,
-            } => self.generate(
-                namespace.clone(),
-                collection.clone(),
-                size,
-                to.clone(),
-                Self::derive_seed(random, seed)?,
-            ),
+            } => with_telemetry("generate", &self.telemetry, || {
+                self.generate(
+                    namespace.clone(),
+                    collection.clone(),
+                    size,
+                    to.clone(),
+                    Self::derive_seed(random, seed)?,
+                )
+            }),
             CliArgs::Import {
                 ref namespace,
                 ref collection,
                 ref from,
-            } => self.import(namespace.clone(), collection.clone(), from.clone()),
-            CliArgs::Init {} => self.init(),
+            } => with_telemetry("import", &self.telemetry, || {
+                self.import(namespace.clone(), collection.clone(), from.clone())
+            }),
+            CliArgs::Init {} => with_telemetry("init", &self.telemetry, || self.init()),
+            CliArgs::Telemetry(telemetry) => {
+                match telemetry {
+                    TelemetryCommand::Enable => {
+                        with_telemetry("telemetry::enable", &self.telemetry, || telemetry::enable())
+                    }
+                    TelemetryCommand::Disable => {
+                        with_telemetry("telemetry::disable", &self.telemetry, || {
+                            telemetry::disable()
+                        })
+                    }
+                    TelemetryCommand::Status => {
+                        if telemetry::is_enabled() {
+                            println!("Telemetry is enabled. To disable it run `synth telemetry disable`.");
+                        } else {
+                            println!(
+                                "Telemetry is disabled. To enable it run `synth telemetry enable`."
+                            );
+                        }
+                        Ok(())
+                    }
+                }
+            }
         }
     }
 
@@ -228,6 +267,7 @@ pub(crate) enum CliArgs {
         )]
         random: bool,
     },
+    #[structopt(about = "Import data from an external source")]
     Import {
         #[structopt(
             help = "The namespace directory into which to import",
@@ -245,6 +285,18 @@ pub(crate) enum CliArgs {
         )]
         from: Option<SomeImportStrategy>,
     },
+    #[structopt(about = "Toggle anonymous usage data collection")]
+    Telemetry(TelemetryCommand),
+}
+
+#[derive(StructOpt)]
+pub(crate) enum TelemetryCommand {
+    #[structopt(about = "Enable anonymous usage data collection")]
+    Enable,
+    #[structopt(about = "Disable anonymous usage data collection")]
+    Disable,
+    #[structopt(about = "Check telemetry status")]
+    Status,
 }
 
 #[cfg(test)]

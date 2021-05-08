@@ -63,7 +63,6 @@ mod rlog;
 pub mod index;
 use crate::cli::{Cli, CliArgs};
 pub use index::Index;
-use std::convert::TryFrom;
 
 mod sampler;
 pub mod store;
@@ -93,6 +92,10 @@ impl FromStr for DataDirectoryPath {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         PathBuf::from_str(s).map(|pb| Self(pb))
     }
+}
+
+fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 #[derive(StructOpt)]
@@ -143,7 +146,7 @@ impl Splash {
 
         let path = std::env::var("PATH").unwrap_or("unknown".to_string());
 
-        let synth_ver = env!("CARGO_PKG_VERSION").to_string();
+        let synth_ver = version();
 
         let synth_ref = META_SHORTNAME.to_string();
         let synth_rev = META_OID.to_string();
@@ -210,7 +213,11 @@ async fn main() -> Result<()> {
 
     match args {
         Args::Serve(sa) => serve_daemon(sa).await,
-        Args::Cli(cli_args) => Cli::try_from(cli_args)?.run().await,
+        Args::Cli(cli_args) => {
+            Cli::new(cli_args, version(), META_OS.to_string())?
+                .run()
+                .await
+        }
     }
 }
 
