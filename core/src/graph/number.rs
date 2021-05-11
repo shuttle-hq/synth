@@ -28,7 +28,13 @@ impl<N: PartialOrd + Zero + Display> TryFrom<RangeStep<N>> for UniformRangeStep<
 
 impl<N> Distribution<N> for UniformRangeStep<N>
 where
-    N: Zero + Add<Output = N> + Sub<Output = N> + Rem<Output = N> + SampleUniform + Copy + PartialOrd,
+    N: Zero
+        + Add<Output = N>
+        + Sub<Output = N>
+        + Rem<Output = N>
+        + SampleUniform
+        + Copy
+        + PartialOrd,
 {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> N {
         let low = self.0.low;

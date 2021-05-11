@@ -185,7 +185,7 @@ where
             "view next for marker={} range={} at pos={}",
             marker_id,
             range_id,
-            next_idx.map(|idx| idx.to_string()).unwrap_or("unknown".to_string())
+            next_idx.map(|idx| idx.to_string()).unwrap_or_else(|| "unknown".to_string())
         );
         Some(next_idx.map(|idx| self.buf.get(idx).unwrap().clone()))
     }
@@ -229,16 +229,11 @@ where
     fn garbage_collect(&mut self) {
         let threshold = self.gc_threshold;
         let mut triggered = false;
-        self.markers.right_values().next().map(|unique_marker| {
-            unique_marker
-                .marker
-                .ranges
-                .right_values()
-                .next()
-                .map(|unique_range| {
-                    triggered = unique_range.range.start > threshold;
-                });
-        });
+        if let Some(unique_marker) = self.markers.right_values().next() {
+            if let Some(unique_range) = unique_marker.marker.ranges.right_values().next() {
+                triggered = unique_range.range.start > threshold;
+            }
+        }
         if triggered {
             let mut updated_markers = BiBTreeMap::new();
             self.markers.right_values().for_each(|unique_marker| {
@@ -261,7 +256,7 @@ where
                 if marker.right < threshold {
                     marker.flush_to(0);
                 } else {
-                    marker.right = marker.right - threshold;
+                    marker.right -= threshold;
                     assert!(marker.left <= marker.right);
                 }
                 marker.ranges = updated_ranges;

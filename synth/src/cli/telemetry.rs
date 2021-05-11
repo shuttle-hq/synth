@@ -25,7 +25,7 @@ struct TelemetryConfig {
 
 impl TelemetryConfig {
     pub fn initialise() -> Self {
-        Self::from_file().unwrap_or(Self::new())
+        Self::from_file().unwrap_or_else(|_| Self::new())
     }
 
     fn new() -> Self {
@@ -41,9 +41,11 @@ impl TelemetryConfig {
     }
 
     fn synth_config_dir() -> Result<PathBuf> {
-        let synth_config_dir = dirs::config_dir().ok_or(anyhow!(
+        let synth_config_dir = dirs::config_dir().ok_or_else(|| {
+            anyhow!(
             "Could not find a configuration directory. Your operating system may not be supported."
-        ))?;
+        )
+        })?;
         Ok(synth_config_dir.join("synth/"))
     }
 

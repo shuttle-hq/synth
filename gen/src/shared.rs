@@ -77,7 +77,11 @@ where
         new_id
     }
 
-    fn next_for<R: Rng>(&mut self, id: DependentId, rng: &mut R) -> GeneratorState<G::Yield, G::Return> {
+    fn next_for<R: Rng>(
+        &mut self,
+        id: DependentId,
+        rng: &mut R,
+    ) -> GeneratorState<G::Yield, G::Return> {
         self.routes
             .get_mut(&id)
             .unwrap()
@@ -135,7 +139,11 @@ where
         self.0.borrow_mut().register_from(id)
     }
 
-    fn next_for<R: Rng>(&self, id: DependentId, rng: &mut R) -> GeneratorState<G::Yield, G::Return> {
+    fn next_for<R: Rng>(
+        &self,
+        id: DependentId,
+        rng: &mut R,
+    ) -> GeneratorState<G::Yield, G::Return> {
         self.0.borrow_mut().next_for(id, rng)
     }
 }
@@ -207,8 +215,8 @@ where
 pub mod tests {
     use super::*;
 
+    use crate::generator::{Once, Random};
     use crate::GeneratorExt;
-    use crate::generator::{Random, Once};
 
     #[test]
     fn shared() {

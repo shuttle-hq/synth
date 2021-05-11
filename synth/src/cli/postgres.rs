@@ -58,7 +58,7 @@ impl PostgresExportStrategy {
     fn insert_data(
         &self,
         collection_name: String,
-        collection: &Vec<Value>,
+        collection: &[Value],
         client: &mut Client,
     ) -> Result<()> {
         // how to to ordering here?
@@ -73,7 +73,7 @@ impl PostgresExportStrategy {
             .as_object()
             .expect("This is always an object (sampler contract)")
             .keys()
-            .map(|s| s.clone())
+            .cloned()
             .collect::<Vec<String>>()
             .join(",");
 
@@ -91,7 +91,7 @@ impl PostgresExportStrategy {
                 let values = row_obj
                     .values()
                     .map(|v| v.to_string().replace("'", "''")) // two single quotes are the standard way to escape double quotes
-                    .map(|v| v.to_string().replace("\"", "'")) // values in the object have quotes around them by default.
+                    .map(|v| v.replace("\"", "'")) // values in the object have quotes around them by default.
                     .collect::<Vec<String>>()
                     .join(",");
 
@@ -124,9 +124,11 @@ impl ImportStrategy for PostgresImportStrategy {
         let mut client =
             Client::connect(&self.uri, postgres::tls::NoTls).expect("Failed to connect");
 
-        let catalog = self.uri.split("/").last().ok_or(anyhow!(
-            "Cannot import data. No catalog specified in the uri"
-        ))?;
+        let catalog = self
+            .uri
+            .split('/')
+            .last()
+            .ok_or_else(|| anyhow!("Cannot import data. No catalog specified in the uri"))?;
 
         let query ="SELECT table_name FROM information_schema.tables where table_catalog = $1 and table_schema = 'public' and table_type = 'BASE TABLE'";
 
@@ -150,9 +152,9 @@ impl ImportStrategy for PostgresImportStrategy {
 
             let column_info: Vec<ColumnInfo> = client
                 .query(col_info_query, &[&table_name, &catalog])
-                .expect(&format!("Failed to get columns for {}", table_name))
+                .unwrap_or_else(|_| panic!("Failed to get columns for {}", table_name))
                 .into_iter()
-                .map(|row| ColumnInfo::try_from(row))
+                .map(ColumnInfo::try_from)
                 .collect::<Result<Vec<ColumnInfo>>>()?;
 
             namespace.put_collection(
@@ -177,9 +179,9 @@ impl ImportStrategy for PostgresImportStrategy {
 
             let primary_keys = client
                 .query(pk_query, &[])
-                .expect(&format!("Failed to get primary keys for {}", table_name))
+                .unwrap_or_else(|_| panic!("Failed to get primary keys for {}", table_name))
                 .into_iter()
-                .map(|row| PrimaryKey::try_from(row))
+                .map(PrimaryKey::try_from)
                 .collect::<Result<Vec<PrimaryKey>>>()?;
 
             if primary_keys.len() > 1 {
@@ -198,8 +200,7 @@ impl ImportStrategy for PostgresImportStrategy {
 
         // Third pass - foreign keys
         println!("Building foreign keys...");
-        let fk_query: &str = &format!(
-            r"SELECT
+        let fk_query: &str = r"SELECT
                     tc.table_name, kcu.column_name,
                     ccu.table_name AS foreign_table_name,
                     ccu.column_name AS foreign_column_name
@@ -208,14 +209,13 @@ impl ImportStrategy for PostgresImportStrategy {
                         AS kcu ON tc.constraint_name = kcu.constraint_name
                     JOIN information_schema.constraint_column_usage 
                         AS ccu ON ccu.constraint_name = tc.constraint_name
-                WHERE constraint_type = 'FOREIGN KEY';",
-        );
+                WHERE constraint_type = 'FOREIGN KEY';";
 
         let foreign_keys = client
             .query(fk_query, &[])
             .expect("Failed to get foreign keys")
             .into_iter()
-            .map(|row| ForeignKey::try_from(row))
+            .map(ForeignKey::try_from)
             .collect::<Result<Vec<ForeignKey>>>()?;
 
         println!("{} foreign keys found.", foreign_keys.len());
@@ -253,10 +253,10 @@ impl ImportStrategy for PostgresImportStrategy {
     }
 
     fn import_collection(self, name: &Name) -> Result<Content> {
-        self.import()?.collections.remove(name).ok_or(anyhow!(
-            "Could not find table '{}' in Postgres database.",
-            name
-        ))
+        self.import()?
+            .collections
+            .remove(name)
+            .ok_or_else(|| anyhow!("Could not find table '{}' in Postgres database.", name))
     }
 
     fn into_value(self) -> Result<Value> {
@@ -395,7 +395,7 @@ impl TryFrom<postgres::Row> for ColumnInfo {
         Ok(ColumnInfo {
             column_name: row.try_get(0)?,
             ordinal_position: row.try_get(1)?,
-            is_nullable: row.try_get::<_, String>(2)? == "YES".to_string(),
+            is_nullable: row.try_get::<_, String>(2)? == *"YES",
             udt_name: row.try_get(3)?,
             character_maximum_length: row.try_get(4)?,
         })

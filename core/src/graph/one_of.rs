@@ -16,6 +16,6 @@ impl Generator for OneOfNode {
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         self.0
             .next(rng)
-            .map_complete(|m_n| m_n.unwrap_or_else(|| Ok(Value::Null(()))))
+            .map_complete(|m_n| m_n.unwrap_or(Ok(Value::Null(()))))
     }
 }

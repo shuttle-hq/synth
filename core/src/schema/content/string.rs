@@ -368,14 +368,14 @@ pub mod datetime_content {
             } else {
                 parsed
                     .to_datetime()
-                    .map(|dt| ChronoValue::DateTime(dt))
+                    .map(ChronoValue::DateTime)
                     .or_else(|err| {
                         debug!("a chrono content failed to parse as a datetime: {}", err);
                         parsed
                             .to_naive_date()
-                            .and_then(|date| match parsed.to_naive_time() {
-                                Ok(time) => Ok(ChronoValue::NaiveDateTime(date.and_time(time))),
-                                Err(_) => Ok(ChronoValue::NaiveDate(date)),
+                            .map(|date| match parsed.to_naive_time() {
+                                Ok(time) => ChronoValue::NaiveDateTime(date.and_time(time)),
+                                Err(_) => ChronoValue::NaiveDate(date),
                             })
                             .or_else(|err| {
                                 debug!(
@@ -451,18 +451,15 @@ pub mod datetime_content {
                 .transpose()?;
             let end = self.end.map(|end| fmt.parse(end.as_str())).transpose()?;
 
-            match (begin.as_ref(), end.as_ref()) {
-                (Some(begin), Some(end)) => {
-                    if begin > end {
-                        return Err(failed!(
-                            target: Release,
-                            "begin is after end: begin={}, end={}",
-                            fmt.format(&begin).unwrap(), // should be alright exactly at this point
-                            fmt.format(&end).unwrap()
-                        ));
-                    }
+            if let (Some(begin), Some(end)) = (begin.as_ref(), end.as_ref()) {
+                if begin > end {
+                    return Err(failed!(
+                        target: Release,
+                        "begin is after end: begin={}, end={}",
+                        fmt.format(&begin).unwrap(), // should be alright exactly at this point
+                        fmt.format(&end).unwrap()
+                    ));
                 }
-                _ => {}
             }
 
             let common_variant = begin
@@ -505,7 +502,7 @@ impl Serialize for DateTimeContent {
         S: serde::Serializer,
     {
         datetime_content::SerdeDateTimeContent::from_datetime_content(self)
-            .map_err(|err| S::Error::custom(err))
+            .map_err(S::Error::custom)
             .and_then(|content| content.serialize(serializer))
     }
 }
@@ -515,11 +512,8 @@ impl<'de> Deserialize<'de> for DateTimeContent {
     where
         D: serde::Deserializer<'de>,
     {
-        datetime_content::SerdeDateTimeContent::deserialize(deserializer).and_then(|inter| {
-            inter
-                .to_datetime_content()
-                .map_err(|err| D::Error::custom(err))
-        })
+        datetime_content::SerdeDateTimeContent::deserialize(deserializer)
+            .and_then(|inter| inter.to_datetime_content().map_err(D::Error::custom))
     }
 }
 
@@ -545,7 +539,7 @@ impl Compile for StringContent {
             }) => {
                 let begin = begin
                     .clone()
-                    .unwrap_or(ChronoValue::default_of(ChronoValue::origin(), *type_));
+                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::origin(), *type_));
                 let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
                 RandomDateTime::new(begin..end, &format).into()
             }

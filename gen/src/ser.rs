@@ -240,7 +240,7 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         for i in 0..10 {
             let mut gen = base_gen(i).aggregate();
-	    let next = gen.next(&mut rng).into_yielded().unwrap();
+            let next = gen.next(&mut rng).into_yielded().unwrap();
             let ser = OwnedSerializable::new(next);
             let as_str = serde_json::to_string_pretty(&ser).unwrap();
             let as_value: serde_json::Value = serde_json::from_str(&as_str).unwrap();

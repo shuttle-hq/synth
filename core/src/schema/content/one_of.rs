@@ -73,7 +73,7 @@ impl OneOfContent {
         }
     }
 
-    pub fn accepts(&self, arr: &Vec<Value>) -> Result<()> {
+    pub fn accepts(&self, arr: &[Value]) -> Result<()> {
         // try each value exhaustively against the allowed types in
         // the schema until there is a match
         for json_value in arr {
@@ -111,7 +111,7 @@ impl Find<Content> for OneOfContent {
     {
         let next_ = reference
             .next()
-            .ok_or(Error::bad_request("expected a field name, found nothing"))?;
+            .ok_or_else(|| Error::bad_request("expected a field name, found nothing"))?;
 
         let index: usize = next_.as_ref().parse().map_err(|_| {
             Error::bad_request(format!(
@@ -138,7 +138,7 @@ impl Find<Content> for OneOfContent {
     {
         let next_ = reference
             .next()
-            .ok_or(Error::bad_request("expected a field name, found nothing"))?;
+            .ok_or_else(|| Error::bad_request("expected a field name, found nothing"))?;
 
         let index: usize = next_.as_ref().parse().map_err(|_| {
             Error::bad_request(format!(

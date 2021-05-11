@@ -1,9 +1,12 @@
 use super::prelude::*;
+use serde::{
+    de::{Deserialize, Deserializer, MapAccess},
+    ser::{Serialize, SerializeMap, Serializer},
+};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::ops::Not;
-use serde::{ser::{Serialize, Serializer, SerializeMap}, de::{Deserialize, Deserializer, MapAccess}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectContent {
@@ -39,7 +42,7 @@ struct ObjectContentVisitor;
 
 impl<'de> Visitor<'de> for ObjectContentVisitor {
     type Value = ObjectContent;
-    
+
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "an object's contents")
     }
@@ -49,7 +52,10 @@ impl<'de> Visitor<'de> for ObjectContentVisitor {
         while let Some((key, value)) = access.next_entry()? {
             let key: String = key;
             if fields.contains_key(&key) {
-                return Err(serde::de::Error::custom(format!("duplicate field: {}", &key)));
+                return Err(serde::de::Error::custom(format!(
+                    "duplicate field: {}",
+                    &key
+                )));
             }
             fields.insert(remove_type_underscore(key), value);
         }
@@ -86,9 +92,9 @@ impl ObjectContent {
                     v.content.accepts(value)?;
                 }
             } else {
-                let json_value =
-                    obj.get(k)
-                        .ok_or(failed!(target: Release, "could not find field: '{}'", k))?;
+                let json_value = obj
+                    .get(k)
+                    .ok_or_else(|| failed!(target: Release, "could not find field: '{}'", k))?;
                 v.content
                     .accepts(json_value)
                     .context(anyhow!("in a field: '{}'", k))?;
@@ -160,10 +166,9 @@ impl Find<Content> for ObjectContent {
         I: Iterator<Item = R>,
         R: AsRef<str>,
     {
-        let next_ = reference.next().ok_or(failed!(
-            target: Release,
-            "expected a field name, found nothing"
-        ))?;
+        let next_ = reference
+            .next()
+            .ok_or_else(|| failed!(target: Release, "expected a field name, found nothing"))?;
         let next = next_.as_ref();
         self.get(next)?
             .content
@@ -176,10 +181,9 @@ impl Find<Content> for ObjectContent {
         I: Iterator<Item = R>,
         R: AsRef<str>,
     {
-        let next_ = reference.next().ok_or(failed!(
-            target: Release,
-            "expected a field name, found nothing"
-        ))?;
+        let next_ = reference
+            .next()
+            .ok_or_else(|| failed!(target: Release, "expected a field name, found nothing"))?;
         let next = next_.as_ref();
         self.get_mut(next)?
             .content

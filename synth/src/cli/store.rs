@@ -128,14 +128,13 @@ impl Store {
     fn get_collection(&self, dir_entry: &DirEntry) -> Result<(Name, Content)> {
         let entry_name = dir_entry.file_name();
         let file_name = entry_name.to_str().unwrap();
-        let collection_name = file_name.split(".").next().ok_or(failed!(
-            target: Debug,
-            "invalid filename {}",
-            file_name
-        ))?;
+        let collection_name = file_name
+            .split('.')
+            .next()
+            .ok_or_else(|| failed!(target: Debug, "invalid filename {}", file_name))?;
         let collection_file_content = std::fs::read_to_string(dir_entry.path())?;
         let collection = UNDERLYING.parse(&collection_file_content)?;
-        return Ok((Name::from_str(collection_name)?, collection));
+        Ok((Name::from_str(collection_name)?, collection))
     }
 }
 

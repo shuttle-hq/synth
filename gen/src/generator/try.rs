@@ -18,17 +18,15 @@ pub trait TryGenerator {
     type Return: Try<Ok = Self::Ok, Error = Self::Error>;
 
     fn try_next_yielded<R: Rng>(&mut self, rng: &mut R) -> Result<Self::Yield, Self::Error> {
-	loop {
-	    match self.try_next(rng) {
-		GeneratorState::Yielded(y) => return Ok(y),
-		GeneratorState::Complete(t) => {
-		    match t.into_result() {
-			Err(err) => return Err(err),
-			Ok(_) => continue,
-		    }
-		}
-	    }
-	}
+        loop {
+            match self.try_next(rng) {
+                GeneratorState::Yielded(y) => return Ok(y),
+                GeneratorState::Complete(t) => match t.into_result() {
+                    Err(err) => return Err(err),
+                    Ok(_) => continue,
+                },
+            }
+        }
     }
 
     fn try_next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return>;
@@ -66,25 +64,23 @@ where
 
 pub trait FallibleGeneratorExt: Sized
 where
-    Self: FallibleGenerator
+    Self: FallibleGenerator,
 {
     fn unwrap(self) -> Unwrap<Self> {
-	Unwrap {
-	    inner: self
-	}
+        Unwrap { inner: self }
     }
 }
 
 impl<G> FallibleGeneratorExt for G where G: FallibleGenerator {}
 
 pub struct Unwrap<G> {
-    inner: G
+    inner: G,
 }
 
 impl<G> Generator for Unwrap<G>
 where
     G: Generator,
-    G::Yield: Try
+    G::Yield: Try,
 {
     type Yield = <G::Yield as Try>::Ok;
 
@@ -92,12 +88,12 @@ where
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
-	    GeneratorState::Yielded(y) => match y.into_result() {
-		Ok(y_ok) => GeneratorState::Yielded(y_ok),
-		Err(err) => GeneratorState::Complete(Err(err))
-	    },
-	    GeneratorState::Complete(c) => GeneratorState::Complete(Ok(c))
-	}
+            GeneratorState::Yielded(y) => match y.into_result() {
+                Ok(y_ok) => GeneratorState::Yielded(y_ok),
+                Err(err) => GeneratorState::Complete(Err(err)),
+            },
+            GeneratorState::Complete(c) => GeneratorState::Complete(Ok(c)),
+        }
     }
 }
 
@@ -155,8 +151,7 @@ where
         }
     }
 
-    fn try_aggregate(self) -> TryAggregate<Self>
-    {
+    fn try_aggregate(self) -> TryAggregate<Self> {
         TryAggregate {
             inner: self,
             output: None,
@@ -289,15 +284,15 @@ where
 /// [`TryGenerator`](crate::TryGenerator).
 pub struct TryAggregate<TG>
 where
-    TG: TryGenerator
+    TG: TryGenerator,
 {
     inner: TG,
-    output: Option<TG::Return>
+    output: Option<TG::Return>,
 }
 
 impl<TG> Generator for TryAggregate<TG>
 where
-    TG: TryGenerator
+    TG: TryGenerator,
 {
     type Yield = Vec<TG::Yield>;
     type Return = TG::Return;
@@ -316,14 +311,15 @@ where
                     }
                 }
             }
-            match std::mem::replace(&mut self.output, None).unwrap().into_result() {
+            match std::mem::replace(&mut self.output, None)
+                .unwrap()
+                .into_result()
+            {
                 Ok(v) => {
                     self.output = Some(TG::Return::from_ok(v));
                     GeneratorState::Yielded(out)
-                },
-                Err(e) => {
-                    GeneratorState::Complete(TG::Return::from_error(e))
                 }
+                Err(e) => GeneratorState::Complete(TG::Return::from_error(e)),
             }
         }
     }

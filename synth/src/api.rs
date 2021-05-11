@@ -25,12 +25,10 @@ where
     R: FromStr,
     <R as FromStr>::Err: std::error::Error + Send + Sync + 'static,
 {
-    req.param(param)
-        .map(|value| Some(value))
-        .or_else(|e| match e {
-            ParamError::NotFound(_) => Ok(None),
-            otherwise => Err(otherwise.into()),
-        })
+    req.param(param).map(Some).or_else(|e| match e {
+        ParamError::NotFound(_) => Ok(None),
+        otherwise => Err(otherwise.into()),
+    })
 }
 
 #[derive(Clone)]
@@ -215,41 +213,31 @@ impl Api {
     pub fn new_server(daemon: Arc<Daemon>) -> Result<Server<Self>> {
         let api = Self { daemon };
         let mut server = Server::with_state(api);
-        server.at("/").get(|req: Request<Api>| get_namespaces(req));
+        server.at("/").get(get_namespaces);
 
         server
             .at("/:namespace/:collection")
-            .put(|req: Request<Api>| put_documents(req))
-            .delete(|req: Request<Api>| delete_collection(req));
+            .put(put_documents)
+            .delete(delete_collection);
 
-        server
-            .at("/:namespace")
-            .delete(|req: Request<Api>| delete_namespace(req));
+        server.at("/:namespace").delete(delete_namespace);
 
-        server
-            .at("/:namespace/_rollback")
-            .put(|req: Request<Api>| rollback_namespace(req));
+        server.at("/:namespace/_rollback").put(rollback_namespace);
 
-        server
-            .at("/:namespace/_sample")
-            .get(|req: Request<Api>| get_documents(req));
+        server.at("/:namespace/_sample").get(get_documents);
 
         server
             .at("/:namespace/:collection/_sample")
-            .get(|req: Request<Api>| get_documents(req));
+            .get(get_documents);
 
         server
             .at("/:namespace/_override")
-            .put(|req: Request<Api>| put_override(req))
-            .delete(|req: Request<Api>| delete_override(req));
+            .put(put_override)
+            .delete(delete_override);
 
-        server
-            .at("/:namespace/_schema")
-            .get(|req: Request<Api>| get_schema(req));
+        server.at("/:namespace/_schema").get(get_schema);
 
-        server
-            .at("/:namespace/_optionalise")
-            .put(|req: Request<Api>| put_optionalise(req));
+        server.at("/:namespace/_optionalise").put(put_optionalise);
 
         server
             .with(tide::utils::After(|mut res: Response| async move {
@@ -294,8 +282,7 @@ impl Api {
                 url = req.url(),
                 len = req
                     .len()
-                    .map(|v| v.to_string())
-                    .unwrap_or("unknown".to_string())
+                    .map_or_else(|| "unknown".to_string(), |v| v.to_string())
             );
             req
         }));

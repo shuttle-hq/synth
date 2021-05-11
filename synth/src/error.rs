@@ -20,7 +20,7 @@ macro_rules! failed {
 impl From<Error> for UserError {
     fn from(crate_error: Error) -> Self {
         UserError {
-            msg: vec![crate_error.msg.unwrap_or("".to_string())],
+            msg: vec![crate_error.msg.unwrap_or_else(|| "".to_string())],
             kind: crate_error.kind,
         }
     }
@@ -58,12 +58,12 @@ impl From<&(dyn std::error::Error + 'static)> for UserError {
     }
 }
 
-impl Into<tide::Response> for UserError {
-    fn into(self) -> tide::Response {
-        let value = serde_json::to_value(&self).unwrap();
-        let status_code: tide::StatusCode = self.kind.into();
+impl From<UserError> for tide::Response {
+    fn from(u: UserError) -> Self {
+        let value = serde_json::to_value(&u).unwrap();
+        let status_code: tide::StatusCode = u.kind.into();
         let mut resp = tide::Response::builder(status_code).body(value).build();
-        let as_anyhow: anyhow::Error = self.into();
+        let as_anyhow: anyhow::Error = u.into();
         let tide_error = tide::Error::new(status_code, as_anyhow);
         resp.set_error(tide_error);
         resp

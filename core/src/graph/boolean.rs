@@ -6,9 +6,9 @@ derive_generator! {
     yield bool,
     return Never,
     pub enum RandomBool {
-	Bernoulli(Random<bool, Bernoulli>),
-	Constant(Yield<bool>),
-	Categorical(Random<bool, Categorical<bool>>),
+    Bernoulli(Random<bool, Bernoulli>),
+    Constant(Yield<bool>),
+    Categorical(Random<bool, Categorical<bool>>),
     }
 }
 
@@ -22,10 +22,10 @@ impl From<RandomBool> for BoolNode {
     fn from(inner: RandomBool) -> Self {
         Self(
             inner
-		.infallible()
+                .infallible()
                 .try_once()
                 .into_token()
-                .map_complete(value_from_ok::<bool>)
+                .map_complete(value_from_ok::<bool>),
         )
     }
 }

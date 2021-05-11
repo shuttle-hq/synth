@@ -90,7 +90,7 @@ impl FromStr for DataDirectoryPath {
     type Err = <PathBuf as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        PathBuf::from_str(s).map(|pb| Self(pb))
+        PathBuf::from_str(s).map(Self)
     }
 }
 
@@ -144,7 +144,7 @@ impl Splash {
         #[cfg(not(feature = "python"))]
         let python_ver = { "disabled".bold().red().to_string() };
 
-        let path = std::env::var("PATH").unwrap_or("unknown".to_string());
+        let path = std::env::var("PATH").unwrap_or_else(|_| "unknown".to_string());
 
         let synth_ver = version();
 
@@ -252,19 +252,17 @@ fn init_logger(args: &Args) {
     let env_logger = env_logger::Builder::from_default_env().build();
     loggers.push(Box::new(env_logger));
 
-    match args {
-        Args::Serve(ServeArgs {
-            zenduty: Some(api_key),
-            ..
-        }) => {
-            let zen_logger = Box::new(TargetLogger::new(
-                "remote".to_string(),
-                ZenDuty::new(api_key.clone()),
-            ));
-            loggers.push(zen_logger);
-        }
-        _ => (),
-    };
+    if let Args::Serve(ServeArgs {
+        zenduty: Some(api_key),
+        ..
+    }) = args
+    {
+        let zen_logger = Box::new(TargetLogger::new(
+            "remote".to_string(),
+            ZenDuty::new(api_key.clone()),
+        ));
+        loggers.push(zen_logger);
+    }
 
     CompositeLogger::init(loggers)
 }

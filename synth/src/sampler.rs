@@ -2,7 +2,7 @@ use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use serde_json::{Map, Value};
-use std::collections::BTreeMap;
+use std::collections::{btree_map::Entry, BTreeMap};
 use std::convert::TryFrom;
 use synth_core::schema::ValueKindExt;
 use synth_core::Graph;
@@ -64,24 +64,35 @@ impl Sampler {
             };
 
             if let Some(name) = collection_name.as_ref() {
-                let collection_value = value.remove(name.as_ref()).ok_or(failed!(
-                    target: Release,
-                    "generated namespace does not have a collection '{}'",
-                    name
-                ))?;
+                let collection_value = value.remove(name.as_ref()).ok_or_else(|| {
+                    failed!(
+                        target: Release,
+                        "generated namespace does not have a collection '{}'",
+                        name
+                    )
+                })?;
                 let vec = value_as_array(name.as_ref(), collection_value)?;
                 generated += vec.len();
-                out.entry(name.to_string())
-                    .or_insert_with(|| Vec::new())
-                    .extend(vec);
+                match out.entry(name.to_string()) {
+                    Entry::Vacant(e) => {
+                        e.insert(vec);
+                    }
+                    Entry::Occupied(mut o) => {
+                        o.get_mut().extend(vec);
+                    }
+                }
             } else {
                 value.into_iter().try_for_each(|(collection, value)| {
-                    value_as_array(&collection, value).and_then(|vec| {
+                    value_as_array(&collection, value).map(|vec| {
                         generated += vec.len();
-                        out.entry(collection)
-                            .or_insert_with(|| Vec::new())
-                            .extend(vec);
-                        Ok(())
+                        match out.entry(collection) {
+                            Entry::Vacant(e) => {
+                                e.insert(vec);
+                            }
+                            Entry::Occupied(mut o) => {
+                                o.get_mut().extend(vec);
+                            }
+                        }
                     })
                 })?;
             }

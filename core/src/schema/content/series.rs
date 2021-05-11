@@ -63,31 +63,31 @@ impl Compile for SeriesContent {
 impl SeriesVariant {
     pub(crate) fn inc(
         incrementing: &Incrementing,
-        fmt: &String,
+        fmt: &str,
     ) -> Result<IncrementingSeries<NaiveDateTime, Duration>> {
         Ok(IncrementingSeries::new(
             NaiveDateTime::parse_from_str(&incrementing.start, fmt)?,
-            Duration::from_std(incrementing.increment.into())?,
+            Duration::from_std(incrementing.increment)?,
         ))
     }
 
-    pub(crate) fn poisson(poisson: &Poisson, fmt: &String) -> Result<PoissonSeries> {
+    pub(crate) fn poisson(poisson: &Poisson, fmt: &str) -> Result<PoissonSeries> {
         Ok(PoissonSeries::new(
             NaiveDateTime::parse_from_str(&poisson.start, fmt)?,
-            Duration::from_std(poisson.rate.into())?,
+            Duration::from_std(poisson.rate)?,
         ))
     }
 
-    pub(crate) fn cyclical(cyclical: &Cyclical, fmt: &String) -> Result<CyclicalSeries> {
+    pub(crate) fn cyclical(cyclical: &Cyclical, fmt: &str) -> Result<CyclicalSeries> {
         Ok(CyclicalSeries::new(
             NaiveDateTime::parse_from_str(&cyclical.start, fmt)?,
-            Duration::from_std(cyclical.period.into())?,
-            Duration::from_std(cyclical.min_rate.into())?,
-            Duration::from_std(cyclical.max_rate.into())?,
+            Duration::from_std(cyclical.period)?,
+            Duration::from_std(cyclical.min_rate)?,
+            Duration::from_std(cyclical.max_rate)?,
         ))
     }
 
-    pub(crate) fn zip(zip: &Zip, fmt: &String) -> Result<ZipSeries> {
+    pub(crate) fn zip(zip: &Zip, fmt: &str) -> Result<ZipSeries> {
         let mut children = Vec::new();
         for child in &zip.series {
             let series = match child {

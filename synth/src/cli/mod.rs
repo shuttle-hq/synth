@@ -94,7 +94,7 @@ impl Cli {
             CliArgs::Telemetry(telemetry) => {
                 match telemetry {
                     TelemetryCommand::Enable => {
-                        with_telemetry("telemetry::enable", &self.telemetry, || telemetry::enable())
+                        with_telemetry("telemetry::enable", &self.telemetry, telemetry::enable)
                     }
                     TelemetryCommand::Disable => {
                         with_telemetry("telemetry::disable", &self.telemetry, || {
@@ -193,17 +193,15 @@ impl Cli {
                     .save_collection_path(&path, collection, content)?;
                 Ok(())
             }
+        } else if self.store.ns_exists(&path) {
+            Err(anyhow!(
+                "The namespace at `{}` already exists. Will not import into an existing namespace.",
+                path.display()
+            ))
         } else {
-            if self.store.ns_exists(&path) {
-                return Err(anyhow!(
-                    "The namespace at `{}` already exists. Will not import into an existing namespace.",
-                    path.display()
-		));
-            } else {
-                let ns = import_strategy.unwrap_or_default().import()?;
-                self.store.save_ns_path(path, ns)?;
-                Ok(())
-            }
+            let ns = import_strategy.unwrap_or_default().import()?;
+            self.store.save_ns_path(path, ns)?;
+            Ok(())
         }
     }
 

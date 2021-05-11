@@ -61,7 +61,7 @@ impl FileStore {
         Ok(ty)
     }
 
-    pub fn insert<'a, P: AsRef<Path>, T: Serialize>(
+    pub fn insert<P: AsRef<Path>, T: Serialize>(
         &self,
         location: P,
         t: T,
@@ -92,7 +92,7 @@ impl FileStore {
                         dir_entry
                             .file_name()
                             .to_str()
-                            .map(|fn_| fn_.chars().all(|c| char::is_numeric(c)))
+                            .map(|fn_| fn_.chars().all(char::is_numeric))
                             .unwrap_or(false)
                     })
                     .map(move |dir_entry| {

@@ -177,8 +177,8 @@ impl Generator for PoissonSeries {
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         let delta = self.rate.num_milliseconds() as f64
             * (-1.0 * (1.0 - rng.gen_range(0.0f64..1.0f64)).ln());
-        self.current = self.current.clone() + chrono::Duration::milliseconds(delta as i64);
-        GeneratorState::Yielded(self.current.clone())
+        self.current += chrono::Duration::milliseconds(delta as i64);
+        GeneratorState::Yielded(self.current)
     }
 }
 
@@ -199,7 +199,7 @@ impl CyclicalSeries {
         max_rate: Duration,
     ) -> Self {
         Self {
-            start: start.clone(),
+            start,
             current: start,
             period,
             min_rate,
@@ -221,8 +221,8 @@ impl Generator for CyclicalSeries {
         let phase = 2.0 * PI * ((current_ms - start_ms) % period_ms) as f64 / period_ms as f64;
         let delta = 1.0 + (min_rate_ms as f64 + ((max_rate_ms - min_rate_ms) as f64 * phase.sin()));
         let next_delta = delta * (-1.0 * (1.0 - rng.gen_range(0.0f64..1.0f64)).ln());
-        self.current = self.current.clone() + chrono::Duration::milliseconds(next_delta as i64);
-        GeneratorState::Yielded(self.current.clone())
+        self.current += chrono::Duration::milliseconds(next_delta as i64);
+        GeneratorState::Yielded(self.current)
     }
 }
 
@@ -233,7 +233,7 @@ pub struct ZipSeries {
 
 impl ZipSeries {
     pub fn new(children: Vec<TimeSeries>) -> anyhow::Result<Self> {
-        if children.len() == 0 {
+        if children.is_empty() {
             return Err(anyhow!("Cannot instantiate a Zip Series with 0 children"));
         }
         Ok(ZipSeries {
@@ -282,7 +282,7 @@ impl Generator for AutoCorrelatedSeries {
                     .get(t - i)
                     .map(|val| val.timestamp_millis())
                     .unwrap_or(0);
-            current = current + delta;
+            current += delta;
         }
 
         self.eps.push(rng.gen());
@@ -291,13 +291,13 @@ impl Generator for AutoCorrelatedSeries {
             let t = self.eps.len();
             let delta = self.beta.get(j).unwrap().num_milliseconds() as f64
                 * self.eps.get(t - j).unwrap_or(&0.0);
-            current = current + delta as i64;
+            current += delta as i64;
         }
 
         self.v
             .push(NaiveDateTime::from_timestamp(current / 1000, 0));
 
-        GeneratorState::Yielded(self.v.last().unwrap().clone())
+        GeneratorState::Yielded(*self.v.last().unwrap())
     }
 }
 

@@ -76,7 +76,7 @@ impl Namespace {
     }
 
     pub fn put_collection(&mut self, name: &Name, content: Content) -> Result<()> {
-        if let Some(_) = self.collections.insert(name.clone(), content) {
+        if self.collections.insert(name.clone(), content).is_some() {
             Err(failed!(
                 target: Release,
                 "collection already exists: {}",
@@ -101,7 +101,7 @@ impl Namespace {
     }
 
     pub fn delete_collection(&mut self, name: &Name) -> Result<()> {
-        if let None = self.collections.remove(name) {
+        if self.collections.remove(name).is_none() {
             return Err(failed!(
                 target: Release,
                 "collection does not exist: {}",

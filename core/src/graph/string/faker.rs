@@ -30,13 +30,13 @@ impl RandFaker {
     }
 
     /// Creates an instance of python `Faker` with appropriate locales
-    fn faker<'p>(locales: &Vec<String>, python: &Python<'p>) -> PyResult<&'p PyAny> {
+    fn faker<'p>(locales: &[String], python: &Python<'p>) -> PyResult<&'p PyAny> {
         let faker = python.import("faker")?.get("Faker")?;
         match locales.len() {
             // No locales call an empty constructor
             0 => faker.call0(),
             // Pass locales in python `Faker` constructor
-            _ => faker.call1(PyTuple::new(python.clone(), vec![locales])),
+            _ => faker.call1(PyTuple::new(*python, vec![locales])),
         }
     }
 

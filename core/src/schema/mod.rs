@@ -163,9 +163,7 @@ impl FieldRef {
             return None;
         }
         let parent = FieldRef {
-            fields: self.fields.as_slice()[0..self.fields.len() - 1]
-                .to_vec()
-                .clone(),
+            fields: self.fields.as_slice()[0..self.fields.len() - 1].to_vec(),
             collection: self.collection.clone(),
         };
         Some(parent)
@@ -197,7 +195,6 @@ struct Lexer {
 impl Lexer {
     fn lex(s: String) -> Self {
         let tokens: VecDeque<Token> = s
-            .to_string()
             .split("")
             .map(|char| match char {
                 "." => Token::Dot,
@@ -334,7 +331,7 @@ impl Parser {
         while !done {
             match self.lex.eat_next() {
                 Token::Char(c) => self.curr_chunk.push_str(&c),
-                Token::Dot => self.curr_chunk.push_str("."),
+                Token::Dot => self.curr_chunk.push('.'),
                 Token::EOF => {
                     return Err(
                         failed!(target: Release, BadRequest => "cannot have unclosed quotes"),
@@ -410,7 +407,7 @@ impl std::fmt::Display for FieldRef {
                 write!(f, ".")?
             }
 
-            if chunk.contains(".") {
+            if chunk.contains('.') {
                 write!(f, "\"{}\"", chunk)?
             } else {
                 write!(f, "{}", chunk)?

@@ -27,7 +27,7 @@ impl Generator for KeyValueOrNothing {
             if next.is_complete() {
                 self.active = false;
             }
-            next.map_complete(|c| Some(c))
+            next.map_complete(Some)
         }
     }
 }

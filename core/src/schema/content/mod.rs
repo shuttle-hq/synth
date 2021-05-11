@@ -102,10 +102,7 @@ pub enum Content {
 
 impl Content {
     pub fn is_null(&self) -> bool {
-        match self {
-            Self::Null => true,
-            _ => false,
-        }
+        matches!(self, Self::Null)
     }
 
     pub fn accepts(&self, value: &Value) -> Result<()> {
@@ -218,7 +215,7 @@ impl<'r> From<&'r Value> for Content {
             Value::String(_) => Content::String(StringContent::default()),
             Value::Array(arr) => {
                 let length = arr.len();
-                let one_of_content = arr.into_iter().collect();
+                let one_of_content = arr.iter().collect();
                 Content::Array(ArrayContent {
                     length: Box::new(Content::from(&Value::from(length as u64))),
                     content: Box::new(Content::OneOf(one_of_content)),

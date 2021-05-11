@@ -152,7 +152,7 @@ pub fn value_from_ok<T>(value: Result<T, Error>) -> Result<Value, Error>
 where
     Value: From<T>,
 {
-    value.map(|t| Value::from(t))
+    value.map(Value::from)
 }
 
 pub fn value_from_ok_number<T>(value: Result<T, Error>) -> Result<Value, Error>

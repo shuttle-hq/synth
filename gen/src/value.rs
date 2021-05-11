@@ -6,9 +6,9 @@ use std::marker::PhantomData;
 use rand::Rng;
 
 use crate::{
-    de::Deserializator,  Error, Generator, GeneratorExt,
-    GeneratorState,
-    generator::{Brace, Concatenate, Yield, Just, Prefix}
+    de::Deserializator,
+    generator::{Brace, Concatenate, Just, Prefix, Yield},
+    Error, Generator, GeneratorExt, GeneratorState,
 };
 
 use serde::Deserialize;

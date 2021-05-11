@@ -121,7 +121,7 @@ impl Index {
     }
 
     pub fn list_ns(&self) -> Result<Vec<NamespaceEntry>> {
-        let query = format!("SELECT * FROM generations");
+        let query = "SELECT * FROM generations";
         let nss: Vec<NamespaceEntry> = diesel::sql_query(query).load(&self.conn()?)?;
         Ok(nss)
     }
@@ -240,7 +240,7 @@ impl Index {
         let nss: Vec<NamespaceEntry> = diesel::sql_query(query).load(&self.conn()?)?;
         nss.into_iter()
             .max_by_key(|item| item.generation)
-            .ok_or(failed!(target: Release, NotFound => "no such namespace: {}", ns))
+            .ok_or_else(|| failed!(target: Release, NotFound => "no such namespace: {}", ns))
     }
 
     fn commit(&self, nse: &NamespaceEntry, ns: Namespace) -> Result<()> {

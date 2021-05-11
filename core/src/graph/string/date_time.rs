@@ -62,11 +62,13 @@ impl Generator for RandomDateTime {
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
-	    GeneratorState::Yielded(y) => match ChronoValueFormatter::new(&self.format).format(&y) {
-		Ok(formatted) => GeneratorState::Yielded(formatted),
-		Err(err) => GeneratorState::Complete(Err(err)),
-            },
-	    GeneratorState::Complete(r) => GeneratorState::Complete(r)
-	}
+            GeneratorState::Yielded(y) => {
+                match ChronoValueFormatter::new(&self.format).format(&y) {
+                    Ok(formatted) => GeneratorState::Yielded(formatted),
+                    Err(err) => GeneratorState::Complete(Err(err)),
+                }
+            }
+            GeneratorState::Complete(r) => GeneratorState::Complete(r),
+        }
     }
 }

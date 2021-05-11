@@ -218,17 +218,15 @@ impl<G: Generator> OutputState<G> {
     }
 
     fn into_output(self) -> Option<Artifact<G>> {
-        match self {
-            Self::Some(artifact) => Some(artifact),
-            _ => None,
+        if let Self::Some(artifact) = self {
+            Some(artifact)
+        } else {
+            None
         }
     }
 
     fn is_built(&self) -> bool {
-        match self {
-            Self::Emptied | Self::Some(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Emptied | Self::Some(_))
     }
 }
 
@@ -445,9 +443,9 @@ impl<'a> CompilerState<'a> {
     fn project(&mut self, mut to: Scope) -> Result<&mut Self> {
         let mut projected = self;
         while let Some(next) = to.deeper() {
-            projected = projected
-                .get_mut(&next)
-                .ok_or(failed!(target: Release, Compilation => "unknown field: {}", next))?;
+            projected = projected.get_mut(&next).ok_or_else(
+                || failed!(target: Release, Compilation => "unknown field: {}", next),
+            )?;
         }
         Ok(projected)
     }
@@ -467,7 +465,10 @@ impl<'t, 'a> Entry<'t, 'a> {
         if !self.node.compiled.is_built() {
             f(self.node).compile()?;
         }
-        self.node.get_mut(&self.field).ok_or(failed!(
+        if let Some(node) = self.node.get_mut(&self.field) {
+            return Ok(node);
+        }
+        Err(failed!(
             target: Release,
             "could not find field: {}",
             self.field
@@ -575,7 +576,7 @@ impl<'a> NamespaceCompiler<'a> {
                     let keys: Vec<_> = locals.locals.keys().map(|key| key.to_string()).collect();
                     keys.as_slice().join(", ")
                 })
-                .unwrap_or("{empty}".to_string());
+                .unwrap_or_else(|_| "{empty}".to_string());
             stage_2!("{}: context extends to {}", next_scope, ctx);
 
             let content_compiler = ContentCompiler {
@@ -660,9 +661,11 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
         let model = self
             .cursor
             .get_mut(field)
-            .ok_or(failed!(target: Release, Compilation => "undefined: {}", field))?
+            .ok_or_else(|| failed!(target: Release, Compilation => "undefined: {}", field))?
             .move_output()
-            .ok_or(failed!(target: Release, Compilation => "dependency not satisfied: {}", field))?
+            .ok_or_else(
+                || failed!(target: Release, Compilation => "dependency not satisfied: {}", field),
+            )?
             .into_model();
         let as_scope = Scope::new_root().as_within(field);
         match self
@@ -680,8 +683,8 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
                         )
                     }
                 };
-                let as_view = factory.issue(&Scope::new_root())?.ok_or(
-                    failed!(target: Release, Compilation => "reference not built: {}", field),
+                let as_view = factory.issue(&Scope::new_root())?.ok_or_else(
+                    || failed!(target: Release, Compilation => "reference not built: {}", field),
                 )?;
                 Ok(Graph::View(Unwrapped::wrap(as_view)))
             }
@@ -691,10 +694,9 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
 
     fn get<S: Into<Scope>>(&mut self, field: S) -> Result<Graph> {
         let as_scope = field.into();
-        let view = self
-            .vtable
-            .issue(&as_scope, &self.scope)?
-            .ok_or(failed!(target: Release, Compilation => "reference not built: {}", as_scope))?;
+        let view = self.vtable.issue(&as_scope, &self.scope)?.ok_or_else(
+            || failed!(target: Release, Compilation => "reference not built: {}", as_scope),
+        )?;
         Ok(Graph::View(Unwrapped::wrap(view)))
     }
 }
@@ -779,13 +781,13 @@ where
     fn get(&self, to: &Scope) -> Result<&ReferenceFactory<G>> {
         self.locals
             .get(to)
-            .ok_or(failed!(target: Release, "undefined reference to {}", to))
+            .ok_or_else(|| failed!(target: Release, "undefined reference to {}", to))
     }
 
     fn get_mut(&mut self, to: &Scope) -> Result<&mut ReferenceFactory<G>> {
         self.locals
             .get_mut(to)
-            .ok_or(failed!(target: Release, Compilation => "undeclared: {}", to))
+            .ok_or_else(|| failed!(target: Release, Compilation => "undeclared: {}", to))
     }
 
     #[allow(dead_code)]
@@ -828,7 +830,7 @@ where
     fn issue(&mut self, what: &Scope, to: &Scope) -> Result<Option<View<G>>> {
         self.locals
             .get_mut(what)
-            .ok_or(failed!(target: Release, "undefined reference to {}", what))
+            .ok_or_else(|| failed!(target: Release, "undefined reference to {}", what))
             .and_then(|factory| factory.issue(to))
     }
 
@@ -913,13 +915,13 @@ where
     fn get(&self, at: &Scope) -> Result<&LocalTable<G>> {
         self.storage
             .get(at)
-            .ok_or(failed!(target: Release, Compilation => "undeclared: {}", at))
+            .ok_or_else(|| failed!(target: Release, Compilation => "undeclared: {}", at))
     }
 
     fn get_mut(&mut self, at: &Scope) -> Result<&mut LocalTable<G>> {
         self.storage
             .get_mut(at)
-            .ok_or(failed!(target: Release, Compilation => "undeclared: {}", at))
+            .ok_or_else(|| failed!(target: Release, Compilation => "undeclared: {}", at))
     }
 
     fn set(
