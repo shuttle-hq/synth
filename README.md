@@ -1,8 +1,8 @@
 <p align=center>
-  <img height="128px" src="docs/static/img/getsynth_identicon.png"/>
+  <img height="150px" src="docs/static/img/getsynth_identicon.png"/>
 </p>
 <p align=center>
-  The Declarative Data Generator
+  <b>The Declarative Data Generator</b>
 </p>
 <br>
 <p align=center>
