@@ -228,8 +228,12 @@ impl ImportStrategy for PostgresImportStrategy {
             *node = Content::SameAs(SameAsContent { ref_: to_field });
         }
 
-        // Fourth pass - ingest
+        // Set the RNG to get a deterministic sample
+        let _ = client
+            .query("select setseed(0.5);", &[])
+            .expect("Failed to set seed for sampling");
 
+        // Fourth pass - ingest
         for table in table_names {
             print!("Ingesting data for table {}... ", table);
 
