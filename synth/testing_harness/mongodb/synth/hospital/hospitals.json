@@ -1,0 +1,32 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "low": 1,
+      "high": 10,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "address": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]*"
+    },
+    "hospital_name": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]*"
+    },
+    "id": {
+      "type": "number",
+      "range": {
+        "low": 1,
+        "high": 10,
+        "step": 1
+      },
+      "subtype": "i64"
+    }
+  }
+}

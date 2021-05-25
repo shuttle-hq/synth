@@ -1,3 +1,4 @@
+use crate::cli::mongo::MongoImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
 use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
 use anyhow::{Context, Result};
@@ -24,6 +25,7 @@ pub(crate) enum SomeImportStrategy {
     FromFile(FileImportStrategy),
     #[allow(unused)]
     FromPostgres(PostgresImportStrategy),
+    FromMongo(MongoImportStrategy),
 }
 
 impl Default for SomeImportStrategy {
@@ -41,8 +43,12 @@ impl FromStr for SomeImportStrategy {
     /// For example, `postgres://...` is not going to be a file on the FS
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // for postgres, `postgres` or `postgresql` are fine
-        if s.starts_with("postgres") {
+        if s.starts_with("postgres://") || s.starts_with("postgresql://") {
             return Ok(SomeImportStrategy::FromPostgres(PostgresImportStrategy {
+                uri: s.to_string(),
+            }));
+        } else if s.starts_with("mongodb://") {
+            return Ok(SomeImportStrategy::FromMongo(MongoImportStrategy {
                 uri: s.to_string(),
             }));
         }
@@ -52,7 +58,9 @@ impl FromStr for SomeImportStrategy {
                 from_file: path,
             }));
         }
-        Err(anyhow!("Data source not recognized"))
+        Err(anyhow!(
+            "Data source not recognized. Was expecting one of 'mongodb' or 'postgres'"
+        ))
     }
 }
 
@@ -62,6 +70,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromFile(fis) => fis.import(),
             SomeImportStrategy::FromPostgres(pis) => pis.import(),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.import(),
+            SomeImportStrategy::FromMongo(mis) => mis.import(),
         }
     }
     fn import_collection(self, name: &Name) -> Result<Content> {
@@ -69,6 +78,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromFile(fis) => fis.import_collection(name),
             SomeImportStrategy::FromPostgres(pis) => pis.import_collection(name),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.import_collection(name),
+            SomeImportStrategy::FromMongo(mis) => mis.import_collection(name),
         }
     }
     fn into_value(self) -> Result<Value> {
@@ -76,6 +86,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromFile(fis) => fis.into_value(),
             SomeImportStrategy::FromPostgres(pis) => pis.into_value(),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.into_value(),
+            SomeImportStrategy::FromMongo(mis) => mis.into_value(),
         }
     }
 }

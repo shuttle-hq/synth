@@ -9,6 +9,7 @@ use std::{default::Default, iter::FromIterator};
 use super::inference::MergeStrategy;
 use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::compile::{Compile, Compiler};
+use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
 
 #[allow(dead_code)]
@@ -58,6 +59,10 @@ impl Namespace {
     #[inline]
     pub fn keys(&self) -> impl Iterator<Item = &Name> {
         self.collections.keys()
+    }
+
+    pub fn default_try_update(&mut self, name: &Name, value: &Value) -> Result<()> {
+        self.try_update(OptionalMergeStrategy, name, value)
     }
 
     pub fn try_update<M: MergeStrategy<Content, Value>>(

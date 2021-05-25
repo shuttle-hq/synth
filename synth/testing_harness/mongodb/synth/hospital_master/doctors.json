@@ -1,0 +1,41 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "low": 1,
+      "high": 10,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "date_joined": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]*"
+    },
+    "hospital_id": {
+      "type": "number",
+      "range": {
+        "low": 1,
+        "high": 6,
+        "step": 1
+      },
+      "subtype": "i64"
+    },
+    "id": {
+      "type": "number",
+      "range": {
+        "low": 2,
+        "high": 9,
+        "step": 1
+      },
+      "subtype": "i64"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]*"
+    }
+  }
+}

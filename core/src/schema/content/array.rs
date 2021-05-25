@@ -1,4 +1,6 @@
 use super::prelude::*;
+use crate::graph::prelude::content::number::number_content::U64;
+use crate::schema::{NumberContent, RangeStep};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -6,6 +8,19 @@ use super::prelude::*;
 pub struct ArrayContent {
     pub length: Box<Content>,
     pub content: Box<Content>,
+}
+
+impl ArrayContent {
+    pub fn from_content_default_length(content: Content) -> Self {
+        Self {
+            length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep {
+                low: 1,
+                high: 2,
+                step: 1,
+            })))),
+            content: Box::new(content),
+        }
+    }
 }
 
 impl Compile for ArrayContent {

@@ -119,9 +119,9 @@ $ synth generate my_app/ --size 2 | jq
 ```
 
 
-### Building a data model from Postgres
+### Building a data model from an external database
 
-If you have an existing database, Synth can create the data model for you by importing data  from your database.
+If you have an existing database, Synth can automatically generate a data model by inspecting the database. 
 
 To get started, initialise your Synth workspace locally:
 
@@ -129,7 +129,7 @@ To get started, initialise your Synth workspace locally:
 $ mkdir synth_workspace && cd synth_workspace && synth init
 ```
 
-Then use the `synth import` command to build a data model from your Postgres database:
+Then use the `synth import` command to build a data model from your Postgres or MongoDB database:
 
 ```bash
 $ synth import tpch --from postgres://user:pass@localhost:5432/tpch

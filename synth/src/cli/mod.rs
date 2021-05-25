@@ -1,5 +1,6 @@
 mod export;
 mod import;
+mod mongo;
 mod postgres;
 mod stdf;
 mod store;
@@ -252,7 +253,10 @@ pub(crate) enum CliArgs {
         collection: Option<Name>,
         #[structopt(long, help = "the number of samples", default_value = "1")]
         size: usize,
-        #[structopt(long, help = "the generation destination")]
+        #[structopt(
+            long,
+            help = "The sink into which to generate data. Can be a postgres uri, a mongodb uri. If not specified, data will be written to stdout"
+        )]
         to: Option<SomeExportStrategy>,
         #[structopt(
             long,
@@ -279,7 +283,7 @@ pub(crate) enum CliArgs {
         collection: Option<Name>,
         #[structopt(
             long,
-            help = "Path to a JSON file containing the data to import. If not specified, data will be read from stdin"
+            help = "The source from which to import data. Can be a postgres uri, a mongodb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
         )]
         from: Option<SomeImportStrategy>,
     },
