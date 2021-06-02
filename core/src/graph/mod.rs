@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::ops::Try;
 
 use anyhow::{Context, Result};
 
@@ -204,8 +203,8 @@ impl<G> IntoCompleted<G> {
 impl<G> Generator for IntoCompleted<G>
 where
     G: Generator<Yield = Token>,
-    G::Return: Try,
-    <G::Return as Try>::Error: IntoToken,
+    G::Return: GeneratorResult,
+    <G::Return as GeneratorResult>::Err: IntoToken,
 {
     type Yield = Token;
     type Return = ();

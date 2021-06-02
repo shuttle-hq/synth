@@ -11,7 +11,7 @@ jobs:
     name: synth tests
     runs-on: ubuntu-latest
     env:
-      toolchain: "nightly-2021-05-17"
+      toolchain: "nightly"
     steps:
       - uses: actions/checkout@v2
       - name: Install nix
