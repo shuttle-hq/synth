@@ -13,7 +13,7 @@ default = [ "python" ]
 python = [ "pyo3" ]
 
 [build-dependencies]
-git2 = "0.13.11"
+git2 = "0.13.20"
 
 [dev-dependencies]
 lazy_static = "1.4.0"

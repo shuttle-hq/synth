@@ -29,7 +29,8 @@ impl ExportStrategy for PostgresExportStrategy {
             Client::connect(&self.uri, postgres::tls::NoTls).expect("Failed to connect");
 
         let sampler = Sampler::try_from(&params.namespace)?;
-        let values = sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
+        let values =
+            sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
         match values {
             Value::Array(collection_json) => {
@@ -67,9 +68,17 @@ impl PostgresExportStrategy {
         // We basically need something like an InsertionStrategy where we have a DAG of insertions
         let batch_size = 1000;
 
+        if collection.is_empty() {
+            println!(
+                "Collection {} generated 0 values. Skipping insertion...",
+                collection_name
+            );
+            return Ok(());
+        }
+
         let column_names = collection
             .get(0)
-            .expect("Collection should not be empty")
+            .expect("Explicit check is done above that this collection is non-empty")
             .as_object()
             .expect("This is always an object (sampler contract)")
             .keys()
