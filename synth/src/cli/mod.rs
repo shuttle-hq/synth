@@ -21,7 +21,7 @@ use crate::cli::telemetry::TelemetryClient;
 use rand::RngCore;
 use synth_core::Name;
 
-pub(crate) struct Cli {
+pub struct Cli {
     store: Store,
     args: CliArgs,
     telemetry: TelemetryClient,
@@ -46,7 +46,7 @@ fn with_telemetry<F: FnOnce() -> Result<T>, T>(
 
 impl Cli {
     /// this is going to get confusing with `init` command
-    pub(crate) fn new(args: CliArgs, version: String, os: String) -> Result<Self> {
+    pub fn new(args: CliArgs, version: String, os: String) -> Result<Self> {
         Ok(Self {
             store: Store::init()?,
             args,
@@ -239,7 +239,7 @@ impl Cli {
 
 #[derive(StructOpt)]
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
-pub(crate) enum CliArgs {
+pub enum CliArgs {
     #[structopt(about = "Initialise the workspace")]
     Init {},
     #[structopt(about = "Generate data from a namespace")]
@@ -292,7 +292,7 @@ pub(crate) enum CliArgs {
 }
 
 #[derive(StructOpt)]
-pub(crate) enum TelemetryCommand {
+pub enum TelemetryCommand {
     #[structopt(about = "Enable anonymous usage data collection")]
     Enable,
     #[structopt(about = "Disable anonymous usage data collection")]

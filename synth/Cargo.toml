@@ -12,12 +12,17 @@ license = "Apache-2.0"
 default = [ "python" ]
 python = [ "pyo3" ]
 
+[[bench]]
+name = "bench"
+harness = false
+
 [build-dependencies]
 git2 = "0.13.20"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
 tempfile = "3.1.0"
+iai = "0.1"
 
 [dependencies]
 lazy_static = "1.4.0"

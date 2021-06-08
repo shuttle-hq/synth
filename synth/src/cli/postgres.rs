@@ -19,8 +19,8 @@ use synth_core::schema::{
 use synth_core::{Content, Name};
 
 #[derive(Clone, Debug)]
-pub(crate) struct PostgresExportStrategy {
-    pub(crate) uri: String,
+pub struct PostgresExportStrategy {
+    pub uri: String,
 }
 
 impl ExportStrategy for PostgresExportStrategy {
@@ -124,8 +124,8 @@ impl PostgresExportStrategy {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct PostgresImportStrategy {
-    pub(crate) uri: String,
+pub struct PostgresImportStrategy {
+    pub uri: String,
 }
 
 impl ImportStrategy for PostgresImportStrategy {

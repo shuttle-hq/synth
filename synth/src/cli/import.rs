@@ -9,7 +9,7 @@ use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
 
-pub(crate) trait ImportStrategy: Sized {
+pub trait ImportStrategy: Sized {
     fn import(self) -> Result<Namespace> {
         ns_from_value(self.into_value()?)
     }
@@ -20,7 +20,7 @@ pub(crate) trait ImportStrategy: Sized {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum SomeImportStrategy {
+pub enum SomeImportStrategy {
     StdinImportStrategy(StdinImportStrategy),
     FromFile(FileImportStrategy),
     #[allow(unused)]

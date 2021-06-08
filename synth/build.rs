@@ -22,10 +22,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut f = File::create(format!("{}/meta.rs", env::var("OUT_DIR").unwrap()))?;
     write!(
         &mut f,
-        r#"const META_OID: &str = "{}";
-        const META_SHORTNAME: &str = "{}";
-        const META_OS: &str = "{}";
-        const META_ARCH: &str = "{}";"#,
+        r#"pub const META_OID: &str = "{}";
+        pub const META_SHORTNAME: &str = "{}";
+        pub const META_OS: &str = "{}";
+        pub const META_ARCH: &str = "{}";"#,
         oid, shortname, os, arch,
     )?;
     Ok(())

@@ -8,15 +8,15 @@ use std::convert::TryFrom;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
-pub(crate) struct FileImportStrategy {
-    pub(crate) from_file: PathBuf,
+pub struct FileImportStrategy {
+    pub from_file: PathBuf,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct StdinImportStrategy {}
+pub struct StdinImportStrategy {}
 
 #[derive(Clone, Debug)]
-pub(crate) struct StdoutExportStrategy {}
+pub struct StdoutExportStrategy {}
 
 impl ExportStrategy for StdoutExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {

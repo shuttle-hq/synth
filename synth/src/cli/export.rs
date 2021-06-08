@@ -7,19 +7,19 @@ use std::str::FromStr;
 use crate::cli::mongo::MongoExportStrategy;
 use synth_core::{Name, Namespace};
 
-pub(crate) trait ExportStrategy {
+pub trait ExportStrategy {
     fn export(self, params: ExportParams) -> Result<()>;
 }
 
-pub(crate) struct ExportParams {
-    pub(crate) namespace: Namespace,
-    pub(crate) collection_name: Option<Name>,
-    pub(crate) target: usize,
-    pub(crate) seed: u64,
+pub struct ExportParams {
+    pub namespace: Namespace,
+    pub collection_name: Option<Name>,
+    pub target: usize,
+    pub seed: u64,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum SomeExportStrategy {
+pub enum SomeExportStrategy {
     StdoutExportStrategy(StdoutExportStrategy),
     FromPostgres(PostgresExportStrategy),
     FromMongo(MongoExportStrategy),

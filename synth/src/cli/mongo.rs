@@ -21,13 +21,13 @@ use synth_core::schema::{
 use synth_core::{Content, Name, Namespace};
 
 #[derive(Clone, Debug)]
-pub(crate) struct MongoExportStrategy {
-    pub(crate) uri: String,
+pub struct MongoExportStrategy {
+    pub uri: String,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct MongoImportStrategy {
-    pub(crate) uri: String,
+pub struct MongoImportStrategy {
+    pub uri: String,
 }
 
 impl ImportStrategy for MongoImportStrategy {
