@@ -64,7 +64,7 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, UuidGen};
+pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen};
 
 pub mod number;
 pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, UniformRangeStep};
@@ -355,8 +355,14 @@ pub mod tests {
             "frequency": 0.2
             },
             "username": {
-            "type": "string",
-            "pattern": "[a-z0-9]{5,15}"
+                "type": "string",
+                "truncated": {
+                    "content": {
+                        "type": "string",
+                        "pattern": "[a-zA-Z0-9]{0, 255}"
+                    },
+                    "length": 5
+                }
             },
             "bank_country": {
             "type": "string",
@@ -530,6 +536,7 @@ pub mod tests {
                 println!("bank_country={}", user.bank_country);
                 assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
                 assert!(user.id >= 100);
+                assert!(user.username.len() <= 5);
                 all_users.insert(user.username.clone());
                 currencies.insert(user.username, user.currency);
                 /*

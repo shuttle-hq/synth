@@ -153,6 +153,31 @@ Accepted values for the `"date_time"` key are objects with the following keys:
 }
 ```
 
+## truncated
+
+The `truncated` generator truncates the output of it's inner generator to a fixed length.
+
+If the output of its inner generator is less than or equal to the length, it is left untouched. 
+
+`truncated` has 2 fields,
+- `length`: The number of characters to truncate to.
+- `content`: The content to be truncated. This can be any Synth generator that yields a String.
+
+#### Example
+
+```json synth
+{
+  "type": "string",
+  "truncated": {
+    "content": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 255}"
+    },
+    "length": 5
+  }
+}
+```
+
 
 
 ## categorical

@@ -7,11 +7,13 @@ pub use date_time::RandomDateTime;
 
 pub mod faker;
 pub mod serialized;
+pub mod truncated;
 pub mod uuid;
 
 pub use self::uuid::UuidGen;
 pub use faker::RandFaker;
 pub use serialized::Serialized;
+pub use truncated::Truncated;
 
 derive_generator! {
     yield String,
@@ -22,6 +24,7 @@ derive_generator! {
         Serialized(TryOnce<Serialized>)
         Categorical(OnceInfallible<Random<String, Categorical<String>>>)
         Uuid(OnceInfallible<UuidGen>)
+        Truncated(Truncated)
     }
 }
 
@@ -55,10 +58,17 @@ impl From<UuidGen> for RandomString {
     }
 }
 
+impl From<Truncated> for RandomString {
+    fn from(trunc: Truncated) -> Self {
+        Self::Truncated(trunc)
+    }
+}
+
 derive_generator! {
     yield Token,
     return Result<Value, Error>,
-    pub enum StringNode {
+    pub enum
+    StringNode {
     String(Valuize<Tokenizer<RandomString>, String>),
     DateTime(Valuize<Tokenizer<RandomDateTime>, ChronoValue>)
     }
