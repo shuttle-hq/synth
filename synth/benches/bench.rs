@@ -1,3 +1,5 @@
+// we can ignore irrefutable patterns here, because we might run this with or without a feature
+#![allow(irrefutable_let_patterns)]
 use log::debug;
 
 use synth::{cli, init_logger, version, Args, Splash, META_OS};
@@ -11,14 +13,11 @@ fn bench_init() {
         let splash = Splash::auto().unwrap();
         debug!("{}", splash);
 
-        match args {
-            Args::Serve(_) => panic!("We don't serve your kind here!"),
-            Args::Cli(cli_args) => {
-                let _ = cli::Cli::new(cli_args, version(), META_OS.to_string())
-                    .unwrap()
-                    .run()
-                    .await;
-            }
+        if let Args::Cli(cli_args) = args {
+            let _ = cli::Cli::new(cli_args, version(), META_OS.to_string())
+                .unwrap()
+                .run()
+                .await;
         }
     });
 }
@@ -51,13 +50,12 @@ fn bench_generate_n_to_stdout(size: usize) {
         let splash = Splash::auto().unwrap();
         debug!("{}", splash);
 
-        match args {
-            Args::Serve(_) => panic!("We don't serve your kind here!"),
-            Args::Cli(cli_args) => cli::Cli::new(cli_args, version(), META_OS.to_string())
+        if let Args::Cli(cli_args) = args {
+            cli::Cli::new(cli_args, version(), META_OS.to_string())
                 .unwrap()
                 .run()
                 .await
-                .unwrap(),
+                .unwrap()
         }
     });
 }

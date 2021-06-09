@@ -35,7 +35,6 @@ use colored::Colorize;
 
 use std::env;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::{net::SocketAddr, str::FromStr};
 
 use anyhow::Result;
@@ -46,15 +45,17 @@ use pyo3::{PyResult, Python};
 #[macro_use]
 mod error;
 
+#[cfg(feature = "api")]
 mod api;
+#[cfg(feature = "api")]
 pub use api::Api;
 
+#[cfg(feature = "api")]
 mod daemon;
+#[cfg(feature = "api")]
 use daemon::Daemon;
 
 use crate::rlog::composite::CompositeLogger;
-use crate::rlog::target::TargetLogger;
-use crate::rlog::zenduty::ZenDuty;
 
 pub mod cli;
 mod rlog;
@@ -99,6 +100,7 @@ pub fn version() -> String {
 
 #[derive(StructOpt)]
 pub enum Args {
+    #[cfg(feature = "api")]
     #[structopt(about = "Run Synth in daemon mode")]
     Serve(ServeArgs),
     #[structopt(flatten)]
@@ -201,8 +203,9 @@ mem         = {mem}
     }
 }
 
+#[cfg(feature = "api")]
 pub async fn serve_daemon(args: ServeArgs) -> Result<()> {
-    let daemon = Arc::new(Daemon::new(args.data_directory.0)?);
+    let daemon = std::sync::Arc::new(Daemon::new(args.data_directory.0)?);
 
     let server = Api::new_server(daemon)?;
     eprintln!(
@@ -225,21 +228,22 @@ pub async fn serve_daemon(args: ServeArgs) -> Result<()> {
     Ok(())
 }
 
+#[allow(unused_variables)]
 pub fn init_logger(args: &Args) {
     let mut loggers = Vec::<Box<dyn log::Log>>::new();
 
     // Env logger
     let env_logger = env_logger::Builder::from_default_env().build();
     loggers.push(Box::new(env_logger));
-
+    #[cfg(feature = "api")]
     if let Args::Serve(ServeArgs {
         zenduty: Some(api_key),
         ..
     }) = args
     {
-        let zen_logger = Box::new(TargetLogger::new(
+        let zen_logger = Box::new(crate::rlog::target::TargetLogger::new(
             "remote".to_string(),
-            ZenDuty::new(api_key.clone()),
+            crate::rlog::zenduty::ZenDuty::new(api_key.clone()),
         ));
         loggers.push(zen_logger);
     }

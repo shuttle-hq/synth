@@ -857,18 +857,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dialoguer"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9dd058f8b65922819fabb4a41e7d1964e56344042c26efbccd465202c23fa0c"
-dependencies = [
- "console",
- "lazy_static",
- "tempfile",
- "zeroize",
-]
-
-[[package]]
 name = "diesel"
 version = "1.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -929,31 +917,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "dirs-next"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b98cf8ebf19c3d1b223e151f99a4f9f0690dca41414773390fc824184ac833e1"
-dependencies = [
- "cfg-if 1.0.0",
- "dirs-sys-next",
-]
-
-[[package]]
 name = "dirs-sys"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03d86534ed367a67548dc68113a0f5db55432fdfbb6e6f9d77704397d95d5780"
-dependencies = [
- "libc",
- "redox_users",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "dirs-sys-next"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ebda144c4fe02d1f7ea1a7d9641b6fc6b580adcfa024ae48797ecdeb6825b4d"
 dependencies = [
  "libc",
  "redox_users",
@@ -3148,15 +3115,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shellexpand"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83bdb7831b2d85ddf4a7b148aa19d0587eddbe8671a436b7bd1182eaad0f2829"
-dependencies = [
- "dirs-next",
-]
-
-[[package]]
 name = "signal-hook"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3389,7 +3347,6 @@ dependencies = [
  "chrono",
  "colored",
  "ctrlc",
- "dialoguer",
  "diesel",
  "diesel_migrations",
  "dirs",
@@ -3411,7 +3368,6 @@ dependencies = [
  "rust_decimal",
  "serde",
  "serde_json",
- "shellexpand",
  "strsim 0.10.0",
  "structopt",
  "synth-core",
@@ -3432,7 +3388,6 @@ dependencies = [
  "chrono",
  "colored",
  "env_logger",
- "fake",
  "humantime-serde",
  "lazy_static",
  "log",
@@ -3441,13 +3396,11 @@ dependencies = [
  "pyo3",
  "rand 0.8.3",
  "rand_regex",
- "rayon",
  "regex",
  "serde",
  "serde_json",
  "strsim 0.10.0",
  "synth-gen",
- "sysinfo",
  "tempfile",
  "tide 0.16.0",
  "uuid",
@@ -3457,7 +3410,6 @@ dependencies = [
 name = "synth-gen"
 version = "0.4.0"
 dependencies = [
- "anyhow",
  "fake",
  "rand 0.8.3",
  "serde",
@@ -4213,9 +4165,3 @@ dependencies = [
  "winapi 0.2.8",
  "winapi-build",
 ]
-
-[[package]]
-name = "zeroize"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4756f7db3f7b5574938c3eb1c117038b8e07f95ee6718c0efad4ac21508f1efd"

@@ -34,6 +34,8 @@ let
 
     preferLocalBuild = true;
 
+    cargoBuildOptions = (opts: opts ++ [ "--features" "api"]);
+
     # To help with tests on MacOS
     NIX_PYTHONPATH = "${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages";
 

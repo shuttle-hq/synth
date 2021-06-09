@@ -57,7 +57,7 @@ impl From<&(dyn std::error::Error + 'static)> for UserError {
         final_error
     }
 }
-
+#[cfg(feature = "api")]
 impl From<UserError> for tide::Response {
     fn from(u: UserError) -> Self {
         let value = serde_json::to_value(&u).unwrap();
