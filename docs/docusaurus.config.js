@@ -1,12 +1,12 @@
 module.exports = {
     title: 'Synth - Documentation',
     tagline: 'Easy data generation',
-    url: 'https://openquery-io.github.io/synth',
+    url: 'https://getsynth.github.io/synth',
     baseUrl: '/synth/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/getsynth_favicon.png',
-    organizationName: 'openquery-io', // Usually your GitHub org/user name.
+    organizationName: 'getsynth', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
         plugins: [require.resolve('docusaurus-plugin-fathom')],
     themeConfig: {
@@ -48,7 +48,7 @@ module.exports = {
 		    position: 'left'
 		},
                 {
-                    href: 'https://github.com/openquery-io/synth',
+                    href: 'https://github.com/getsynth/synth',
                     label: 'GitHub',
                     position: 'right',
                 },
@@ -87,7 +87,7 @@ module.exports = {
                     sidebarPath: require.resolve('./sidebars.js'),
                     // Please change this to your repo.
                     editUrl:
-                        'https://github.com/openquery-io/synth/edit/master/docs/',
+                        'https://github.com/getsynth/synth/edit/master/docs/',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css')

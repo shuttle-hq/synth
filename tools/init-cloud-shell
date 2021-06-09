@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-SYNTH_REPO=${SYNTH_REPO:-https://github.com/openquery-io/synth}
+SYNTH_REPO=${SYNTH_REPO:-https://github.com/getsynth/synth}
 SYNTH_VERSION=${SYNTH_VERSION:-latest}
 SYNTH_INSTALLER=$SYNTH_REPO/releases/$SYNTH_VERSION/download/install-nix
 BUG_REPORT_URL="$SYNTH_REPO/issues/new?assignees=&labels=bug&template=bug_report.md&title="
-GETTING_STARTED=https://openquery-io.github.io/synth/hello-world
+GETTING_STARTED=https://getsynth.github.io/synth/hello-world
 
 MUTED='\033[1;30m'
 CLEAR='\033[0m'

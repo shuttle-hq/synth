@@ -93,7 +93,7 @@ install_based_on_os() {
 }
 
 prompt_install_telemetry() {
-  info "\nTelemetry is disabled by default (more details here: https://openquery-io.github.io/synth/other/telemetry)"
+  info "\nTelemetry is disabled by default (more details here: https://getsynth.github.io/synth/other/telemetry)"
   info "Help us improve the product by allowing Synth to collect de-identified command usage data? (y/N) "
   read INSTALL_TELEMETRY </dev/tty
 
@@ -104,7 +104,7 @@ prompt_install_telemetry() {
 
 # Download a Synth binary package and install it in $HOME_LOCAL_BIN.
 install_from_bin_package() {
-  PACKAGE_URL="https://github.com/openquery-io/synth/releases/latest/download/$1"
+  PACKAGE_URL="https://github.com/getsynth/synth/releases/latest/download/$1"
   make_temp_dir
   info "Downloading binary package to temporary dir and unpacking it there...\n"
   dl_to_file "$PACKAGE_URL" "$SYNTH_TEMP_DIR/$1"

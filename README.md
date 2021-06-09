@@ -6,12 +6,12 @@
 </p>
 <br>
 <p align=center>
-  <a href="https://openquery-io.github.io/synth"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
-  <a href="https://github.com/openquery-io/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
-  <a href="https://github.com/openquery-io/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
-  <a href="https://github.com/openquery-io/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/openquery-io/synth/synth%20public%20cachix"/></a>
+  <a href="https://getsynth.github.io/synth"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
+  <a href="https://github.com/getsynth/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
+  <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
+  <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
   <a href="https://discord.gg/H33rRDTm3p"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
-  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/openquery-io/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
+  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/getsynth/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
 </p>
 
 ------
@@ -46,7 +46,7 @@ The key features of Synth are:
 
 ## Installation & Getting Started
 
-To get started quickly, check out the [docs](https://openquery-io.github.io/synth).
+To get started quickly, check out the [docs](https://getsynth.github.io/synth).
 
 ## Examples
 
@@ -169,5 +169,5 @@ See the [contributing](./CONTRIBUTING.md) section for details.
 
 ## License
 
-Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/openquery-io/synth/blob/master/LICENSE).
+Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/getsynth/synth/blob/master/LICENSE).
 

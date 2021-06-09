@@ -2,11 +2,11 @@
 
 ## Raise an Issue
 
-Raising [issues](https://github.com/openquery-io/synth/issues) is encouraged. We have some templates to help you get started.
+Raising [issues](https://github.com/getsynth/synth/issues) is encouraged. We have some templates to help you get started.
 
 ## Running Locally
 
-To compile from source, see the `Compiling from source` tab in the [docs](https://openquery-io.github.io/synth/hello-world). You should also install the `Dependencies` mentioned in the installation section.
+To compile from source, see the `Compiling from source` tab in the [docs](https://getsynth.github.io/synth/hello-world). You should also install the `Dependencies` mentioned in the installation section.
 
 ## Running Tests
 
