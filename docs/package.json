@@ -15,10 +15,11 @@
     "@docusaurus/core": "2.0.0-alpha.70",
     "@docusaurus/preset-classic": "2.0.0-alpha.70",
     "@mdx-js/react": "^1.6.21",
+    "@papercups-io/docusaurus-plugin": "1.0.0",
     "clsx": "^1.1.1",
+    "docusaurus-plugin-fathom": "1.1.0",
     "react": "^16.8.4",
-    "react-dom": "^16.8.4",
-    "docusaurus-plugin-fathom": "1.1.0"
+    "react-dom": "^16.8.4"
   },
   "browserslist": {
     "production": [
