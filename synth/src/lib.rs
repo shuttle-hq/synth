@@ -1,12 +1,7 @@
-#![feature(
-    format_args_capture,
-    async_closure,
-    map_first_last,
-    box_patterns,
-)]
+#![feature(format_args_capture, async_closure, map_first_last, box_patterns)]
 #![feature(error_iter)]
 #![allow(type_alias_bounds)]
-//#![deny(warnings)]
+#![deny(warnings)]
 
 #[macro_use]
 extern crate log;
@@ -118,8 +113,6 @@ pub struct ServeArgs {
 }
 
 pub struct Splash {
-    python_ver: String,
-    python_path: String,
     synth_ver: String,
     synth_ref: String,
     synth_rev: String,
@@ -131,20 +124,6 @@ pub struct Splash {
 
 impl Splash {
     pub fn auto() -> Result<Self> {
-        #[cfg(feature = "python")]
-        let (python_ver, python_path) = {
-            let gil = Python::acquire_gil();
-            let py = gil.python();
-            let sys = py.import("sys")?;
-            let version = sys.get("version")?.extract::<String>()?.replace("\n", "");
-            let path = sys.get("path")?.extract::<Vec<String>>()?.join(":");
-            let out: PyResult<_> = Ok((version, path));
-            out
-        }?;
-
-        #[cfg(not(feature = "python"))]
-        let python_ver = { "disabled".bold().red().to_string() };
-
         let path = std::env::var("PATH").unwrap_or_else(|_| "unknown".to_string());
 
         let synth_ver = version();
@@ -158,8 +137,6 @@ impl Splash {
         let mem = system.get_total_memory();
 
         Ok(Self {
-            python_ver,
-            python_path,
             synth_ver,
             synth_ref,
             synth_rev,
@@ -180,8 +157,6 @@ impl std::fmt::Display for Splash {
 version     = {synth_ver}
 ref         = {synth_ref}
 rev         = {synth_rev}
-python      = {python_ver}
-PYTHONPATH  = {python_path}
 PATH        = {path}
 target      = {os}
 arch        = {arch}
@@ -192,8 +167,6 @@ mem         = {mem}
             synth_ref = self.synth_ref.bold(),
             synth_rev = self.synth_rev.bold(),
             path = self.path.bold(),
-            python_ver = self.python_ver.bold(),
-            python_path = self.python_path,
             arch = self.arch.bold(),
             os = self.os.bold(),
             mem = self.mem,

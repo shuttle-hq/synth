@@ -82,7 +82,7 @@ Next let's create a `users` collection using Synth's configuration language, and
         "email": {
             "type": "string",
             "faker": {
-                "generator": "email"
+                "generator": "safe_email"
             }
         },
         "joined_on": {

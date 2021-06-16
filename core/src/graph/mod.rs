@@ -366,11 +366,8 @@ pub mod tests {
             },
             "bank_country": {
             "type": "string",
-            "faker": {
-                "generator": "bank_country",
-                "locales": ["en_GB", "es_ES"]
-            }
-            },
+            "pattern": "(GB|ES)"
+                    },
             "num_logins": {
             "type": "number",
             "subtype": "u64",
@@ -381,23 +378,14 @@ pub mod tests {
             }
             },
             "currency": {
-            "type": "one_of",
-            "variants": [ {
-                "type": "string",
-                "faker": {
-                "generator": "currency_name",
-                }
-            }, {
-                "type": "string",
-                "pattern": "unknown"
-            }, ]
-            },
+            "type": "string",
+            "pattern": "(USD|GBP)"
+                    },
             "credit_card": {
             "type": "string",
-            "faker": {
-                "generator": "credit_card_number",
-                "card_type": "amex"
-            }
+                "faker": {
+                    "generator": "credit_card"
+                }
             },
             "created_at_date": {
             "type": "string",
@@ -422,7 +410,7 @@ pub mod tests {
             "optional": true,
             "type": "string",
             "faker": {
-                "generator": "ascii_email"
+                "generator": "safe_email"
             }
             },
             "num_logins_again": {
@@ -588,41 +576,6 @@ pub mod tests {
                 assert_eq!(*value, 10);
             }
         }
-    }
-
-    #[test]
-    fn fail_on_generator_error() {
-        let schema: Namespace = from_json!({
-            "users": {
-        "type": "array",
-        "length": {
-            "type": "number",
-            "subtype": "u64",
-            "constant": 10
-        },
-        "content": {
-            "type": "object",
-            "credit_card": {
-            "type": "string",
-            "faker": {
-                "generator": "invalid_generator_name",
-                "card_type": "amex"
-            }
-            },
-        }
-            }
-        });
-
-        let mut rng = rand::thread_rng();
-
-        let mut model = Graph::from_namespace(&schema)
-            .unwrap()
-            .inspect(|yielded| {
-                println!("{:?}", yielded);
-            })
-            .try_aggregate();
-
-        assert!(model.try_next_yielded(&mut rng).is_err());
     }
 
     #[test]

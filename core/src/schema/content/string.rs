@@ -153,34 +153,17 @@ impl Serialize for FakerContentArgument {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FakerContent {
     pub generator: String,
+    /// deprecated: Use FakerArgs::locale instead
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub locales: Vec<String>,
     #[serde(flatten)]
-    pub args: HashMap<String, FakerContentArgument>,
+    pub args: crate::graph::string::FakerArgs,
 }
 
 impl FakerContent {
     fn kind(&self) -> &str {
         self.generator.as_ref()
-    }
-}
-
-impl ToPyObject for FakerContentArgument {
-    fn to_object(&self, py: Python) -> PyObject {
-        match &self.0 {
-            Value::Bool(x) => x.to_object(py),
-            Value::String(x) => x.to_object(py),
-            Value::Number(number) => {
-                number
-                    .as_u64()
-                    .map(|n| n.to_object(py))
-                    .or_else(|| number.as_i64().map(|n| n.to_object(py)))
-                    .or_else(|| number.as_f64().map(|n| n.to_object(py)))
-                    .unwrap() // serde_json::Number API contract
-            }
-            _ => unreachable!(), // would not be constructed
-        }
     }
 }
 
@@ -533,13 +516,9 @@ impl Compile for StringContent {
             StringContent::Faker(FakerContent {
                 generator,
                 args,
-                locales,
-            }) => RandomString::from(RandFaker::new(
-                generator.clone(),
-                args.clone(),
-                locales.clone(),
-            )?)
-            .into(),
+                locales: _, // to combine locales from the 'locales' field and the args::locales,
+                            // we should impl Hash on locale and then put them in a Set
+            }) => RandomString::from(RandFaker::new(generator.clone(), args.clone())?).into(),
             StringContent::DateTime(DateTimeContent {
                 begin,
                 end,

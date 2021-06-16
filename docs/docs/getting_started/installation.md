@@ -16,10 +16,6 @@ Run the following command to install the `synth` binary:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
 ```
-
-:::note
-The binary distribution is only compatible with `python-3.8`. If you happen to be running a different version of Python, you may have to build `synth` from source.
-:::
 	
 </TabItem>
 
@@ -61,7 +57,7 @@ cargo +nightly install --locked --git https://github.com/getsynth/synth.git synt
 If compilation fails, it may be because some required dependencies are not installed. On Ubuntu, you can try:
 
 ```
-sudo apt-get install libssl-dev libsqlite3-dev libpython3-dev
+sudo apt-get install libssl-dev libsqlite3-dev
 ```
 :::
 
@@ -74,10 +70,6 @@ Run the following command to install the `synth` binary:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
 ```
-
-:::note
-The binary distribution is only compatible with `python-3.8`. If you happen to be running a different version of Python, you may have to build `synth` from source.
-:::
 
 </TabItem>
 
@@ -95,15 +87,3 @@ If you have a [Google Cloud Platform](https://cloud.google.com/) account, you ca
 
 </TabItem>
 </Tabs>
-
-You can run `synth --version` to make sure the CLI installed correctly.
-
-:::important Python dependencies
-
-For some classes of generators, Synth makes use of your local Python environment. In particular, you may need to have [Python 3 installed](https://www.python.org/downloads/) and have the [Faker](https://pypi.org/project/Faker/) package installed. To install Faker with `pip`:
-
-```bash
-pip3 install Faker
-```
-
-or take a look at their official [documentation](https://faker.readthedocs.io/en/master/index.html).

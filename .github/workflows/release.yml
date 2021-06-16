@@ -28,9 +28,6 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly-2021-05-17
-    - uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.py }}
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo +nightly-2021-05-17 build --release
@@ -105,10 +102,6 @@ jobs:
         - ubuntu-latest
         - macos-latest
         - ubuntu-18.04
-        py:
-        - 3.7
-        - 3.8
-        - 3.9
     steps:
     - uses: actions/download-artifact@v2
       with:
@@ -120,7 +113,7 @@ jobs:
       uses: dawidd6/action-get-tag@v1
     - uses: actions/download-artifact@v2
       with:
-        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-py${{ matrix.py }}-x86_64
+        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
         path: ./
     - run: ls
     - name: Upload Release Asset
@@ -131,5 +124,5 @@ jobs:
       with:
         upload_url: ${{ steps.release.outputs.upload_url }} 
         asset_path: ./synth.tar.gz
-        asset_name: synth-${{ matrix.os }}-py${{ matrix.py }}-x86_64.tar.gz
+        asset_name: synth-${{ matrix.os }}-x86_64.tar.gz
         asset_content_type: application/octet-stream

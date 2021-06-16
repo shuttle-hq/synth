@@ -11,7 +11,7 @@ pub mod truncated;
 pub mod uuid;
 
 pub use self::uuid::UuidGen;
-pub use faker::RandFaker;
+pub use faker::{RandFaker, FakerArgs, Locale};
 pub use serialized::Serialized;
 pub use truncated::Truncated;
 

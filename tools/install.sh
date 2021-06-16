@@ -53,38 +53,14 @@ install_based_on_os() {
       os="latest"
     fi
 
-    PY_MINOR=$(python3 --version 2>/dev/null | grep -o -e "[0-9]" | sed "2q;d")
-
-    if [ ! ${PY_MINOR} ]; then
-      die "Could not determine your Python version"
-    fi
-
-    if [ ${PY_MINOR} -lt 7 -o ${PY_MINOR} -gt 9 ]; then
-      die "Sorry, this installer does not support versions of Python != 3.7,3.8,3.9"
-    else
-      py="3.${PY_MINOR}"
-    fi
-
-    install_from_bin_package "synth-ubuntu-${os}-py${py}-x86_64.tar.gz"
+    install_from_bin_package "synth-ubuntu-${os}-x86_64.tar.gz"
     ;;
   "Darwin")
     HOME_LOCAL_BIN="/usr/local/bin"
 
     os="latest"
 
-    PY_MINOR=$(python3 --version 2>/dev/null | grep -o -e "[0-9]" | sed "2q;d")
-
-    if [ ! ${PY_MINOR} ]; then
-      die "Could not determine your Python version"
-    fi
-
-    if [ ${PY_MINOR} -lt 7 -o ${PY_MINOR} -gt 9 ]; then
-      die "Sorry, this installer does not support versions of Python != 3.7,3.8,3.9"
-    else
-      py="3.${PY_MINOR}"
-    fi
-
-    install_from_bin_package "synth-macos-${os}-py${py}-x86_64.tar.gz"
+    install_from_bin_package "synth-macos-${os}-x86_64.tar.gz"
     ;;
   *)
     die "Sorry, this installer does not support your operating system: $(uname)."
