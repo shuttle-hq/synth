@@ -19,10 +19,6 @@ jobs:
         # Build for these versions to force backward compat with certain
         # toolchains (GLIBC < 2.29 in case of ubuntu-18.04)
         - ubuntu-18.04
-        py:
-        - 3.7
-        - 3.8
-        - 3.9
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
@@ -35,7 +31,7 @@ jobs:
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
       with:
-        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-py${{ matrix.py }}-x86_64
+        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
         path: target/release/synth.tar.gz
 
   release:
