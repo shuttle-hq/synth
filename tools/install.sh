@@ -4,6 +4,7 @@
 # https://github.com/wasp-lang/wasp/blob/75e17f4dc42451e59fee5c93b9537443f19bc63d/waspc/tools/install.sh
 SYNTH_TEMP_DIR=
 FORCE=
+CI=
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -16,10 +17,10 @@ while [ $# -gt 0 ]; do
     FORCE="true"
     shift
     ;;
-  # -d|--dest)
-  #     DEST="$2"
-  #     shift 2
-  #     ;;
+  -c | --ci)
+    CI="true"
+    shift
+    ;;
   *)
     echo "Invalid argument: $1" >&2
     exit 1
@@ -119,7 +120,9 @@ install_from_bin_package() {
 
   info "${GREEN}Synth has been successfully installed!${RESET}"
 
-  prompt_install_telemetry
+  if [ "$CI" != "true" ]; then
+    prompt_install_telemetry
+  fi
 
   info "\n${GREEN}Done!${RESET}"
 

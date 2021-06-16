@@ -16,7 +16,11 @@ Run the following command to install the `synth` binary:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
 ```
-	
+
+:::note
+To skip the telemetry prompt (if you are installing Synth in CI for example) you can use the `--ci` flag.
+:::
+
 </TabItem>
 
 <TabItem value='nix'>
@@ -70,6 +74,10 @@ Run the following command to install the `synth` binary:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
 ```
+
+:::note
+To skip the telemetry prompt (if you are installing Synth in CI for example) you can use the `--ci` flag.
+:::
 
 </TabItem>
 

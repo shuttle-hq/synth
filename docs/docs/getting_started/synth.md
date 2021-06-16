@@ -1,5 +1,5 @@
 ---
-title: What is this?
+title: What is Synth?
 ---
 
 Synth is a tool for generating realistic data using a declarative data model. Synth is database agnostic and can scale to millions of rows of data.
