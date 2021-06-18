@@ -8,4 +8,6 @@ COPY dist/playground dist/playground
 
 RUN cargo install --path dist/playground
 
-ENTRYPOINT ["synth-playground", "serve"]
+ENV RUST_LOG="debug"
+
+ENTRYPOINT ["synth-playground", "serve", "--port", "8080", "--addr", "0.0.0.0"]
