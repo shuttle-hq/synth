@@ -10,11 +10,9 @@ jobs:
   tests:
     name: synth tests
     runs-on: ubuntu-latest
-    env:
-      toolchain: "nightly"
     steps:
       - uses: actions/checkout@v2
-      - name: Install nix
-        uses: cachix/install-nix-action@v12
-      - name: Run tests
-        run: nix-shell --run "cargo test"
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-05-17
+      - run: cargo +nightly-2021-05-17 test

@@ -3,6 +3,7 @@ members = [
   "gen",
   "core",
   "synth",
+  "dist/playground"
 ]
 
 # blocked by diesel error for now.
