@@ -42,11 +42,17 @@ The key features of Synth are:
 
 - **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.  
  
-- **Semantic Data Types**: Synth integrates with the (amazing) Python [Faker](https://pypi.org/project/Faker/) library, supporting generation of thousands of semantic types (e.g. credit card numbers, email addresses etc.) as well as locales.
+- **Semantic Data Types**: Synth has a library of semantic 'faker' types to cover PII like names, addresses, credit card numbers etc.
 
 ## Installation & Getting Started
 
-To get started quickly, check out the [docs](https://getsynth.github.io/synth).
+On Linux and MacOS you can get started with the one-liner:
+
+```bash
+$ curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+```
+
+For more installation options, check out the [docs](https://getsynth.github.io/synth/getting_started/installation).
 
 ## Examples
 

@@ -40,7 +40,7 @@ Synth has na internal fake data generator which will generate fake data for sema
 {
   "type": "string",
   "faker": {
-    "generator": "sentence"
+    "generator": "address"
   }
 }
 ```
