@@ -9,11 +9,11 @@ extern crate log;
 #[macro_use]
 extern crate anyhow;
 
-#[macro_use]
-extern crate diesel;
+// #[macro_use]
+// extern crate diesel;
 
-#[macro_use]
-extern crate diesel_migrations;
+// #[macro_use]
+// extern crate diesel_migrations;
 
 //#[macro_use]
 //extern crate lazy_static;
@@ -34,9 +34,6 @@ use std::{net::SocketAddr, str::FromStr};
 
 use anyhow::Result;
 
-#[cfg(feature = "python")]
-use pyo3::{PyResult, Python};
-
 #[macro_use]
 mod error;
 
@@ -55,9 +52,12 @@ use crate::rlog::composite::CompositeLogger;
 pub mod cli;
 mod rlog;
 
+#[cfg(feature = "api")]
 pub mod index;
-use crate::cli::CliArgs;
+#[cfg(feature = "api")]
 pub use index::Index;
+
+use crate::cli::CliArgs;
 
 mod sampler;
 pub mod store;
