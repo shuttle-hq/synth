@@ -36,12 +36,13 @@ If a subdirectory for a given namespace does not exist in your workspace, Synth 
 #### Options
 
 - `--from <from>` - The location from which to import. Synth supports multiple import strategies. 
-                  Importing directly from a database will be supported in future versions.
   
   Importing from a file: Currently we support importing from JSON files by specifying the path to
                            the file: `/some/path/to/file.json`.
   
   Importing from standard input: Not specifying `from` will accept JSON files from stdin.
+  
+  Importing from a database (e.g. postgres): synth import tpch --from postgres://user:pass@localhost:5432/tpch
 
 ---
 
