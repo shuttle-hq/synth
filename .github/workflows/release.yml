@@ -34,6 +34,22 @@ jobs:
         name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
         path: target/release/synth.tar.gz
 
+  build-windows:
+    name: build-windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-05-17
+      - id: tag
+        uses: dawidd6/action-get-tag@v1
+      - run: cargo +nightly-2021-05-17 build --release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: synth-${{ steps.tag.outputs.tag }}-windows-x86_64
+          path: target/release/synth.exe
+
   release:
     name: release
     needs: [ build ]
@@ -83,7 +99,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.release.outputs.upload_url }} 
+        upload_url: ${{ steps.release.outputs.upload_url }}
         asset_path: ./tools/nix/install-nix
         asset_name: install-nix
         asset_content_type: application/octet-stream
@@ -118,7 +134,36 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.release.outputs.upload_url }} 
+        upload_url: ${{ steps.release.outputs.upload_url }}
         asset_path: ./synth.tar.gz
         asset_name: synth-${{ matrix.os }}-x86_64.tar.gz
         asset_content_type: application/octet-stream
+
+  upload-windows:
+    name: upload-windows
+    needs: [ release ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: upload_url
+          path: ./
+      - id: release
+        run: echo "##[set-output name=upload_url;]$(cat upload_url)"
+      - id: tag
+        uses: dawidd6/action-get-tag@v1
+      - uses: actions/download-artifact@v2
+        with:
+          name: synth-${{ steps.tag.outputs.tag }}-${{ steps.tag.outputs.tag }}-windows-x86_64
+          path: ./
+      - run: ls
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./synth.exe
+          asset_name: synth-windows-latest-x86_64.exe
+          asset_content_type: application/octet-stream
