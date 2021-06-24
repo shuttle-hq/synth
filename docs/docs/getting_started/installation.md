@@ -6,7 +6,7 @@ import Tabs from '@theme/Tabs'; import TabItem from '@theme/TabItem';
 
 <Tabs defaultValue="linux"
 values={[
-{label: 'Linux', value: 'linux'}, {label: 'macOS', value: 'mac'}, {label: 'Compile from source', value: 'cargo'}, {label: 'Nix', value: 'nix'}, {label: 'GCP Cloud Shell', value: 'gcp_shell'},
+{label: 'Linux', value: 'linux'}, {label: 'macOS', value: 'mac'}, {label: 'Windows', value: 'windows'}, {label: 'Nix', value: 'nix'}, {label: 'Compile from source', value: 'cargo'},
 ]}>
 
 <TabItem value='linux'>
@@ -23,9 +23,25 @@ To skip the telemetry prompt (if you are installing Synth in CI for example) you
 
 </TabItem>
 
+<TabItem value='windows'>
+
+To install on Windows, [download](https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe) the Synth executable and run it from your `cmd` or `Git BASH` or `Windows PowerShell`.
+
+Then copy the downloaded executable to a suitable folder (e.g. C:\synth\synth.exe).
+
+Finally - [add Synth to your PATH](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/) via your environment variables.
+
+You should now be able to use synth:
+
+```
+PS C:\Users\user\workspace> synth --version
+```
+
+</TabItem>
+
 <TabItem value='nix'>
 
-If you happen to be running the [Nix](https://nixos.org/download.html#nix-quick-install) package manager or if you're on [NixOS](https://nixos.org/), you can use our automated Nix packaging that will set everything up for you (including `Python` dependencies and other runtime requirements).
+If you happen to be running the [Nix](https://nixos.org/download.html#nix-quick-install) package manager or if you're on [NixOS](https://nixos.org/), you can use our automated Nix packaging that will set everything up for you.
 
 :::note
 We recommend you add [getsynth.cachix.org](https://app.cachix.org/cache/getsynth) to your list of binary caches. This will speed up your installation considerably by downloading [GitHub Actions build artifacts](https://github.com/getsynth/synth/actions/workflows/cachix.yml) instead of compiling everything locally.
@@ -81,17 +97,4 @@ To skip the telemetry prompt (if you are installing Synth in CI for example) you
 
 </TabItem>
 
-
-<TabItem value='gcp_shell'>
-<div align="center">
-<a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/getsynth/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://storage.googleapis.com/gweb-cloudblog-publish/images/run_on_google_cloud.max-300x300.png"></img></a>
-</div>
-
-If you have a [Google Cloud Platform](https://cloud.google.com/) account, you can quickly give `synth` a try by cloning the GitHub repository in a Cloud Shell instance and running our installation script there. To get started, click on the "Run on Google Cloud" button. Then, as prompted, run the following installer:
-
-```bash
-./tools/init-cloud-shell && export PATH=$HOME/.local/bin:$PATH
-```
-
-</TabItem>
 </Tabs>
