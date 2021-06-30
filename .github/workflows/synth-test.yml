@@ -1,0 +1,23 @@
+name: synth-cargo-test
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
+  pull_request:
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
+
+  workflow_dispatch:
+
+jobs:
+  cargo_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-05-17
+      - run: |
+          cargo +nightly-2021-05-17 test
+

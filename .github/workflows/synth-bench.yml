@@ -1,0 +1,43 @@
+name: synth-bench
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
+  pull_request:
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
+
+  workflow_dispatch:
+
+env:
+  BENCHPATH: /home/runner/work/synth/synth/synth
+jobs:
+  synth_bench:
+    runs-on: ubuntu-latest
+    steps:
+    - name: install valgrind
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes --no-install-recommends valgrind
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+    - uses: actions/setup-python@v2
+    - name: run benchmark
+      id: bench
+      run: |
+        body=$(cargo +nightly bench --manifest-path /home/runner/work/synth/synth/synth/Cargo.toml)
+        body="${body//'%'/'%25'}"
+        body="${body//$'\n'/'%0A'}"
+        body="${body//$'\r'/'%0D'}" 
+        echo ::set-output name=body::$body
+    - name: comment with benchmark results
+      uses: JungWinter/comment@v1.1.0
+      with:
+        id: create
+        type: create
+        body: ${{ steps.bench.outputs.body }}
+        issue_number: ${{ github.event.pull_request.number }}
+        token: ${{ secrets.GITHUB_TOKEN }}

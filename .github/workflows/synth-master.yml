@@ -1,0 +1,38 @@
+name: synth master ci/cd
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+
+  deploy:
+    name: deployments
+    runs-on: ubuntu-latest
+    env:
+      project_id: openquery-synth-dev
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ env.project_id }}
+          service_account_key: ${{ secrets.OPENQUERY_CI_SERVICE_ACCOUNT_KEY }}
+          export_default_credentials: true
+      - name: Build image
+        working-directory: synth/core/
+        run: |
+          echo building image...
+          gcloud auth configure-docker
+          docker build -t eu.gcr.io/${project_id}/playground:$GITHUB_SHA -f dist/playground/Dockerfile .
+          docker push eu.gcr.io/${project_id}/playground:$GITHUB_SHA
+#      - uses: hashicorp/setup-terraform@v1
+#      - name: Deploy image
+#        working-directory: terraform/synth/dev
+#        run: |
+#          terraform init
+#          terraform apply -var-file=gcp.tfvars -var playground_tag=$GITHUB_SHA -auto-approve
+#      - name: Upload installer
+#        working-directory: synth/core/tools
+#        run: bucket=${project_id}-public ./upload_installer.sh
