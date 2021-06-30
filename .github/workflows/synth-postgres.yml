@@ -1,0 +1,50 @@
+name: synth-postgres
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
+  pull_request:
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
+
+  workflow_dispatch:
+
+jobs:
+  e2e_tests_postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          -p 5432:5432
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client jq
+      - run: |
+          psql -f synth/testing_harness/postgres/0_hospital_schema.sql postgres://postgres:postgres@localhost:5432/postgres
+          psql -f synth/testing_harness/postgres/1_hospital_data.sql postgres://postgres:postgres@localhost:5432/postgres
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-05-17
+      - run: cargo +nightly-2021-05-17 install --debug --path=synth
+      - run: |
+          echo "Running generate test"
+          cd synth/testing_harness/postgres
+          synth init || true
+          synth generate --size 10 hospital_master > hospital_data_generated.json
+          diff hospital_data_generated.json hospital_data_generated_master.json || exit 1
+      - run: |
+          echo "Testing import"
+          cd synth/testing_harness/postgres
+          synth init || true
+          synth import --from postgres://postgres:postgres@localhost:5432/postgres hospital_import
+          diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*)
