@@ -47,6 +47,16 @@ impl VariantContent {
     }
 }
 
+impl FromIterator<Content> for OneOfContent {
+    fn from_iter<T: IntoIterator<Item = Content>>(iter: T) -> Self {
+        let mut one_of = OneOfContent { variants: vec![] };
+
+        iter.into_iter().for_each(|content| one_of.update(content));
+
+        one_of
+    }
+}
+
 impl<'t> FromIterator<&'t Value> for OneOfContent {
     fn from_iter<T: IntoIterator<Item = &'t Value>>(iter: T) -> Self {
         let mut out = Self {
@@ -60,6 +70,21 @@ impl<'t> FromIterator<&'t Value> for OneOfContent {
 }
 
 impl OneOfContent {
+    fn update(&mut self, candidate: Content) {
+        match self
+            .variants
+            .iter_mut()
+            .find(|variant| *variant.content == candidate)
+        {
+            None => self.add_variant(candidate),
+            Some(master) => master.weight.0 = master.weight.0 + 1.0,
+        }
+    }
+
+    fn add_variant(&mut self, variant: Content) {
+        self.variants.push(VariantContent::new(variant))
+    }
+
     pub fn insert_with<M>(&mut self, strategy: M, what: &Value)
     where
         M: MergeStrategy<Self, Value> + MergeStrategy<Content, Value> + Copy,

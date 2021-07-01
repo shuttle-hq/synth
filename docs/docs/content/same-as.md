@@ -43,7 +43,7 @@ with a period `.`.
     "zip_code": {
       "type": "string",
       "faker": {
-        "generator": "zipcode"
+        "generator": "zip_code"
       }
     }
   },

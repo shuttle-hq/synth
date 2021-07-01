@@ -32,8 +32,7 @@ This generator has no parameters.
 
 ## faker
 
-Synth integrates with the Python [Faker library][faker]. To generate a string using `Faker`, use the `"faker": {...}`
-key/value pair. The value of the `faker` key must be an object with at least a `generator` key.
+Synth has na internal fake data generator which will generate fake data for semantic types such as Names, Addresses etc.
 
 #### Example
 
@@ -41,34 +40,671 @@ key/value pair. The value of the `faker` key must be an object with at least a `
 {
   "type": "string",
   "faker": {
-    "generator": "sentence"
+    "generator": "address"
   }
 }
 ```
 
 Faker offers a variety of different fake data, in different locales and can be leveraged easily from Synth schemas using
-the `generator` key. Any of the Faker [standard providers](https://faker.readthedocs.io/en/master/providers.html)
-generating a string can be used in a Synth schema. The example given below generates fake credit card numbers using
-the [`credit_card_number`](https://faker.readthedocs.io/en/master/providers/faker.providers.credit_card.html#faker.providers.credit_card.Provider.credit_card_number)
-provider.
+the `generator` key. 
 
-Some Faker providers allow for parameters to customize the generated data. These parameters can be specified alongside
-the `generator` field as arbitrary key/value pairs. In the example below, we used `"card_type" : "amex"`.
+#### first_name
 
-Locales can be specified using the *optional* `locales` key. Allowed values are the same as locales specified
-in [Faker's locales documentation](https://faker.readthedocs.io/en/master/locales.html). In the example below, we
-use `"locales": ["en_GB"]`. Multiple locales can be specified and Synth will sample at random among them.
-
-#### Example
 
 ```json synth
 {
-  "type": "string",
-  "faker": {
-    "generator": "credit_card_number",
-    "card_type": "amex",
-    "locales": ["en_GB"]
-  }
+	"type": "string",
+	"faker": {
+		"generator": "first_name"
+	}
+}
+```
+
+#### last_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "last_name"
+	}
+}
+```
+
+#### title
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "title"
+	}
+}
+```
+
+#### suffix
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "suffix"
+	}
+}
+```
+
+#### name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "name"
+	}
+}
+```
+
+#### name_with_title
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "name_with_title"
+	}
+}
+```
+
+#### credit_card
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "credit_card"
+	}
+}
+```
+
+#### free_email_provider
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "free_email_provider"
+	}
+}
+```
+
+#### domain_suffix
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "domain_suffix"
+	}
+}
+```
+
+#### free_email
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "free_email"
+	}
+}
+```
+
+#### safe_email
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "safe_email"
+	}
+}
+```
+
+#### username
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "username"
+	}
+}
+```
+
+#### ipv4
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "ipv4"
+	}
+}
+```
+
+#### ipv6
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "ipv6"
+	}
+}
+```
+
+#### ip
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "ip"
+	}
+}
+```
+
+#### mac_address
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "mac_address"
+	}
+}
+```
+
+#### color
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "color"
+	}
+}
+```
+
+#### user_agent
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "user_agent"
+	}
+}
+```
+
+#### rfc_status_code
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "rfc_status_code"
+	}
+}
+```
+
+#### valid_status_code
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "valid_status_code"
+	}
+}
+```
+
+#### company_suffix
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "company_suffix"
+	}
+}
+```
+
+#### company_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "company_name"
+	}
+}
+```
+
+#### buzzword
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "buzzword"
+	}
+}
+```
+
+#### buzzword_muddle
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "buzzword_muddle"
+	}
+}
+```
+
+#### buzzword_tail
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "buzzword_tail"
+	}
+}
+```
+
+#### catch_phrase
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "catch_phrase"
+	}
+}
+```
+
+#### bs_verb
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "bs_verb"
+	}
+}
+```
+
+#### bs_adj
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "bs_adj"
+	}
+}
+```
+
+#### bs_noun
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "bs_noun"
+	}
+}
+```
+
+#### bs
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "bs"
+	}
+}
+```
+
+#### profession
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "profession"
+	}
+}
+```
+
+#### industry
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "industry"
+	}
+}
+```
+
+#### city_prefix
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "city_prefix"
+	}
+}
+```
+
+#### city_suffix
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "city_suffix"
+	}
+}
+```
+
+#### city_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "city_name"
+	}
+}
+```
+
+#### country_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "country_name"
+	}
+}
+```
+
+#### country_code
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "country_code"
+	}
+}
+```
+
+#### street_suffix
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "street_suffix"
+	}
+}
+```
+
+#### street_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "street_name"
+	}
+}
+```
+
+#### time_zone
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "time_zone"
+	}
+}
+```
+
+#### state_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "state_name"
+	}
+}
+```
+
+#### state_abbr
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "state_abbr"
+	}
+}
+```
+
+#### secondary_address_type
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "secondary_address_type"
+	}
+}
+```
+
+#### secondary_address
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "secondary_address"
+	}
+}
+```
+
+#### zip_code
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "zip_code"
+	}
+}
+```
+
+#### post_code
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "post_code"
+	}
+}
+```
+
+#### building_number
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "building_number"
+	}
+}
+```
+
+#### latitude
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "latitude"
+	}
+}
+```
+
+#### longitude
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "longitude"
+	}
+}
+```
+
+#### phone_number
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "phone_number"
+	}
+}
+```
+
+#### cell_number
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "cell_number"
+	}
+}
+```
+
+#### file_path
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "file_path"
+	}
+}
+```
+
+#### file_name
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "file_name"
+	}
+}
+```
+
+#### file_extension
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "file_extension"
+	}
+}
+```
+
+#### dir_path
+
+
+```json synth
+{
+	"type": "string",
+	"faker": {
+		"generator": "dir_path"
+	}
 }
 ```
 
@@ -150,6 +786,31 @@ Accepted values for the `"date_time"` key are objects with the following keys:
             }
         }
     }
+}
+```
+
+## truncated
+
+The `truncated` generator truncates the output of it's inner generator to a fixed length.
+
+If the output of its inner generator is less than or equal to the length, it is left untouched. 
+
+`truncated` has 2 fields,
+- `length`: The number of characters to truncate to.
+- `content`: The content to be truncated. This can be any Synth generator that yields a String.
+
+#### Example
+
+```json synth
+{
+  "type": "string",
+  "truncated": {
+    "content": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 255}"
+    },
+    "length": 5
+  }
 }
 ```
 

@@ -1,4 +1,4 @@
-#![feature(try_trait)]
+//#![feature(try_trait)]
 #![forbid(unsafe_code)]
 #![allow(clippy::all, type_alias_bounds)]
 #![warn(rust_2018_idioms)]
@@ -42,8 +42,8 @@ pub type Rng = rand::rngs::ThreadRng;
 
 pub mod generator;
 pub use generator::{
-    random, FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, TryGenerator,
-    TryGeneratorExt,
+    random, FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, GeneratorResult,
+    TryGenerator, TryGeneratorExt,
 };
 
 #[cfg(feature = "faker")]

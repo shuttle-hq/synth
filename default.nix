@@ -16,7 +16,7 @@
 , release ? true
 }:
 let
-  version = "0.4.5";
+  version = "0.5.0";
   darwinBuildInputs =
     stdenv.lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk.frameworks; [
       libiconv
@@ -33,6 +33,8 @@ let
     src = if synthSrc == null then ./. else synthSrc;
 
     preferLocalBuild = true;
+
+    cargoBuildOptions = (opts: opts ++ [ "--features" "api"]);
 
     # To help with tests on MacOS
     NIX_PYTHONPATH = "${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages";

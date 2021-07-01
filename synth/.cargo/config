@@ -1,0 +1,12 @@
+# https://docs.rs/pyo3/0.13.2/pyo3/#using-rust-from-python
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]

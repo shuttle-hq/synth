@@ -315,6 +315,12 @@ where
     }
 }
 
+impl<G, F, O> MapComplete<G, F, O> {
+    pub fn into_inner(self) -> G {
+        self.inner
+    }
+}
+
 /// This `struct` is constructed by the
 /// [`map_yielded`](crate::GeneratorExt::map_yielded) method on
 /// [`Generator`](crate::Generator).

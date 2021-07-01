@@ -11,6 +11,7 @@ pub enum StringContent {
     Categorical(Categorical<String>),
     Serialized(SerializedContent),
     Uuid(Uuid),
+    Truncated(TruncatedContent),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -25,6 +26,7 @@ impl StringContent {
             Self::Categorical(_) => "categorical",
             Self::Serialized(_) => "serialized",
             Self::Uuid(_) => "uuid",
+            Self::Truncated(_) => "truncated",
         }
     }
 }
@@ -151,11 +153,12 @@ impl Serialize for FakerContentArgument {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FakerContent {
     pub generator: String,
+    /// deprecated: Use FakerArgs::locale instead
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub locales: Vec<String>,
     #[serde(flatten)]
-    pub args: HashMap<String, FakerContentArgument>,
+    pub args: crate::graph::string::FakerArgs,
 }
 
 impl FakerContent {
@@ -164,29 +167,18 @@ impl FakerContent {
     }
 }
 
-impl ToPyObject for FakerContentArgument {
-    fn to_object(&self, py: Python) -> PyObject {
-        match &self.0 {
-            Value::Bool(x) => x.to_object(py),
-            Value::String(x) => x.to_object(py),
-            Value::Number(number) => {
-                number
-                    .as_u64()
-                    .map(|n| n.to_object(py))
-                    .or_else(|| number.as_i64().map(|n| n.to_object(py)))
-                    .or_else(|| number.as_f64().map(|n| n.to_object(py)))
-                    .unwrap() // serde_json::Number API contract
-            }
-            _ => unreachable!(), // would not be constructed
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "serializer")]
 pub enum SerializedContent {
     JSON(JsonContent),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub struct TruncatedContent {
+    content: Box<Content>,
+    length: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -524,13 +516,9 @@ impl Compile for StringContent {
             StringContent::Faker(FakerContent {
                 generator,
                 args,
-                locales,
-            }) => RandomString::from(RandFaker::new(
-                generator.clone(),
-                args.clone(),
-                locales.clone(),
-            )?)
-            .into(),
+                locales: _, // to combine locales from the 'locales' field and the args::locales,
+                            // we should impl Hash on locale and then put them in a Set
+            }) => RandomString::from(RandFaker::new(generator.clone(), args.clone())?).into(),
             StringContent::DateTime(DateTimeContent {
                 begin,
                 end,
@@ -550,6 +538,10 @@ impl Compile for StringContent {
                     RandomString::from(Serialized::new_json(inner)).into()
                 }
             },
+            StringContent::Truncated(trunc) => {
+                let inner = trunc.content.compile(compiler)?;
+                RandomString::from(Truncated::new(trunc.length, inner)?).into()
+            }
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
         Ok(Graph::String(string_node))

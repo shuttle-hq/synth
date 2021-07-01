@@ -4,6 +4,7 @@
 # https://github.com/wasp-lang/wasp/blob/75e17f4dc42451e59fee5c93b9537443f19bc63d/waspc/tools/install.sh
 SYNTH_TEMP_DIR=
 FORCE=
+CI=
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -16,10 +17,10 @@ while [ $# -gt 0 ]; do
     FORCE="true"
     shift
     ;;
-  # -d|--dest)
-  #     DEST="$2"
-  #     shift 2
-  #     ;;
+  -c | --ci)
+    CI="true"
+    shift
+    ;;
   *)
     echo "Invalid argument: $1" >&2
     exit 1
@@ -53,38 +54,14 @@ install_based_on_os() {
       os="latest"
     fi
 
-    PY_MINOR=$(python3 --version 2>/dev/null | grep -o -e "[0-9]" | sed "2q;d")
-
-    if [ ! ${PY_MINOR} ]; then
-      die "Could not determine your Python version"
-    fi
-
-    if [ ${PY_MINOR} -lt 7 -o ${PY_MINOR} -gt 9 ]; then
-      die "Sorry, this installer does not support versions of Python != 3.7,3.8,3.9"
-    else
-      py="3.${PY_MINOR}"
-    fi
-
-    install_from_bin_package "synth-ubuntu-${os}-py${py}-x86_64.tar.gz"
+    install_from_bin_package "synth-ubuntu-${os}-x86_64.tar.gz"
     ;;
   "Darwin")
     HOME_LOCAL_BIN="/usr/local/bin"
 
     os="latest"
 
-    PY_MINOR=$(python3 --version 2>/dev/null | grep -o -e "[0-9]" | sed "2q;d")
-
-    if [ ! ${PY_MINOR} ]; then
-      die "Could not determine your Python version"
-    fi
-
-    if [ ${PY_MINOR} -lt 7 -o ${PY_MINOR} -gt 9 ]; then
-      die "Sorry, this installer does not support versions of Python != 3.7,3.8,3.9"
-    else
-      py="3.${PY_MINOR}"
-    fi
-
-    install_from_bin_package "synth-macos-${os}-py${py}-x86_64.tar.gz"
+    install_from_bin_package "synth-macos-${os}-x86_64.tar.gz"
     ;;
   *)
     die "Sorry, this installer does not support your operating system: $(uname)."
@@ -93,7 +70,7 @@ install_based_on_os() {
 }
 
 prompt_install_telemetry() {
-  info "\nTelemetry is disabled by default (more details here: https://openquery-io.github.io/synth/other/telemetry)"
+  info "\nTelemetry is disabled by default (more details here: https://getsynth.github.io/synth/other/telemetry)"
   info "Help us improve the product by allowing Synth to collect de-identified command usage data? (y/N) "
   read INSTALL_TELEMETRY </dev/tty
 
@@ -104,7 +81,7 @@ prompt_install_telemetry() {
 
 # Download a Synth binary package and install it in $HOME_LOCAL_BIN.
 install_from_bin_package() {
-  PACKAGE_URL="https://github.com/openquery-io/synth/releases/latest/download/$1"
+  PACKAGE_URL="https://github.com/getsynth/synth/releases/latest/download/$1"
   make_temp_dir
   info "Downloading binary package to temporary dir and unpacking it there...\n"
   dl_to_file "$PACKAGE_URL" "$SYNTH_TEMP_DIR/$1"
@@ -143,7 +120,9 @@ install_from_bin_package() {
 
   info "${GREEN}Synth has been successfully installed!${RESET}"
 
-  prompt_install_telemetry
+  if [ "$CI" != "true" ]; then
+    prompt_install_telemetry
+  fi
 
   info "\n${GREEN}Done!${RESET}"
 

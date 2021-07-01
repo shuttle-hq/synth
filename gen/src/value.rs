@@ -448,6 +448,16 @@ where
     inner: G,
 }
 
+impl<G> Tokenizer<G>
+where
+    G: Generator,
+    G::Yield: IntoToken,
+{
+    pub fn into_inner(self) -> G {
+        self.inner
+    }
+}
+
 impl<G> Generator for Tokenizer<G>
 where
     G: Generator,

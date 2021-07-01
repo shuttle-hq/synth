@@ -46,13 +46,13 @@ application testing.
 We first create a new workspace to import our dataset into Synth:
 
 ```bash
-$ mkdir synth_workspace && cd synth_workspace && synth init
+mkdir synth_workspace && cd synth_workspace && synth init
 ```
 
 Synth supports importing from JSON files. To create a namespace, copy the JSON blob below to a file outside your workspace and use the `import` command:
 
 ```bash
-$ synth import bank_db/ --from /path/to/the/file.json
+synth import bank_db/ --from /path/to/the/file.json
 ```
 
 ```json
@@ -177,7 +177,7 @@ We can now generate data from our namespace using the `synth generate` sub-comma
 into [`jq`](https://stedolan.github.io/jq/download/) for the auto-formatting but this is optional.)
 
 ```bash
-$ synth generate bank_db/ | jq
+synth generate bank_db/ | jq
 {
   "transactions": [
     {
@@ -363,7 +363,7 @@ in `USD` so let's assign a higher probability to that variant.
 Now let's generate data from the `transactions` collection again:
 
 ```bash
-$ synth generate bank_db --collection transactions --size 10 | jq
+synth generate bank_db --collection transactions --size 10 | jq
 [
   {
     "amount": 1458.2,

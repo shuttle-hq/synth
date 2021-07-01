@@ -3,7 +3,6 @@
     async_closure,
     map_first_last,
     box_patterns,
-    try_trait,
     error_iter
 )]
 #![allow(type_alias_bounds)]

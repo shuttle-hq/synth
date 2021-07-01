@@ -1,14 +1,29 @@
 module.exports = {
     title: 'Synth - Documentation',
     tagline: 'Easy data generation',
-    url: 'https://openquery-io.github.io/synth',
+    url: 'https://getsynth.github.io/synth',
     baseUrl: '/synth/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/getsynth_favicon.png',
-    organizationName: 'openquery-io', // Usually your GitHub org/user name.
+    organizationName: 'getsynth', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
-        plugins: [require.resolve('docusaurus-plugin-fathom')],
+    plugins: [
+        require.resolve('docusaurus-plugin-fathom'),
+        [
+            "@papercups-io/docusaurus-plugin",
+            {
+                accountId: '41ff5b3d-e2c2-42ed-bed3-ef7a6c0dde62',
+                title: 'Welcome to Synth',
+                subtitle: 'Ask us anything in the chat window below 😊',
+                newMessagePlaceholder: 'Start typing...',
+                primaryColor: '#00dab8',
+                greeting: '',
+                requireEmailUpfront: false,
+                showAgentAvailability: false,
+            },
+        ]
+    ],
     themeConfig: {
         fathomAnalytics: {
             siteId: 'ASXTKXUJ',
@@ -42,13 +57,13 @@ module.exports = {
                     label: 'Generators',
                     position: 'left',
                 },
-		{
-		    to: 'blog',
-		    label: 'Blog',
-		    position: 'left'
-		},
                 {
-                    href: 'https://github.com/openquery-io/synth',
+                    to: 'blog',
+                    label: 'Blog',
+                    position: 'left'
+                },
+                {
+                    href: 'https://github.com/getsynth/synth',
                     label: 'GitHub',
                     position: 'right',
                 },
@@ -87,7 +102,7 @@ module.exports = {
                     sidebarPath: require.resolve('./sidebars.js'),
                     // Please change this to your repo.
                     editUrl:
-                        'https://github.com/openquery-io/synth/edit/master/docs/',
+                        'https://github.com/getsynth/synth/edit/master/docs/',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css')

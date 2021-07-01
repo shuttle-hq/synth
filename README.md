@@ -6,12 +6,12 @@
 </p>
 <br>
 <p align=center>
-  <a href="https://openquery-io.github.io/synth"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
-  <a href="https://github.com/openquery-io/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
-  <a href="https://github.com/openquery-io/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
-  <a href="https://github.com/openquery-io/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/openquery-io/synth/synth%20public%20cachix"/></a>
+  <a href="https://getsynth.github.io/synth"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
+  <a href="https://github.com/getsynth/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
+  <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
+  <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
   <a href="https://discord.gg/H33rRDTm3p"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
-  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/openquery-io/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
+  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/getsynth/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
 </p>
 
 ------
@@ -42,11 +42,17 @@ The key features of Synth are:
 
 - **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.  
  
-- **Semantic Data Types**: Synth integrates with the (amazing) Python [Faker](https://pypi.org/project/Faker/) library, supporting generation of thousands of semantic types (e.g. credit card numbers, email addresses etc.) as well as locales.
+- **Semantic Data Types**: Synth has a library of semantic 'faker' types to cover PII like names, addresses, credit card numbers etc.
 
 ## Installation & Getting Started
 
-To get started quickly, check out the [docs](https://openquery-io.github.io/synth).
+On Linux and MacOS you can get started with the one-liner:
+
+```bash
+$ curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+```
+
+For more installation options, check out the [docs](https://getsynth.github.io/synth/getting_started/installation).
 
 ## Examples
 
@@ -82,7 +88,7 @@ Next let's create a `users` collection using Synth's configuration language, and
         "email": {
             "type": "string",
             "faker": {
-                "generator": "email"
+                "generator": "safe_email"
             }
         },
         "joined_on": {
@@ -119,9 +125,9 @@ $ synth generate my_app/ --size 2 | jq
 ```
 
 
-### Building a data model from Postgres
+### Building a data model from an external database
 
-If you have an existing database, Synth can create the data model for you by importing data  from your database.
+If you have an existing database, Synth can automatically generate a data model by inspecting the database. 
 
 To get started, initialise your Synth workspace locally:
 
@@ -129,7 +135,7 @@ To get started, initialise your Synth workspace locally:
 $ mkdir synth_workspace && cd synth_workspace && synth init
 ```
 
-Then use the `synth import` command to build a data model from your Postgres database:
+Then use the `synth import` command to build a data model from your Postgres or MongoDB database:
 
 ```bash
 $ synth import tpch --from postgres://user:pass@localhost:5432/tpch
@@ -169,5 +175,5 @@ See the [contributing](./CONTRIBUTING.md) section for details.
 
 ## License
 
-Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/openquery-io/synth/blob/master/LICENSE).
+Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/getsynth/synth/blob/master/LICENSE).
 

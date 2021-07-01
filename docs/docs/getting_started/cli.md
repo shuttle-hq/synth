@@ -68,7 +68,7 @@ Usage: `synth serve [OPTIONS]`
 
 Run Synth in Daemon mode. The Daemon exposes an HTTP RESTful API on port `8182` and creates an internal state which is managed by a version controlled index.
                             
-Daemon mode is used when `synth` is used in the context of a collaborating team and comes with a very handy [Python client](https://openquery-io.github.io/synthpy/)
+Daemon mode is used when `synth` is used in the context of a collaborating team and comes with a very handy [Python client](https://getsynth.github.io/synthpy/)
 
 #### Options
 

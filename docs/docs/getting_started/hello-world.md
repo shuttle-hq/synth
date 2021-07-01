@@ -8,7 +8,7 @@ that Synth uses to read your schemas from.
 To create and initialise a workspace called `synth_workspace` in your current working directory, run:
 
 ```bash
-$ mkdir synth_workspace && cd synth_workspace && synth init
+mkdir synth_workspace && cd synth_workspace && synth init
 ```
 
 :::note Note
@@ -52,7 +52,7 @@ output data when you click it.
 
 Finally, run
 ```bash
-$ synth generate my_namespace/
+synth generate my_namespace/
 ```
 and you should see an output very close to the output of the above snippet.
 

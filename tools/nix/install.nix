@@ -4,7 +4,7 @@
 }:
 let
   synthSrc = builtins.fetchGit {
-    url = "https://github.com/openquery-io/synth.git";
+    url = "https://github.com/getsynth/synth.git";
     inherit ref rev;
   };
 in {

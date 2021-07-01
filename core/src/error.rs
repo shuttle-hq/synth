@@ -161,6 +161,7 @@ generate_error_variants!(
     }
 );
 
+#[cfg(feature = "api")]
 impl From<ErrorKind> for tide::StatusCode {
     fn from(kind: ErrorKind) -> Self {
         match kind {

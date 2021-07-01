@@ -44,7 +44,7 @@ definition.
       "postcode": {
         "type": "string",
         "faker": {
-          "generator": "postcode"
+          "generator": "post_code"
         }
       },
       "number": {

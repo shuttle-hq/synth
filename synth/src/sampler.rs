@@ -22,6 +22,7 @@ impl Sampler {
         bar
     }
 
+    #[cfg(feature = "api")]
     pub(crate) fn sample(self, collection_name: Option<Name>, target: usize) -> Result<Value> {
         self.sample_seeded(collection_name, target, 0)
     }

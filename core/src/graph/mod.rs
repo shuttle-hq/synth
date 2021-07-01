@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::ops::Try;
 
 use anyhow::{Context, Result};
 
@@ -65,7 +64,7 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, UuidGen};
+pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen};
 
 pub mod number;
 pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, UniformRangeStep};
@@ -204,8 +203,8 @@ impl<G> IntoCompleted<G> {
 impl<G> Generator for IntoCompleted<G>
 where
     G: Generator<Yield = Token>,
-    G::Return: Try,
-    <G::Return as Try>::Error: IntoToken,
+    G::Return: GeneratorResult,
+    <G::Return as GeneratorResult>::Err: IntoToken,
 {
     type Yield = Token;
     type Return = ();
@@ -356,16 +355,19 @@ pub mod tests {
             "frequency": 0.2
             },
             "username": {
-            "type": "string",
-            "pattern": "[a-z0-9]{5,15}"
+                "type": "string",
+                "truncated": {
+                    "content": {
+                        "type": "string",
+                        "pattern": "[a-zA-Z0-9]{0, 255}"
+                    },
+                    "length": 5
+                }
             },
             "bank_country": {
             "type": "string",
-            "faker": {
-                "generator": "bank_country",
-                "locales": ["en_GB", "es_ES"]
-            }
-            },
+            "pattern": "(GB|ES)"
+                    },
             "num_logins": {
             "type": "number",
             "subtype": "u64",
@@ -376,23 +378,14 @@ pub mod tests {
             }
             },
             "currency": {
-            "type": "one_of",
-            "variants": [ {
-                "type": "string",
-                "faker": {
-                "generator": "currency_name",
-                }
-            }, {
-                "type": "string",
-                "pattern": "unknown"
-            }, ]
-            },
+            "type": "string",
+            "pattern": "(USD|GBP)"
+                    },
             "credit_card": {
             "type": "string",
-            "faker": {
-                "generator": "credit_card_number",
-                "card_type": "amex"
-            }
+                "faker": {
+                    "generator": "credit_card"
+                }
             },
             "created_at_date": {
             "type": "string",
@@ -417,7 +410,7 @@ pub mod tests {
             "optional": true,
             "type": "string",
             "faker": {
-                "generator": "ascii_email"
+                "generator": "safe_email"
             }
             },
             "num_logins_again": {
@@ -531,6 +524,7 @@ pub mod tests {
                 println!("bank_country={}", user.bank_country);
                 assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
                 assert!(user.id >= 100);
+                assert!(user.username.len() <= 5);
                 all_users.insert(user.username.clone());
                 currencies.insert(user.username, user.currency);
                 /*
@@ -582,41 +576,6 @@ pub mod tests {
                 assert_eq!(*value, 10);
             }
         }
-    }
-
-    #[test]
-    fn fail_on_generator_error() {
-        let schema: Namespace = from_json!({
-            "users": {
-        "type": "array",
-        "length": {
-            "type": "number",
-            "subtype": "u64",
-            "constant": 10
-        },
-        "content": {
-            "type": "object",
-            "credit_card": {
-            "type": "string",
-            "faker": {
-                "generator": "invalid_generator_name",
-                "card_type": "amex"
-            }
-            },
-        }
-            }
-        });
-
-        let mut rng = rand::thread_rng();
-
-        let mut model = Graph::from_namespace(&schema)
-            .unwrap()
-            .inspect(|yielded| {
-                println!("{:?}", yielded);
-            })
-            .try_aggregate();
-
-        assert!(model.try_next_yielded(&mut rng).is_err());
     }
 
     #[test]

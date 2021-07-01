@@ -1,0 +1,72 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "high": 10,
+      "low": 1,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "date_joined": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "string",
+          "date_time": {
+            "format": "%Y-%m-%d",
+            "subtype": "naive_date",
+            "begin": "2011-05-16",
+            "end": "2019-09-14"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "hospital_id": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "number",
+          "range": {
+            "high": 12,
+            "low": 0,
+            "step": 1
+          },
+          "subtype": "i64"
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "id": {
+      "type": "number",
+      "id": {},
+      "subtype": "u64"
+    },
+    "name": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "string",
+          "pattern": "[a-zA-Z0-9]{0, 255}"
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

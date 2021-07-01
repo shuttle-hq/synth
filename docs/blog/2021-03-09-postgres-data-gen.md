@@ -2,7 +2,7 @@
 title: How to Create PostgreSQL Test Data
 author: Christos Hadjiaslanis
 author_title: Founder
-author_url: https://github.com/openquery-io
+author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [postgres, test data, data generation, tutorial, beginners guide]
 description: This post covers three different ways to generate test data for your Postgres database
@@ -118,9 +118,9 @@ We could define functions ourselves to generate names / phone numbers / emails e
 
 ## Using a data generator like Synth
 
-[Synth](https://github.com/openquery-io/synth) is an open-source project designed to solve the problem of creating realistic testing data. It has integration with Postgres, so you won't need to write any SQL.
+[Synth](https://github.com/getsynth/synth) is an open-source project designed to solve the problem of creating realistic testing data. It has integration with Postgres, so you won't need to write any SQL.
 
-Synth uses declarative configuration files (just JSON don't worry) to define how data should be generated. To install the `synth` binary refer to the [installation page](https://openquery-io.github.io/synth/getting_started/installation).
+Synth uses declarative configuration files (just JSON don't worry) to define how data should be generated. To install the `synth` binary refer to the [installation page](https://getsynth.github.io/synth/getting_started/installation).
 
 The first step to use Synth is to create a workspace. A workspace is just a directory in your filesystem that tell Synth that this is where you are going to be storing configuration:
 
@@ -181,7 +181,7 @@ $ synth generate my_app/ --size 2
 }
 ```
 
-Now we can do the same thing for the `contacts` table by create a file `my_app/contacts.json`. Here we have the added complexity of a foreign key constraints to the company table, but we can solve it easily using Synth's [`same_as`](https://openquery-io.github.io/synth/content/same-as/) generator.
+Now we can do the same thing for the `contacts` table by create a file `my_app/contacts.json`. Here we have the added complexity of a foreign key constraints to the company table, but we can solve it easily using Synth's [`same_as`](https://getsynth.github.io/synth/content/same-as/) generator.
 
 
 ```json
@@ -250,7 +250,7 @@ We explored 3 different ways to generate data.
 
 - **Manual Insertion**: Is ok to get you started. If your needs are basic it's the path of least effort to creating a working dataset.
 - **Postgres generate_series**: This method scales better than manual insertion - but if you care about the contents of your data and have foreign key constraints you'll need to write quite a bit of bespoke SQL by hand.
-- [**Synth**](https://github.com/openquery-io/synth): Synth has a small learning curve, but to create realistic testing data at scale it reduces most of the manual labour.
+- [**Synth**](https://github.com/getsynth/synth): Synth has a small learning curve, but to create realistic testing data at scale it reduces most of the manual labour.
 
 
 In the next post we'll explore how to subset your existing database for testing purposes. And don't worry if you have sensitive / personal data - we'll cover that too. 

@@ -1,10 +1,30 @@
-use std::ops::Try;
-
 use rand::Rng;
 
 use crate::{GeneratorState, Never};
 
 use super::Generator;
+
+/// we use this trait to bound `Result`s because we don't have type equality
+/// in `where` clauses yet.
+pub trait GeneratorResult {
+    type Ok;
+    type Err;
+    // this should be a no-op
+    fn into_result(self) -> Result<Self::Ok, Self::Err>;
+    fn from_ok(ok: Self::Ok) -> Self;
+    fn from_err(err: Self::Err) -> Self;
+}
+
+impl<O, E> GeneratorResult for Result<O, E> {
+    type Ok = O;
+    type Err = E;
+
+    // inlined to make sure it's optimized out
+    #[inline(always)]
+    fn into_result(self) -> Result<O, E> { self }
+    fn from_ok(ok: O) -> Self { Ok(ok) }
+    fn from_err(err: E) -> Self { Err(err) }
+}
 
 /// A convenience trait for [`Generator`](crate::Generator)s that
 /// return [`Result`](std::result::Result)s.
@@ -15,14 +35,14 @@ pub trait TryGenerator {
 
     type Error;
 
-    type Return: Try<Ok = Self::Ok, Error = Self::Error>;
+    type Return: GeneratorResult<Ok = Self::Ok, Err = Self::Error>;
 
     fn try_next_yielded<R: Rng>(&mut self, rng: &mut R) -> Result<Self::Yield, Self::Error> {
         loop {
             match self.try_next(rng) {
                 GeneratorState::Yielded(y) => return Ok(y),
                 GeneratorState::Complete(t) => match t.into_result() {
-                    Err(err) => return Err(err),
+                    Err(e) => return Err(e),
                     Ok(_) => continue,
                 },
             }
@@ -37,7 +57,7 @@ pub trait FallibleGenerator {
 
     type Error;
 
-    type Yield: Try<Ok = Self::Ok, Error = Self::Error>;
+    type Yield: GeneratorResult<Ok = Self::Ok, Err = Self::Error>;
 
     type Return;
 
@@ -47,17 +67,17 @@ pub trait FallibleGenerator {
 impl<G> FallibleGenerator for G
 where
     G: Generator,
-    G::Yield: Try,
+    G::Yield: GeneratorResult,
 {
-    type Ok = <G::Yield as Try>::Ok;
+    type Ok = <G::Yield as GeneratorResult>::Ok;
 
-    type Error = <G::Yield as Try>::Error;
+    type Error = <G::Yield as GeneratorResult>::Err;
 
     type Yield = G::Yield;
 
     type Return = G::Return;
 
-    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<G::Yield, G::Return> {
         <Self as Generator>::next(self, rng)
     }
 }
@@ -80,11 +100,11 @@ pub struct Unwrap<G> {
 impl<G> Generator for Unwrap<G>
 where
     G: Generator,
-    G::Yield: Try,
+    G::Yield: GeneratorResult,
 {
-    type Yield = <G::Yield as Try>::Ok;
+    type Yield = <G::Yield as GeneratorResult>::Ok;
 
-    type Return = Result<G::Return, <G::Yield as Try>::Error>;
+    type Return = Result<G::Return, <G::Yield as GeneratorResult>::Err>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
@@ -100,17 +120,17 @@ where
 impl<G> TryGenerator for G
 where
     G: Generator,
-    G::Return: Try,
+    G::Return: GeneratorResult,
 {
     type Yield = G::Yield;
 
-    type Ok = <G::Return as Try>::Ok;
+    type Ok = <G::Return as GeneratorResult>::Ok;
 
-    type Error = <G::Return as Try>::Error;
+    type Error = <G::Return as GeneratorResult>::Err;
 
     type Return = G::Return;
 
-    fn try_next<Rand: Rng>(&mut self, rng: &mut Rand) -> GeneratorState<Self::Yield, Self::Return> {
+    fn try_next<Rand: Rng>(&mut self, rng: &mut Rand) -> GeneratorState<G::Yield, G::Return> {
         self.next(rng)
     }
 }
@@ -173,11 +193,11 @@ impl<G> Generator for TryOnce<G>
 where
     G: Generator,
     G::Yield: Clone,
-    G::Return: Try<Ok = Never>,
+    G::Return: GeneratorResult<Ok = Never>,
 {
     type Yield = G::Yield;
 
-    type Return = Result<G::Yield, <G::Return as Try>::Error>;
+    type Return = Result<G::Yield, <G::Return as GeneratorResult>::Err>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         if let Some(y) = std::mem::replace(&mut self.output, None) {
@@ -227,7 +247,7 @@ where
             match self.inner.try_next(rng) {
                 GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
                 GeneratorState::Complete(c) => match c.into_result() {
-                    Err(err) => GeneratorState::Complete(O::Return::from_error(err)),
+                    Err(err) => GeneratorState::Complete(O::Return::from_err(err)),
                     Ok(r) => {
                         self.output = Some((self.closure)(r));
                         self.next(rng)
@@ -319,7 +339,7 @@ where
                     self.output = Some(TG::Return::from_ok(v));
                     GeneratorState::Yielded(out)
                 }
-                Err(e) => GeneratorState::Complete(TG::Return::from_error(e)),
+                Err(e) => GeneratorState::Complete(TG::Return::from_err(e)),
             }
         }
     }
