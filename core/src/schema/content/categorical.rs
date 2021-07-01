@@ -1,9 +1,9 @@
 use super::prelude::*;
 use std::collections::BTreeMap;
 
-pub trait CategoricalType: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
+pub trait CategoricalType: Eq + Hash + Clone + Display + FromStr + Ord + PartialOrd {}
 
-impl<T> CategoricalType for T where T: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
+impl<T> CategoricalType for T where T: Eq + Hash + Clone + Display + FromStr + Ord + PartialOrd {}
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(from = "CategoricalShadow<T>")]
@@ -34,6 +34,22 @@ where
         ));
     }
     Ok(hm_final)
+}
+
+impl<T: CategoricalType> Display for Categorical<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut first = true;
+        for (t, n) in self.seen.iter() {
+            write!(
+                f,
+                "{}{}×{}",
+                if std::mem::replace(&mut first, false) { "{" } else { ", "},
+                n,
+                t
+            )?;
+        }
+        f.write_str("}")
+    }
 }
 
 impl<T: CategoricalType> Categorical<T> {

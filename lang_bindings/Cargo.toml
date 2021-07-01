@@ -1,0 +1,10 @@
+[package]
+name = "lang_bindings"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+# for now, we use my koto branch wholesale
+koto = { git = "https://github.com/llogiq/koto", branch = "vtable" }
+chrono = "0.4.19"
+

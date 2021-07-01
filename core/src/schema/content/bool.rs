@@ -2,6 +2,7 @@ use super::prelude::*;
 
 use super::Categorical;
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -21,9 +22,20 @@ impl BoolContent {
     }
 }
 
+#[bindlang::bindlang]
 impl Default for BoolContent {
     fn default() -> Self {
         Self::Frequency(0.5)
+    }
+}
+
+impl Display for BoolContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Frequency(freq) => write!(f, "{}% true", freq),
+            Self::Constant(b) => write!(f, "{}", b),
+            Self::Categorical(cat) => write!(f, "{}", cat),
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 use super::prelude::*;
 use super::Categorical;
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -15,6 +16,7 @@ pub enum StringContent {
     Format(FormatContent),
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Uuid;
 
@@ -33,6 +35,7 @@ impl StringContent {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Clone)]
 pub struct RegexContent(String, RandRegex);
 
@@ -104,6 +107,7 @@ impl Serialize for RegexContent {
     }
 }
 
+#[bindlang::bindlang]
 impl Default for RegexContent {
     fn default() -> Self {
         let pattern = "[a-zA-Z0-9]*".to_string();
@@ -111,6 +115,7 @@ impl Default for RegexContent {
     }
 }
 
+#[bindlang::bindlang]
 impl Default for StringContent {
     fn default() -> Self {
         Self::Pattern(RegexContent::default())
@@ -152,6 +157,7 @@ impl Serialize for FakerContentArgument {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FakerContent {
     pub generator: String,
@@ -169,6 +175,13 @@ impl FakerContent {
     }
 }
 
+impl Display for FakerContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}({})", self.generator, self.args)
+    }
+}
+
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "serializer")]
@@ -176,6 +189,7 @@ pub enum SerializedContent {
     Json(JsonContent),
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub struct TruncatedContent {
@@ -183,6 +197,7 @@ pub struct TruncatedContent {
     length: usize,
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub struct FormatContent {
@@ -190,6 +205,7 @@ pub struct FormatContent {
     arguments: HashMap<String, Content>,
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[serde(untagged)]
@@ -198,11 +214,13 @@ pub enum ContentOrRef {
     FieldRef(FieldRef),
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct JsonContent {
     content: Box<Content>,
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Hash)]
 pub enum ChronoValue {
     NaiveDate(NaiveDate),
@@ -292,6 +310,7 @@ impl ChronoValue {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum ChronoValueType {
@@ -307,6 +326,7 @@ impl Default for ChronoValueType {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DateTimeContent {
     pub format: String,

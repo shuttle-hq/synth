@@ -35,3 +35,8 @@ bimap = { version = "0.6.0", features = [ "std" ] }
 humantime-serde = "1.0.1"
 bloomfilter = "1.0.5"
 dynfmt = { version = "0.1.5", features = [ "curly" ] }
+# language bindings
+lang_bindings = { path = "../lang_bindings" }
+koto = { git = "https://github.com/llogiq/koto", branch = "vtable" }
+koto_runtime = { git = "https://github.com/llogiq/koto", branch = "vtable" }
+bindlang = { path = "../bindlang" }

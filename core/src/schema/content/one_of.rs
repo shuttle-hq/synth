@@ -2,10 +2,20 @@ use super::prelude::*;
 
 use super::Weight;
 
+#[bindlang::bindlang]
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct OneOfContent {
     pub variants: Vec<VariantContent>,
+}
+
+impl Display for OneOfContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for v in &self.variants {
+            v.fmt(f)?;
+        }
+        Ok(())
+    }
 }
 
 impl PartialEq for OneOfContent {
@@ -24,12 +34,19 @@ impl PartialEq for OneOfContent {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VariantContent {
     #[serde(default)]
     weight: Weight,
     #[serde(flatten)]
     pub content: Box<Content>,
+}
+
+impl Display for VariantContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}: {}", self.content, self.weight)
+    }
 }
 
 impl PartialEq for VariantContent {

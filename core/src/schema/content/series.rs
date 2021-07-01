@@ -4,8 +4,10 @@ use crate::graph::series::{
 };
 use crate::{Compile, Compiler, Graph};
 use anyhow::Result;
+use bindlang::bindlang;
 use std::convert::TryInto;
 
+#[bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct SeriesContent {
@@ -14,6 +16,7 @@ pub struct SeriesContent {
     pub variant: SeriesVariant,
 }
 
+#[bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -24,6 +27,7 @@ pub enum SeriesVariant {
     Zip(Zip),
 }
 
+#[bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Incrementing {
     pub(crate) start: String,
@@ -31,6 +35,7 @@ pub struct Incrementing {
     pub(crate) increment: std::time::Duration,
 }
 
+#[bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Poisson {
     pub(crate) start: String,
@@ -38,6 +43,7 @@ pub struct Poisson {
     pub(crate) rate: std::time::Duration,
 }
 
+#[bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Cyclical {
     pub(crate) start: String,
@@ -49,6 +55,7 @@ pub struct Cyclical {
     pub(crate) max_rate: std::time::Duration,
 }
 
+#[bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Zip {
     series: Vec<SeriesVariant>,

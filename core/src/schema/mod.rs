@@ -67,6 +67,7 @@ pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<boo
         .map_err(|e| D::Error::custom(format!("not a boolean: {}", e)))
 }
 
+#[bindlang::bindlang]
 #[derive(Hash, PartialEq, Eq, Debug, Clone, Ord, PartialOrd)]
 pub struct Name(String);
 
@@ -125,12 +126,14 @@ impl<'de> Deserialize<'de> for Name {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct FieldRef {
     collection: Name,
     fields: Vec<String>,
 }
 
+#[bindlang::bindlang]
 impl From<Name> for FieldRef {
     fn from(collection: Name) -> Self {
         Self {

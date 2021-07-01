@@ -2,12 +2,19 @@ use super::prelude::*;
 use crate::graph::prelude::content::number::number_content::U64;
 use crate::schema::{NumberContent, RangeStep};
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub struct ArrayContent {
     pub length: Box<Content>,
     pub content: Box<Content>,
+}
+
+impl Display for ArrayContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}; {}]", self.content, self.length)
+    }
 }
 
 impl ArrayContent {
