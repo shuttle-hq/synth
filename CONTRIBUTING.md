@@ -6,7 +6,7 @@ Raising [issues](https://github.com/getsynth/synth/issues) is encouraged. We hav
 
 ## Running Locally
 
-To compile from source, see the `Compiling from source` tab in the [docs](https://getsynth.github.io/synth/hello-world). You should also install the `Dependencies` mentioned in the installation section.
+To compile from source, see the `Compiling from source` tab in the [docs](https://getsynth.github.io/synth/getting_started/installation).
 
 ## Running Tests
 
@@ -16,10 +16,6 @@ To run the test suite - just run `cargo test` at the root of the repository.
 
 ## Committing
 
- We use the [Angular Commit Guidelines](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#commit). We expect all commits to conform to these guidelines.
- 
- Furthermore, commits should be squashed before being merged to master.
- 
+We use the [Angular Commit Guidelines](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#commit). We expect all commits to conform to these guidelines.
 
-
-
+Furthermore, commits should be squashed before being merged to master.
