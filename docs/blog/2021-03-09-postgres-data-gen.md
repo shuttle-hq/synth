@@ -49,7 +49,7 @@ CREATE TABLE contacts(
    contact_id SERIAL PRIMARY KEY,
    company_id INT,
    contact_name VARCHAR(255) NOT NULL,
-   phone VARCHAR(20),
+   phone VARCHAR(25),
    email VARCHAR(100),
    CONSTRAINT fk_company
       FOREIGN KEY(company_id) 
@@ -138,7 +138,7 @@ Now comes the fun part! Using Synth's configuration language we can specify how 
 
 To tell Synth that `companies` is a table (or collection in the Synth lingo) we'll create a new file `app/companies.json`.
 
-```json synth
+```json
 {
     "type": "array",
     "length": {
@@ -154,7 +154,7 @@ To tell Synth that `companies` is a table (or collection in the Synth lingo) we'
         "company_name": {
             "type": "string",
             "faker": {
-                "generator": "company"
+                "generator": "company_name"
             }
         }
     }
@@ -213,7 +213,7 @@ Now we can do the same thing for the `contacts` table by create a file `my_app/c
         "email": {
             "type": "string",
             "faker": {
-                "generator": "email"
+                "generator": "safe_email"
             }
         }
     }
@@ -225,7 +225,7 @@ There is quite a bit going on here - to get an in-depth understanding of the syn
 Now we have both our tables data model under Synth, we can generate data into Postgres:
 
 ```bash
-$ synth generate my_app/ --to postgres://postgres:5432@localhost:5432/dev
+$ synth generate my_app/ --to postgres://postgres:1234@localhost:5432/dev
 ```
 
 Taking a look at the company table:
