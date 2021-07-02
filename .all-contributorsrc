@@ -1,0 +1,38 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "christoshadjiaslanis",
+      "name": "Christos Hadjiaslanis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/14791384?v=4",
+      "profile": "https://github.com/christoshadjiaslanis",
+      "contributions": [
+        "blog",
+        "business",
+        "code",
+        "content",
+        "design",
+        "doc",
+        "fundingFinding",
+        "ideas",
+        "infra",
+        "maintenance",
+        "platform",
+        "review",
+        "security",
+        "test",
+        "talk"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "synth",
+  "projectOwner": "getsynth",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}

@@ -1,4 +1,7 @@
 <p align=center>
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
   <img height="150px" src="docs/static/img/getsynth_identicon.png"/>
 </p>
 <p align=center>
@@ -177,3 +180,23 @@ See the [contributing](./CONTRIBUTING.md) section for details.
 
 Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/getsynth/synth/blob/master/LICENSE).
 
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/christoshadjiaslanis"><img src="https://avatars.githubusercontent.com/u/14791384?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Christos Hadjiaslanis</b></sub></a><br /><a href="#blog-christoshadjiaslanis" title="Blogposts">📝</a> <a href="#business-christoshadjiaslanis" title="Business development">💼</a> <a href="https://github.com/getsynth/synth/commits?author=christoshadjiaslanis" title="Code">💻</a> <a href="#content-christoshadjiaslanis" title="Content">🖋</a> <a href="#design-christoshadjiaslanis" title="Design">🎨</a> <a href="https://github.com/getsynth/synth/commits?author=christoshadjiaslanis" title="Documentation">📖</a> <a href="#fundingFinding-christoshadjiaslanis" title="Funding Finding">🔍</a> <a href="#ideas-christoshadjiaslanis" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-christoshadjiaslanis" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-christoshadjiaslanis" title="Maintenance">🚧</a> <a href="#platform-christoshadjiaslanis" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/getsynth/synth/pulls?q=is%3Apr+reviewed-by%3Achristoshadjiaslanis" title="Reviewed Pull Requests">👀</a> <a href="#security-christoshadjiaslanis" title="Security">🛡️</a> <a href="https://github.com/getsynth/synth/commits?author=christoshadjiaslanis" title="Tests">⚠️</a> <a href="#talk-christoshadjiaslanis" title="Talks">📢</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
