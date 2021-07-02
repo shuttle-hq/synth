@@ -27,6 +27,21 @@
         "test",
         "talk"
       ]
+    },
+    {
+      "login": "NodarD",
+      "name": "Nodar Daneliya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12720758?v=4",
+      "profile": "https://www.linkedin.com/in/ndaneliya/",
+      "contributions": [
+        "blog",
+        "business",
+        "content",
+        "design",
+        "doc",
+        "fundingFinding",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
