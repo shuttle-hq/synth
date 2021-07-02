@@ -1,0 +1,30 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "NodarD",
+      "name": "Nodar Daneliya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12720758?v=4",
+      "profile": "https://www.linkedin.com/in/ndaneliya/",
+      "contributions": [
+        "blog",
+        "business",
+        "content",
+        "design",
+        "doc",
+        "fundingFinding",
+        "ideas"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "synth",
+  "projectOwner": "getsynth",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
