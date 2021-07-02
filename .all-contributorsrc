@@ -60,6 +60,15 @@
         "security",
         "test"
       ]
+    },
+    {
+      "login": "shkurskid",
+      "name": "Dmitri Shkurski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/77615792?v=4",
+      "profile": "https://github.com/shkurskid",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
