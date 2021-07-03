@@ -6,7 +6,7 @@
     error_iter
 )]
 #![allow(type_alias_bounds)]
-#![deny(warnings)]
+// #![deny(warnings)]
 
 #[macro_use]
 extern crate log;

@@ -64,7 +64,7 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen};
+pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen, Format};
 
 pub mod number;
 pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, UniformRangeStep};

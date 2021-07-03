@@ -9,11 +9,13 @@ pub mod faker;
 pub mod serialized;
 pub mod truncated;
 pub mod uuid;
+pub mod format;
 
 pub use self::uuid::UuidGen;
 pub use faker::{RandFaker, FakerArgs, Locale};
 pub use serialized::Serialized;
 pub use truncated::Truncated;
+pub use format::Format;
 
 derive_generator! {
     yield String,
@@ -25,6 +27,7 @@ derive_generator! {
         Categorical(OnceInfallible<Random<String, Categorical<String>>>)
         Uuid(OnceInfallible<UuidGen>)
         Truncated(Truncated)
+        Format(TryOnce<Format>)
     }
 }
 
@@ -61,6 +64,12 @@ impl From<UuidGen> for RandomString {
 impl From<Truncated> for RandomString {
     fn from(trunc: Truncated) -> Self {
         Self::Truncated(trunc)
+    }
+}
+
+impl From<Format> for RandomString {
+    fn from(format: Format) -> Self {
+        Self::Format(format.try_once())
     }
 }
 
