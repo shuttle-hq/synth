@@ -5,6 +5,7 @@ use anyhow::Result;
 use serde_json::Value;
 
 use std::path::PathBuf;
+use crate::cli::json::samples_to_json;
 
 #[derive(Clone, Debug)]
 pub struct FileImportStrategy {
@@ -21,7 +22,8 @@ impl ExportStrategy for StdoutExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
         let generator = Sampler::new(&params.namespace);
         let values = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-        println!("{}", values);
+        let serialized_values: Vec<_> = samples_to_json(values).collect();
+        println!("{}", serde_json::Value::Array(serialized_values));
         Ok(())
     }
 }
