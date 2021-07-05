@@ -121,10 +121,12 @@ macro_rules! derive_from {
 		    $(Self::$variant(_) => stringify!($variant),)*
 		}
 	    }
+
 	}
 
 	$(
 	    $(
+
 		impl From<$ty> for $id {
 		    fn from(value: $ty) -> Self {
 			Self::$variant(value)
@@ -188,6 +190,100 @@ derive_from! {
         DateTime(ChronoValue),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
+    }
+}
+
+#[allow(unused)]
+impl Value {
+    pub fn as_null(&self) -> Option<()> {
+        match *self {
+            Value::Null(()) => Some(()),
+            _ => None
+        }
+    }
+
+    pub fn as_bool(&self) -> Option<&bool> {
+        match *self {
+            Value::Bool(ref bool) => Some(bool),
+            _ => None
+        }
+    }
+
+    pub fn as_number(&self) -> Option<&Number> {
+        match *self {
+            Value::Number(ref number) => Some(number),
+            _ => None
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&String> {
+        match *self {
+            Value::String(ref string) => Some(string),
+            _ => None
+        }
+    }
+
+    pub fn as_datetime(&self) -> Option<&ChronoValue> {
+        match *self {
+            Value::DateTime(ref chrono_value) => Some(chrono_value),
+            _ => None
+        }
+    }
+
+    pub fn as_object(&self) -> Option<&BTreeMap<String, Value>> {
+        match *self {
+            Value::Object(ref map) => Some(map),
+            _ => None
+        }
+    }
+
+    pub fn as_array(&self) -> Option<&Vec<Value>> {
+        match *self {
+            Value::Array(ref vec) => Some(vec),
+            _ => None
+        }
+    }
+
+    pub fn as_bool_mut(&mut self) -> Option<&mut bool> {
+        match *self {
+            Value::Bool(ref mut bool) => Some(bool),
+            _ => None
+        }
+    }
+
+    pub fn as_number_mut(&mut self) -> Option<&mut Number> {
+        match *self {
+            Value::Number(ref mut number) => Some(number),
+            _ => None
+        }
+    }
+
+    pub fn as_string_mut(&mut self) -> Option<&mut String> {
+        match *self {
+            Value::String(ref mut string) => Some(string),
+            _ => None
+        }
+    }
+
+    pub fn as_datetime_mut(&mut self) -> Option<&mut ChronoValue> {
+        match *self {
+            Value::DateTime(ref mut chrono_value) => Some(chrono_value),
+            _ => None
+        }
+    }
+
+    pub fn as_object_mut(&mut self) -> Option<&mut BTreeMap<String, Value>> {
+        match *self {
+            Value::Object(ref mut map) => Some(map),
+            _ => None
+        }
+    }
+
+    pub fn as_array_mut(&mut self) -> Option<&mut Vec<Value>> {
+        match *self {
+            Value::Array(ref mut vec) => Some(vec),
+            _ => None
+        }
     }
 }
 

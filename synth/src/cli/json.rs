@@ -5,8 +5,8 @@ use synth_core::graph::prelude::ChronoValue;
 use synth_core::graph::Value;
 use synth_gen::value::Number;
 
-pub(crate) fn samples_to_json(samples: Samples) -> impl Iterator<Item=serde_json::Value> {
-    samples.into_iter().map(synth_val_to_json)
+pub(crate) fn samples_to_json(value: Value) -> serde_json::Value {
+    synth_val_to_json(value)
 }
 
 fn synth_val_to_json(val: Value) -> serde_json::Value {
