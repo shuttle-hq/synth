@@ -78,6 +78,10 @@ pub use array::ArrayNode;
 pub mod object;
 pub use object::{KeyValueOrNothing, ObjectNode};
 
+
+pub mod unique;
+pub use unique::UniqueNode;
+
 pub mod one_of;
 pub(crate) mod series;
 
@@ -174,15 +178,15 @@ where
 }
 
 derive_from! {
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Hash, PartialEq)]
     pub enum Value {
-    Null(()),
-    Bool(bool),
-    Number(Number),
-    String(String),
-    DateTime(ChronoValue),
-    Object(BTreeMap<String, Value>),
-    Array(Vec<Value>),
+        Null(()),
+        Bool(bool),
+        Number(Number),
+        String(String),
+        DateTime(ChronoValue),
+        Object(BTreeMap<String, Value>),
+        Array(Vec<Value>),
     }
 }
 
@@ -245,6 +249,7 @@ derive_generator!(
         View(Unwrapped<View<Graph>>),
         Scoped(Scoped<Graph>),
         Series(SeriesNode),
+        Unique(UniqueNode)
     }
 );
 
