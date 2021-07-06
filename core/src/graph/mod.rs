@@ -180,6 +180,7 @@ where
     })
 }
 
+
 derive_from! {
     #[derive(Debug, Clone, Hash, PartialEq, Eq)]
     pub enum Value {
@@ -190,6 +191,12 @@ derive_from! {
         DateTime(ChronoValue),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap())
     }
 }
 

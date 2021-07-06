@@ -27,7 +27,7 @@ docker build -t $NAME . || exit 1
 echo "Running database with container name $NAME on port $PORT with password $PASSWORD"
 CONTAINER=$(docker run -p $PORT:5432 -e POSTGRES_PASSWORD=$PASSWORD -d $NAME)
 
-sleep 1
+sleep 3
 
 RESULT=0
 

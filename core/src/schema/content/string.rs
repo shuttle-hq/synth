@@ -203,7 +203,8 @@ pub struct JsonContent {
     content: Box<Content>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Hash)]
+#[serde(untagged)]
 pub enum ChronoValue {
     NaiveDate(NaiveDate),
     NaiveTime(NaiveTime),
