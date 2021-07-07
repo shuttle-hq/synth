@@ -2,8 +2,8 @@ use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use std::collections::{btree_map::Entry, BTreeMap};
-use std::convert::{TryFrom};
-use synth_core::graph::{Value};
+use std::convert::TryFrom;
+use synth_core::graph::Value;
 use synth_core::Graph;
 use synth_core::{Name, Namespace};
 use synth_gen::prelude::*;
@@ -83,6 +83,10 @@ impl NamespaceSampleStrategy {
 
         while generated < self.target {
             let next = model.complete(&mut rng)?;
+            // Here we are building a BTreeMap.
+            // Keys are the name of the collection and values are vectors of type synth_core::Value.
+            // If the key is absent, we insert the first vec sampled, otherwise we extend the existing Vec.
+            // In the future this should be replaced by a Sample/Samples struct which encapsulates this complexity.
             as_object(next)?
                 .into_iter()
                 .try_for_each(|(collection, value)| {

@@ -4,11 +4,7 @@ use synth_core::graph::prelude::ChronoValue;
 use synth_core::graph::Value;
 use synth_gen::value::Number;
 
-pub(crate) fn samples_to_json(value: Value) -> serde_json::Value {
-    synth_val_to_json(value)
-}
-
-fn synth_val_to_json(val: Value) -> serde_json::Value {
+pub fn synth_val_to_json(val: Value) -> serde_json::Value {
     match val {
         Value::Null(_) => serde_json::Value::Null,
         Value::Bool(b) => serde_json::Value::Bool(b),
