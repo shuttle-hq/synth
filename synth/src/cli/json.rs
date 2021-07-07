@@ -1,4 +1,3 @@
-use crate::sampler::Samples;
 use serde_json::Map;
 use std::collections::BTreeMap;
 use synth_core::graph::prelude::ChronoValue;

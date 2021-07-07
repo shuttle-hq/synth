@@ -1,16 +1,12 @@
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
-use serde_json::{Map, Value as JsonValue};
 use std::collections::{btree_map::Entry, BTreeMap};
-use std::convert::{TryFrom, TryInto};
-use synth_core::graph::{IntoCompleted, Value};
-use synth_core::schema::ValueKindExt;
+use std::convert::{TryFrom};
+use synth_core::graph::{Value};
 use synth_core::Graph;
 use synth_core::{Name, Namespace};
 use synth_gen::prelude::*;
-
-pub type Samples = Vec<Value>;
 
 pub(crate) struct Sampler {
     graph: Graph,
@@ -32,10 +28,9 @@ impl Sampler {
         target: usize,
         seed: u64,
     ) -> Result<Value> {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-        let mut model = self.graph.aggregate();
+        let rng = rand::rngs::StdRng::seed_from_u64(seed);
+        let model = self.graph.aggregate();
         let sample_strategy = SampleStrategy::new(collection_name, target);
-
 
         sample_strategy.sample(model, rng)
     }
