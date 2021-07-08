@@ -1,13 +1,12 @@
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::{ExportParams, ExportStrategy, create_and_insert_values};
 use crate::cli::import::ImportStrategy;
 use anyhow::{Context, Result};
+use async_std::task;
 
 use postgres::{Client, Column, Row};
 use rust_decimal::prelude::ToPrimitive;
 use serde_json::{Map, Number, Value};
 use std::convert::TryFrom;
-
-use crate::sampler::Sampler;
 use std::str::FromStr;
 use synth_core::graph::prelude::{Uuid, VariantContent};
 use synth_core::schema::number_content::*;
@@ -17,6 +16,10 @@ use synth_core::schema::{
     RegexContent, SameAsContent, StringContent,
 };
 use synth_core::{Content, Name};
+use crate::datasource::postgres_datasource::PostgresDataSource;
+use crate::datasource::DataSource;
+use crate::datasource::relational_datasource::{RelationalDataSource, ColumnInfo, PrimaryKey, ForeignKey};
+
 
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
@@ -25,101 +28,9 @@ pub struct PostgresExportStrategy {
 
 impl ExportStrategy for PostgresExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
-        let mut client =
-            Client::connect(&self.uri, postgres::tls::NoTls).expect("Failed to connect");
+        let datasource = PostgresDataSource::new(&self.uri)?;
 
-        let sampler = Sampler::try_from(&params.namespace)?;
-        let values =
-            sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
-
-        match values {
-            Value::Array(collection_json) => {
-                self.insert_data(params.collection_name.unwrap().to_string(), &collection_json, &mut client)
-            }
-            Value::Object(namespace_json) => {
-                for (collection_name, collection_json) in namespace_json {
-                    self.insert_data(
-                        collection_name,
-                        &collection_json
-                            .as_array()
-                            .expect("This is always a collection (sampler contract)"),
-                        &mut client,
-                    )?;
-                }
-                Ok(())
-            }
-            _ => unreachable!(
-                "The sampler will never generate a value which is not an array or object (sampler contract)"
-            ),
-        }
-    }
-}
-
-impl PostgresExportStrategy {
-    fn insert_data(
-        &self,
-        collection_name: String,
-        collection: &[Value],
-        client: &mut Client,
-    ) -> Result<()> {
-        // how to to ordering here?
-        // If we have foreign key constraints we need to traverse the tree and
-        // figure out insertion order
-        // We basically need something like an InsertionStrategy where we have a DAG of insertions
-        let batch_size = 1000;
-
-        if collection.is_empty() {
-            println!(
-                "Collection {} generated 0 values. Skipping insertion...",
-                collection_name
-            );
-            return Ok(());
-        }
-
-        let column_names = collection
-            .get(0)
-            .expect("Explicit check is done above that this collection is non-empty")
-            .as_object()
-            .expect("This is always an object (sampler contract)")
-            .keys()
-            .cloned()
-            .collect::<Vec<String>>()
-            .join(",");
-
-        for rows in collection.chunks(batch_size) {
-            let mut query = format!(
-                "INSERT INTO {} ({}) VALUES \n",
-                collection_name, column_names
-            );
-
-            for (i, row) in rows.iter().enumerate() {
-                let row_obj = row
-                    .as_object()
-                    .expect("This is always an object (sampler contract)");
-
-                let values = row_obj
-                    .values()
-                    .map(|v| v.to_string().replace("'", "''")) // two single quotes are the standard way to escape double quotes
-                    .map(|v| v.replace("\"", "'")) // values in the object have quotes around them by default.
-                    .collect::<Vec<String>>()
-                    .join(",");
-
-                // We should be using some form of a prepared statement here.
-                // It is not clear how this would work for our batch inserts...
-                if i == rows.len() - 1 {
-                    query.push_str(&format!("({});\n", values));
-                } else {
-                    query.push_str(&format!("({}),\n", values));
-                }
-            }
-
-            if let Err(err) = client.query(query.as_str(), &[]) {
-                println!("Error at: {}", query);
-                return Err(err.into());
-            }
-        }
-        println!("Inserted {} rows...", collection.len());
-        Ok(())
+        create_and_insert_values(params, &datasource)
     }
 }
 
@@ -130,23 +41,12 @@ pub struct PostgresImportStrategy {
 
 impl ImportStrategy for PostgresImportStrategy {
     fn import(self) -> Result<Namespace> {
-        let mut client =
-            Client::connect(&self.uri, postgres::tls::NoTls).expect("Failed to connect");
+        let datasource = PostgresDataSource::new(&self.uri)?;
 
-        let catalog = self
-            .uri
-            .split('/')
-            .last()
-            .ok_or_else(|| anyhow!("Cannot import data. No catalog specified in the uri"))?;
-
-        let query ="SELECT table_name FROM information_schema.tables where table_catalog = $1 and table_schema = 'public' and table_type = 'BASE TABLE'";
-
-        let table_names: Vec<String> = client
-            .query(query, &[&catalog])
-            .expect("Failed to get tables")
-            .iter()
-            .map(|row| row.get(0))
-            .collect();
+        let table_names = task::block_on(async {
+            let table_names = datasource.get_table_names().await?;
+            Ok::<Vec<String>, anyhow::Error>(table_names)
+        }).context(format!("Failed to get table names"))?;
 
         let mut namespace = Namespace::default();
 
@@ -154,47 +54,26 @@ impl ImportStrategy for PostgresImportStrategy {
         // Now we can execute a simple statement that just returns its parameter.
         for table_name in table_names.iter() {
             println!("Building {} collection...", table_name);
-            // Get columns
-            let col_info_query = r"select column_name, ordinal_position, is_nullable, udt_name, character_maximum_length
-                 from information_schema.columns 
-                 where table_name = $1 and table_catalog = $2;";
 
-            let column_info: Vec<ColumnInfo> = client
-                .query(col_info_query, &[&table_name, &catalog])
-                .unwrap_or_else(|_| panic!("Failed to get columns for {}", table_name))
-                .into_iter()
-                .map(ColumnInfo::try_from)
-                .collect::<Result<Vec<ColumnInfo>>>()?;
+            let column_infos = task::block_on(async {
+                Ok::<Vec<ColumnInfo>, anyhow::Error>(datasource.get_columns_infos(table_name).await?)
+            })?;
 
             namespace.put_collection(
                 &Name::from_str(&table_name)?,
-                Collection::from(column_info).collection,
+                Collection::from(column_infos).collection,
             )?;
         }
 
         // Second pass - build primary keys
         println!("Building primary keys...");
         for table_name in table_names.iter() {
-            // Unfortunately cannot use parameterised queries here
-            let pk_query: &str = &format!(
-                r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
-                    FROM   pg_index i
-                    JOIN   pg_attribute a ON a.attrelid = i.indrelid
-                                         AND a.attnum = ANY(i.indkey)
-                    WHERE  i.indrelid = '{}'::regclass
-                    AND    i.indisprimary;",
-                &table_name
-            );
-
-            let primary_keys = client
-                .query(pk_query, &[])
-                .unwrap_or_else(|_| panic!("Failed to get primary keys for {}", table_name))
-                .into_iter()
-                .map(PrimaryKey::try_from)
-                .collect::<Result<Vec<PrimaryKey>>>()?;
+            let primary_keys = task::block_on(async {
+                Ok::<Vec<PrimaryKey>, anyhow::Error>(datasource.get_primary_keys(table_name).await?)
+            })?;
 
             if primary_keys.len() > 1 {
-                unimplemented!("Synth does not support composite primary keys")
+                bail!("Synth does not support composite primary keys")
             }
 
             if let Some(primary_key) = primary_keys.get(0) {
@@ -208,24 +87,9 @@ impl ImportStrategy for PostgresImportStrategy {
         }
 
         // Third pass - foreign keys
-        println!("Building foreign keys...");
-        let fk_query: &str = r"SELECT
-                    tc.table_name, kcu.column_name,
-                    ccu.table_name AS foreign_table_name,
-                    ccu.column_name AS foreign_column_name
-                FROM information_schema.table_constraints AS tc
-                    JOIN information_schema.key_column_usage 
-                        AS kcu ON tc.constraint_name = kcu.constraint_name
-                    JOIN information_schema.constraint_column_usage 
-                        AS ccu ON ccu.constraint_name = tc.constraint_name
-                WHERE constraint_type = 'FOREIGN KEY';";
-
-        let foreign_keys = client
-            .query(fk_query, &[])
-            .expect("Failed to get foreign keys")
-            .into_iter()
-            .map(ForeignKey::try_from)
-            .collect::<Result<Vec<ForeignKey>>>()?;
+        let foreign_keys = task::block_on(async {
+            Ok::<Vec<ForeignKey>, anyhow::Error>(datasource.get_foreign_keys().await?)
+        })?;
 
         println!("{} foreign keys found.", foreign_keys.len());
 
@@ -237,6 +101,24 @@ impl ImportStrategy for PostgresImportStrategy {
             *node = Content::SameAs(SameAsContent { ref_: to_field });
         }
 
+
+
+
+
+
+        //TODO remove this
+        let mut client =
+            Client::connect(&self.uri, postgres::tls::NoTls).expect("Failed to connect");
+
+
+
+
+
+
+
+
+
+
         // Set the RNG to get a deterministic sample
         let _ = client
             .query("select setseed(0.5);", &[])
@@ -244,10 +126,13 @@ impl ImportStrategy for PostgresImportStrategy {
 
         // Fourth pass - ingest
         for table in table_names {
-            print!("Ingesting data for table {}... ", table);
+            println!("Ingesting data for table {}... ", table);
 
             // Again parameterised queries don't work here
             let data_query: &str = &format!("select * from {} order by random() limit 10;", table);
+
+            println!("data_query = {}", data_query);
+
             let data = client
                 .query(data_query, &[])
                 .expect("Failed to retrieve data");
@@ -286,29 +171,6 @@ struct Collection {
 // Wrapper around rows
 #[derive(Debug)]
 struct Values(Vec<Value>);
-
-#[derive(Debug)]
-struct ColumnInfo {
-    column_name: String,
-    ordinal_position: i32,
-    is_nullable: bool,
-    udt_name: String,
-    character_maximum_length: Option<i32>,
-}
-
-#[derive(Debug)]
-struct PrimaryKey {
-    column_name: String,
-    type_name: String,
-}
-
-#[derive(Debug)]
-struct ForeignKey {
-    from_table: String,
-    from_column: String,
-    to_table: String,
-    to_column: String,
-}
 
 impl TryFrom<Vec<Row>> for Values {
     type Error = anyhow::Error;
@@ -377,44 +239,6 @@ fn try_match_value(row: &Row, i: usize, column: &Column) -> Result<Value> {
     Ok(value)
 }
 
-impl TryFrom<postgres::Row> for ForeignKey {
-    type Error = anyhow::Error;
-
-    fn try_from(value: Row) -> Result<Self, Self::Error> {
-        Ok(ForeignKey {
-            from_table: value.try_get(0)?,
-            from_column: value.try_get(1)?,
-            to_table: value.try_get(2)?,
-            to_column: value.try_get(3)?,
-        })
-    }
-}
-
-impl TryFrom<postgres::Row> for PrimaryKey {
-    type Error = anyhow::Error;
-
-    fn try_from(row: Row) -> Result<Self, Self::Error> {
-        Ok(PrimaryKey {
-            column_name: row.try_get(0)?,
-            type_name: row.try_get(1)?,
-        })
-    }
-}
-
-impl TryFrom<postgres::Row> for ColumnInfo {
-    type Error = anyhow::Error;
-
-    fn try_from(row: Row) -> Result<Self, Self::Error> {
-        Ok(ColumnInfo {
-            column_name: row.try_get(0)?,
-            ordinal_position: row.try_get(1)?,
-            is_nullable: row.try_get::<_, String>(2)? == *"YES",
-            udt_name: row.try_get(3)?,
-            character_maximum_length: row.try_get(4)?,
-        })
-    }
-}
-
 impl From<Vec<ColumnInfo>> for Collection {
     fn from(columns: Vec<ColumnInfo>) -> Self {
         let mut collection = ObjectContent::default();
@@ -441,7 +265,7 @@ impl From<Vec<ColumnInfo>> for Collection {
 // Type conversions: https://docs.rs/postgres-types/0.2.0/src/postgres_types/lib.rs.html#360
 impl From<ColumnInfo> for FieldContent {
     fn from(column: ColumnInfo) -> Self {
-        let mut content = match column.udt_name.as_ref() {
+        let mut content = match column.data_type.as_ref() {
             "bool" => Content::Bool(BoolContent::default()),
             "oid" => {
                 unimplemented!()
@@ -504,7 +328,7 @@ impl From<ColumnInfo> for FieldContent {
                 end: None,
             })),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
-            _ => unimplemented!("We haven't implemented a converter for {}", column.udt_name),
+            _ => unimplemented!("We haven't implemented a converter for {}", column.data_type),
         };
 
         // This happens because an `optional` field in a Synth schema

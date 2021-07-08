@@ -61,6 +61,7 @@ use crate::cli::CliArgs;
 
 mod sampler;
 pub mod store;
+mod datasource;
 
 include!(concat!(env!("OUT_DIR"), "/meta.rs"));
 

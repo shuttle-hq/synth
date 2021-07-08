@@ -5,6 +5,7 @@ mod postgres;
 mod stdf;
 mod store;
 mod telemetry;
+mod mysql;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
