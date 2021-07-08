@@ -43,11 +43,13 @@ pub use categorical::{Categorical, CategoricalType};
 pub use number::Id;
 pub mod prelude;
 pub(crate) mod series;
+pub(crate) mod unique;
 
 use prelude::*;
 
 use super::FieldRef;
 use crate::schema::content::series::SeriesContent;
+use crate::schema::unique::UniqueContent;
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -98,6 +100,7 @@ pub enum Content {
     SameAs(SameAsContent),
     OneOf(OneOfContent),
     Series(SeriesContent),
+    Unique(UniqueContent),
 }
 
 impl Content {
@@ -107,6 +110,7 @@ impl Content {
 
     pub fn accepts(&self, value: &Value) -> Result<()> {
         match self {
+            Self::Unique(unique_content) => unique_content.content.accepts(value),
             Self::SameAs(_) => Ok(()),
             Self::OneOf(one_of_content) => {
                 let res: Vec<_> = one_of_content
@@ -190,6 +194,7 @@ impl Content {
             Content::SameAs(_) => "same_as",
             Content::OneOf(_) => "one_of",
             Content::Series(_) => "series",
+            Content::Unique(_) => "unique",
         }
     }
 }
@@ -312,6 +317,7 @@ impl Compile for Content {
             Self::SameAs(same_as_content) => same_as_content.compile(compiler),
             Self::OneOf(one_of_content) => one_of_content.compile(compiler),
             Self::Series(series_content) => series_content.compile(compiler),
+            Self::Unique(unique_content) => unique_content.compile(compiler),
             Self::Null => Ok(Graph::null()),
         }
     }

@@ -12,6 +12,10 @@ use crate::{
 };
 
 use serde::Deserialize;
+use ordered_float::OrderedFloat;
+
+pub type OrderedFloat32 = OrderedFloat<f32>;
+pub type OrderedFloat64 = OrderedFloat<f64>;
 
 macro_rules! generate_enum {
     {
@@ -212,7 +216,7 @@ macro_rules! data_model_variant_impl_ext {
 generate_enum!(
     /// Token variant for serde primitive numerical types.
     #[allow(missing_docs)]
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum Number {
         I8(i8),
         I16(i16),
@@ -224,10 +228,44 @@ generate_enum!(
         U32(u32),
         U64(u64),
         U128(u128),
-        F32(f32),
-        F64(f64),
+        F32(OrderedFloat32),
+        F64(OrderedFloat64),
     }
 );
+
+impl From<f32> for Number {
+    fn from(f: f32) -> Self {
+        Number::F32(OrderedFloat(f))
+    }
+}
+
+impl From<f64> for Number {
+    fn from(f: f64) -> Self {
+        Number::F64(OrderedFloat(f))
+    }
+}
+
+impl TryFrom<Number> for f32 {
+    type Error = Error;
+    fn try_from(value: Number) -> Result<f32, <Self as TryFrom<Number>>::Error> {
+        match value {
+            Number::F32(of32) => Ok(of32.into_inner()),
+            otherwise => Err(Error::type_(stringify!(F32), otherwise)),
+        }
+    }
+}
+
+impl TryFrom<Number> for f64 {
+    type Error = Error;
+    fn try_from(value: Number) -> Result<f64, <Self as TryFrom<Number>>::Error> {
+        match value {
+            Number::F64(of64) => Ok(of64.into_inner()),
+            otherwise => Err(Error::type_(stringify!(F64), otherwise)),
+        }
+    }
+}
+
+
 
 impl serde::Serialize for Number {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -245,8 +283,8 @@ impl serde::Serialize for Number {
             Self::U32(x) => serializer.serialize_u32(x),
             Self::U64(x) => serializer.serialize_u64(x),
             Self::U128(x) => serializer.serialize_u128(x),
-            Self::F32(x) => serializer.serialize_f32(x),
-            Self::F64(x) => serializer.serialize_f64(x),
+            Self::F32(x) => serializer.serialize_f32(x.into_inner()),
+            Self::F64(x) => serializer.serialize_f64(x.into_inner()),
         }
     }
 }
@@ -254,7 +292,7 @@ impl serde::Serialize for Number {
 generate_enum!(
     /// Token variant for all serde primitive (non-composite) types.
     #[allow(missing_docs)]
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
     pub enum Primitive {
         Bool(bool),
         String(String),
@@ -285,7 +323,7 @@ generate_special_enum!(
     /// Token variant for serde control flow statements that allow
     /// for building instances of composite types.
     #[allow(missing_docs)]
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
     pub enum Special {
     BeginMap(Option<usize> as len,) -> is_begin_map begin_map,
     EndMap -> is_end_map end_map,
@@ -306,7 +344,7 @@ generate_special_enum!(
 
 generate_enum!(
     /// A custom tokenization for the serde data model.
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
     pub enum Token {
         /// A token encoding serde primitive types.
         Primitive(Primitive),
@@ -418,7 +456,7 @@ macro_rules! impl_into_token {
 
 impl_into_token! {
     token_from_number:
-    i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64 => Number => Primitive => Token,
+    i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64, OrderedFloat32, OrderedFloat64 => Number => Primitive => Token,
     token_from_primitives: bool => Primitive => Token,
     token_from_string: String, &str => String => Primitive => Token,
     token_from_null: () => Primitive => Token,
@@ -633,8 +671,8 @@ pub mod tests {
         value_u32<u32>,
         value_u64<u64>,
         value_u128<u128>,
-        value_f32<f32>,
-        value_f64<f64>,
+        value_f32<OrderedFloat32>,
+        value_f64<OrderedFloat64>,
         value_bool<bool>,
     );
 

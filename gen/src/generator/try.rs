@@ -3,6 +3,7 @@ use rand::Rng;
 use crate::{GeneratorState, Never};
 
 use super::Generator;
+use std::collections::VecDeque;
 
 /// we use this trait to bound `Result`s because we don't have type equality
 /// in `where` clauses yet.
@@ -21,9 +22,15 @@ impl<O, E> GeneratorResult for Result<O, E> {
 
     // inlined to make sure it's optimized out
     #[inline(always)]
-    fn into_result(self) -> Result<O, E> { self }
-    fn from_ok(ok: O) -> Self { Ok(ok) }
-    fn from_err(err: E) -> Self { Err(err) }
+    fn into_result(self) -> Result<O, E> {
+        self
+    }
+    fn from_ok(ok: O) -> Self {
+        Ok(ok)
+    }
+    fn from_err(err: E) -> Self {
+        Err(err)
+    }
 }
 
 /// A convenience trait for [`Generator`](crate::Generator)s that
@@ -171,6 +178,18 @@ where
         }
     }
 
+    fn try_filter_map<F, O>(self, f: F) -> TryFilterMap<Self, F, O>
+    where
+        F: FnMut(Self::Ok) -> Result<Option<O>, Self::Error>,
+    {
+        TryFilterMap {
+            inner: self,
+            yielded: VecDeque::new(),
+            output: None,
+            closure: f,
+        }
+    }
+
     fn try_aggregate(self) -> TryAggregate<Self> {
         TryAggregate {
             inner: self,
@@ -295,6 +314,57 @@ where
                     Ok(r) => GeneratorState::Complete(O::Return::from_ok(r)),
                 },
             }
+        }
+    }
+}
+
+pub struct TryFilterMap<TG, F, O>
+where
+    TG: TryGenerator,
+    F: FnMut(TG::Ok) -> Result<Option<O>, TG::Error>,
+{
+    inner: TG,
+    yielded: VecDeque<TG::Yield>,
+    output: Option<O>,
+    closure: F,
+}
+
+impl<TG, F, O> Generator for TryFilterMap<TG, F, O>
+where
+    TG: TryGenerator,
+    F: FnMut(TG::Ok) -> Result<Option<O>, TG::Error>,
+{
+    type Yield = TG::Yield;
+
+    type Return = Result<O, TG::Error>;
+
+    fn next<RR: Rng>(&mut self, rng: &mut RR) -> GeneratorState<Self::Yield, Self::Return> {
+        match self.yielded.pop_front() {
+            Some(fst) => GeneratorState::Yielded(fst),
+            None => match std::mem::replace(&mut self.output, None) {
+                Some(output) => GeneratorState::Complete(Ok(output)),
+                None => {
+                    loop {
+                        match self.inner.try_next(rng) {
+                            GeneratorState::Yielded(yielded) => self.yielded.push_back(yielded),
+                            GeneratorState::Complete(complete) => match complete.into_result() {
+                                Ok(output) => match (self.closure)(output) {
+                                    Ok(Some(value)) => {
+                                        self.output = Some(value);
+                                        break;
+                                    }
+                                    Ok(None) => {
+                                        self.yielded.clear();
+                                    }
+                                    Err(err) => return GeneratorState::Complete(Err(err)),
+                                },
+                                Err(err) => return GeneratorState::Complete(Err(err)),
+                            },
+                        }
+                    }
+                    self.next(rng)
+                }
+            },
         }
     }
 }

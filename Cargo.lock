@@ -400,6 +400,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bit-vec"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
+
+[[package]]
 name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -462,6 +468,17 @@ dependencies = [
  "fastrand",
  "futures-lite",
  "once_cell",
+]
+
+[[package]]
+name = "bloomfilter"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cffe85a8b173164000edb6570ff7cf429acc9460b41d963e797df413f1765b4"
+dependencies = [
+ "bit-vec",
+ "rand 0.8.3",
+ "siphasher",
 ]
 
 [[package]]
@@ -2228,6 +2245,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ordered-float"
+version = "2.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f100fcfb41e5385e0991f74981732049f9b896821542a219420491046baafdc2"
+dependencies = [
+ "num-traits",
+ "rand 0.8.3",
+ "serde",
+]
+
+[[package]]
 name = "os_info"
 version = "3.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3279,11 +3307,12 @@ dependencies = [
 
 [[package]]
 name = "synth-core"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "bimap",
  "bincode",
+ "bloomfilter",
  "chrono",
  "colored",
  "env_logger",
@@ -3307,9 +3336,10 @@ dependencies = [
 
 [[package]]
 name = "synth-gen"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fake",
+ "ordered-float",
  "rand 0.8.3",
  "serde",
  "serde_json",

@@ -173,12 +173,13 @@ pub struct RandFaker {
 }
 
 impl RandFaker {
-    pub(crate) fn new(generator: String, args: FakerArgs) -> Result<Self, anyhow::Error> {
-        match FAKE_MAP.get(generator.as_str()) {
+    pub(crate) fn new<S: AsRef<str>>(generator: S, args: FakerArgs) -> Result<Self, anyhow::Error> {
+        match FAKE_MAP.get(generator.as_ref()) {
             None => Err(anyhow!(
                 "Generator '{}' does not exist {}",
-                generator,
-                suggest_closest(FAKE_MAP.keys(), &generator).unwrap_or_else(|| "".to_string())
+                generator.as_ref(),
+                suggest_closest(FAKE_MAP.keys(), &generator.as_ref())
+                    .unwrap_or_else(|| "".to_string())
             )),
             Some(generator) => Ok(Self {
                 generator: *generator,
