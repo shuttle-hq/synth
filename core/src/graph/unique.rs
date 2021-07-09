@@ -9,7 +9,7 @@ use std::hash::{BuildHasher, Hash, Hasher};
 const MAX_RETRIES: usize = 64;
 
 type ValueFilter =
-    TryFilterMap<Box<Graph>, Box<dyn FnMut(Value) -> Result<Option<Value>, Error>>, Value>;
+TryFilterMap<Box<Graph>, Box<dyn FnMut(Value) -> Result<Option<Value>, Error>>, Value>;
 
 derive_generator! {
     yield Token,
@@ -20,7 +20,7 @@ derive_generator! {
 }
 
 impl UniqueNode {
-    pub fn hash(inner: Graph) -> Self {
+    pub fn hash(inner: Graph, retries: Option<usize>) -> Self {
         let mut seen: HashMap<u64, usize> = HashMap::new();
         let filter = move |value: Value| {
             let mut hasher = seen.hasher().build_hasher();
@@ -36,11 +36,11 @@ impl UniqueNode {
 
             match *count {
                 0 => Ok(Some(value)),
-                x if x < MAX_RETRIES => Ok(None),
+                x if x < retries.unwrap_or(MAX_RETRIES) => Ok(None),
                 _ => Err(failed_crate!(
                     target: Release,
-                    "Could not generate enough unique values from this generator:\
-                         try reducing the number of values generated"
+                    "Could not generate enough unique values from generator: \
+                    try reducing the number of values generated"
                 )),
             }
         };
@@ -65,7 +65,7 @@ pub mod tests {
             RandFaker::new("username", Default::default()).unwrap(),
         )));
         let mut rng = rand::thread_rng();
-        let output = UniqueNode::hash(usernames)
+        let output = UniqueNode::hash(usernames, None)
             .repeat(NUM_GENERATED)
             .complete(&mut rng)
             .into_iter()
@@ -79,9 +79,9 @@ pub mod tests {
                 high: NUM_GENERATED as u64,
                 step: 1,
             })
-            .unwrap(),
+                .unwrap(),
         ));
-        let output = UniqueNode::hash(numbers)
+        let output = UniqueNode::hash(numbers, None)
             .repeat(NUM_GENERATED)
             .complete(&mut rng)
             .into_iter()

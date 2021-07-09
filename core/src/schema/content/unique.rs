@@ -6,12 +6,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum UniqueAlgorithm {
-    Hash,
+    Hash { retries: Option<usize> },
 }
 
 impl Default for UniqueAlgorithm {
     fn default() -> Self {
-        Self::Hash
+        Self::Hash { retries: None }
     }
 }
 
@@ -27,7 +27,7 @@ impl Compile for UniqueContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph> {
         let graph = self.content.compile(compiler)?;
         let node = match self.algorithm {
-            UniqueAlgorithm::Hash => UniqueNode::hash(graph),
+            UniqueAlgorithm::Hash { retries } => UniqueNode::hash(graph, retries),
         };
         Ok(Graph::Unique(node))
     }
