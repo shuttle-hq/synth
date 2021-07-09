@@ -90,7 +90,7 @@ pub mod tests {
         assert_eq!(output.len(), NUM_GENERATED);
 
         let constant = Graph::Number(NumberNode::from(RandomU64::constant(44)));
-        let output = UniqueNode::hash(constant)
+        let output = UniqueNode::hash(constant, None)
             .repeat(10)
             .complete(&mut rng)
             .into_iter()
