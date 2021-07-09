@@ -1,6 +1,6 @@
 [package]
 name = "synth-gen"
-version = "0.4.0"
+version = "0.4.1"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>"
@@ -21,5 +21,5 @@ shared = [ ]
 [dependencies]
 serde = { version = "1.0", features = [ "derive" ] }
 rand = "0.8.3"
-
+ordered-float = { version = "2.0", features = ["serde", "rand"] }
 fake = { git = "https://github.com/cksac/fake-rs", features = ["http"], rev = "ab095c1f8cf230cfa94305339b4e08bd02a275d4", optional = true }

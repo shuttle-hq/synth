@@ -48,8 +48,8 @@ macro_rules! deserialize_number_helper {
     (u32) => (deserialize_number_impl!(u32 => deserialize_u32 visit_u32););
     (u64) => (deserialize_number_impl!(u64 => deserialize_u64 visit_u64););
     (u128) => (deserialize_number_impl!(u128 => deserialize_u128 visit_u128););
-    (f32) => (deserialize_number_impl!(f32 => deserialize_f32 visit_f32););
-    (f64) => (deserialize_number_impl!(f64 => deserialize_f64 visit_f64););
+    (OrderedFloat32) => (deserialize_number_impl!(OrderedFloat32 => deserialize_f32 visit_f32););
+    (OrderedFloat64) => (deserialize_number_impl!(OrderedFloat64 => deserialize_f64 visit_f64););
 }
 
 macro_rules! deserialize_number_impl {
@@ -252,7 +252,20 @@ where
     Vec<u8> => deserialize_byte_buf visit_byte_buf,
     );
 
-    deserialize_number!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64,);
+    deserialize_number!(
+        i8,
+        i16,
+        i32,
+        i64,
+        i128,
+        u8,
+        u16,
+        u32,
+        u64,
+        u128,
+        OrderedFloat32,
+        OrderedFloat64,
+    );
 
     deserialize_redirect!(
     deserialize_str -> deserialize_string,
