@@ -275,21 +275,21 @@ impl TryFrom<PgRow> for ValueWrapper {
 
 fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
     let value = match column.type_info().name() {
-        "BOOL" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
-        "OID" => {
+        "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
+        "oid" => {
             bail!("OID data type not supported for Postgresql")
         }
-        "CHAR" | "VARCHAR" | "TEXT" | "BPCHAR" | "NAME" | "UNKNOWN" => {
+        "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
             Value::String(row.try_get::<String, &str>(column.name())?)
         }
-        "INT2" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
-        "INT4" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
-        "INT8" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
-        "FLOAT4" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
+        "int2" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
+        "int4" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
+        "int8" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
+        "float4" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
             .ok_or(anyhow!("Failed to convert float4 data type"))?), // TODO test f32, f64
-        "FLOAT8" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
+        "float8" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
             .ok_or(anyhow!("Failed to convert float8 data type"))?),
-        "NUMERIC" => {
+        "numeric" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
@@ -300,9 +300,9 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")
         }
-        "TIMESTAMPZ" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "TIMESTAMP" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "DATE" => Value::String(format!("{}", row.try_get::<chrono::NaiveDate, &str>(column.name())?)),
+        "timestampz" => Value::String(row.try_get::<String, &str>(column.name())?),
+        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
+        "date" => Value::String(format!("{}", row.try_get::<chrono::NaiveDate, &str>(column.name())?)),
         _ => {
             bail!(
                 "Could not convert value. Converter not implemented for {}",
