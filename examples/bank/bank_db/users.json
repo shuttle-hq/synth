@@ -11,12 +11,6 @@
     },
     "content": {
         "type": "object",
-        "password_hash": {
-            "type": "string",
-            "faker": {
-                "generator": "bs_adj"
-            }
-        },
         "username": {
             "type": "one_of",
             "variants": [
