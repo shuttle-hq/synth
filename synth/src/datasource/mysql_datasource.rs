@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use crate::datasource::relational_datasource::{RelationalDataSource, ColumnInfo, PrimaryKey, ForeignKey};
 use std::prelude::rust_2015::Result::Ok;
 use std::convert::TryFrom;
+use synth_core::Content;
 
 pub struct MySqlDataSource {
     pool: Pool<MySql>,
@@ -123,6 +124,10 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_deterministic_samples(&self, _table_name: &str) -> Result<Vec<Value>> {
+        todo!()
+    }
+
+    fn decode_to_content(&self, _data_type: &str, _char_max_len: Option<i32>) -> Result<Content> {
         todo!()
     }
 }

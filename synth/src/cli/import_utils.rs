@@ -5,14 +5,17 @@ use async_std::task;
 use std::str::FromStr;
 use anyhow::{Result, Context};
 use log::debug;
-use synth_core::schema::{FieldRef, NumberContent, Id, SameAsContent, OptionalMergeStrategy};
+use synth_core::schema::{FieldRef, NumberContent, Id, SameAsContent, OptionalMergeStrategy, ObjectContent, ArrayContent, RangeStep, OneOfContent, VariantContent, FieldContent};
 use synth_core::schema::content::number_content::U64;
 use serde_json::Value;
+use std::convert::TryFrom;
 
 #[derive(Debug)]
 pub(crate) struct Collection {
     pub(crate) collection: Content,
 }
+
+struct FieldContentWrapper(FieldContent);
 
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)
     -> Result<Namespace> {
@@ -49,7 +52,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
 
         namespace.put_collection(
             &Name::from_str(&table_name)?,
-            Collection::from(column_infos).collection,
+            Collection::try_from((datasource, column_infos))?.collection,
         )?;
     }
 
@@ -114,4 +117,57 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
     }
 
     Ok(())
+}
+
+impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Collection {
+    type Error = anyhow::Error;
+
+    fn try_from(columns_meta: (&T, Vec<ColumnInfo>)) -> Result<Self> {
+        let mut collection = ObjectContent::default();
+
+        for column_info in columns_meta.1 {
+            let content = FieldContentWrapper::try_from((columns_meta.0, &column_info))?.0;
+
+            collection
+                .fields
+                .insert(column_info.column_name.clone(), content);
+        }
+
+        Ok(Collection {
+            collection: Content::Array(ArrayContent {
+                length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep {
+                    low: 1,
+                    high: 2,
+                    step: 1,
+                })))),
+                content: Box::new(Content::Object(collection)),
+            }),
+        })
+    }
+}
+
+impl<T: RelationalDataSource + DataSource> TryFrom<(&T, &ColumnInfo)> for FieldContentWrapper {
+    type Error = anyhow::Error;
+
+    fn try_from(column_meta: (&T, &ColumnInfo)) -> Result<Self> {
+        let data_type = &column_meta.1.data_type;
+        let mut content= column_meta.0.decode_to_content(data_type, column_meta.1.character_maximum_length)?;
+
+        // This happens because an `optional` field in a Synth schema
+        // won't show up as a key during generation. Whereas what we
+        // want instead is a null field.
+        if column_meta.1.is_nullable {
+            content = Content::OneOf(OneOfContent {
+                variants: vec![
+                    VariantContent::new(content),
+                    VariantContent::new(Content::Null),
+                ],
+            })
+        }
+
+        Ok(FieldContentWrapper(FieldContent {
+            optional: false,
+            content: Box::new(content),
+        }))
+    }
 }

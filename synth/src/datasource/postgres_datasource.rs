@@ -1,5 +1,5 @@
 use crate::datasource::DataSource;
-use anyhow::Result;
+use anyhow::{Result, Context};
 use crate::datasource::relational_datasource::{RelationalDataSource, ColumnInfo, PrimaryKey, ForeignKey, ValueWrapper};
 use sqlx::{Pool, Postgres, Row, Column, TypeInfo};
 use sqlx::postgres::{PgPoolOptions, PgQueryResult, PgRow, PgColumn};
@@ -9,6 +9,9 @@ use async_trait::async_trait;
 use std::convert::TryFrom;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use synth_core::Content;
+use synth_core::schema::{BoolContent, StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType, Uuid};
+use synth_core::schema::number_content::{I64, F64};
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
@@ -144,6 +147,76 @@ impl RelationalDataSource for PostgresDataSource {
             .collect::<Result<Vec<Value>>>()?;
 
         Ok(values)
+    }
+
+    fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content> {
+        let content = match data_type {
+            "bool" => Content::Bool(BoolContent::default()),
+            "oid" => {
+                bail!("OID data type not supported")
+            }
+            "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
+                let pattern = "[a-zA-Z0-9]{0, {}}".replace(
+                    "{}",
+                    &format!("{}", _char_max_len.unwrap_or(1)),
+                );
+                Content::String(StringContent::Pattern(
+                    RegexContent::pattern(pattern).context("pattern will always compile")?,
+                ))
+            }
+            "int2" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
+                low: 0,
+                high: 1,
+                step: 1,
+            }))),
+            "int4" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
+                low: 0,
+                high: 1,
+                step: 1,
+            }))),
+            "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
+                low: 1,
+                high: 1,
+                step: 1,
+            }))),
+            "float4" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
+                low: 0.0,
+                high: 1.0,
+                step: 0.1, //todo
+            }))),
+            "float8" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
+                low: 0.0,
+                high: 1.0,
+                step: 0.1, //todo
+            }))),
+            "numeric" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
+                low: 0.0,
+                high: 1.0,
+                step: 0.1, //todo
+            }))),
+            "timestampz" => Content::String(StringContent::DateTime(DateTimeContent {
+                format: "".to_string(), // todo
+                type_: ChronoValueType::DateTime,
+                begin: None,
+                end: None,
+            })),
+            "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
+                format: "".to_string(), // todo
+                type_: ChronoValueType::NaiveDateTime,
+                begin: None,
+                end: None,
+            })),
+            "date" => Content::String(StringContent::DateTime(DateTimeContent {
+                format: "%Y-%m-%d".to_string(),
+                type_: ChronoValueType::NaiveDate,
+                begin: None,
+                end: None,
+            })),
+            "uuid" => Content::String(StringContent::Uuid(Uuid)),
+            _ => bail!("We haven't implemented a converter for {}", data_type),
+        };
+
+        Ok(content)
     }
 }
 
