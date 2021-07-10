@@ -121,6 +121,10 @@ impl RelationalDataSource for MySqlDataSource {
             .map(ForeignKey::try_from)
             .collect::<Result<Vec<ForeignKey>>>()
     }
+
+    async fn get_deterministic_samples(&self, _table_name: &str) -> Result<Vec<Value>> {
+        todo!()
+    }
 }
 
 impl TryFrom<MySqlRow> for ColumnInfo {

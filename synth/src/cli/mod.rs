@@ -6,6 +6,7 @@ mod stdf;
 mod store;
 mod telemetry;
 mod mysql;
+mod import_utils;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};

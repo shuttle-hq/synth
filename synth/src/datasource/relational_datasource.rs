@@ -30,6 +30,9 @@ pub struct ForeignKey {
     pub(crate) to_column: String,
 }
 
+#[derive(Debug)]
+pub struct ValueWrapper(pub(crate) Value);
+
 #[async_trait]
 pub trait RelationalDataSource : DataSource {
     type QueryResult: Send + Sync;
@@ -113,4 +116,6 @@ pub trait RelationalDataSource : DataSource {
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>>;
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>>;
+
+    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 }

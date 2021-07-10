@@ -61,14 +61,13 @@ ctrlc = { version = "3.0", features = ["termination"] }
 synth-core = { path = "../core" }
 synth-gen = { path = "../gen" }
 
-postgres = { version = "0.19.0", features = ["with-chrono-0_4"] }
-rust_decimal = { version = "1.10.3", features = ["db-postgres"] }
+rust_decimal = "1.10.3"
 indicatif = "0.15.0"
 
 dirs = "3.0.2"
 uuid = { version = "0.8.2", features = ["v4"] }
 mongodb = {version = "1.2.1", features = ["sync"] , default-features = false}
 
-sqlx = { version = "0.5.5", features = [ "postgres", "mysql", "runtime-async-std-rustls" ] }
+sqlx = { version = "0.5.5", features = [ "postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono" ] }
 
 beau_collector = "0.2.1"
