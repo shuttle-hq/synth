@@ -2,6 +2,11 @@ use crate::cli::export::{ExportStrategy, ExportParams, create_and_insert_values}
 use crate::datasource::mysql_datasource::MySqlDataSource;
 use crate::datasource::DataSource;
 use anyhow::Result;
+use crate::cli::import::ImportStrategy;
+use synth_core::schema::Namespace;
+use synth_core::{Content, Name};
+use crate::cli::import_utils::build_namespace_import;
+use serde_json::Value;
 
 #[derive(Clone, Debug)]
 pub struct MySqlExportStrategy {
@@ -13,5 +18,29 @@ impl ExportStrategy for MySqlExportStrategy {
         let datasource = MySqlDataSource::new(&self.uri)?;
 
         create_and_insert_values(params, &datasource)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct MySqlImportStrategy {
+    pub uri: String,
+}
+
+impl ImportStrategy for MySqlImportStrategy {
+    fn import(self) -> Result<Namespace> {
+        let datasource = MySqlDataSource::new(&self.uri)?;
+
+        build_namespace_import(&datasource)
+    }
+
+    fn import_collection(self, name: &Name) -> Result<Content> {
+        self.import()?
+            .collections
+            .remove(name)
+            .ok_or_else(|| anyhow!("Could not find table '{}' in Postgres database.", name))
+    }
+
+    fn into_value(self) -> Result<Value> {
+        bail!("MySql import doesn't support conversion into value")
     }
 }

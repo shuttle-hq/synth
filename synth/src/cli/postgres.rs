@@ -41,7 +41,7 @@ impl ImportStrategy for PostgresImportStrategy {
     }
 
     fn into_value(self) -> Result<Value> {
-        unreachable!()
+        bail!("Postgres import doesn't support conversion into value")
     }
 }
 

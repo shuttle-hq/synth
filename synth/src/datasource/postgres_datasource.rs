@@ -149,7 +149,7 @@ impl RelationalDataSource for PostgresDataSource {
         Ok(values)
     }
 
-    fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content> {
+    fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
         let content = match data_type {
             "bool" => Content::Bool(BoolContent::default()),
             "oid" => {
@@ -158,7 +158,7 @@ impl RelationalDataSource for PostgresDataSource {
             "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
                 let pattern = "[a-zA-Z0-9]{0, {}}".replace(
                     "{}",
-                    &format!("{}", _char_max_len.unwrap_or(1)),
+                    &format!("{}", char_max_len.unwrap_or(1)),
                 );
                 Content::String(StringContent::Pattern(
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
