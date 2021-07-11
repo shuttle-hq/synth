@@ -11,8 +11,12 @@ use std::convert::TryFrom;
 use synth_core::Content;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
-use synth_core::schema::{BoolContent, StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType};
+use synth_core::schema::{StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType};
 use synth_core::schema::number_content::{I64, F64, U64};
+
+/// Known issues:
+/// - MySql aliases bool and boolean data types as tinyint. We currently define all tinyint as i8.
+///   Ideally, the user can define a way to force certain fields as bool rather than i8.
 
 pub struct MySqlDataSource {
     pool: Pool<MySql>,
@@ -146,7 +150,6 @@ impl RelationalDataSource for MySqlDataSource {
 
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
         let content = match data_type {
-            "bool" | "boolean" => Content::Bool(BoolContent::default()),
             "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
                 let pattern = "[a-zA-Z0-9]{0, {}}".replace(
                     "{}",
@@ -167,16 +170,13 @@ impl RelationalDataSource for MySqlDataSource {
                 high: 1,
                 step: 1,
             }))),
-            name if name.starts_with("float") |
-                name.starts_with("double") |
-                name.starts_with("numeric") |
-                name.starts_with("decimal") =>
+            "float" | "double" | "numeric" | "decimal" =>
                 Content::Number(NumberContent::F64(F64::Range(RangeStep {
                 low: 0.0,
                 high: 1.0,
                 step: 0.1, //todo
             }))),
-            name if name.starts_with("timestamp") => Content::String(StringContent::DateTime(DateTimeContent {
+            "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
@@ -188,13 +188,18 @@ impl RelationalDataSource for MySqlDataSource {
                 begin: None,
                 end: None,
             })),
-            //TODO time datetime
-            // name if name.starts_with("datetime") => Content::String(StringContent::DateTime(DateTimeContent {
-            //     format: "%Y-%m-%d".to_string(),
-            //     type_: ChronoValueType::NaiveDateTime,
-            //     begin: None,
-            //     end: None,
-            // })),
+            "datetime" => Content::String(StringContent::DateTime(DateTimeContent {
+                format: "%Y-%m-%d %H:%M:%S".to_string(),
+                type_: ChronoValueType::NaiveDateTime,
+                begin: None,
+                end: None,
+            })),
+            "time" => Content::String(StringContent::DateTime(DateTimeContent {
+                format: "%H:%M:%S".to_string(),
+                type_: ChronoValueType::NaiveTime,
+                begin: None,
+                end: None,
+            })),
             _ => bail!("We haven't implemented a converter for {}", data_type),
         };
 
@@ -257,7 +262,6 @@ impl TryFrom<MySqlRow> for ValueWrapper {
 
 fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
     let value = match column.type_info().name() {
-        "bool" | "boolean" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
         "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
             Value::String(row.try_get::<String, &str>(column.name())?)
         }
@@ -266,11 +270,11 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
         "mediumint" | "int" | "integer" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
         "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
         "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
-        name if name.starts_with("float") => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-            .ok_or(anyhow!("Failed to convert float data type"))?), // TODO test f32, f64
-        name if name.starts_with("double") => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
+        "float" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
+            .ok_or(anyhow!("Failed to convert float data type"))?),
+        "double" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
             .ok_or(anyhow!("Failed to convert double data type"))?),
-        name if name.starts_with("numeric") | name.starts_with("decimal") => {
+        "numeric" | "decimal" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
@@ -281,12 +285,12 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")
         }
-        name if name.starts_with("timestamp") => Value::String(
+        "timestamp" => Value::String(
             row.try_get::<String, &str>(column.name())?),
         "date" => Value::String(format!("{}", row.try_get::<chrono::NaiveDate, &str>(column.name())?)),
-        name if name.starts_with("datetime") => Value::String(
+        "datetime" => Value::String(
             format!("{}", row.try_get::<chrono::NaiveDateTime, &str>(column.name())?)),
-        name if name.starts_with("time") => Value::String(
+        "time" => Value::String(
             format!("{}", row.try_get::<chrono::NaiveTime, &str>(column.name())?)),
         _ => {
             bail!(
