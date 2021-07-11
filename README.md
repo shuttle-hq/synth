@@ -37,11 +37,11 @@ The key features of Synth are:
 - **Data as Code**: Data generation is described using a declarative configuration language allowing you to specify your entire data model as code.
 
 - **Import from Existing Sources**: Synth can import data from existing sources and automatically create data models. Synth currently has Alpha support for Postgres!
- 
+
 - **Data Inference**: While ingesting data, Synth automatically infers the relations, distributions and types of the dataset.
 
-- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.  
- 
+- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.
+
 - **Semantic Data Types**: Synth has a library of semantic 'faker' types to cover PII like names, addresses, credit card numbers etc.
 
 ## Installation & Getting Started
@@ -58,10 +58,16 @@ For more installation options, check out the [docs](https://getsynth.github.io/s
 
 ### Building a data model from scratch
 
-To start generating data without having a source to import from, you need to first initialise a workspace using `synth init`:
+To start generating data without having a source to import from, you need to first initialise a workspace using `synth init [opt path]` (if no optional path is specified, the current directory will be used):
 
 ```bash
 $ mkdir workspace && cd workspace && synth init
+```
+
+or
+
+```bash
+$ synth init /some/other/path
 ```
 
 Inside the workspace we'll create a namespace for our data model and call it `my_app`:
@@ -127,7 +133,7 @@ $ synth generate my_app/ --size 2 | jq
 
 ### Building a data model from an external database
 
-If you have an existing database, Synth can automatically generate a data model by inspecting the database. 
+If you have an existing database, Synth can automatically generate a data model by inspecting the database.
 
 To get started, initialise your Synth workspace locally:
 
