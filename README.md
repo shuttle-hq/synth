@@ -1,7 +1,4 @@
 <p align=center>
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
   <img height="150px" src="docs/static/img/getsynth_identicon.png"/>
 </p>
 <p align=center>
@@ -14,7 +11,7 @@
   <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
   <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
   <a href="https://discord.gg/H33rRDTm3p"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
-  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/getsynth/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
+      <img src="https://img.shields.io/github/all-contributors/getsynth/synth" alt="Synth open source contributors"/>
 </p>
 
 ------

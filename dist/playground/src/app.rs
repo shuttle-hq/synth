@@ -46,8 +46,8 @@ impl State {
                     if stream.len() > self.max_size {
                         warn!("aborting: too large");
                         let text = format!(
-			    "generated too many tokens: try generating less data by controlling (for example) the `length` parameter of arrays or using the `?size=` query parameter"
-			);
+                            "generated too many tokens: try generating less data by controlling (for example) the `length` parameter of arrays or using the `?size=` query parameter"
+                        );
                         let body = ErrorResponseBody {
                             kind: "illegal",
                             text: Some(text),
@@ -96,7 +96,17 @@ impl std::error::Error for ErrorResponseBody {}
 
 async fn put_compile(mut req: Request<State>) -> tide::Result {
     let query: CompileRequestQuery = req.query()?;
-    let body: Content = req.body_json().await?;
+    let body: Content = match req.body_json().await {
+        Ok(body) => body,
+        Err(e) => {
+            let error = ErrorResponseBody {
+                kind: "schema",
+                text: Some(e.to_string()),
+            };
+            let response = Response::builder(422).body(Body::from_json(&error)?).build();
+            return Ok(response);
+        }
+    };
     info!(
         "compile request with query={:?} for content of kind {}",
         query,

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::value::{IntoToken, Special, Token};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Error {
     Type { expected: String, got: String },
     Deserialize { msg: String },
