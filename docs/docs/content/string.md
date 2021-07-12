@@ -32,7 +32,7 @@ This generator has no parameters.
 
 ## faker
 
-Synth has na internal fake data generator which will generate fake data for semantic types such as Names, Addresses etc.
+Synth has an internal fake data generator that will generate fake data for semantic types such as Names, Addresses, etc.
 
 #### Example
 
