@@ -1,0 +1,45 @@
+PROJECT_SRC_DIR = "/synth"
+PROJECT_SRC_SANDBOX_DIR = "/synth-sandbox"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+
+  config.vm.provider :virtualbox do |v, override|
+    v.customize ["modifyvm", :id, "--memory", "4096"]
+    v.customize ["modifyvm", :id, "--cpus", "2"]
+    v.customize ["modifyvm", :id, "--vram", 32]
+    v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    v.customize ["modifyvm", :id, "--audio", "none"]
+    v.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    v.customize ["modifyvm", :id, "--draganddrop", "hosttoguest"]
+    v.customize ["modifyvm", :id, "--usb", "off"]
+    v.linked_clone = true if Vagrant::VERSION >= '1.8.0'
+  end
+
+  config.vm.network "private_network", type: "dhcp"
+
+  config.vm.synced_folder "../../../../", PROJECT_SRC_DIR
+  config.vm.provision "shell", :args => [PROJECT_SRC_DIR, PROJECT_SRC_SANDBOX_DIR], privileged: true, inline: <<-SHELL
+    cp -r $1 $2
+    chmod -R a+rw $2
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    apt-get update
+    apt install -y build-essential
+    apt-get install pkg-config libssl-dev
+    source ~/.profile
+    rustup toolchain install nightly-2021-05-17
+    cd $2
+    /root/.cargo/bin/cargo +nightly-2021-05-17 install --debug --path=synth
+  SHELL
+
+#   Install Docker
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+    apt-get install -y docker-ce docker-ce-cli containerd.io
+  SHELL
+
+end
