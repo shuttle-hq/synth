@@ -1,4 +1,4 @@
-use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource, PrimaryKey, ForeignKey};
+use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource};
 use synth_core::{Namespace, Name, Content};
 use crate::datasource::DataSource;
 use async_std::task;
@@ -19,10 +19,8 @@ struct FieldContentWrapper(FieldContent);
 
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)
     -> Result<Namespace> {
-    let table_names = task::block_on(async {
-        let table_names = datasource.get_table_names().await?;
-        Ok::<Vec<String>, anyhow::Error>(table_names)
-    }).context(format!("Failed to get table names"))?;
+    let table_names = task::block_on(datasource.get_table_names())
+        .context(format!("Failed to get table names"))?;
 
     let mut namespace = Namespace::default();
 
@@ -44,11 +42,9 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datas
 fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
     namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
     for table_name in table_names.iter() {
-        println!("Building {} collection...", table_name);
+        info!("Building {} collection...", table_name);
 
-        let column_infos = task::block_on(async {
-            Ok::<Vec<ColumnInfo>, anyhow::Error>(datasource.get_columns_infos(table_name).await?)
-        })?;
+        let column_infos = task::block_on(datasource.get_columns_infos(table_name))?;
 
         namespace.put_collection(
             &Name::from_str(&table_name)?,
@@ -62,9 +58,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
 fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
     namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
     for table_name in table_names.iter() {
-        let primary_keys = task::block_on(async {
-            Ok::<Vec<PrimaryKey>, anyhow::Error>(datasource.get_primary_keys(table_name).await?)
-        })?;
+        let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
 
         if primary_keys.len() > 1 {
             bail!("Synth does not support composite primary keys")
@@ -85,9 +79,7 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
 
 fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
     namespace: &mut Namespace, datasource: &T) -> Result<()> {
-    let foreign_keys = task::block_on(async {
-        Ok::<Vec<ForeignKey>, anyhow::Error>(datasource.get_foreign_keys().await?)
-    })?;
+    let foreign_keys = task::block_on(datasource.get_foreign_keys())?;
 
     debug!("{} foreign keys found.", foreign_keys.len());
 
@@ -104,14 +96,10 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
 
 fn populate_namespace_values<T: DataSource + RelationalDataSource>(
     namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
-    task::block_on(async {
-        Ok::<(), anyhow::Error>(datasource.set_seed().await?)
-    })?;
+    task::block_on(datasource.set_seed())?;
 
     for table in table_names {
-        let values = task::block_on(async {
-            Ok::<Vec<Value>, anyhow::Error>(datasource.get_deterministic_samples(&table).await?)
-        })?;
+        let values = task::block_on(datasource.get_deterministic_samples(&table))?;
 
         namespace.try_update(
             OptionalMergeStrategy,
