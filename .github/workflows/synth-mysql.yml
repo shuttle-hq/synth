@@ -13,18 +13,12 @@ on:
 jobs:
   e2e_tests_mysql:
     runs-on: ubuntu-latest
-    env:
-      MYSQL_HOST: localhost
-      MYSQL_USER: root
-      MYSQL_PORT: 3306
-      MYSQL_ROOT_PASSWORD: mysecretpassword
-      MYSQL_DATABASE: test_db
     services:
       mysql:
         image: mysql
         env:
-          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_ROOT_PASSWORD: mysecretpassword
+          MYSQL_DATABASE: test_db
         ports:
           - ${{ env.MYSQL_PORT }}
         options: >-
@@ -34,12 +28,19 @@ jobs:
           --health-retries=3
     steps:
       - uses: actions/checkout@v2
+      ## Set env. variables for this job
+      - run: |
+          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_ROOT_PASSWORD=mysecretpassword" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE=test_db" >> $GITHUB_ENV
       - run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends mysql-client jq
       - run: >
-          mysql -h ${{ env.MYSQL_HOST }} -u ${{ env.MYSQL_USER }} --password=${{ env.MYSQL_ROOT_PASSWORD }}
-          -P ${{ env.MYSQL_PORT }} test_db < synth/testing_harness/mysql/0_hospital_schema.sql
+          mysql -h "${{ env.MYSQL_HOST }}" -u "${{ env.MYSQL_USER }}" --password="${{ env.MYSQL_ROOT_PASSWORD }}"
+          -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/0_hospital_schema.sql
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-05-17
@@ -50,6 +51,13 @@ jobs:
           synth init || true
           synth generate hospital_master --to mysql://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} --size 30
           bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/validate_mysql_gen_count.sh"
+      ## Clear out and repopulate DB
+      - run: >
+          mysql -h "${{ env.MYSQL_HOST }}" -u "${{ env.MYSQL_USER }}" --password="${{ env.MYSQL_ROOT_PASSWORD }}"
+          -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/0_hospital_schema.sql
+      - run: >
+          mysql -h "${{ env.MYSQL_HOST }}" -u "${{ env.MYSQL_USER }}" --password="${{ env.MYSQL_ROOT_PASSWORD }}"
+          -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/1_hospital_data.sql
       - run: |
           echo "Testing import"
           cd synth/testing_harness/mysql
