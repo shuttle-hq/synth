@@ -12,8 +12,14 @@ use crate::compile::{Compile, Compiler};
 use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
 
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::ops::Index;
+
 #[allow(dead_code)]
 type JsonObject = Map<String, Value>;
+
+//graph alies
+type NameGraph = HashMap<Name, Vec<Name>>;
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Namespace {
@@ -160,6 +166,78 @@ impl Namespace {
             Err(failed!(target: Release, NotFound => "no such collection: '{}'{}", name, suggest))
         }
     }
+    fn get_ajd_list(&self) -> Vec<(Name, Name)> {
+        let mut list = Vec::new();
+        for (n, c) in self.clone() {
+            match c {
+                Content::SameAs(same_as_content) => {
+                    list.push((same_as_content.ref_.collection().clone(), n));
+                }
+                _ => {}
+            }
+        }
+        list
+    }
+
+    pub fn topo_sort(&self) -> Option<Vec<Name>> {
+        eprintln!("namespace: {:?}", self);
+        let lists: Vec<(Name, Name)> = self.get_ajd_list();
+        let mut q: VecDeque<Name> = VecDeque::new();
+        //topologically sorted vec of names to be returned
+        let mut sorted: Vec<Name> = Vec::new();
+
+        //or graph
+        let mut graph: NameGraph = HashMap::new();
+        //make a slice of lists
+        let dep_lists = lists.get(0..).unwrap();
+        //here we build our graph by running through deplists
+        for v in dep_lists {
+            let source = &mut graph.entry(v.0.clone()).or_insert_with(|| Vec::new());
+            source.push(v.1.clone());
+        }
+        eprintln!("dep_lists: {:?}", dep_lists);
+        //kahn's algorithm says we need a way to count the inward edes into a node
+        let mut in_degrees: BTreeMap<Name, usize> = BTreeMap::new();
+        //get a set of all the names. we'll need it to develop our indegree and outedges
+        let set: HashSet<Name> = lists
+            .iter()
+            .cloned()
+            .map(|(p, c)| vec![p, c])
+            .flatten()
+            .collect();
+        for name in &set {
+            let entry = in_degrees.entry(name.clone()).or_insert(0);
+            *entry = lists.iter().filter(|(_, c)| name == c).count();
+        }
+        eprintln!("indegrees: {:?}", in_degrees);
+        eprintln!("set: {:?}", set);
+        eprintln!("graph: {:?}", graph);
+        //first push all the names with in_degree of zero into the queue
+        for n in &in_degrees {
+            if n.1 == &0 {
+                q.push_back(n.0.clone());
+            }
+        }
+        //then we loop through the queue
+        while let Some(name) = q.pop_front() {
+            sorted.push(name.clone());
+            eprintln!("name: {:?}", name);
+            if graph.contains_key(&name) {
+                for out in graph.index(&name) {
+                    in_degrees.entry(out.clone()).and_modify(|v| *v -= 1);
+                    if in_degrees.iter().find(|v| v.1 == &0usize).is_some() {
+                        q.push_back(out.clone());
+                    }
+                }
+            };
+        }
+        if sorted.len() == set.len() {
+            println!("{:?}", sorted.clone());
+            Some(sorted)
+        } else {
+            None
+        }
+    }
 }
 
 impl Compile for Namespace {
@@ -174,5 +252,139 @@ impl Compile for Namespace {
             })
             .collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_sort_simple() {
+        let mut namespace = Namespace {
+            collections: BTreeMap::new(),
+        };
+        let ref1: FieldRef = "visitors.address.postcode".parse().unwrap();
+        let ref2: FieldRef = "daughters.address.postcode".parse().unwrap();
+        //            let ref3: FieldRef = "winners.address.postcode".parse().unwrap();
+
+        namespace
+            .put_collection(
+                &"users".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref1 }),
+            )
+            .unwrap();
+        namespace
+            .put_collection(
+                &"sons".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref2 }),
+            )
+            .unwrap();
+        // namespace.put_collection(
+        //     &"losers".parse::<Name>().unwrap(),
+        //     Content::SameAs(crate::schema::SameAsContent { ref_: ref3 }),
+        // );
+        println!("sorted: {:?}", namespace.topo_sort());
+        assert!(
+            namespace.topo_sort().unwrap()
+                == (vec![
+                    "visitors".parse::<Name>().unwrap(),
+                    "daughters".parse::<Name>().unwrap(),
+                    "users".parse::<Name>().unwrap(),
+                    "sons".parse::<Name>().unwrap(),
+                ])
+                || namespace.topo_sort().unwrap()
+                    == (vec![
+                        "daughters".parse::<Name>().unwrap(),
+                        "visitors".parse::<Name>().unwrap(),
+                        "users".parse::<Name>().unwrap(),
+                        "sons".parse::<Name>().unwrap(),
+                    ])
+                || namespace.topo_sort().unwrap()
+                    == (vec![
+                        "visitors".parse::<Name>().unwrap(),
+                        "daughters".parse::<Name>().unwrap(),
+                        "sons".parse::<Name>().unwrap(),
+                        "users".parse::<Name>().unwrap(),
+                    ])
+                || namespace.topo_sort().unwrap()
+                    == (vec![
+                        "daughters".parse::<Name>().unwrap(),
+                        "visitors".parse::<Name>().unwrap(),
+                        "sons".parse::<Name>().unwrap(),
+                        "users".parse::<Name>().unwrap(),
+                    ])
+        );
+    }
+    #[test]
+    fn test_sort_complex() {
+        let mut namespace = Namespace {
+            collections: BTreeMap::new(),
+        };
+        let ref1: FieldRef = "visitors.address.postcode".parse().unwrap();
+        //let ref2: FieldRef = "daughters.address.postcode".parse().unwrap();
+        //            let ref3: FieldRef = "winners.address.postcode".parse().unwrap();
+
+        namespace
+            .put_collection(
+                &"users".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref1.clone() }),
+            )
+            .unwrap();
+        namespace
+            .put_collection(
+                &"sons".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref1 }),
+            )
+            .unwrap();
+        // namespace.put_collection(
+        //     &"losers".parse::<Name>().unwrap(),
+        //     Content::SameAs(crate::schema::SameAsContent { ref_: ref3 }),
+        // );
+        println!("sorted: {:?}", namespace.topo_sort());
+        assert!(
+            namespace.topo_sort().unwrap()
+                == (vec![
+                    "visitors".parse::<Name>().unwrap(),
+                    //"daughters".parse::<Name>().unwrap(),
+                    "users".parse::<Name>().unwrap(),
+                    "sons".parse::<Name>().unwrap(),
+                ])
+                || namespace.topo_sort().unwrap()
+                    == (vec![
+                        "visitors".parse::<Name>().unwrap(),
+                        //"daughters".parse::<Name>().unwrap(),
+                        "sons".parse::<Name>().unwrap(),
+                        "users".parse::<Name>().unwrap(),
+                    ])
+        );
+    }
+
+    #[test]
+    fn test_sort_cycle() {
+        let mut namespace = Namespace {
+            collections: BTreeMap::new(),
+        };
+        let ref1: FieldRef = "visitors.address.postcode".parse().unwrap();
+        let ref2: FieldRef = "users.address.postcode".parse().unwrap();
+        //            let ref3: FieldRef = "winners.address.postcode".parse().unwrap();
+
+        namespace
+            .put_collection(
+                &"users".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref1 }),
+            )
+            .unwrap();
+        namespace
+            .put_collection(
+                &"visitors".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref2 }),
+            )
+            .unwrap();
+        // namespace.put_collection(
+        //     &"losers".parse::<Name>().unwrap(),
+        //     Content::SameAs(crate::schema::SameAsContent { ref_: ref3 }),
+        // );
+        println!("sorted: {:?}", namespace.topo_sort());
+        assert!(namespace.topo_sort() == None);
     }
 }
