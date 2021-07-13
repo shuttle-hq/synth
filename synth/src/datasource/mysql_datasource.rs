@@ -67,11 +67,10 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query = r"SELECT table_name FROM information_schema.tables
-        WHERE table_schema = 'dev' and table_type = 'BASE TABLE'";
+        let query = &format!(r"SELECT table_name FROM information_schema.tables
+        WHERE table_schema = '{}' and table_type = 'BASE TABLE'", self.get_catalog()?);
 
         let table_names: Vec<String> = sqlx::query(query)
-            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .iter()

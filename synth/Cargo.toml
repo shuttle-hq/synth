@@ -68,6 +68,6 @@ dirs = "3.0.2"
 uuid = { version = "0.8.2", features = ["v4"] }
 mongodb = {version = "1.2.1", features = ["sync"] , default-features = false}
 
-sqlx = { version = "0.5.5", features = [ "postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono" ] }
+sqlx = { version = "0.5.5", features = [ "postgres", "mysql", "runtime-async-std-native-tls", "decimal", "chrono" ] }
 
 beau_collector = "0.2.1"
