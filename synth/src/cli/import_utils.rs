@@ -104,6 +104,10 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
 
 fn populate_namespace_values<T: DataSource + RelationalDataSource>(
     namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
+    task::block_on(async {
+        Ok::<(), anyhow::Error>(datasource.set_seed().await?)
+    })?;
+
     for table in table_names {
         let values = task::block_on(async {
             Ok::<Vec<Value>, anyhow::Error>(datasource.get_deterministic_samples(&table).await?)

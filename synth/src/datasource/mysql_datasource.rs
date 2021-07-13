@@ -128,6 +128,11 @@ impl RelationalDataSource for MySqlDataSource {
             .collect::<Result<Vec<ForeignKey>>>()
     }
 
+    async fn set_seed(&self) -> Result<()> {
+        // MySql doesn't set seed in a separate query
+        Ok(())
+    }
+
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
         let query: &str = &format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
 
@@ -148,7 +153,7 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
-        let content = match data_type {
+        let content = match data_type.to_lowercase().as_str() {
             "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
                 let pattern = "[a-zA-Z0-9]{0, {}}".replace(
                     "{}",
@@ -260,7 +265,7 @@ impl TryFrom<MySqlRow> for ValueWrapper {
 }
 
 fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
-    let value = match column.type_info().name() {
+    let value = match column.type_info().name().to_lowercase().as_str() {
         "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
             Value::String(row.try_get::<String, &str>(column.name())?)
         }

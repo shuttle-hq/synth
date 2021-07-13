@@ -15,6 +15,7 @@ use synth_core::schema::number_content::{I64, F64};
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
+    single_thread_pool: Pool<Postgres>,
     connect_params: String
 }
 
@@ -29,8 +30,15 @@ impl DataSource for PostgresDataSource {
                 .connect(connect_params.as_str())
                 .await?;
 
+            // Needed for queries that require explicit synchronous order, i.e. setseed + random
+            let single_thread_pool = PgPoolOptions::new()
+                .max_connections(1)
+                .connect(connect_params.as_str())
+                .await?;
+
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
+                single_thread_pool,
                 connect_params: connect_params.to_string()
             })
         })
@@ -128,13 +136,20 @@ impl RelationalDataSource for PostgresDataSource {
             .collect::<Result<Vec<ForeignKey>>>()
     }
 
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
-        sqlx::query("SELECT setseed(0.5)").execute(&self.pool).await?;
+    /// Must use the singled threaded pool when setting this in conjunction with random, called by
+    /// [get_deterministic_samples]. Otherwise, expect endless facepalms (-_Q)
+    async fn set_seed(&self) -> Result<()> {
+        sqlx::query("SELECT setseed(0.5)").execute(&self.single_thread_pool).await?;
+        Ok(())
+    }
 
+    /// Must use the singled threaded pool when setting this in conjunction with setseed, called by
+    /// [set_seed]. Otherwise, expect big regrets :(
+    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
         let query: &str = &format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name);
 
         let values = sqlx::query(query)
-            .fetch_all(&self.pool)
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(ValueWrapper::try_from)
@@ -150,7 +165,7 @@ impl RelationalDataSource for PostgresDataSource {
     }
 
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
-        let content = match data_type {
+        let content = match data_type.to_lowercase().as_str() {
             "bool" => Content::Bool(BoolContent::default()),
             "oid" => {
                 bail!("OID data type not supported")
@@ -274,7 +289,7 @@ impl TryFrom<PgRow> for ValueWrapper {
 }
 
 fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
-    let value = match column.type_info().name() {
+    let value = match column.type_info().name().to_lowercase().as_str() {
         "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
         "oid" => {
             bail!("OID data type not supported for Postgresql")

@@ -118,6 +118,8 @@ pub trait RelationalDataSource : DataSource {
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>>;
 
+    async fn set_seed(&self) -> Result<()>;
+
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
     fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content>;

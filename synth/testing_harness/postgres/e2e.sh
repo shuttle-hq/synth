@@ -38,7 +38,7 @@ echo "stopping container"
 docker stop "${CONTAINER}" > /dev/null
 
 # check by diff against golden master
-diff hospital_import hospital_master || RESULT=1
+diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || RESULT=1
 
 # removing generated namespace files
 rm -f hospital_import/doctors.json hospital_import/hospitals.json hospital_import/patients.json || RESULT=1
