@@ -61,13 +61,7 @@ For more installation options, check out the [docs](https://getsynth.github.io/s
 To start generating data without having a source to import from, you need to first initialise a workspace using `synth init [opt path]` (if no optional path is specified, the current directory will be used):
 
 ```bash
-$ mkdir workspace && cd workspace && synth init
-```
-
-or
-
-```bash
-$ synth init /some/other/path
+$ synth init /some/path
 ```
 
 Inside the workspace we'll create a namespace for our data model and call it `my_app`:
