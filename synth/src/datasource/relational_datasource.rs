@@ -31,9 +31,13 @@ pub struct ForeignKey {
     pub(crate) to_column: String,
 }
 
+/// Wrapper around `Value` since we can't impl `TryFrom` on a struct in a non-owned crate
 #[derive(Debug)]
 pub struct ValueWrapper(pub(crate) Value);
 
+/// All relational databases should define this trait and implement database specific queries in
+/// their own impl. APIs should be defined async when possible, delegating to the caller on how to
+/// handle it.
 #[async_trait]
 pub trait RelationalDataSource : DataSource {
     type QueryResult: Send + Sync;

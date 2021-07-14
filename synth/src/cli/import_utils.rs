@@ -15,6 +15,7 @@ pub(crate) struct Collection {
     pub(crate) collection: Content,
 }
 
+/// Wrapper around `FieldContent` since we cant' impl `TryFrom` on a struct in a non-owned crate
 struct FieldContentWrapper(FieldContent);
 
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)

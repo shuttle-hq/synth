@@ -14,6 +14,7 @@ use rust_decimal::prelude::ToPrimitive;
 use synth_core::schema::{StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType};
 use synth_core::schema::number_content::{I64, F64, U64};
 
+/// TODO
 /// Known issues:
 /// - MySql aliases bool and boolean data types as tinyint. We currently define all tinyint as i8.
 ///   Ideally, the user can define a way to force certain fields as bool rather than i8.

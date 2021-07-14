@@ -20,7 +20,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: mysecretpassword
           MYSQL_DATABASE: test_db
         ports:
-          - ${{ env.MYSQL_PORT }}
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval=10s
