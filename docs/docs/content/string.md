@@ -30,6 +30,36 @@ This generator has no parameters.
 }
 ```
 
+## format
+
+`format` allows to format one or more string values by parsing a parametric
+format string and processing the specified replacements.
+
+#### Example
+
+```json synth
+{
+  "type": "string",
+  "format": {
+    "format": "my name is {name} and my email is {email}",
+    "arguments": {
+      "name": {
+        "type": "string",
+        "faker": {
+          "generator": "username"
+        }
+      },
+      "email": {
+        "type": "string",
+        "faker": {
+          "generator": "safe_email"
+        }
+      }
+    }
+  }
+}
+```
+
 ## faker
 
 Synth has na internal fake data generator which will generate fake data for semantic types such as Names, Addresses etc.
