@@ -6,7 +6,7 @@ use synth::{cli, init_logger, version, Args, Splash, META_OS};
 
 fn bench_init() {
     async_std::task::block_on(async {
-        let args = Args::Cli(cli::CliArgs::Init {});
+        let args = Args::Cli(cli::CliArgs::Init { init_path: None });
 
         init_logger(&args);
 

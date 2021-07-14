@@ -91,7 +91,7 @@ impl Cli {
             } => with_telemetry("import", &self.telemetry, || {
                 self.import(namespace.clone(), collection.clone(), from.clone())
             }),
-            CliArgs::Init {} => with_telemetry("init", &self.telemetry, || self.init()),
+            CliArgs::Init { ref init_path } => with_telemetry("init", &self.telemetry, || self.init(init_path.clone())),
             CliArgs::Telemetry(telemetry) => {
                 match telemetry {
                     TelemetryCommand::Enable => {
@@ -117,24 +117,27 @@ impl Cli {
         }
     }
 
-    fn init(&self) -> Result<()> {
-        match self.workspace_initialised() {
+    fn init(&self, init_path: Option<PathBuf>) -> Result<()> {
+        let base_path = match init_path {
+            Some(path) => std::fs::canonicalize(".")?.join(path),
+            None => std::fs::canonicalize(".")?,
+        };
+        match self.workspace_initialised_from_path(&base_path) { // need to check workspace in base_path
             true => {
                 println!("Workspace already initialised");
                 std::process::exit(1)
             }
             false => {
                 let workspace_dir = ".synth";
-                let base_path = std::fs::canonicalize(".")?;
-                let result = std::fs::create_dir(workspace_dir).context(format!(
-                    "Failed to initialize workspace at: {}",
+                let result = std::fs::create_dir_all(base_path.join(workspace_dir)).context(format!(
+                    "Failed to create working directory at: {} during initialization",
                     base_path.join(workspace_dir).to_str().unwrap()
                 ));
                 let config_path = ".synth/config.toml";
                 match result {
                     Ok(()) => {
-                        File::create(config_path).context(format!(
-                            "Failed to initialize workspace at: {}",
+                        File::create(base_path.join(config_path)).context(format!(
+                            "Failed to create config file at: {} during initialization",
                             base_path.join(config_path).to_str().unwrap()
                         ))?;
                         Ok(())
@@ -143,8 +146,8 @@ impl Cli {
                         if e.downcast_ref::<std::io::Error>().unwrap().kind()
                             == std::io::ErrorKind::AlreadyExists =>
                     {
-                        File::create(config_path).context(format!(
-                            "Failed to initialize workspace at: {}",
+                        File::create(base_path.join(config_path)).context(format!(
+                            "Failed to initialize workspace at: {}. File already exists.",
                             base_path.join(config_path).to_str().unwrap()
                         ))?;
                         Ok(())
@@ -159,6 +162,11 @@ impl Cli {
         Path::new(".synth/config.toml").exists()
     }
 
+    fn workspace_initialised_from_path(&self, init_path: &PathBuf) -> bool {
+        let config_path = init_path.join(".synth/config.toml");
+        Path::new(&config_path).exists()
+    }
+
     fn import(
         &self,
         path: PathBuf,
@@ -167,7 +175,7 @@ impl Cli {
     ) -> Result<()> {
         if !self.workspace_initialised() {
             return Err(anyhow!(
-                "Workspace has not been initialised. To initialise the workspace run `synth init`."
+                "Workspace has not been initialised. To initialise the workspace run `synth init [optional path]`."
             ));
         }
 
@@ -216,7 +224,7 @@ impl Cli {
     ) -> Result<()> {
         if !self.workspace_initialised() {
             return Err(anyhow!(
-                "Workspace has not been initialised. To initialise the workspace run `synth init`."
+                "Workspace has not been initialised. To initialise the workspace run `synth init [optional path]`."
             ));
         }
         let namespace = self
@@ -241,7 +249,10 @@ impl Cli {
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
 pub enum CliArgs {
     #[structopt(about = "Initialise the workspace")]
-    Init {},
+    Init {
+        #[structopt(parse(from_os_str), help = "name of directory to initialize")]
+        init_path: Option<PathBuf>,
+    },
     #[structopt(about = "Generate data from a namespace")]
     Generate {
         #[structopt(
