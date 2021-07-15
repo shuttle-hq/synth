@@ -842,4 +842,5 @@ The value of the `"categorical"` key must be an object whose:
 - keys are the allowed values of the categorical (e.g. `"pawn"`, `"rook"`, etc.),
 - values are non-negative integers defining the relative weight of the corresponding variant (e.g. `8`, `2`, etc.).
 
-[faker]: https://faker.readthedocs.io/en/master/
+[faker]: https://github.com/cksac/fake-rs
+
