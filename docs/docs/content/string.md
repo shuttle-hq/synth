@@ -62,7 +62,7 @@ format string and processing the specified replacements.
 
 ## faker
 
-Synth has na internal fake data generator which will generate fake data for semantic types such as Names, Addresses etc.
+Synth has an internal fake data generator that will generate fake data for semantic types such as Names, Addresses, etc.
 
 #### Example
 
@@ -872,4 +872,5 @@ The value of the `"categorical"` key must be an object whose:
 - keys are the allowed values of the categorical (e.g. `"pawn"`, `"rook"`, etc.),
 - values are non-negative integers defining the relative weight of the corresponding variant (e.g. `8`, `2`, etc.).
 
-[faker]: https://faker.readthedocs.io/en/master/
+[faker]: https://github.com/cksac/fake-rs
+
