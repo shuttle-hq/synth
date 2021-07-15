@@ -98,6 +98,16 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "baile320",
+      "name": "Tyler Bailey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26841355?v=4",
+      "profile": "https://github.com/baile320",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

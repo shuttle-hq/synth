@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use rand::Rng;
 
 use crate::{GeneratorState, Never};
@@ -151,6 +153,17 @@ where
         TryOnce {
             inner: self,
             output: None,
+        }
+    }
+
+    fn map_ok<F, O>(self, f: F) -> MapOk<Self, F, O>
+    where
+        F: Fn(Self::Ok) -> O,
+    {
+        MapOk {
+            inner: self,
+            closure: f,
+            _output: PhantomData,
         }
     }
 
@@ -412,5 +425,27 @@ where
                 Err(e) => GeneratorState::Complete(TG::Return::from_err(e)),
             }
         }
+    }
+}
+
+pub struct MapOk<TG, F, O> {
+    inner: TG,
+    closure: F,
+    _output: PhantomData<O>,
+}
+
+impl<TG, F, O> Generator for MapOk<TG, F, O>
+where
+    TG: TryGenerator,
+    F: Fn(TG::Ok) -> O,
+{
+    type Yield = TG::Yield;
+
+    type Return = Result<O, TG::Error>;
+
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        self.inner
+            .try_next(rng)
+            .map_complete(|ret| ret.into_result().map(|ok| (self.closure)(ok)))
     }
 }
