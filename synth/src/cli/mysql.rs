@@ -1,34 +1,34 @@
-use crate::cli::export::{ExportParams, ExportStrategy, create_and_insert_values};
-use crate::cli::import::ImportStrategy;
+use crate::cli::export::{ExportStrategy, ExportParams, create_and_insert_values};
+use crate::datasource::mysql_datasource::MySqlDataSource;
+use crate::datasource::DataSource;
 use anyhow::Result;
-use serde_json::Value;
+use crate::cli::import::ImportStrategy;
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
-use crate::datasource::postgres_datasource::PostgresDataSource;
-use crate::datasource::DataSource;
 use crate::cli::import_utils::build_namespace_import;
+use serde_json::Value;
 
 #[derive(Clone, Debug)]
-pub struct PostgresExportStrategy {
+pub struct MySqlExportStrategy {
     pub uri: String,
 }
 
-impl ExportStrategy for PostgresExportStrategy {
+impl ExportStrategy for MySqlExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
-        let datasource = PostgresDataSource::new(&self.uri)?;
+        let datasource = MySqlDataSource::new(&self.uri)?;
 
         create_and_insert_values(params, &datasource)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct PostgresImportStrategy {
+pub struct MySqlImportStrategy {
     pub uri: String,
 }
 
-impl ImportStrategy for PostgresImportStrategy {
+impl ImportStrategy for MySqlImportStrategy {
     fn import(self) -> Result<Namespace> {
-        let datasource = PostgresDataSource::new(&self.uri)?;
+        let datasource = MySqlDataSource::new(&self.uri)?;
 
         build_namespace_import(&datasource)
     }
@@ -41,7 +41,6 @@ impl ImportStrategy for PostgresImportStrategy {
     }
 
     fn into_value(self) -> Result<Value> {
-        bail!("Postgres import doesn't support conversion into value")
+        bail!("MySql import doesn't support conversion into value")
     }
 }
-
