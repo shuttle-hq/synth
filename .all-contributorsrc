@@ -96,7 +96,10 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/41805201?v=4",
       "profile": "https://github.com/fretz12",
       "contributions": [
-        "ideas"
+        "ideas",
+        "code",
+        "doc",
+        "test"
       ]
     },
     {
