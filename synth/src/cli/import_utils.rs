@@ -62,7 +62,8 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
         let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
 
         if primary_keys.len() > 1 {
-            bail!("Synth does not support composite primary keys")
+            bail!("{} primary keys found at collection {}. Synth does not currently support \
+            composite primary keys.", primary_keys.len(), table_name)
         }
 
         if let Some(primary_key) = primary_keys.get(0) {

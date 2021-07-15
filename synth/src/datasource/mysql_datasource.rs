@@ -52,8 +52,14 @@ impl DataSource for MySqlDataSource {
 impl RelationalDataSource for MySqlDataSource {
     type QueryResult = MySqlQueryResult;
 
-    async fn execute_query(&self, query: String, _query_params: Vec<&str>) -> Result<MySqlQueryResult> {
-        let result = sqlx::query(query.as_str())
+    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<MySqlQueryResult> {
+        let mut query = sqlx::query(query.as_str());
+
+        for param in query_params {
+            query = query.bind(param);
+        }
+
+        let result = query
             .execute(&self.pool)
             .await?;
 
@@ -68,10 +74,12 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query = &format!(r"SELECT table_name FROM information_schema.tables
-        WHERE table_schema = '{}' and table_type = 'BASE TABLE'", self.get_catalog()?);
+        let query =
+            r"SELECT table_name FROM information_schema.tables
+            WHERE table_schema = ? and table_type = 'BASE TABLE'";
 
         let table_names: Vec<String> = sqlx::query(query)
+            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .iter()
@@ -82,12 +90,15 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query = &format!(r"SELECT column_name, ordinal_position, is_nullable, data_type,
-        character_maximum_length
-        FROM information_schema.columns
-        WHERE table_name = '{}' AND table_schema = '{}'", table_name, self.get_catalog()?);
+        let query =
+            r"SELECT column_name, ordinal_position, is_nullable, data_type,
+            character_maximum_length
+            FROM information_schema.columns
+            WHERE table_name = ? AND table_schema = ?";
 
         let column_infos = sqlx::query(query)
+            .bind(table_name)
+            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
@@ -98,15 +109,14 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        let query: &str = &format!(
+        let query: &str =
             r"SELECT column_name, data_type
             FROM information_schema.columns
-            WHERE table_schema = '{}' AND table_name = '{}' AND column_key = 'PRI'",
-            self.get_catalog()?,
-            &table_name
-        );
+            WHERE table_schema = ? AND table_name = ? AND column_key = 'PRI'";
 
         sqlx::query(query)
+            .bind(self.get_catalog()?)
+            .bind(table_name)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
@@ -115,13 +125,13 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str =&format!(
+        let query: &str =
             r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
             FROM information_schema.key_column_usage
-            WHERE referenced_table_schema = '{}'",
-            self.get_catalog()?);
+            WHERE referenced_table_schema = ?";
 
         sqlx::query(query)
+            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .into_iter()

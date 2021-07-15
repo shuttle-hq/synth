@@ -98,7 +98,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(params: ExportParams, data
 
             Ok(())
         }
-        _ => unreachable!(
+        _ => bail!(
             "The sampler will never generate a value which is not an array or object (sampler contract)"
         ),
     }
@@ -106,12 +106,10 @@ pub(crate) fn create_and_insert_values<T: DataSource>(params: ExportParams, data
 
 fn insert_data<T: DataSource>(datasource: &T, collection_name: String, collection_json: &Vec<Value>)
     -> Result<()> {
-    task::block_on(async {
+    task::block_on(
         datasource.insert_data(
             collection_name.clone(),
             collection_json
-        ).await?;
-
-        Ok::<(), anyhow::Error>(())
-    }).context(format!("Failed to insert data for collection {}", collection_name))
+        )
+    ).context(format!("Failed to insert data for collection {}", collection_name))
 }

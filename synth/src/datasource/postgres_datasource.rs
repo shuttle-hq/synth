@@ -54,8 +54,14 @@ impl DataSource for PostgresDataSource {
 impl RelationalDataSource for PostgresDataSource {
     type QueryResult = PgQueryResult;
 
-    async fn execute_query(&self, query: String, _query_params: Vec<&str>) -> Result<PgQueryResult> {
-        let result = sqlx::query(query.as_str())
+    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<PgQueryResult> {
+        let mut query = sqlx::query(query.as_str());
+
+        for param in query_params {
+            query = query.bind(param);
+        }
+
+        let result = query
             .execute(&self.pool)
             .await?;
 
@@ -190,7 +196,7 @@ impl RelationalDataSource for PostgresDataSource {
                 step: 1,
             }))),
             "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
-                low: 1,
+                low: 0,
                 high: 1,
                 step: 1,
             }))),
