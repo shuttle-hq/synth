@@ -182,7 +182,7 @@ where
 
 
 derive_from! {
-    #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+    #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
     pub enum Value {
         Null(()),
         Bool(bool),
