@@ -231,9 +231,27 @@ impl TryFrom<MySqlRow> for ColumnInfo {
             ordinal_position: row.try_get::<u32, usize>(1)? as i32,
             is_nullable: row.try_get::<String, usize>(2)? == *"YES",
             data_type: row.try_get::<String, usize>(3)?,
-            character_maximum_length: row.try_get::<Option<i32>, usize>(4)?,
+            character_maximum_length: extract_column_char_max_len(4, row)?,
         })
     }
+}
+
+/// Extracts a column's max character length. MySql's datatype for max char length is INT, but for
+/// Mariadb it's BIGINT UNSIGNED, so we must try both rust data types when reading the row. We
+/// truncate i64 to i32 in order to fit our internal models and practically, we probably won't be
+/// generating synthetic data for sizes beyond i32.
+fn extract_column_char_max_len(index: usize, row: MySqlRow) -> Result<Option<i32>> {
+    let character_maximum_length = match row.try_get::<Option<i32>, usize>(index) {
+        Ok(c) => c,
+        Err(_) => {
+            match row.try_get::<Option<u64>, usize>(index)? {
+                None => None,
+                Some(c) => Some(c as i32)
+            }
+        }
+    };
+
+    Ok(character_maximum_length)
 }
 
 impl TryFrom<MySqlRow> for PrimaryKey {

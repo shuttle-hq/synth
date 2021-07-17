@@ -5,6 +5,7 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD="mysecretpassword"
 DB_NAME=test_db
+DB_SCHEME="${MARIA_DB_SCHEME:=mysql}"
 CONTAINER_NAME=mysql-synth-harness
 
 ######### Initialization #########
@@ -21,7 +22,7 @@ rm -f .synth/config.toml
 synth init || exit 1
 
 # 1. Init DB service
-container_id=$(docker run --name $CONTAINER_NAME -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD -e MYSQL_DATABASE=$DB_NAME -p $DB_PORT:3306 -d mysql:latest)
+container_id=$(docker run --name $CONTAINER_NAME -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD -e MYSQL_DATABASE=$DB_NAME -p $DB_PORT:3306 -d $DB_SCHEME:latest)
 
 # Waits til DB is ready
 while ! mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME -e "SELECT 1" > /dev/null 2>&1; do
@@ -36,7 +37,7 @@ mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME < 0_hospi
 result=0
 
 # 3. Verify gen to DB crates min. expected rows
-synth generate hospital_master --to mysql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME --size 30 || result=1
+synth generate hospital_master --to $DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME --size 30 || result=1
 sum_rows_query="SELECT (SELECT count(*) FROM hospitals) +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
 sum=`mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME -e "$sum_rows_query" | grep -o '[[:digit:]]*'`
 [ "$sum" -gt "30" ] || result=1
@@ -48,7 +49,7 @@ mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME < 0_hospi
 mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME < 1_hospital_data.sql || exit 1
 
 # 5. Import with synth and diff
-synth import --from mysql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME hospital_import || result=1
+synth import --from $DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME hospital_import || result=1
 diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || result=1
 
 ######### Cleanup #########

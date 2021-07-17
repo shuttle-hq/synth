@@ -66,7 +66,7 @@ impl FromStr for SomeExportStrategy {
             return Ok(SomeExportStrategy::FromMongo(MongoExportStrategy {
                 uri: s.to_string(),
             }));
-        } else if s.starts_with("mysql://") {
+        } else if s.starts_with("mysql://") || s.starts_with("mariadb://") {
             return Ok(SomeExportStrategy::FromMySql(MySqlExportStrategy {
                 uri: s.to_string(),
             }));
