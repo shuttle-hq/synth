@@ -1,10 +1,10 @@
 use crate::datasource::DataSource;
-use serde_json::Value;
 use anyhow::{Result};
 use async_trait::async_trait;
 use futures::future::join_all;
 use beau_collector::BeauCollector;
 use synth_core::Content;
+use synth_core::Value;
 
 const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
 

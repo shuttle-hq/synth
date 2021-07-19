@@ -270,8 +270,8 @@ fn number_to_bson(number: Number) -> Bson {
         Number::U32(u32) => Bson::Int64(u32 as i64),
         Number::U64(u64) => Bson::Int64(u64 as i64),
         Number::U128(u128) => Bson::Int64(u128 as i64),
-        Number::F32(f32) => Bson::Double(f32 as f64),
-        Number::F64(f64) => Bson::Double(f64)
+        Number::F32(f32) => Bson::Double(*f32 as f64),
+        Number::F64(f64) => Bson::Double(*f64)
     }
 }
 

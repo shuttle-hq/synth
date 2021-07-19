@@ -3,16 +3,17 @@ use anyhow::{Result, Context};
 use crate::datasource::DataSource;
 use async_std::task;
 use sqlx::mysql::{MySqlPoolOptions, MySqlQueryResult, MySqlRow, MySqlColumn};
-use serde_json::{Value, Map, Number};
 use async_trait::async_trait;
 use crate::datasource::relational_datasource::{RelationalDataSource, ColumnInfo, PrimaryKey, ForeignKey, ValueWrapper};
 use std::prelude::rust_2015::Result::Ok;
 use std::convert::TryFrom;
-use synth_core::Content;
+use synth_core::{Content, Value};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
 use synth_core::schema::{StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType};
 use synth_core::schema::number_content::{I64, F64, U64};
+use std::collections::BTreeMap;
+use synth_gen::prelude::*;
 
 /// TODO
 /// Known issues:
@@ -21,7 +22,7 @@ use synth_core::schema::number_content::{I64, F64, U64};
 
 pub struct MySqlDataSource {
     pool: Pool<MySql>,
-    connect_params: String
+    connect_params: String,
 }
 
 #[async_trait]
@@ -37,7 +38,7 @@ impl DataSource for MySqlDataSource {
 
             Ok::<Self, anyhow::Error>(MySqlDataSource {
                 pool,
-                connect_params: connect_params.to_string()
+                connect_params: connect_params.to_string(),
             })
         })
     }
@@ -173,7 +174,7 @@ impl RelationalDataSource for MySqlDataSource {
                 Content::String(StringContent::Pattern(
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
-            },
+            }
             "int" | "integer" | "tinyint" | "smallint" | "mediumint" | "bigint" =>
                 Content::Number(NumberContent::I64(I64::Range(RangeStep {
                     low: 0,
@@ -187,10 +188,10 @@ impl RelationalDataSource for MySqlDataSource {
             }))),
             "float" | "double" | "numeric" | "decimal" =>
                 Content::Number(NumberContent::F64(F64::Range(RangeStep {
-                low: 0.0,
-                high: 1.0,
-                step: 0.1, //todo
-            }))),
+                    low: 0.0,
+                    high: 1.0,
+                    step: 0.1, //todo
+                }))),
             "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::NaiveDateTime,
@@ -270,7 +271,7 @@ impl TryFrom<MySqlRow> for ForeignKey {
             from_table: row.try_get::<String, usize>(0)?,
             from_column: row.try_get::<String, usize>(1)?,
             to_table: row.try_get::<String, usize>(2)?,
-            to_column: row.try_get::<String, usize>(3)?
+            to_column: row.try_get::<String, usize>(3)?,
         })
     }
 }
@@ -279,14 +280,14 @@ impl TryFrom<MySqlRow> for ValueWrapper {
     type Error = anyhow::Error;
 
     fn try_from(row: MySqlRow) -> Result<Self, Self::Error> {
-        let mut json_kv = Map::new();
+        let mut kv = BTreeMap::new();
 
         for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null);
-            json_kv.insert(column.name().to_string(), value);
+            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
+            kv.insert(column.name().to_string(), value);
         }
 
-        Ok(ValueWrapper(Value::Object(json_kv)))
+        Ok(ValueWrapper(Value::Object(kv)))
     }
 }
 
@@ -300,17 +301,13 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
         "mediumint" | "int" | "integer" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
         "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
         "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
-        "float" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-            .ok_or_else(|| anyhow!("Failed to convert float data type"))?),
-        "double" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
-            .ok_or_else(|| anyhow!("Failed to convert double data type"))?),
+        "float" => Value::Number(Number::from(row.try_get::<f32, &str>(column.name())? as f64)),
+        "double" => Value::Number(Number::from(row.try_get::<f64, &str>(column.name())?)),
         "numeric" | "decimal" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
-                if let Some(json_number) =  Number::from_f64(truncated) {
-                    return Ok(Value::Number(json_number));
-                }
+                return Ok(Value::Number(Number::from(truncated)));
             }
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")

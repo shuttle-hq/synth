@@ -3,20 +3,20 @@ use anyhow::{Result, Context};
 use crate::datasource::relational_datasource::{RelationalDataSource, ColumnInfo, PrimaryKey, ForeignKey, ValueWrapper};
 use sqlx::{Pool, Postgres, Row, Column, TypeInfo};
 use sqlx::postgres::{PgPoolOptions, PgQueryResult, PgRow, PgColumn};
-use serde_json::{Value, Map, Number};
 use async_std::task;
 use async_trait::async_trait;
 use std::convert::TryFrom;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
-use synth_core::Content;
+use synth_core::{Content, Value};
 use synth_core::schema::{BoolContent, StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType, Uuid};
 use synth_core::schema::number_content::{I64, F64};
+use std::collections::BTreeMap;
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
     single_thread_pool: Pool<Postgres>,
-    connect_params: String
+    connect_params: String,
 }
 
 #[async_trait]
@@ -39,7 +39,7 @@ impl DataSource for PostgresDataSource {
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
                 single_thread_pool,
-                connect_params: connect_params.to_string()
+                connect_params: connect_params.to_string(),
             })
         })
     }
@@ -124,7 +124,7 @@ impl RelationalDataSource for PostgresDataSource {
     }
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str = 
+        let query: &str =
             r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name, 
             ccu.column_name AS foreign_column_name 
             FROM information_schema.table_constraints AS tc 
@@ -274,7 +274,7 @@ impl TryFrom<PgRow> for ForeignKey {
             from_table: row.try_get::<String, usize>(0)?,
             from_column: row.try_get::<String, usize>(1)?,
             to_table: row.try_get::<String, usize>(2)?,
-            to_column: row.try_get::<String, usize>(3)?
+            to_column: row.try_get::<String, usize>(3)?,
         })
     }
 }
@@ -283,14 +283,14 @@ impl TryFrom<PgRow> for ValueWrapper {
     type Error = anyhow::Error;
 
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
-        let mut json_kv = Map::new();
+        let mut kv = BTreeMap::new();
 
         for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null);
-            json_kv.insert(column.name().to_string(), value);
+            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
+            kv.insert(column.name().to_string(), value);
         }
 
-        Ok(ValueWrapper(Value::Object(json_kv)))
+        Ok(ValueWrapper(Value::Object(kv)))
     }
 }
 
@@ -303,20 +303,16 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
         "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
             Value::String(row.try_get::<String, &str>(column.name())?)
         }
-        "int2" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
-        "int4" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
-        "int8" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
-        "float4" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-            .ok_or_else(|| anyhow!("Failed to convert float4 data type"))?), // TODO test f32, f64
-        "float8" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
-            .ok_or_else(|| anyhow!("Failed to convert float8 data type"))?),
+        "int2" => Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
+        "int4" => Value::Number(row.try_get::<i32, &str>(column.name())?.into()),
+        "int8" => Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
+        "float4" => Value::Number(row.try_get::<f32, &str>(column.name())?.into()),
+        "float8" => Value::Number(row.try_get::<f64, &str>(column.name())?.into()),
         "numeric" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
-                if let Some(json_number) =  Number::from_f64(truncated) {
-                    return Ok(Value::Number(json_number));
-                }
+                return Ok(Value::Number(truncated.into()));
             }
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")

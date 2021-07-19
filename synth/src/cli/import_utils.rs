@@ -1,14 +1,15 @@
-use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource};
 use synth_core::{Namespace, Name, Content};
-use crate::datasource::DataSource;
 use async_std::task;
 use std::str::FromStr;
 use anyhow::{Result, Context};
 use log::debug;
 use synth_core::schema::{FieldRef, NumberContent, Id, SameAsContent, OptionalMergeStrategy, ObjectContent, ArrayContent, RangeStep, OneOfContent, VariantContent, FieldContent};
 use synth_core::schema::content::number_content::U64;
-use serde_json::Value;
 use std::convert::TryFrom;
+use serde_json::Value;
+use crate::cli::json::synth_val_to_json;
+use crate::datasource::DataSource;
+use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource};
 
 #[derive(Debug)]
 pub(crate) struct Collection {
@@ -19,7 +20,7 @@ pub(crate) struct Collection {
 struct FieldContentWrapper(FieldContent);
 
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)
-    -> Result<Namespace> {
+                                                                           -> Result<Namespace> {
     let table_names = task::block_on(datasource.get_table_names())
         .with_context(|| "Failed to get table names".to_string())?;
 
@@ -101,12 +102,15 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
     task::block_on(datasource.set_seed())?;
 
     for table in table_names {
-        let values = task::block_on(datasource.get_deterministic_samples(table))?;
+        let values = task::block_on(datasource.get_deterministic_samples(&table))?;
+        // This is temporary while we replace JSON as the core data model in namespaces.
+        // namespace::try_update should take `synth_core::Value`s
+        let json_values: Vec<Value> = values.into_iter().map(|v| synth_val_to_json(v)).collect();
 
         namespace.try_update(
             OptionalMergeStrategy,
-            &Name::from_str(table).unwrap(),
-            &Value::from(values),
+            &Name::from_str(&table).unwrap(),
+            &Value::from(json_values),
         )?;
     }
 
@@ -145,7 +149,7 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, &ColumnInfo)> for FieldC
 
     fn try_from(column_meta: (&T, &ColumnInfo)) -> Result<Self> {
         let data_type = &column_meta.1.data_type;
-        let mut content= column_meta.0.decode_to_content(data_type, column_meta.1.character_maximum_length)?;
+        let mut content = column_meta.0.decode_to_content(data_type, column_meta.1.character_maximum_length)?;
 
         // This happens because an `optional` field in a Synth schema
         // won't show up as a key during generation. Whereas what we

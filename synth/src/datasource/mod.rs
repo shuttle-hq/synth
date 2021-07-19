@@ -1,4 +1,4 @@
-use serde_json::Value;
+use synth_core::graph::Value;
 use anyhow::Result;
 use async_trait::async_trait;
 
