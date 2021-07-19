@@ -343,11 +343,7 @@ pub mod tests {
         let schema: Namespace = from_json!({
             "users": {
                 "type": "array",
-                "length": {
-                    "type": "number",
-                    "subtype": "u64",
-                    "constant": 10
-                },
+                "length": 10,
                 "content": {
                     "type": "object",
                     "id" : {
@@ -363,6 +359,7 @@ pub mod tests {
                     },
                     "username": {
                         "type": "string",
+                        "unique": true,
                         "truncated": {
                             "content": {
                                 "type": "string",
@@ -399,14 +396,8 @@ pub mod tests {
                         "format": {
                             "format": "my username is {name} and I trade in {currency}",
                             "arguments": {
-                                "name": {
-                                    "type": "same_as",
-                                    "ref": "users.content.username"
-                                },
-                                "currency": {
-                                    "type": "same_as",
-                                    "ref": "users.content.currency"
-                                }
+                                "name": "@users.content.username",
+                                "currency": "@users.content.currency"
                             }
                         }
                     },
@@ -431,24 +422,18 @@ pub mod tests {
                     },
                     "maybe_an_email": {
                         "optional": true,
+                        "unique": true,
                         "type": "string",
                         "faker": {
                             "generator": "safe_email"
                         }
                     },
-                    "num_logins_again": {
-                        "type": "same_as",
-                        "ref": "users.content.num_logins"
-                    }
+                    "num_logins_again": "@users.content.num_logins"
                 }
             },
             "transactions": {
                 "type": "array",
-                "length": {
-                    "type": "number",
-                    "subtype": "u64",
-                    "constant": 100
-                },
+                "length": 100,
                 "content": {
                     "type": "object",
                     "username": {
@@ -542,6 +527,8 @@ pub mod tests {
             let sample_data = serde_json::from_str::<SampleData>(&generated_str).unwrap();
 
             let mut all_users = BTreeSet::new();
+            let mut all_emails = BTreeSet::new();
+
             let mut currencies = BTreeMap::new();
             for user in sample_data.users {
                 assert_eq!(user.num_logins, user.num_logins_again);
@@ -549,7 +536,13 @@ pub mod tests {
                 assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
                 assert!(user.id >= 100);
                 assert!(user.username.len() <= 5);
+
                 all_users.insert(user.username.clone());
+
+                if let Some(email) = user.maybe_an_email.clone() {
+                    assert!(all_emails.insert(email))
+                }
+
                 currencies.insert(user.username, user.currency);
                 ChronoValueFormatter::new("%Y-%m-%d")
                     .parse(&user.created_at_date)
@@ -563,6 +556,7 @@ pub mod tests {
                     .parse(&user.last_login_at)
                     .unwrap();
             }
+
             assert_eq!(all_users.len(), 10);
 
             println!("currencies={:?}", currencies);

@@ -154,6 +154,14 @@ macro_rules! number_content {
 		    )*
 		}
 
+        $(
+        impl From<$variant_ty> for $as {
+            fn from(value: $variant_ty) -> Self {
+                Self::$variant(value)
+            }
+        }
+        )*
+
 		impl From<$as> for NumberContent {
 		    fn from(value: $as) -> Self {
 			Self::$as(value)

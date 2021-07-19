@@ -57,7 +57,7 @@ impl<'t> OverrideStrategy for DefaultOverrideStrategy<'t> {
 		variants.remove(idx);
 		Ok(())
 	    },
-	    Content::Object(ObjectContent { fields }) => {
+	    Content::Object(ObjectContent { fields, .. }) => {
 		fields
 		    .remove(&child)
 		    .ok_or_else(|| failed!(target: Release, "field '{}' not a member of '{}'", child, parent))?;

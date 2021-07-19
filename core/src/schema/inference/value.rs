@@ -5,9 +5,7 @@ use serde_json::{Map, Value};
 pub type Object = Map<String, Value>;
 
 use super::MergeStrategy;
-use crate::schema::{
-    BoolContent, Content, FieldContent, NumberContent, StringContent, ValueKindExt,
-};
+use crate::schema::{BoolContent, Content, NumberContent, StringContent, ValueKindExt};
 
 #[derive(Clone, Copy, Default)]
 pub struct ValueMergeStrategy {
@@ -22,55 +20,32 @@ enum Squashables {
     NumberContent(NumberContent),
     StringContent(StringContent),
     BoolContent(BoolContent),
-    FieldContent(FieldContent),
 }
 
 impl Squashables {
     fn kind(&self) -> &str {
         match self {
-            Self::FieldContent(FieldContent {
-                content: box Content::Number(number_content),
-                ..
-            })
-            | Self::Content(Content::Number(number_content))
+            Self::Content(Content::Number(number_content))
             | Self::NumberContent(number_content) => number_content.kind(),
-            Self::FieldContent(FieldContent {
-                content: box Content::String(string_content),
-                ..
-            })
-            | Self::Content(Content::String(string_content))
+            Self::Content(Content::String(string_content))
             | Self::StringContent(string_content) => string_content.kind(),
-            Self::FieldContent(FieldContent {
-                content: box Content::Bool(bool_content),
-                ..
-            })
-            | Self::Content(Content::Bool(bool_content))
-            | Self::BoolContent(bool_content) => bool_content.kind(),
+            Self::Content(Content::Bool(bool_content)) | Self::BoolContent(bool_content) => {
+                bool_content.kind()
+            }
             Self::Content(content) => content.kind(),
-            Self::FieldContent(FieldContent { content, .. }) => content.kind(),
         }
     }
 
     fn into_object(self) -> Result<Object> {
-        let mut has_optional = None;
         let content = match self {
             Self::Content(content) => content,
             Self::NumberContent(number_content) => Content::Number(number_content),
             Self::StringContent(string_content) => Content::String(string_content),
             Self::BoolContent(bool_content) => Content::Bool(bool_content),
-            Self::FieldContent(FieldContent { content, optional }) => {
-                has_optional = Some(optional);
-                *content
-            }
         };
         let as_value = serde_json::to_value(&content)?;
         match as_value {
-            Value::Object(mut object) => {
-                if let Some(optional) = has_optional {
-                    object.insert("optional".to_string(), optional.into());
-                }
-                Ok(object)
-            }
+            Value::Object(object) => Ok(object),
             // SAFETY: assumes `Content::Null` is not in `Sqashables`
             _ => unreachable!(),
         }

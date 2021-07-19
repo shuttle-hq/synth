@@ -15,8 +15,8 @@ use synth_core::graph::prelude::number_content::I64;
 use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep};
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
-    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, FieldContent,
-    OneOfContent, RegexContent, StringContent,
+    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, OneOfContent,
+    RegexContent, StringContent,
 };
 use synth_core::{Content, Name, Namespace};
 
@@ -106,10 +106,13 @@ fn doc_to_content(doc: &Document) -> Content {
 
     // Notice this `filter` here is a hack as we don't support id's out of the box.
     for (name, bson) in doc.iter().filter(|(name, _)| name.as_str() != "_id") {
-        let fc = FieldContent::new(bson_to_content(bson));
-        root.insert(name.clone(), fc);
+        let content = bson_to_content(bson);
+        root.insert(name.clone(), content);
     }
-    Content::Object(ObjectContent { fields: root })
+    Content::Object(ObjectContent {
+        fields: root,
+        ..Default::default()
+    })
 }
 
 fn bson_to_content(bson: &Bson) -> Content {
@@ -131,7 +134,7 @@ fn bson_to_content(bson: &Bson) -> Content {
         }
         Bson::Document(doc) => doc_to_content(doc),
         Bson::Boolean(_) => Content::Bool(BoolContent::Categorical(Categorical::default())),
-        Bson::Null => Content::Null,
+        Bson::Null => Content::null(),
         Bson::RegularExpression(regex) => Content::String(StringContent::Pattern(
             RegexContent::pattern(regex.pattern.clone()).unwrap_or_default(),
         )),

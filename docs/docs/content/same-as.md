@@ -24,7 +24,7 @@ used to specify foreign key relationships in complex datasets.
 }
 ```
 
-The `"ref"` field must point to another existing field. Complex objects can be traversed by using concatenating levels
+The `"ref"` field must point to another existing field. Complex objects can be traversed by concatenating levels
 with a period `.`.
 
 #### Example
@@ -51,5 +51,29 @@ with a period `.`.
     "type": "same_as",
     "ref": "address.zip_code"
   }
+}
+```
+
+The `same_as` generator can also be simply declared by the value of the `"ref"` field prefixed with `@`:
+
+```json synth
+{
+  "type": "object",
+  "address": {
+    "type": "object",
+    "street_name": {
+      "type": "string",
+      "faker": {
+        "generator": "street_name"
+      }
+    },
+    "zip_code": {
+      "type": "string",
+      "faker": {
+        "generator": "zip_code"
+      }
+    }
+  },
+  "same_zip_code": "@address.zip_code"
 }
 ```
