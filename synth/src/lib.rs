@@ -1,7 +1,6 @@
 #![feature(format_args_capture, async_closure, map_first_last, box_patterns)]
 #![feature(error_iter)]
 #![allow(type_alias_bounds)]
-#![deny(warnings)]
 
 #[macro_use]
 extern crate log;

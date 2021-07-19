@@ -7,7 +7,6 @@
     try_blocks
 )]
 #![allow(type_alias_bounds)]
-#![deny(warnings)]
 
 #[macro_use]
 extern crate log;
