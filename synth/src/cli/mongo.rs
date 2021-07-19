@@ -20,6 +20,7 @@ use synth_core::schema::{
 };
 use synth_core::{Content, Name, Namespace};
 use synth_core::graph::Value;
+use chrono::{Utc, TimeZone};
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {
@@ -253,7 +254,7 @@ fn date_time_to_bson(datetime: ChronoValue) -> Bson {
     match datetime {
         ChronoValue::NaiveDate(nd) => Bson::String(nd.to_string()),
         ChronoValue::NaiveTime(nt) => Bson::String(nt.to_string()),
-        ChronoValue::NaiveDateTime(ndt) => Bson::String(ndt.to_string()),
+        ChronoValue::NaiveDateTime(ndt) => Bson::DateTime(Utc.from_utc_datetime(&ndt)),
         ChronoValue::DateTime(dt) => Bson::DateTime(dt.into()),
     }
 }
