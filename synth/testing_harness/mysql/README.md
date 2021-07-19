@@ -13,3 +13,6 @@ schema and test data within the database.
 
 To run this, execute the `e2e.sh` script from the current directory. A non-zero return code denotes failure. 
 Note: run this with all dependencies installed in Vagrant with the [Vagrantfile](tools/vagrant/linux/ubuntu/Vagrantfile)
+
+By default, the script will test MySql. To test MariaDb, set the environment variable `MARIA_DB_SCHEME=mariadb` before 
+running.

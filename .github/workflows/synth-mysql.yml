@@ -26,15 +26,35 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
+      mariadb:
+        image: mariadb
+        env:
+          MYSQL_ROOT_PASSWORD: mysecretpassword
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    strategy:
+      matrix:
+        include:
+          - db: mysql
+            port: 3306
+          - db: mariadb
+            port: 3307
     steps:
       - uses: actions/checkout@v2
       ## Set env. variables for this job
       - run: |
           echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
           echo "MYSQL_USER=root" >> $GITHUB_ENV
-          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_PORT=${{ matrix.port }}" >> $GITHUB_ENV
           echo "MYSQL_ROOT_PASSWORD=mysecretpassword" >> $GITHUB_ENV
           echo "MYSQL_DATABASE=test_db" >> $GITHUB_ENV
+          echo "DB_SCHEME=${{ matrix.db }}" >> $GITHUB_ENV
       - run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends mysql-client jq
@@ -49,7 +69,7 @@ jobs:
           echo "Running generate test"
           cd synth/testing_harness/mysql
           synth init || true
-          synth generate hospital_master --to mysql://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} --size 30
+          synth generate hospital_master --to ${{ env.DB_SCHEME }}://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} --size 30
           bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/validate_mysql_gen_count.sh"
       ## Clear out and repopulate DB
       - run: >
@@ -62,5 +82,5 @@ jobs:
           echo "Testing import"
           cd synth/testing_harness/mysql
           synth init || true
-          synth import --from mysql://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} hospital_import
+          synth import --from ${{ env.DB_SCHEME }}://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} hospital_import
           diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*)

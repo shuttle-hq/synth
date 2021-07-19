@@ -53,7 +53,7 @@ impl FromStr for SomeImportStrategy {
             return Ok(SomeImportStrategy::FromMongo(MongoImportStrategy {
                 uri: s.to_string(),
             }));
-        } else if s.starts_with("mysql://") {
+        } else if s.starts_with("mysql://") || s.starts_with("mariadb://") {
             return Ok(SomeImportStrategy::FromMySql(MySqlImportStrategy {
                 uri: s.to_string(),
             }));
