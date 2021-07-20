@@ -44,8 +44,7 @@ impl DataSource for MySqlDataSource {
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection).await.unwrap();
-        Ok(())
+        self.insert_relational_data(collection_name, collection).await
     }
 }
 
@@ -53,7 +52,7 @@ impl DataSource for MySqlDataSource {
 impl RelationalDataSource for MySqlDataSource {
     type QueryResult = MySqlQueryResult;
 
-    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<MySqlQueryResult> {
+    async fn execute_query(&self, query: String, query_params: Vec<&Value>) -> Result<MySqlQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
         for param in query_params {
@@ -220,6 +219,16 @@ impl RelationalDataSource for MySqlDataSource {
         };
 
         Ok(content)
+    }
+
+    fn extend_parameterised_query(mut query: String, _curr_index: usize, extend: usize) -> String {
+        for i in 0..extend {
+            query.push_str("?");
+            if i != extend - 1 {
+                query.push_str(",");
+            }
+        }
+        query
     }
 }
 

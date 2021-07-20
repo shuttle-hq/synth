@@ -35,18 +35,18 @@ pub struct ForeignKey {
 #[derive(Debug)]
 pub struct ValueWrapper(pub(crate) Value);
 
+/// A type alias for `Option<String>`.
+///
+type SqlType = Option<String>;
+
 /// All relational databases should define this trait and implement database specific queries in
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
 /// handle it.
 #[async_trait]
-pub trait RelationalDataSource : DataSource {
+pub trait RelationalDataSource: DataSource {
     type QueryResult: Send + Sync;
 
     async fn insert_relational_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        // how to to ordering here?
-        // If we have foreign key constraints we need to traverse the tree and
-        // figure out insertion order
-        // We basically need something like an InsertionStrategy where we have a DAG of insertions
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
         if collection.is_empty() {
@@ -70,33 +70,35 @@ pub trait RelationalDataSource : DataSource {
         let mut futures = vec![];
 
         for rows in collection.chunks(batch_size) {
-            let mut query = format!(
+            let query = format!(
                 "INSERT INTO {} ({}) VALUES \n",
                 collection_name, column_names
             );
+
+            let mut curr_index = 0;
+            let mut query_params = vec![];
 
             for (i, row) in rows.iter().enumerate() {
                 let row_obj = row
                     .as_object()
                     .expect("This is always an object (sampler contract)");
+                let extend = row_obj.values().len();
+                let mut query = Self::extend_parameterised_query(query.clone(), curr_index, extend);
+                curr_index += extend;
 
-                let values = row_obj
-                    .values()
-                    .map(|v| v.to_string().replace("'", "''")) // two single quotes are the standard way to escape double quotes
-                    .map(|v| v.replace("\"", "'")) // values in the object have quotes around them by default.
-                    .collect::<Vec<String>>()
-                    .join(",");
+                // TODO
+                query_params.extend(row_obj.values());
 
                 // We should be using some form of a prepared statement here.
                 // It is not clear how this would work for our batch inserts...
                 if i == rows.len() - 1 {
-                    query.push_str(&format!("({});\n", values));
+                    query.push_str(&format!(";\n"));
                 } else {
-                    query.push_str(&format!("({}),\n", values));
+                    query.push_str(&format!(",\n"));
                 }
             }
 
-            let future = self.execute_query(query, vec![]);
+            let future = self.execute_query(query, query_params);
             futures.push(future);
         }
 
@@ -110,7 +112,7 @@ pub trait RelationalDataSource : DataSource {
         Ok(())
     }
 
-    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<Self::QueryResult>;
+    async fn execute_query(&self, query: String, query_params: Vec<&Value>) -> Result<Self::QueryResult>;
 
     fn get_catalog(&self) -> Result<&str>;
 
@@ -127,4 +129,7 @@ pub trait RelationalDataSource : DataSource {
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
     fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content>;
+
+    // Returns extended query string + current index
+    fn extend_parameterised_query(query: String, curr_index: usize, extend: usize) -> String;
 }

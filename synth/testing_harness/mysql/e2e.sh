@@ -11,7 +11,7 @@ CONTAINER_NAME=mysql-synth-harness
 ######### Initialization #########
 
 # Install dependencies
-apt-get install -y mysql-client
+#apt-get install -y mysql-client
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 

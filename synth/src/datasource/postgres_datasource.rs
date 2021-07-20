@@ -54,7 +54,7 @@ impl DataSource for PostgresDataSource {
 impl RelationalDataSource for PostgresDataSource {
     type QueryResult = PgQueryResult;
 
-    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<PgQueryResult> {
+    async fn execute_query(&self, query: String, query_params: Vec<&Value>) -> Result<PgQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
         for param in query_params {
@@ -238,6 +238,16 @@ impl RelationalDataSource for PostgresDataSource {
         };
 
         Ok(content)
+    }
+
+    fn extend_parameterised_query(mut query: String, curr_index: usize, extend: usize) -> String {
+        for i in 0..extend {
+            query.push_str(&format!("${}", curr_index + i));
+            if i != extend - 1 {
+                query.push_str(",");
+            }
+        }
+        query
     }
 }
 

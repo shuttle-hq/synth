@@ -108,6 +108,8 @@ impl NamespaceSampleStrategy {
                 })?;
             progress_bar.set_position(generated as u64);
         }
+
+        progress_bar.finish();
         Ok(Value::Object(out))
     }
 }
