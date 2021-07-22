@@ -215,7 +215,7 @@ impl RelationalDataSource for PostgresDataSource {
                 high: 1.0,
                 step: 0.1, //todo
             }))),
-            "timestampz" => Content::String(StringContent::DateTime(DateTimeContent {
+            "timestamptz" => Content::String(StringContent::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::DateTime,
                 begin: None,
