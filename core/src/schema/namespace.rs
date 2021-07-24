@@ -6,13 +6,17 @@ use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
+
+
+
+
 use super::inference::MergeStrategy;
 use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::compile::{Compile, Compiler};
 use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::ops::Index;
 
 #[allow(dead_code)]
@@ -166,7 +170,7 @@ impl Namespace {
             Err(failed!(target: Release, NotFound => "no such collection: '{}'{}", name, suggest))
         }
     }
-    fn get_ajd_list(&self) -> Vec<(Name, Name)> {
+    fn get_adj_list(&self) -> Vec<(Name, Name)> {
         let mut list = Vec::new();
         for (n, c) in self.clone() {
             match c {
@@ -180,48 +184,31 @@ impl Namespace {
     }
 
     pub fn topo_sort(&self) -> Option<Vec<Name>> {
-        eprintln!("namespace: {:?}", self);
-        let lists: Vec<(Name, Name)> = self.get_ajd_list();
+        log::info!("namespace: {:?}", self);
+        let lists: Vec<(Name, Name)> = self.get_adj_list();
         let mut q: VecDeque<Name> = VecDeque::new();
-        //topologically sorted vec of names to be returned
         let mut sorted: Vec<Name> = Vec::new();
-
-        //or graph
-        let mut graph: NameGraph = HashMap::new();
-        //make a slice of lists
-        let dep_lists = lists.get(0..).unwrap();
-        //here we build our graph by running through deplists
-        for v in dep_lists {
-            let source = &mut graph.entry(v.0.clone()).or_insert_with(|| Vec::new());
-            source.push(v.1.clone());
+        let mut graph: NameGraph = NameGraph::new();
+        for v in &lists {
+            graph.entry(v.0.clone()).or_insert_with(|| Vec::new()).push(v.1.clone());
         }
-        eprintln!("dep_lists: {:?}", dep_lists);
-        //kahn's algorithm says we need a way to count the inward edes into a node
+        log::info!("lists: {:?}", lists);
         let mut in_degrees: BTreeMap<Name, usize> = BTreeMap::new();
-        //get a set of all the names. we'll need it to develop our indegree and outedges
-        let set: HashSet<Name> = lists
-            .iter()
-            .cloned()
-            .map(|(p, c)| vec![p, c])
-            .flatten()
-            .collect();
-        for name in &set {
-            let entry = in_degrees.entry(name.clone()).or_insert(0);
-            *entry = lists.iter().filter(|(_, c)| name == c).count();
-        }
-        eprintln!("indegrees: {:?}", in_degrees);
-        eprintln!("set: {:?}", set);
-        eprintln!("graph: {:?}", graph);
-        //first push all the names with in_degree of zero into the queue
+
+        for (p,c) in &lists {
+            *in_degrees.entry(c.clone()).or_insert(0) += 1;
+            in_degrees.entry(p.clone()).or_insert(0);
+        };
+
         for n in &in_degrees {
             if n.1 == &0 {
                 q.push_back(n.0.clone());
             }
         }
-        //then we loop through the queue
+        
         while let Some(name) = q.pop_front() {
             sorted.push(name.clone());
-            eprintln!("name: {:?}", name);
+            log::info!("name: {:?}", name);
             if graph.contains_key(&name) {
                 for out in graph.index(&name) {
                     in_degrees.entry(out.clone()).and_modify(|v| *v -= 1);
@@ -231,8 +218,9 @@ impl Namespace {
                 }
             };
         }
-        if sorted.len() == set.len() {
-            println!("{:?}", sorted.clone());
+        
+        if sorted.len() == in_degrees.keys().len() {
+            log::info!("{:?}", sorted);
             Some(sorted)
         } else {
             None
@@ -258,6 +246,8 @@ impl Compile for Namespace {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::schema::Content;
+    use crate::schema::BoolContent;
     #[test]
     fn test_sort_simple() {
         let mut namespace = Namespace {
@@ -265,7 +255,6 @@ mod tests {
         };
         let ref1: FieldRef = "visitors.address.postcode".parse().unwrap();
         let ref2: FieldRef = "daughters.address.postcode".parse().unwrap();
-        //            let ref3: FieldRef = "winners.address.postcode".parse().unwrap();
 
         namespace
             .put_collection(
@@ -279,50 +268,22 @@ mod tests {
                 Content::SameAs(crate::schema::SameAsContent { ref_: ref2 }),
             )
             .unwrap();
-        // namespace.put_collection(
-        //     &"losers".parse::<Name>().unwrap(),
-        //     Content::SameAs(crate::schema::SameAsContent { ref_: ref3 }),
-        // );
+        namespace.put_collection(&"visitors".parse::<Name>().unwrap(), Content::Bool(BoolContent::Constant(true))).unwrap();
+        namespace.put_collection(&"daughters".parse::<Name>().unwrap(),Content::Bool(BoolContent::Constant(false) )).unwrap();
         println!("sorted: {:?}", namespace.topo_sort());
-        assert!(
-            namespace.topo_sort().unwrap()
-                == (vec![
-                    "visitors".parse::<Name>().unwrap(),
-                    "daughters".parse::<Name>().unwrap(),
-                    "users".parse::<Name>().unwrap(),
-                    "sons".parse::<Name>().unwrap(),
-                ])
-                || namespace.topo_sort().unwrap()
-                    == (vec![
-                        "daughters".parse::<Name>().unwrap(),
-                        "visitors".parse::<Name>().unwrap(),
-                        "users".parse::<Name>().unwrap(),
-                        "sons".parse::<Name>().unwrap(),
-                    ])
-                || namespace.topo_sort().unwrap()
-                    == (vec![
-                        "visitors".parse::<Name>().unwrap(),
-                        "daughters".parse::<Name>().unwrap(),
-                        "sons".parse::<Name>().unwrap(),
-                        "users".parse::<Name>().unwrap(),
-                    ])
-                || namespace.topo_sort().unwrap()
-                    == (vec![
-                        "daughters".parse::<Name>().unwrap(),
-                        "visitors".parse::<Name>().unwrap(),
-                        "sons".parse::<Name>().unwrap(),
-                        "users".parse::<Name>().unwrap(),
-                    ])
-        );
+        let sorted = namespace.topo_sort().unwrap();
+        let length = sorted.len();
+        for i in 0..length {
+            assert!(check_dep(&sorted[..i], &namespace))
+        }
     }
+
     #[test]
     fn test_sort_complex() {
         let mut namespace = Namespace {
             collections: BTreeMap::new(),
         };
         let ref1: FieldRef = "visitors.address.postcode".parse().unwrap();
-        //let ref2: FieldRef = "daughters.address.postcode".parse().unwrap();
-        //            let ref3: FieldRef = "winners.address.postcode".parse().unwrap();
 
         namespace
             .put_collection(
@@ -336,27 +297,16 @@ mod tests {
                 Content::SameAs(crate::schema::SameAsContent { ref_: ref1 }),
             )
             .unwrap();
-        // namespace.put_collection(
-        //     &"losers".parse::<Name>().unwrap(),
-        //     Content::SameAs(crate::schema::SameAsContent { ref_: ref3 }),
-        // );
         println!("sorted: {:?}", namespace.topo_sort());
-        assert!(
-            namespace.topo_sort().unwrap()
-                == (vec![
-                    "visitors".parse::<Name>().unwrap(),
-                    //"daughters".parse::<Name>().unwrap(),
-                    "users".parse::<Name>().unwrap(),
-                    "sons".parse::<Name>().unwrap(),
-                ])
-                || namespace.topo_sort().unwrap()
-                    == (vec![
-                        "visitors".parse::<Name>().unwrap(),
-                        //"daughters".parse::<Name>().unwrap(),
-                        "sons".parse::<Name>().unwrap(),
-                        "users".parse::<Name>().unwrap(),
-                    ])
-        );
+        namespace.put_collection(&"visitors".parse::<Name>().unwrap(), Content::Bool(BoolContent::Constant(true))).unwrap();
+        namespace.put_collection(&"daughters".parse::<Name>().unwrap(),Content::Bool(BoolContent::Constant(false) )).unwrap();
+        
+        println!("sorted: {:?}", namespace.topo_sort());
+        let sorted = namespace.topo_sort().unwrap();
+        let length = sorted.len();
+        for i in 0..length {
+            assert!(check_dep(&sorted[..i], &namespace))
+        }
     }
 
     #[test]
@@ -380,11 +330,21 @@ mod tests {
                 Content::SameAs(crate::schema::SameAsContent { ref_: ref2 }),
             )
             .unwrap();
-        // namespace.put_collection(
-        //     &"losers".parse::<Name>().unwrap(),
-        //     Content::SameAs(crate::schema::SameAsContent { ref_: ref3 }),
-        // );
         println!("sorted: {:?}", namespace.topo_sort());
-        assert!(namespace.topo_sort() == None);
+        assert!(namespace.topo_sort().is_none());
+    }
+
+    //helper method for checking sorted dependencies
+    fn check_dep(list: &[Name], ns: &Namespace) -> bool {
+        let curr_name= match list.last() {
+            Some(n) => n,
+            None=> return true
+        };
+        let c = ns.get_collection(&curr_name).unwrap();
+        if let Content::SameAs(same) = c {
+            list[..list.len()-1].contains(same.ref_.collection()) && check_dep(&list[..list.len()-1], ns)
+        } else {
+            true
+        }
     }
 }
