@@ -1,11 +1,17 @@
 use crate::cli::postgres::PostgresExportStrategy;
 use crate::cli::stdf::StdoutExportStrategy;
-use anyhow::Result;
+use anyhow::{Result, Context};
 
 use std::str::FromStr;
+use std::convert::TryFrom;
 
 use crate::cli::mongo::MongoExportStrategy;
 use synth_core::{Name, Namespace};
+use serde_json::Value;
+use async_std::task;
+use crate::datasource::DataSource;
+use crate::sampler::Sampler;
+use crate::cli::mysql::MySqlExportStrategy;
 
 pub trait ExportStrategy {
     fn export(self, params: ExportParams) -> Result<()>;
@@ -23,6 +29,7 @@ pub enum SomeExportStrategy {
     StdoutExportStrategy(StdoutExportStrategy),
     FromPostgres(PostgresExportStrategy),
     FromMongo(MongoExportStrategy),
+    FromMySql(MySqlExportStrategy)
 }
 
 impl ExportStrategy for SomeExportStrategy {
@@ -31,6 +38,7 @@ impl ExportStrategy for SomeExportStrategy {
             SomeExportStrategy::StdoutExportStrategy(ses) => ses.export(params),
             SomeExportStrategy::FromPostgres(pes) => pes.export(params),
             SomeExportStrategy::FromMongo(mes) => mes.export(params),
+            SomeExportStrategy::FromMySql(mes) => mes.export(params)
         }
     }
 }
@@ -58,9 +66,50 @@ impl FromStr for SomeExportStrategy {
             return Ok(SomeExportStrategy::FromMongo(MongoExportStrategy {
                 uri: s.to_string(),
             }));
+        } else if s.starts_with("mysql://") || s.starts_with("mariadb://") {
+            return Ok(SomeExportStrategy::FromMySql(MySqlExportStrategy {
+                uri: s.to_string(),
+            }));
         }
         Err(anyhow!(
             "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres'"
         ))
     }
+}
+
+pub(crate) fn create_and_insert_values<T: DataSource>(params: ExportParams, datasource: &T)
+    -> Result<()> {
+    let sampler = Sampler::try_from(&params.namespace)?;
+    let values =
+        sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
+
+    match values {
+        Value::Array(collection_json) => {
+            insert_data(datasource, params.collection_name.unwrap().to_string(), &collection_json)
+        }
+        Value::Object(namespace_json) => {
+            for (collection_name, collection_json) in namespace_json {
+                let collection_json = &collection_json
+                    .as_array()
+                    .expect("This is always a collection (sampler contract)");
+
+                insert_data(datasource, collection_name.clone(), &collection_json)?;
+            }
+
+            Ok(())
+        }
+        _ => bail!(
+            "The sampler will never generate a value which is not an array or object (sampler contract)"
+        ),
+    }
+}
+
+fn insert_data<T: DataSource>(datasource: &T, collection_name: String, collection_json: &Vec<Value>)
+    -> Result<()> {
+    task::block_on(
+        datasource.insert_data(
+            collection_name.clone(),
+            collection_json
+        )
+    ).context(format!("Failed to insert data for collection {}", collection_name))
 }

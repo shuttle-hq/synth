@@ -1,7 +1,4 @@
 <p align=center>
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
   <img height="150px" src="docs/static/img/getsynth_identicon.png"/>
 </p>
 <p align=center>
@@ -14,7 +11,7 @@
   <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
   <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
   <a href="https://discord.gg/H33rRDTm3p"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
-  <a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/getsynth/synth.git&cloudshell_print=tools/README-cloud-shell"><img alt="Run in Cloud Shell" src="https://img.shields.io/static/v1?label=GCP&message=Run%20in%20Cloud%20Shell&color=4394ff&logo=google-cloud&logoColor=4d9aff"></a>
+      <img src="https://img.shields.io/github/all-contributors/getsynth/synth" alt="Synth open source contributors"/>
 </p>
 
 ------
@@ -40,11 +37,11 @@ The key features of Synth are:
 - **Data as Code**: Data generation is described using a declarative configuration language allowing you to specify your entire data model as code.
 
 - **Import from Existing Sources**: Synth can import data from existing sources and automatically create data models. Synth currently has Alpha support for Postgres!
- 
+
 - **Data Inference**: While ingesting data, Synth automatically infers the relations, distributions and types of the dataset.
 
-- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.  
- 
+- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.
+
 - **Semantic Data Types**: Synth has a library of semantic 'faker' types to cover PII like names, addresses, credit card numbers etc.
 
 ## Installation & Getting Started
@@ -61,10 +58,10 @@ For more installation options, check out the [docs](https://getsynth.github.io/s
 
 ### Building a data model from scratch
 
-To start generating data without having a source to import from, you need to first initialise a workspace using `synth init`:
+To start generating data without having a source to import from, you need to first initialise a workspace using `synth init [opt path]` (if no optional path is specified, the current directory will be used):
 
 ```bash
-$ mkdir workspace && cd workspace && synth init
+$ synth init /some/path
 ```
 
 Inside the workspace we'll create a namespace for our data model and call it `my_app`:
@@ -130,7 +127,7 @@ $ synth generate my_app/ --size 2 | jq
 
 ### Building a data model from an external database
 
-If you have an existing database, Synth can automatically generate a data model by inspecting the database. 
+If you have an existing database, Synth can automatically generate a data model by inspecting the database.
 
 To get started, initialise your Synth workspace locally:
 
@@ -195,7 +192,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://llogiq.github.io"><img src="https://avatars.githubusercontent.com/u/4200835?v=4?s=100" width="100px;" alt=""/><br /><sub><b>llogiq</b></sub></a><br /><a href="#business-llogiq" title="Business development">💼</a> <a href="https://github.com/getsynth/synth/commits?author=llogiq" title="Code">💻</a> <a href="#content-llogiq" title="Content">🖋</a> <a href="#ideas-llogiq" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-llogiq" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-llogiq" title="Maintenance">🚧</a> <a href="#mentoring-llogiq" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/getsynth/synth/pulls?q=is%3Apr+reviewed-by%3Allogiq" title="Reviewed Pull Requests">👀</a> <a href="#security-llogiq" title="Security">🛡️</a> <a href="https://github.com/getsynth/synth/commits?author=llogiq" title="Tests">⚠️</a></td>
     <td align="center"><a href="https://github.com/shkurskid"><img src="https://avatars.githubusercontent.com/u/77615792?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitri Shkurski</b></sub></a><br /><a href="https://github.com/getsynth/synth/commits?author=shkurskid" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/brokad"><img src="https://avatars.githubusercontent.com/u/13315034?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Damien Broka</b></sub></a><br /><a href="#blog-brokad" title="Blogposts">📝</a> <a href="#business-brokad" title="Business development">💼</a> <a href="https://github.com/getsynth/synth/commits?author=brokad" title="Code">💻</a> <a href="#content-brokad" title="Content">🖋</a> <a href="#design-brokad" title="Design">🎨</a> <a href="https://github.com/getsynth/synth/commits?author=brokad" title="Documentation">📖</a> <a href="#fundingFinding-brokad" title="Funding Finding">🔍</a> <a href="#ideas-brokad" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-brokad" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-brokad" title="Maintenance">🚧</a> <a href="https://github.com/getsynth/synth/pulls?q=is%3Apr+reviewed-by%3Abrokad" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/getsynth/synth/commits?author=brokad" title="Tests">⚠️</a></td>
-    <td align="center"><a href="https://github.com/fretz12"><img src="https://avatars.githubusercontent.com/u/41805201?v=4?s=100" width="100px;" alt=""/><br /><sub><b>fretz12</b></sub></a><br /><a href="#ideas-fretz12" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/fretz12"><img src="https://avatars.githubusercontent.com/u/41805201?v=4?s=100" width="100px;" alt=""/><br /><sub><b>fretz12</b></sub></a><br /><a href="#ideas-fretz12" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/getsynth/synth/commits?author=fretz12" title="Code">💻</a> <a href="https://github.com/getsynth/synth/commits?author=fretz12" title="Documentation">📖</a> <a href="https://github.com/getsynth/synth/commits?author=fretz12" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/baile320"><img src="https://avatars.githubusercontent.com/u/26841355?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tyler Bailey</b></sub></a><br /><a href="https://github.com/getsynth/synth/commits?author=baile320" title="Code">💻</a> <a href="https://github.com/getsynth/synth/commits?author=baile320" title="Documentation">📖</a></td>
   </tr>
 </table>
 

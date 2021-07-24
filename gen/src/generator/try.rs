@@ -1,8 +1,11 @@
+use std::marker::PhantomData;
+
 use rand::Rng;
 
 use crate::{GeneratorState, Never};
 
 use super::Generator;
+use std::collections::VecDeque;
 
 /// we use this trait to bound `Result`s because we don't have type equality
 /// in `where` clauses yet.
@@ -21,9 +24,15 @@ impl<O, E> GeneratorResult for Result<O, E> {
 
     // inlined to make sure it's optimized out
     #[inline(always)]
-    fn into_result(self) -> Result<O, E> { self }
-    fn from_ok(ok: O) -> Self { Ok(ok) }
-    fn from_err(err: E) -> Self { Err(err) }
+    fn into_result(self) -> Result<O, E> {
+        self
+    }
+    fn from_ok(ok: O) -> Self {
+        Ok(ok)
+    }
+    fn from_err(err: E) -> Self {
+        Err(err)
+    }
 }
 
 /// A convenience trait for [`Generator`](crate::Generator)s that
@@ -147,6 +156,17 @@ where
         }
     }
 
+    fn map_ok<F, O>(self, f: F) -> MapOk<Self, F, O>
+    where
+        F: Fn(Self::Ok) -> O,
+    {
+        MapOk {
+            inner: self,
+            closure: f,
+            _output: PhantomData,
+        }
+    }
+
     fn or_else_try<F, O>(self, f: F) -> OrElseTry<Self, F, O>
     where
         F: Fn(Self::Error) -> O,
@@ -168,6 +188,18 @@ where
             inner: self,
             closure: f,
             output: None,
+        }
+    }
+
+    fn try_filter_map<F, O>(self, f: F) -> TryFilterMap<Self, F, O>
+    where
+        F: FnMut(Self::Ok) -> Result<Option<O>, Self::Error>,
+    {
+        TryFilterMap {
+            inner: self,
+            yielded: VecDeque::new(),
+            output: None,
+            closure: f,
         }
     }
 
@@ -299,6 +331,57 @@ where
     }
 }
 
+pub struct TryFilterMap<TG, F, O>
+where
+    TG: TryGenerator,
+    F: FnMut(TG::Ok) -> Result<Option<O>, TG::Error>,
+{
+    inner: TG,
+    yielded: VecDeque<TG::Yield>,
+    output: Option<O>,
+    closure: F,
+}
+
+impl<TG, F, O> Generator for TryFilterMap<TG, F, O>
+where
+    TG: TryGenerator,
+    F: FnMut(TG::Ok) -> Result<Option<O>, TG::Error>,
+{
+    type Yield = TG::Yield;
+
+    type Return = Result<O, TG::Error>;
+
+    fn next<RR: Rng>(&mut self, rng: &mut RR) -> GeneratorState<Self::Yield, Self::Return> {
+        match self.yielded.pop_front() {
+            Some(fst) => GeneratorState::Yielded(fst),
+            None => match std::mem::replace(&mut self.output, None) {
+                Some(output) => GeneratorState::Complete(Ok(output)),
+                None => {
+                    loop {
+                        match self.inner.try_next(rng) {
+                            GeneratorState::Yielded(yielded) => self.yielded.push_back(yielded),
+                            GeneratorState::Complete(complete) => match complete.into_result() {
+                                Ok(output) => match (self.closure)(output) {
+                                    Ok(Some(value)) => {
+                                        self.output = Some(value);
+                                        break;
+                                    }
+                                    Ok(None) => {
+                                        self.yielded.clear();
+                                    }
+                                    Err(err) => return GeneratorState::Complete(Err(err)),
+                                },
+                                Err(err) => return GeneratorState::Complete(Err(err)),
+                            },
+                        }
+                    }
+                    self.next(rng)
+                }
+            },
+        }
+    }
+}
+
 /// This struct is created by the
 /// [`try_aggregate`](crate::TryGeneratorExt::try_aggregate) method on
 /// [`TryGenerator`](crate::TryGenerator).
@@ -342,5 +425,27 @@ where
                 Err(e) => GeneratorState::Complete(TG::Return::from_err(e)),
             }
         }
+    }
+}
+
+pub struct MapOk<TG, F, O> {
+    inner: TG,
+    closure: F,
+    _output: PhantomData<O>,
+}
+
+impl<TG, F, O> Generator for MapOk<TG, F, O>
+where
+    TG: TryGenerator,
+    F: Fn(TG::Ok) -> O,
+{
+    type Yield = TG::Yield;
+
+    type Return = Result<O, TG::Error>;
+
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        self.inner
+            .try_next(rng)
+            .map_complete(|ret| ret.into_result().map(|ok| (self.closure)(ok)))
     }
 }

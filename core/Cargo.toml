@@ -1,6 +1,6 @@
 [package]
 name = "synth-core"
-version = "0.5.0"
+version = "0.5.1"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>",
@@ -37,3 +37,5 @@ synth-gen = { path = "../gen", features = [ "shared" ] }
 uuid = { version = "0.8.2", features = ["v4"] }
 bimap = { version = "0.6.0", features = [ "std" ] }
 humantime-serde = "1.0.1"
+bloomfilter = "1.0.5"
+dynfmt = { version = "0.1.5", features = [ "curly" ] }

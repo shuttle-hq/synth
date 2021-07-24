@@ -64,7 +64,9 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen};
+pub use string::{
+    Format, FormatArgs, RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen,
+};
 
 pub mod number;
 pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, UniformRangeStep};
@@ -77,6 +79,9 @@ pub use array::ArrayNode;
 
 pub mod object;
 pub use object::{KeyValueOrNothing, ObjectNode};
+
+pub mod unique;
+pub use unique::UniqueNode;
 
 pub mod one_of;
 pub(crate) mod series;
@@ -174,15 +179,15 @@ where
 }
 
 derive_from! {
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Hash, PartialEq, Eq)]
     pub enum Value {
-    Null(()),
-    Bool(bool),
-    Number(Number),
-    String(String),
-    DateTime(ChronoValue),
-    Object(BTreeMap<String, Value>),
-    Array(Vec<Value>),
+        Null(()),
+        Bool(bool),
+        Number(Number),
+        String(String),
+        DateTime(ChronoValue),
+        Object(BTreeMap<String, Value>),
+        Array(Vec<Value>),
     }
 }
 
@@ -245,6 +250,7 @@ derive_generator!(
         View(Unwrapped<View<Graph>>),
         Scoped(Scoped<Graph>),
         Series(SeriesNode),
+        Unique(UniqueNode)
     }
 );
 
@@ -328,6 +334,7 @@ pub mod tests {
     use rand::thread_rng;
 
     use super::*;
+    use crate::schema::ChronoValueFormatter;
 
     use crate::schema::tests::USER_NAMESPACE;
 
@@ -335,137 +342,153 @@ pub mod tests {
     fn schema_to_generator() {
         let schema: Namespace = from_json!({
             "users": {
-        "type": "array",
-        "length": {
-            "type": "number",
-            "subtype": "u64",
-            "constant": 10
-        },
-        "content": {
-            "type": "object",
-            "id" : {
-            "type" : "number",
-            "subtype" : "u64",
-            "id" : {
-            "start_at" : 100
-            }
-            },
-            "is_active": {
-            "type": "bool",
-            "frequency": 0.2
-            },
-            "username": {
-                "type": "string",
-                "truncated": {
-                    "content": {
+                "type": "array",
+                "length": {
+                    "type": "number",
+                    "subtype": "u64",
+                    "constant": 10
+                },
+                "content": {
+                    "type": "object",
+                    "id" : {
+                        "type" : "number",
+                        "subtype" : "u64",
+                        "id" : {
+                            "start_at" : 100
+                        }
+                    },
+                    "is_active": {
+                        "type": "bool",
+                        "frequency": 0.2
+                    },
+                    "username": {
                         "type": "string",
-                        "pattern": "[a-zA-Z0-9]{0, 255}"
+                        "truncated": {
+                            "content": {
+                                "type": "string",
+                                "pattern": "[a-zA-Z0-9]{0, 255}"
+                            },
+                            "length": 5
+                        }
                     },
-                    "length": 5
-                }
-            },
-            "bank_country": {
-            "type": "string",
-            "pattern": "(GB|ES)"
+                    "bank_country": {
+                        "type": "string",
+                        "pattern": "(GB|ES)"
                     },
-            "num_logins": {
-            "type": "number",
-            "subtype": "u64",
-            "range": {
-                "high": 100,
-                "low": 0,
-                "step": 1
-            }
-            },
-            "currency": {
-            "type": "string",
-            "pattern": "(USD|GBP)"
+                    "num_logins": {
+                        "type": "number",
+                        "subtype": "u64",
+                        "range": {
+                            "high": 100,
+                            "low": 0,
+                            "step": 1
+                        }
                     },
-            "credit_card": {
-            "type": "string",
-                "faker": {
-                    "generator": "credit_card"
-                }
-            },
-            "created_at_date": {
-            "type": "string",
-            "date_time": {
-                "format": "%Y-%m-%d"
-            }
-            },
-            "created_at_time": {
-            "type": "string",
-            "date_time": {
-                "format": "%H:%M:%S"
-            }
-            },
-            "last_login_at": {
-            "type": "string",
-            "date_time": {
-                "format": "%Y-%m-%dT%H:%M:%S%z",
-                "begin": "2020-01-01T00:00:00+0000"
-            }
-            },
-            "maybe_an_email": {
-            "optional": true,
-            "type": "string",
-            "faker": {
-                "generator": "safe_email"
-            }
-            },
-            "num_logins_again": {
-            "type": "same_as",
-            "ref": "users.content.num_logins"
-            }
+                    "currency": {
+                        "type": "string",
+                        "pattern": "(USD|GBP)"
+                    },
+                    "credit_card": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "credit_card"
+                        }
+                    },
+                    "formatted_username": {
+                        "type": "string",
+                        "format": {
+                            "format": "my username is {name} and I trade in {currency}",
+                            "arguments": {
+                                "name": {
+                                    "type": "same_as",
+                                    "ref": "users.content.username"
+                                },
+                                "currency": {
+                                    "type": "same_as",
+                                    "ref": "users.content.currency"
+                                }
+                            }
+                        }
+                    },
+                    "created_at_date": {
+                        "type": "string",
+                        "date_time": {
+                            "format": "%Y-%m-%d"
+                        }
+                    },
+                    "created_at_time": {
+                        "type": "string",
+                        "date_time": {
+                            "format": "%H:%M:%S"
+                        }
+                    },
+                    "last_login_at": {
+                        "type": "string",
+                        "date_time": {
+                            "format": "%Y-%m-%dT%H:%M:%S%z",
+                            "begin": "2020-01-01T00:00:00+0000"
+                        }
+                    },
+                    "maybe_an_email": {
+                        "optional": true,
+                        "type": "string",
+                        "faker": {
+                            "generator": "safe_email"
+                        }
+                    },
+                    "num_logins_again": {
+                        "type": "same_as",
+                        "ref": "users.content.num_logins"
+                    }
                 }
             },
             "transactions": {
-        "type": "array",
-        "length": {
-            "type": "number",
-            "subtype": "u64",
-            "constant": 100
-        },
-        "content": {
-            "type": "object",
-            "username": {
-            "type": "same_as",
-            "ref": "users.content.username"
-            },
-            "currency": {
-            "type": "same_as",
-            "ref": "users.content.currency"
-            },
-            "timestamp": {
-            "type": "string",
-            "date_time": {
-                "format": "%Y-%m-%dT%H:%M:%S%z",
-                "begin": "2020-01-01T00:00:00+0000"
-            }
-            },
-            "amount": {
-            "type": "number",
-            "subtype": "f64",
-            "range": {
-                "high": 10000,
-                "low": 0,
-                "step": 0.1
-            }
-            },
-            "serialized_nonce": {
-            "type" : "string",
-            "serialized" : {
-                "serializer" : "json",
-                 "content" : {
-                 "type" : "object",
-                 "nonce" : {
-                     "type" : "string",
-                     "pattern" : "[A-Z a-z 0-9]+",
+                "type": "array",
+                "length": {
+                    "type": "number",
+                    "subtype": "u64",
+                    "constant": 100
+                },
+                "content": {
+                    "type": "object",
+                    "username": {
+                        "type": "same_as",
+                        "ref": "users.content.username"
+                    },
+                    "currency": {
+                        "type": "same_as",
+                        "ref": "users.content.currency"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "date_time": {
+                            "format": "%Y-%m-%dT%H:%M:%S%z",
+                            "begin": "2020-01-01T00:00:00+0000"
+                        }
+                    },
+                    "amount": {
+                        "type": "number",
+                        "subtype": "f64",
+                        "range": {
+                            "high": 10000,
+                            "low": 0,
+                            "step": 0.1
+                        }
+                    },
+                    "serialized_nonce": {
+                        "type" : "string",
+                        "serialized" : {
+                            "serializer" : "json",
+                            "content" : {
+                                "type" : "object",
+                                "nonce" : {
+                                    "type" : "string",
+                                    "pattern" : "[A-Z a-z 0-9]+",
+                                }
+                            }
+                        }
+                    },
                 }
-                }
-             }
-            },
-        }
             }
         });
 
@@ -504,6 +527,7 @@ pub mod tests {
             currency: String,
             credit_card: String,
             maybe_an_email: Option<String>,
+            formatted_username: String,
             is_active: bool,
             created_at_date: String,
             created_at_time: String,
@@ -527,29 +551,17 @@ pub mod tests {
                 assert!(user.username.len() <= 5);
                 all_users.insert(user.username.clone());
                 currencies.insert(user.username, user.currency);
-                /*
-                       if let Some(email) = user.maybe_an_email {
-                           if !user.is_active {
-                               assert!(
-                                   email.contains("inactive"),
-                                   "email did not contain inactive: {}",
-                                   email
-                               )
-                           }
-                       }
+                ChronoValueFormatter::new("%Y-%m-%d")
+                    .parse(&user.created_at_date)
+                    .unwrap();
 
-                       ChronoContentFormatter::new("%Y-%m-%d")
-                           .parse(&user.created_at_date)
-                           .unwrap();
+                ChronoValueFormatter::new("%H:%M:%S")
+                    .parse(&user.created_at_time)
+                    .unwrap();
 
-                       ChronoContentFormatter::new("%H:%M:%S")
-                           .parse(&user.created_at_time)
-                           .unwrap();
-
-                       ChronoContentFormatter::new("%Y-%m-%dT%H:%M:%S%z")
-                           .parse(&user.last_login_at)
-                           .unwrap();
-                */
+                ChronoValueFormatter::new("%Y-%m-%dT%H:%M:%S%z")
+                    .parse(&user.last_login_at)
+                    .unwrap();
             }
             assert_eq!(all_users.len(), 10);
 

@@ -11,12 +11,6 @@
     },
     "content": {
         "type": "object",
-        "password_hash": {
-            "type": "string",
-            "faker": {
-                "generator": "sha256"
-            }
-        },
         "username": {
             "type": "one_of",
             "variants": [
@@ -27,7 +21,7 @@
                 {
                     "type": "string",
                     "faker": {
-                        "generator": "user_name"
+                        "generator": "username"
                     }
                 }
             ]
@@ -35,7 +29,7 @@
         "credit_card": {
             "type": "string",
             "faker": {
-                "generator": "credit_card_number"
+                "generator": "credit_card"
             }
         },
         "id": {
@@ -63,7 +57,7 @@
         "email": {
             "type": "string",
             "faker": {
-                "generator": "email"
+                "generator": "safe_email"
             }
         },
         "is_active": {

@@ -70,9 +70,14 @@ install_based_on_os() {
 }
 
 prompt_install_telemetry() {
-  info "\nTelemetry is disabled by default (more details here: https://getsynth.github.io/synth/other/telemetry)"
-  info "Help us improve the product by allowing Synth to collect de-identified command usage data? (y/N) "
+  info "\nHey wonderful new user! We hate to ask you this, but there is really only one way we can build Synth into something great - by knowing the bare minimum about how users interact with it."
+  info "\nIt seems like privacy is important to you. It is to us as well! So we made sure our analytics is completely anonymous and explicitly opt-in. (see more details here: https://getsynth.github.io/synth/other/telemetry). Please support us by hitting 'y' and opting-in."
+  info "\nLove, the Synth team <3  (y/N) "
+
   read INSTALL_TELEMETRY </dev/tty
+
+  # TODO remove
+  exit 1;
 
   if [ "$INSTALL_TELEMETRY" = "y" ]; then
     "$BIN_DST_DIR"/synth telemetry enable

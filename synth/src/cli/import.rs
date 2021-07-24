@@ -8,6 +8,7 @@ use std::str::FromStr;
 use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
+use crate::cli::mysql::MySqlImportStrategy;
 
 pub trait ImportStrategy: Sized {
     fn import(self) -> Result<Namespace> {
@@ -26,6 +27,7 @@ pub enum SomeImportStrategy {
     #[allow(unused)]
     FromPostgres(PostgresImportStrategy),
     FromMongo(MongoImportStrategy),
+    FromMySql(MySqlImportStrategy)
 }
 
 impl Default for SomeImportStrategy {
@@ -51,6 +53,10 @@ impl FromStr for SomeImportStrategy {
             return Ok(SomeImportStrategy::FromMongo(MongoImportStrategy {
                 uri: s.to_string(),
             }));
+        } else if s.starts_with("mysql://") || s.starts_with("mariadb://") {
+            return Ok(SomeImportStrategy::FromMySql(MySqlImportStrategy {
+                uri: s.to_string(),
+            }));
         }
 
         if let Ok(path) = PathBuf::from_str(s) {
@@ -71,6 +77,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromPostgres(pis) => pis.import(),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.import(),
             SomeImportStrategy::FromMongo(mis) => mis.import(),
+            SomeImportStrategy::FromMySql(mis) => mis.import()
         }
     }
     fn import_collection(self, name: &Name) -> Result<Content> {
@@ -79,6 +86,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromPostgres(pis) => pis.import_collection(name),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.import_collection(name),
             SomeImportStrategy::FromMongo(mis) => mis.import_collection(name),
+            SomeImportStrategy::FromMySql(mis) => mis.import_collection(name),
         }
     }
     fn into_value(self) -> Result<Value> {
@@ -87,6 +95,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromPostgres(pis) => pis.into_value(),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.into_value(),
             SomeImportStrategy::FromMongo(mis) => mis.into_value(),
+            SomeImportStrategy::FromMySql(mis) => mis.into_value(),
         }
     }
 }

@@ -12,6 +12,7 @@ pub enum StringContent {
     Serialized(SerializedContent),
     Uuid(Uuid),
     Truncated(TruncatedContent),
+    Format(FormatContent),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -27,6 +28,7 @@ impl StringContent {
             Self::Serialized(_) => "serialized",
             Self::Uuid(_) => "uuid",
             Self::Truncated(_) => "truncated",
+            Self::Format(_) => "format",
         }
     }
 }
@@ -131,12 +133,12 @@ impl<'de> Deserialize<'de> for FakerContentArgument {
     {
         let value = Value::deserialize(deserializer)?;
         match &value {
-	    Value::Number(_) |
-	    Value::String(_) |
-	    Value::Bool(_) => Ok(Self(value)),
-	    _ => {
-		Err(D::Error::custom("invalid argument for a faker generator: can only be of a primitive type (i.e. one of string, number or boolean)"))
-	    }
+            Value::Number(_) |
+            Value::String(_) |
+            Value::Bool(_) => Ok(Self(value)),
+            _ => {
+                Err(D::Error::custom("invalid argument for a faker generator: can only be of a primitive type (i.e. one of string, number or boolean)"))
+            }
         }
     }
 }
@@ -182,11 +184,26 @@ pub struct TruncatedContent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub struct FormatContent {
+    format: String,
+    arguments: HashMap<String, Content>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+#[serde(untagged)]
+pub enum ContentOrRef {
+    Content(Content),
+    FieldRef(FieldRef),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct JsonContent {
     content: Box<Content>,
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Hash)]
 pub enum ChronoValue {
     NaiveDate(NaiveDate),
     NaiveTime(NaiveTime),
@@ -459,14 +476,14 @@ pub mod datetime_content {
                 .and_then(|begin| begin.common_variant(end.as_ref()?));
 
             match common_variant {
-		Some(variant) if variant != type_ => Err(failed!(target: Release, "content types of 'begin' and 'end' mismatch: begin is a {:?}, end is a {:?}; this is not allowed here. Try specifying the 'type' field.", begin, end)),
-		_ => Ok(DateTimeContent {
+                Some(variant) if variant != type_ => Err(failed!(target: Release, "content types of 'begin' and 'end' mismatch: begin is a {:?}, end is a {:?}; this is not allowed here. Try specifying the 'type' field.", begin, end)),
+                _ => Ok(DateTimeContent {
                     format: self.format,
                     type_,
                     begin,
                     end,
                 })
-	    }
+            }
         }
 
         pub(super) fn from_datetime_content(c: &DateTimeContent) -> Result<Self> {
@@ -486,6 +503,7 @@ pub mod datetime_content {
 }
 
 use crate::graph::string::Serialized;
+use crate::schema::FieldRef;
 pub use datetime_content::ChronoValueFormatter;
 
 impl Serialize for DateTimeContent {
@@ -510,8 +528,18 @@ impl<'de> Deserialize<'de> for DateTimeContent {
 }
 
 impl Compile for StringContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         let string_node = match self {
+            StringContent::Format(FormatContent { format, arguments }) => {
+                let args = FormatArgs {
+                    named: arguments
+                        .iter()
+                        .map(|(name, value)| Ok((name.to_string(), compiler.build(name, value)?)))
+                        .collect::<Result<_>>()?,
+                    ..Default::default()
+                };
+                RandomString::from(Format::new(format.to_string(), args)).into()
+            }
             StringContent::Pattern(pattern) => RandomString::from(pattern.to_regex()).into(),
             StringContent::Faker(FakerContent {
                 generator,
