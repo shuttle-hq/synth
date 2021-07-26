@@ -35,7 +35,7 @@ impl Store {
     pub fn init() -> Result<Self> {
         Ok(Self {
             path: std::env::current_dir()
-                .context(failed!(target: Debug, "Failed to initialise the store"))?,
+                .with_context(|| failed!(target: Debug, "Failed to initialise the store"))?,
         })
     }
 
@@ -74,14 +74,14 @@ impl Store {
 
         for entry in ns_path
             .read_dir()
-            .context(format!("At path {:?}", ns_path))?
+            .with_context(|| format!("At path {:?}", ns_path))?
         {
             let entry = entry?;
             if let Some(file_ext) = entry.path().extension() {
                 if file_ext == UNDERLYING.extension() {
                     let (collection_name, content) = self
                         .get_collection(&entry)
-                        .context(anyhow!("at file {}", entry.path().display()))?;
+                        .with_context(|| anyhow!("at file {}", entry.path().display()))?;
                     ns.put_collection(&collection_name, content)?;
                 }
             }

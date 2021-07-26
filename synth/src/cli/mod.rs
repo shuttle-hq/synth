@@ -131,14 +131,14 @@ impl Cli {
             }
             false => {
                 let workspace_dir = ".synth";
-                let result = std::fs::create_dir_all(base_path.join(workspace_dir)).context(format!(
+                let result = std::fs::create_dir_all(base_path.join(workspace_dir)).with_context(|| format!(
                     "Failed to create working directory at: {} during initialization",
                     base_path.join(workspace_dir).to_str().unwrap()
                 ));
                 let config_path = ".synth/config.toml";
                 match result {
                     Ok(()) => {
-                        File::create(base_path.join(config_path)).context(format!(
+                        File::create(base_path.join(config_path)).with_context(|| format!(
                             "Failed to create config file at: {} during initialization",
                             base_path.join(config_path).to_str().unwrap()
                         ))?;
@@ -148,7 +148,7 @@ impl Cli {
                         if e.downcast_ref::<std::io::Error>().unwrap().kind()
                             == std::io::ErrorKind::AlreadyExists =>
                     {
-                        File::create(base_path.join(config_path)).context(format!(
+                        File::create(base_path.join(config_path)).with_context(|| format!(
                             "Failed to initialize workspace at: {}. File already exists.",
                             base_path.join(config_path).to_str().unwrap()
                         ))?;
@@ -243,7 +243,7 @@ impl Cli {
 
         to.unwrap_or_default()
             .export(params)
-            .context(format!("At namespace {:?}", ns_path))
+            .with_context(|| format!("At namespace {:?}", ns_path))
     }
 }
 

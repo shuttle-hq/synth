@@ -152,7 +152,7 @@ impl Index {
         let _lock = self
             .store
             .lock_exclusive(ns_entry.lock_path())
-            .context(anyhow!(
+            .with_context(|| anyhow!(
                 "while acquiring a shared lock on the namespace: {}",
                 ns_name
             ))?;
@@ -160,7 +160,7 @@ impl Index {
         let old_ns = self
             .store
             .get(ns_entry.at_generation(gen))
-            .context(anyhow!(
+            .with_context(|| anyhow!(
                 "while retrieving schema generation '{}' for namespace '{}'",
                 gen,
                 ns_entry.namespace
@@ -196,14 +196,14 @@ impl Index {
         let lock = self
             .store
             .lock_shared(ns_entry.lock_path())
-            .context(anyhow!(
+            .with_context(|| anyhow!(
                 "while acquiring a shared lock on the namespace: {}",
                 ns_entry.namespace
             ))?;
         let ns: Namespace = self
             .store
             .get(ns_entry.at_generation(gen))
-            .context(anyhow!(
+            .with_context(|| anyhow!(
                 "while retrieving schema for namespace '{}'",
                 &ns_entry.namespace,
             ))?;
@@ -215,11 +215,11 @@ impl Index {
         let lock = self
             .store
             .lock_exclusive(ns_entry.lock_path())
-            .context(anyhow!(
+            .with_context(|| anyhow!(
                 "while acquiring an exclusive lock on the namespace: {}",
                 ns_name
             ))?;
-        let ns: Namespace = self.store.get(ns_entry.generation_path()).context(anyhow!(
+        let ns: Namespace = self.store.get(ns_entry.generation_path()).with_context(|| anyhow!(
             "while retrieving schema for namespace '{}'",
             ns_name,
         ))?;

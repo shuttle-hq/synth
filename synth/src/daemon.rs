@@ -288,7 +288,7 @@ impl Daemon {
         strategy.merge(&mut namespace, &req.body.override_)?;
 
         self.validate(&namespace)
-            .context(anyhow!("while validating the overridden model"))?;
+            .with_context(|| anyhow!("while validating the overridden model"))?;
 
         namespace.commit()?;
         Ok(PutOverrideResponse {})
@@ -324,7 +324,7 @@ impl Daemon {
             if !namespace.collection_exists(&collection) {
                 namespace
                     .create_collection(&collection, document)
-                    .context(anyhow!(
+                    .with_context(|| anyhow!(
                         "while creating a collection from the first document"
                     ))?;
             }
@@ -339,7 +339,7 @@ impl Daemon {
 
             let as_value = Value::from(documents);
             namespace.try_update(OptionalMergeStrategy, &collection, &as_value)?;
-            self.validate(namespace.as_ref()).context(anyhow!(
+            self.validate(namespace.as_ref()).with_context(|| anyhow!(
                 "while validating the inferred model prior to persisting it"
             ))?;
 
