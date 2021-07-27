@@ -133,14 +133,14 @@ impl Namespace {
         let collection = reference.collection();
         self.get_collection_mut(collection)?
             .find_mut(reference.iter_fields().peekable())
-            .context(format!("in a collection: '{}'", collection))
+            .with_context(|| format!("in a collection: '{}'", collection))
     }
 
     pub fn get_s_node(&self, reference: &FieldRef) -> Result<&Content> {
         let collection = reference.collection();
         self.get_collection(collection)?
             .find(reference.iter_fields().peekable())
-            .context(format!("in a collection: '{}'", collection))
+            .with_context(|| format!("in a collection: '{}'", collection))
     }
 
     pub fn get_collection_mut(&mut self, name: &Name) -> Result<&mut Content> {

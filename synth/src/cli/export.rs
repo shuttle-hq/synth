@@ -111,5 +111,5 @@ fn insert_data<T: DataSource>(datasource: &T, collection_name: String, collectio
             collection_name.clone(),
             collection_json
         )
-    ).context(format!("Failed to insert data for collection {}", collection_name))
+    ).with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }

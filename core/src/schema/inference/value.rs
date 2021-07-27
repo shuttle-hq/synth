@@ -127,7 +127,7 @@ impl MergeStrategy<Object, Object> for ValueMergeStrategy {
                 if let Some(field) = master.get_mut(key) {
                     debug!("try_merge entering '{}'", key);
                     self.try_merge(field, value)
-                        .context(anyhow!("in a field: {}", key))?;
+                        .with_context(|| anyhow!("in a field: {}", key))?;
                 } else {
                     master.insert(key.clone(), value.clone());
                 }

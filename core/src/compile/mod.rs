@@ -589,7 +589,7 @@ impl<'a> NamespaceCompiler<'a> {
             stage_2!("{}: building", next_scope);
             let mut model = content_compiler
                 .compile()
-                .context(format!("at `{}`", &next_scope))?;
+                .with_context(|| format!("at `{}`", &next_scope))?;
             stage_2!("{}: done", next_scope);
 
             if let Ok(locals) = self.vtable.get(&next_scope) {
@@ -937,7 +937,7 @@ where
         let (root, relative_what) = what.relativize(&to);
         let relative_to = to.as_in(&root).unwrap();
         self.get_mut(&root)
-            .context(anyhow!(
+            .with_context(|| anyhow!(
                 "looking for the common root to {} and {}",
                 what,
                 to

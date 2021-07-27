@@ -38,7 +38,7 @@ impl AugmentationApi for Namespace {
         match self.get_s_node_mut(&parent) {
             Ok(parent_node) => parent_node
                 .augment(augmentation.field.last(), augmentation.augmentation)
-                .context(format!("at field: {}", parent)),
+                .with_context(|| format!("at field: {}", parent)),
             Err(_) => self.augment_with_ancestors(
                 &parent,
                 vec![augmentation.field.last()],
@@ -57,7 +57,7 @@ impl AugmentationApi for Namespace {
         let parent_node = self.get_s_node_mut(&parent)?;
         parent_node
             .delete_child(field.last())
-            .context(format!("at field: {}", parent))
+            .with_context(|| format!("at field: {}", parent))
     }
 }
 
