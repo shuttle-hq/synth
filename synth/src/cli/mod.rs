@@ -135,12 +135,12 @@ impl Cli {
                     "Failed to create working directory at: {} during initialization",
                     base_path.join(workspace_dir).to_str().unwrap()
                 ));
-                let config_path = ".synth/config.toml";
+                let config_path = self.get_synth_config_file(base_path);
                 match result {
                     Ok(()) => {
-                        File::create(base_path.join(config_path)).with_context(|| format!(
+                        File::create(config_path.as_path()).with_context(|| format!(
                             "Failed to create config file at: {} during initialization",
-                            base_path.join(config_path).to_str().unwrap()
+                            config_path.to_str().unwrap()
                         ))?;
                         Ok(())
                     }
@@ -148,9 +148,9 @@ impl Cli {
                         if e.downcast_ref::<std::io::Error>().unwrap().kind()
                             == std::io::ErrorKind::AlreadyExists =>
                     {
-                        File::create(base_path.join(config_path)).with_context(|| format!(
+                        File::create(config_path.as_path()).with_context(|| format!(
                             "Failed to initialize workspace at: {}. File already exists.",
-                            base_path.join(config_path).to_str().unwrap()
+                            config_path.to_str().unwrap()
                         ))?;
                         Ok(())
                     }
@@ -160,12 +160,16 @@ impl Cli {
         }
     }
 
+    fn get_synth_config_file(&self, base_path: PathBuf) -> PathBuf {
+        base_path.join(".synth").join("config.toml")
+    }
+
     fn workspace_initialised(&self) -> bool {
-        Path::new(".synth/config.toml").exists()
+        PathBuf::from(".synth").join("config.toml").exists()
     }
 
     fn workspace_initialised_from_path(&self, init_path: &PathBuf) -> bool {
-        let config_path = init_path.join(".synth/config.toml");
+        let config_path = init_path.join(".synth").join("config.toml");
         Path::new(&config_path).exists()
     }
 
