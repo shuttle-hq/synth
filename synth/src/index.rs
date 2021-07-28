@@ -58,15 +58,15 @@ impl NamespaceEntry {
     }
 
     fn at_generation(&self, gen: i32) -> PathBuf {
-        format!("{}/{}", self.namespace, gen).into()
+        self.namespace_path().join(gen)
     }
 
     fn namespace_path(&self) -> PathBuf {
-        format!("{}/", self.namespace).into()
+        PathBuf::from(self.namespace.as_str())
     }
 
     fn lock_path(&self) -> PathBuf {
-        format!("{}/.lock", self.namespace).into()
+        self.namespace_path().join(".lock")
     }
 
     fn update(&self) -> Self {
