@@ -321,6 +321,9 @@ pub enum TelemetryCommand {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use std::env::temp_dir;
+    use crate::{META_OS, version};
+    use std::fs;
 
     #[test]
     fn test_derive_seed() {
@@ -328,5 +331,23 @@ pub mod tests {
         assert_eq!(Cli::derive_seed(false, Some(5)).unwrap(), 5);
         assert!(Cli::derive_seed(true, Some(5)).is_err());
         assert!(Cli::derive_seed(true, None).is_ok());
+    }
+
+    #[test]
+    fn test_init() {
+        let mut temp_dir = temp_dir();
+        temp_dir.push("synth_test_init");
+
+        // Some environments have temp dir related env vars set, making it sticky (i.e., $TMPDIR).
+        // Remove the contents from previous runs, if needed.
+        if temp_dir.exists() {
+            fs::remove_dir_all(&temp_dir).unwrap();
+            fs::create_dir(&temp_dir).unwrap();
+        }
+
+        let args = CliArgs::Init { init_path: Some(temp_dir.clone()) };
+        let cli = Cli::new(args, version(), META_OS.to_string())
+            .unwrap();
+        assert!(cli.init(Some(temp_dir)).is_ok())
     }
 }
