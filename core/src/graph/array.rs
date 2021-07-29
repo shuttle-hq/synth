@@ -28,12 +28,12 @@ impl Generator for RandomArray {
     }
 }
 
+type ArrayNodeInner = AndThenTry<OwnedDevaluize<Box<Graph>, u64>, Box<dyn Fn(u64) -> RandomArray>, RandomArray>;
+
 derive_generator! {
     yield Token,
     return Result<Value, Error>,
-    pub struct ArrayNode(
-    AndThenTry<OwnedDevaluize<Box<Graph>, u64>, Box<dyn Fn(u64) -> RandomArray>, RandomArray>
-    );
+    pub struct ArrayNode(ArrayNodeInner);
 }
 
 impl ArrayNode {

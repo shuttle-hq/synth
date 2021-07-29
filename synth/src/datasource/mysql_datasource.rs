@@ -244,10 +244,7 @@ fn extract_column_char_max_len(index: usize, row: MySqlRow) -> Result<Option<i32
     let character_maximum_length = match row.try_get::<Option<i32>, usize>(index) {
         Ok(c) => c,
         Err(_) => {
-            match row.try_get::<Option<u64>, usize>(index)? {
-                None => None,
-                Some(c) => Some(c as i32)
-            }
+            row.try_get::<Option<u64>, usize>(index)?.map(|c| c as i32)
         }
     };
 
@@ -304,9 +301,9 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
         "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
         "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
         "float" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-            .ok_or(anyhow!("Failed to convert float data type"))?),
+            .ok_or_else(|| anyhow!("Failed to convert float data type"))?),
         "double" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
-            .ok_or(anyhow!("Failed to convert double data type"))?),
+            .ok_or_else(|| anyhow!("Failed to convert double data type"))?),
         "numeric" | "decimal" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 

@@ -214,8 +214,7 @@ pub mod tests {
                 content,
             }) => match content.as_mut() {
                 Content::OneOf(one_of_content) => {
-                    let variants = one_of_content.iter().collect::<Vec<_>>();
-                    assert_eq!(variants.len(), 3);
+                    assert_eq!(one_of_content.iter().count(), 3);
                 }
                 _ => unreachable!(),
             },

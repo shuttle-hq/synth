@@ -149,7 +149,7 @@ pub mod tests {
         let store = Store::with_dir(path.clone());
         let ns = Namespace::default();
         let name = Name::from_str("users").unwrap();
-        store.save_ns(name.clone(), ns.clone())?;
+        store.save_ns(name, ns.clone())?;
 
         let saved_ns = store.get_ns(path.join("users"))?;
         assert_eq!(saved_ns, ns);

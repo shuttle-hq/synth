@@ -465,8 +465,8 @@ pub mod datetime_content {
                     return Err(failed!(
                         target: Release,
                         "begin is after end: begin={}, end={}",
-                        fmt.format(&begin).unwrap(), // should be alright exactly at this point
-                        fmt.format(&end).unwrap()
+                        fmt.format(begin).unwrap(), // should be alright exactly at this point
+                        fmt.format(end).unwrap()
                     ));
                 }
             }
@@ -557,7 +557,7 @@ impl Compile for StringContent {
                     .clone()
                     .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::origin(), *type_));
                 let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
-                RandomDateTime::new(begin..end, &format).into()
+                RandomDateTime::new(begin..end, format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
             StringContent::Serialized(sc) => match sc {

@@ -934,7 +934,7 @@ where
     }
 
     fn issue(&mut self, what: &Scope, to: &Scope) -> Result<Option<View<G>>> {
-        let (root, relative_what) = what.relativize(&to);
+        let (root, relative_what) = what.relativize(to);
         let relative_to = to.as_in(&root).unwrap();
         self.get_mut(&root)
             .with_context(|| anyhow!(

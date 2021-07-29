@@ -129,6 +129,10 @@ impl ObjectContent {
     pub fn len(&self) -> usize {
         self.fields.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

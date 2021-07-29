@@ -164,9 +164,8 @@ impl Cli {
         Path::new(".synth/config.toml").exists()
     }
 
-    fn workspace_initialised_from_path(&self, init_path: &PathBuf) -> bool {
-        let config_path = init_path.join(".synth/config.toml");
-        Path::new(&config_path).exists()
+    fn workspace_initialised_from_path(&self, init_path: &Path) -> bool {
+        init_path.join(".synth/config.toml").exists()
     }
 
     fn import(

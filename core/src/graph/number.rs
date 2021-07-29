@@ -84,6 +84,15 @@ impl<N> Incrementing<N> {
     }
 }
 
+impl<N> Default for Incrementing<N>
+where
+    N: Zero + One,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<N> Generator for Incrementing<N>
 where
     N: CheckedAdd + Copy,

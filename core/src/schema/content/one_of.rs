@@ -77,7 +77,7 @@ impl OneOfContent {
             .find(|variant| *variant.content == candidate)
         {
             None => self.add_variant(candidate),
-            Some(master) => master.weight.0 = master.weight.0 + 1.0,
+            Some(master) => master.weight.0 += 1.0,
         }
     }
 
