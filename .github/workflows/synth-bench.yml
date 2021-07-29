@@ -36,7 +36,6 @@ jobs:
     - name: comment with benchmark results
       uses: JungWinter/comment@v1.1.0
       with:
-        id: create
         type: create
         body: ${{ steps.bench.outputs.body }}
         issue_number: ${{ github.event.pull_request.number }}
