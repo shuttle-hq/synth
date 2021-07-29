@@ -30,32 +30,17 @@ use colored::Colorize;
 
 use std::env;
 use std::path::PathBuf;
-use std::{net::SocketAddr, str::FromStr};
+use std::str::FromStr;
 
 use anyhow::Result;
 
 #[macro_use]
 mod error;
 
-#[cfg(feature = "api")]
-mod api;
-#[cfg(feature = "api")]
-pub use api::Api;
-
-#[cfg(feature = "api")]
-mod daemon;
-#[cfg(feature = "api")]
-use daemon::Daemon;
-
 use crate::rlog::composite::CompositeLogger;
 
 pub mod cli;
 mod rlog;
-
-#[cfg(feature = "api")]
-pub mod index;
-#[cfg(feature = "api")]
-pub use index::Index;
 
 use crate::cli::CliArgs;
 
@@ -96,21 +81,8 @@ pub fn version() -> String {
 
 #[derive(StructOpt)]
 pub enum Args {
-    #[cfg(feature = "api")]
-    #[structopt(about = "Run Synth in daemon mode")]
-    Serve(ServeArgs),
     #[structopt(flatten)]
     Cli(CliArgs),
-}
-
-#[derive(StructOpt)]
-pub struct ServeArgs {
-    #[structopt(short, long, default_value = "0.0.0.0:8182")]
-    pub bind: SocketAddr,
-    #[structopt(short, long, default_value)]
-    pub data_directory: DataDirectoryPath,
-    #[structopt(long)]
-    pub zenduty: Option<String>,
 }
 
 pub struct Splash {
@@ -175,31 +147,6 @@ mem         = {mem}
         )?;
         Ok(())
     }
-}
-
-#[cfg(feature = "api")]
-pub async fn serve_daemon(args: ServeArgs) -> Result<()> {
-    let daemon = std::sync::Arc::new(Daemon::new(args.data_directory.0)?);
-
-    let server = Api::new_server(daemon)?;
-    eprintln!(
-        "{} is listening on {}",
-        "synth".bold(),
-        args.bind.to_string()
-    );
-
-    ctrlc::set_handler(move || {
-        // This is a hack which performs an ungraceful exit.
-        // Some bug was introduced which results in signals from
-        // the terminal being swallowed and not terminating the
-        // application
-        warn!("Received SIGINT! force exiting...");
-        std::process::exit(0);
-    })?;
-
-    server.listen(args.bind).await?;
-
-    Ok(())
 }
 
 #[allow(unused_variables)]
