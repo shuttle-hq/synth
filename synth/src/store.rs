@@ -204,7 +204,10 @@ pub mod tests {
         let store = FileStore::new(dir.path().into()).unwrap();
 
         store.init(&namespace_name).unwrap();
-        let lock = store.lock_exclusive(&namespace_name).unwrap();
+
+        let mut lock_file_path = PathBuf::from(namespace_name);
+        lock_file_path.push(".lock");
+        let lock = store.lock_exclusive(&lock_file_path).unwrap();
 
         let struct_ref = "some_ns/some_struct".parse::<OsString>().unwrap();
         let some_struct = TestStruct {
