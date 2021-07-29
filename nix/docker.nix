@@ -13,7 +13,6 @@ let
     contents = with pkgs; [
       sqlite.dev
       openssl.dev
-      python
     ] ++ lib.optional (! release) [
       bashInteractive
     ];

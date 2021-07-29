@@ -1,0 +1,19 @@
+name: synth-test-examples
+
+on:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test_examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-05-17
+      - run: cargo +nightly-2021-05-17 install --debug --path=synth
+      - run: |
+          bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/test_examples.sh" ${GITHUB_WORKSPACE}/examples

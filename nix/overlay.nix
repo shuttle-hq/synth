@@ -8,44 +8,7 @@ self: super: {
       channel = "nightly";
     };
 
-    python = super.python38;
-    pythonPackages = pp: with pp; [
-      faker
-    ];
-
     nixBundle = (import sources.nix-bundle { nixpkgs = self; }).nix-bootstrap;
-
-    wrapInEnv = {
-      drv
-      , name
-      , pythonEnv
-    }: self.stdenv.mkDerivation {
-      inherit name;
-
-      version = drv.version;
-
-      src = drv;
-
-      buildInputs = [
-        self.makeWrapper
-        pythonEnv
-      ];
-
-      passthru = {
-        unwrapped = drv;
-        inherit pythonEnv;
-      };
-
-      installPhase = ''
-      mkdir -p $out/bin
-      for bin in $src/bin/*; do
-         bin_name=$(basename $bin)
-         makeWrapper "$src/bin/$bin_name" "$out/bin/$bin_name" \
-                     --prefix PATH ":" "${pythonEnv}/bin" \
-                     --prefix NIX_PYTHONPATH ":" "${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages"
-      done
-      '';
-    };
 
     mkWrappedToolchain = {
       name
@@ -81,16 +44,11 @@ self: super: {
         '';
       };
 
-    synth = self.callPackage ../default.nix {
-      pythonPackages = self.synthPackages.pythonPackages;
-    };
+    synth = self.callPackage ../default.nix {};
   };
 
   rustToolchain = self.synthPackages.rustToolchain;
   mkWrappedToolchain = self.synthPackages.mkWrappedToolchain;
-  wrapInEnv = self.synthPackages.wrapInEnv;
-
-  python = self.synthPackages.python;
 
   synth = self.synthPackages.synth;
 
