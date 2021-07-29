@@ -19,3 +19,5 @@ To run the test suite - just run `cargo test` at the root of the repository.
 We use the [Angular Commit Guidelines](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#commit). We expect all commits to conform to these guidelines.
 
 Furthermore, commits should be squashed before being merged to master.
+
+Also, make sure your commits don't trigger any warnings from Clippy by running: `cargo clippy --tests --all-targets`. If you have a good reason to contradict Clippy, insert an #allow[] macro, so that it won't complain.

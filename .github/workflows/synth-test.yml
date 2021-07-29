@@ -20,4 +20,16 @@ jobs:
           toolchain: nightly-2021-05-17
       - run: |
           cargo +nightly-2021-05-17 test
+  clippy_test:
+    runs-on: runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-05-17
+          components: clippy
+      - run: cargo clippy --tests --all-targets -- -D warnings
 
