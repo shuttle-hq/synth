@@ -229,6 +229,14 @@ pub trait GeneratorExt: Generator + Sized {
             buffer: Default::default(),
         }
     }
+
+    fn into_iterator<'r, R: Rng>(self, rng: &'r mut R) -> Iterable<'r, Self, R> {
+        Iterable {
+            inner: self,
+            rng,
+            output: None,
+        }
+    }
 }
 
 impl<T> GeneratorExt for T where T: Generator {}
@@ -1064,6 +1072,53 @@ pub trait PeekableGenerator: Generator {
 /// A convenience generator that is equivalent to
 /// `Yield::wrap(...).once()`
 pub type Just<C> = Once<Yield<C, Never>>;
+
+pub struct Iterable<'r, G, R>
+where
+    G: Generator,
+    R: Rng,
+{
+    inner: G,
+    rng: &'r mut R,
+    output: Option<G::Return>,
+}
+
+impl<'r, G, R> Iterable<'r, G, R>
+where
+    G: Generator,
+    R: Rng,
+{
+    pub fn restart(&mut self) -> G::Return {
+        if let Some(r) = std::mem::replace(&mut self.output, None) {
+            r
+        } else {
+            while self.next().is_some() {}
+            self.restart()
+        }
+    }
+}
+
+impl<'r, G, R> std::iter::Iterator for Iterable<'r, G, R>
+where
+    G: Generator,
+    R: Rng,
+{
+    type Item = G::Yield;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.output.is_none() {
+            match self.inner.next(self.rng) {
+                GeneratorState::Yielded(y) => Some(y),
+                GeneratorState::Complete(c) => {
+                    self.output = Some(c);
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+}
 
 #[cfg(test)]
 pub mod tests {

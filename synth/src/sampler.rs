@@ -2,18 +2,19 @@ use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use serde_json::{Map, Value};
-use std::collections::{btree_map::Entry, BTreeMap};
-use std::convert::TryFrom;
-use synth_core::schema::ValueKindExt;
 use synth_core::Graph;
 use synth_core::{Name, Namespace};
 use synth_gen::prelude::*;
 
-pub(crate) struct Sampler {
-    graph: Graph,
+pub(crate) struct Sampler<'r> {
+    namespace: &'r Namespace,
 }
 
-impl Sampler {
+impl<'r> Sampler<'r> {
+    pub fn new(namespace: &'r Namespace) -> Self {
+        Self { namespace }
+    }
+
     fn sampler_progress_bar(target: u64) -> ProgressBar {
         let bar = ProgressBar::new(target as u64);
         let style = ProgressStyle::default_bar()
@@ -22,114 +23,77 @@ impl Sampler {
         bar
     }
 
-    #[cfg(feature = "api")]
-    pub(crate) fn sample(self, collection_name: Option<Name>, target: usize) -> Result<Value> {
-        self.sample_seeded(collection_name, target, 0)
-    }
-
     pub(crate) fn sample_seeded(
-        self,
-        collection_name: Option<Name>,
+        &self,
+        collection: Option<Name>,
         target: usize,
         seed: u64,
     ) -> Result<Value> {
-        fn value_as_array(name: &str, value: Value) -> Result<Vec<Value>> {
-            match value {
-                Value::Array(vec) => Ok(vec),
-                _ => {
-                    return Err(
-                        failed!(target: Release, Unspecified => "generated data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.kind()),
-                    )
-                }
-            }
-        }
-
         let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-        let mut model = self.graph.try_aggregate();
 
-        let mut generated = 0;
-        let mut out = BTreeMap::new();
+        let graph = Graph::from_namespace(&self.namespace)?;
+        let mut model = graph.into_iterator(&mut rng);
 
-        let progress_bar = Self::sampler_progress_bar(target as u64);
+        let target = target as u64;
+        let progress_bar = Self::sampler_progress_bar(target);
+        let mut output = Map::new();
 
-        while generated < target {
-            let start_of_round = generated;
-            let serializable = OwnedSerializable::new(model.try_next_yielded(&mut rng)?);
-            let mut value = match serde_json::to_value(&serializable)? {
-                Value::Object(map) => map,
-                _ => {
-                    return Err(
-                        failed!(target: Release, Unspecified => "generated data is not a namespace"),
-                    )
+        while progress_bar.position() < target {
+            let serializable = OwnedSerializable::new(&mut model);
+            let mut is_empty = true;
+
+            let as_value = match (serde_json::to_value(serializable), model.restart()) {
+                (Ok(value), Ok(_)) => value,
+                (_, Err(gen_err)) => return Err(gen_err.into()),
+                (Err(ser_err), Ok(_)) => {
+                    return Err(anyhow!("generated data is malformed: {}", ser_err))
                 }
             };
 
-            if let Some(name) = collection_name.as_ref() {
-                let collection_value = value.remove(name.as_ref()).ok_or_else(|| {
-                    failed!(
+            match as_value {
+                Value::Object(map) => map.into_iter().try_for_each(|(name, value)| match value {
+                    Value::Array(content) => {
+                        is_empty &= content.is_empty();
+                        progress_bar.inc(content.len() as u64);
+                        output
+                            .entry(name)
+                            .or_insert_with(|| Value::Array(Vec::new()))
+                            .as_array_mut()
+                            .unwrap()
+                            .extend(content);
+                        Ok(())
+                    }
+                    _ => Err(failed!(
                         target: Release,
-                        "generated namespace does not have a collection '{}'",
-                        name
-                    )
-                })?;
-                let vec = value_as_array(name.as_ref(), collection_value)?;
-                generated += vec.len();
-                match out.entry(name.to_string()) {
-                    Entry::Vacant(e) => {
-                        e.insert(vec);
-                    }
-                    Entry::Occupied(mut o) => {
-                        o.get_mut().extend(vec);
-                    }
-                }
-            } else {
-                value.into_iter().try_for_each(|(collection, value)| {
-                    value_as_array(&collection, value).map(|vec| {
-                        generated += vec.len();
-                        match out.entry(collection) {
-                            Entry::Vacant(e) => {
-                                e.insert(vec);
-                            }
-                            Entry::Occupied(mut o) => {
-                                o.get_mut().extend(vec);
-                            }
-                        }
-                    })
-                })?;
-            }
-
-            if generated == start_of_round {
+                        "namespace content was not an array (this should not happen)"
+                    )),
+                }),
+                _ => Err(failed!(
+                    target: Release,
+                    "namespace was not an object (this should not happen)"
+                )),
+            }?;
+            if is_empty {
                 warn!(
-                    "could not generate the required target number of samples of {}",
-                    target
+                    "unable to generate {} values, only {} were generated",
+                    target,
+                    progress_bar.length()
                 );
                 break;
             }
-
-            progress_bar.set_position(generated as u64);
         }
 
         progress_bar.finish();
 
-        let as_value = if let Some(name) = collection_name.as_ref() {
-            let array = out.remove(name.as_ref()).unwrap_or_default();
-            Value::Array(array)
+        if let Some(name) = collection {
+            let just = output.remove(&name.to_string()).ok_or(failed!(
+                target: Release,
+                "generated namespace does not have a collection {}",
+                name
+            ))?;
+            Ok(just)
         } else {
-            out.into_iter()
-                .map(|(collection, values)| (collection, Value::Array(values)))
-                .collect::<Map<String, Value>>()
-                .into()
-        };
-
-        Ok(as_value)
-    }
-}
-
-impl TryFrom<&Namespace> for Sampler {
-    type Error = anyhow::Error;
-    fn try_from(namespace: &Namespace) -> Result<Self> {
-        Ok(Self {
-            graph: Graph::from_namespace(namespace)?,
-        })
+            Ok(Value::Object(output))
+        }
     }
 }
