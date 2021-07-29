@@ -173,7 +173,7 @@ impl FakerContent {
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "serializer")]
 pub enum SerializedContent {
-    JSON(JsonContent),
+    Json(JsonContent),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -447,7 +447,7 @@ pub mod datetime_content {
     }
 
     impl SerdeDateTimeContent {
-        pub(super) fn to_datetime_content(self) -> Result<DateTimeContent> {
+        pub(super) fn into_datetime_content(self) -> Result<DateTimeContent> {
             debug!("interpreting a shadow datetime content {:?}", self);
 
             let src = &self.format;
@@ -523,7 +523,7 @@ impl<'de> Deserialize<'de> for DateTimeContent {
         D: serde::Deserializer<'de>,
     {
         datetime_content::SerdeDateTimeContent::deserialize(deserializer)
-            .and_then(|inter| inter.to_datetime_content().map_err(D::Error::custom))
+            .and_then(|inter| inter.into_datetime_content().map_err(D::Error::custom))
     }
 }
 
@@ -561,7 +561,7 @@ impl Compile for StringContent {
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
             StringContent::Serialized(sc) => match sc {
-                SerializedContent::JSON(serialized_json_content) => {
+                SerializedContent::Json(serialized_json_content) => {
                     let inner = serialized_json_content.content.compile(compiler)?;
                     RandomString::from(Serialized::new_json(inner)).into()
                 }

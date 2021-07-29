@@ -296,7 +296,7 @@ impl Scope {
     }
 
     #[inline]
-    fn as_within(mut self, scope: &str) -> Self {
+    fn into_within(mut self, scope: &str) -> Self {
         self.within(scope);
         self
     }
@@ -308,7 +308,7 @@ impl Scope {
     }
 
     #[inline]
-    fn as_at(mut self, attribute: &str) -> Self {
+    fn into_at(mut self, attribute: &str) -> Self {
         self.at(attribute);
         self
     }
@@ -541,7 +541,7 @@ impl<'a> NamespaceCompiler<'a> {
                 .ordering
                 .iter()
                 .filter(|attr| !scope.children.get(*attr).unwrap().compiled.is_built())
-                .map(|attr| next_scope.clone().as_at(attr))
+                .map(|attr| next_scope.clone().into_at(attr))
                 .collect();
             stage_2!(
                 "{}: {} dependencies left",
@@ -667,7 +667,7 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
                 || failed!(target: Release, Compilation => "dependency not satisfied: {}", field),
             )?
             .into_model();
-        let as_scope = Scope::new_root().as_within(field);
+        let as_scope = Scope::new_root().into_within(field);
         match self
             .vtable
             .get_mut(&self.scope)
@@ -954,7 +954,7 @@ pub struct Crawler<'t, 'a> {
 
 impl<'t, 'a: 't> Crawler<'t, 'a> {
     fn as_at(&mut self, field: &str, content: &'a Content) -> Crawler<'_, 'a> {
-        let position = self.position.clone().as_at(field);
+        let position = self.position.clone().into_at(field);
         stage_1!("entering {}", position);
         Crawler {
             cursor: self.cursor.entry(field).or_init(content),
