@@ -467,6 +467,7 @@ pub mod tests {
             "step": 1
             }
         });
+        let error_margin = f64::EPSILON;
 
         OptionalMergeStrategy
             .try_merge(&mut master, &"15".parse().unwrap())
@@ -506,9 +507,9 @@ pub mod tests {
 
         match master {
             NumberContent::F64(number_content::F64::Range(RangeStep { low, high, step })) => {
-                assert_eq!(low, -13.6);
-                assert_eq!(high, 20.6);
-                assert_eq!(step, 1.);
+                assert!((low - -13.6).abs() < error_margin);
+                assert!((high - 20.6).abs() < error_margin);
+                assert!((step - 1.).abs() < error_margin);
             }
             _ => unreachable!(),
         }

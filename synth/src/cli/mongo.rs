@@ -90,7 +90,7 @@ impl ImportStrategy for MongoImportStrategy {
     }
 
     fn import_collection(self, name: &Name) -> Result<Content> {
-        self.import()?.collections.remove(name).ok_or(anyhow!(
+        self.import()?.collections.remove(name).ok_or_else(|| anyhow!(
             "Could not find table '{}' in MongoDb database.",
             name
         ))
@@ -178,7 +178,7 @@ impl ExportStrategy for MongoExportStrategy {
                 for (collection_name, collection_json) in namespace_json {
                     self.insert_data(
                         collection_name,
-                        &collection_json
+                        collection_json
                             .as_array()
                             .expect("This is always a collection (sampler contract)"),
                         &mut client,
@@ -197,7 +197,7 @@ impl MongoExportStrategy {
     fn insert_data(
         &self,
         collection_name: String,
-        collection: &Vec<Value>,
+        collection: &[Value],
         client: &mut Client,
     ) -> Result<()> {
         let db_name = parse_db_name(&self.uri)?;
@@ -232,7 +232,7 @@ impl MongoExportStrategy {
 
 fn parse_db_name(uri: &str) -> Result<&str> {
     // this may require a parser instead of `split`
-    uri.split("/").last().ok_or(anyhow!(
+    uri.split('/').last().ok_or_else(|| anyhow!(
         "Cannot export data. No database name specified in the uri"
     ))
 }

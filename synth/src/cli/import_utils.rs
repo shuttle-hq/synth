@@ -21,7 +21,7 @@ struct FieldContentWrapper(FieldContent);
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)
     -> Result<Namespace> {
     let table_names = task::block_on(datasource.get_table_names())
-        .with_context(|| format!("Failed to get table names"))?;
+        .with_context(|| "Failed to get table names".to_string())?;
 
     let mut namespace = Namespace::default();
 
@@ -41,14 +41,14 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datas
 }
 
 fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
+    namespace: &mut Namespace, table_names: &[String], datasource: &T) -> Result<()> {
     for table_name in table_names.iter() {
         info!("Building {} collection...", table_name);
 
         let column_infos = task::block_on(datasource.get_columns_infos(table_name))?;
 
         namespace.put_collection(
-            &Name::from_str(&table_name)?,
+            &Name::from_str(table_name)?,
             Collection::try_from((datasource, column_infos))?.collection,
         )?;
     }
@@ -57,7 +57,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
+    namespace: &mut Namespace, table_names: &[String], datasource: &T) -> Result<()> {
     for table_name in table_names.iter() {
         let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
 
@@ -97,15 +97,15 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_values<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, table_names: &Vec<String>, datasource: &T) -> Result<()> {
+    namespace: &mut Namespace, table_names: &[String], datasource: &T) -> Result<()> {
     task::block_on(datasource.set_seed())?;
 
     for table in table_names {
-        let values = task::block_on(datasource.get_deterministic_samples(&table))?;
+        let values = task::block_on(datasource.get_deterministic_samples(table))?;
 
         namespace.try_update(
             OptionalMergeStrategy,
-            &Name::from_str(&table).unwrap(),
+            &Name::from_str(table).unwrap(),
             &Value::from(values),
         )?;
     }

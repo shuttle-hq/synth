@@ -30,7 +30,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
         let fmt = series_content.format.as_ref().unwrap_or(&default_pattern);
         let sn = match &series_content.variant {
             SeriesVariant::Incrementing(incrementing) => {
-                let incrementing_series = SeriesVariant::inc(&incrementing, &fmt)?;
+                let incrementing_series = SeriesVariant::inc(incrementing, fmt)?;
                 let sf = SeriesFormatter {
                     inner: incrementing_series,
                     format: fmt.clone(),
@@ -43,7 +43,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
                 )
             }
             SeriesVariant::Poisson(poisson) => {
-                let poisson_series = SeriesVariant::poisson(&poisson, &fmt)?;
+                let poisson_series = SeriesVariant::poisson(poisson, fmt)?;
                 let sf = SeriesFormatter {
                     inner: poisson_series,
                     format: fmt.clone(),
@@ -56,7 +56,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
                 )
             }
             SeriesVariant::Cyclical(cyclical) => {
-                let cyclical_series = SeriesVariant::cyclical(&cyclical, &fmt)?;
+                let cyclical_series = SeriesVariant::cyclical(cyclical, fmt)?;
                 let sf = SeriesFormatter {
                     inner: cyclical_series,
                     format: fmt.clone(),
@@ -69,7 +69,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
                 )
             }
             SeriesVariant::Zip(zip) => {
-                let zip_series = SeriesVariant::zip(&zip, &fmt)?;
+                let zip_series = SeriesVariant::zip(zip, fmt)?;
                 let sf = SeriesFormatter {
                     inner: zip_series,
                     format: fmt.clone(),
@@ -350,7 +350,7 @@ pub mod tests {
     fn test_poisson() {
         let initial = ndt("2000-01-01 15:15:15");
         let mut poisson = PoissonSeries {
-            current: initial.clone().into(),
+            current: initial,
             rate: Duration::days(365),
         };
 
@@ -368,8 +368,8 @@ pub mod tests {
     fn test_cyclical() {
         let initial = ndt("2000-01-01 00:00:00");
         let mut cyclical = CyclicalSeries {
-            start: initial.clone().into(),
-            current: initial.clone().into(),
+            start: initial,
+            current: initial,
             period: Duration::weeks(1),
             min_rate: Duration::minutes(10),
             max_rate: Duration::hours(2),

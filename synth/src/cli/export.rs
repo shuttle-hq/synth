@@ -93,7 +93,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(params: ExportParams, data
                     .as_array()
                     .expect("This is always a collection (sampler contract)");
 
-                insert_data(datasource, collection_name.clone(), &collection_json)?;
+                insert_data(datasource, collection_name.clone(), collection_json)?;
             }
 
             Ok(())
@@ -104,7 +104,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(params: ExportParams, data
     }
 }
 
-fn insert_data<T: DataSource>(datasource: &T, collection_name: String, collection_json: &Vec<Value>)
+fn insert_data<T: DataSource>(datasource: &T, collection_name: String, collection_json: &[Value])
     -> Result<()> {
     task::block_on(
         datasource.insert_data(

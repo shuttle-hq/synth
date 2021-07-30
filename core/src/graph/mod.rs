@@ -640,11 +640,15 @@ pub mod tests {
         let range = RangeStep::new(-2.5, 1.0, 1.5);
         let dist = UniformRangeStep::try_from(range).unwrap();
         let mut rng = thread_rng();
+        let error_margin = f64::EPSILON;
         for _ in 1..1000 {
-            let sample = dist.sample(&mut rng);
+            let sample: f64 = dist.sample(&mut rng);
             // Not using pattern matching here because of  <https://github.com/rust-lang/rust/issues/41620>.
             // As of 2020-12-01 it causes a linter warning which will be a compiler error in future releases.
-            if sample == -2.5 || sample == -1.0 || sample == 0.5 {
+            if (sample - -2.5).abs() < error_margin || 
+                (sample - -1.0).abs() < error_margin || 
+                (sample - 0.5).abs() < error_margin 
+            {
             } else {
                 panic!("Generated '{}' which should not happen", sample)
             }

@@ -157,7 +157,7 @@ lazy_static! {
 fn address(rng: &mut dyn RngCore, args: &FakerArgs) -> String {
     // Here we get a single locale
     let args = &FakerArgs {
-        locales: vec![args.locales.first().unwrap_or(&Locale::EN).clone()],
+        locales: vec![*args.locales.first().unwrap_or(&Locale::EN)],
     };
 
     let number = (FAKE_MAP.get("building_number").unwrap())(rng, args);
@@ -178,7 +178,7 @@ impl RandFaker {
             None => Err(anyhow!(
                 "Generator '{}' does not exist {}",
                 generator.as_ref(),
-                suggest_closest(FAKE_MAP.keys(), &generator.as_ref())
+                suggest_closest(FAKE_MAP.keys(), generator.as_ref())
                     .unwrap_or_else(|| "".to_string())
             )),
             Some(generator) => Ok(Self {

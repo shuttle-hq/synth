@@ -185,7 +185,7 @@ impl FieldRef {
 enum ParseState {
     Collection,
     Chunk,
-    EOF,
+    Eof,
 }
 
 struct Lexer {
@@ -207,11 +207,11 @@ impl Lexer {
     }
 
     fn peak(&self) -> &Token {
-        self.tokens.front().unwrap_or(&Token::EOF)
+        self.tokens.front().unwrap_or(&Token::Eof)
     }
 
     fn eat_next(&mut self) -> Token {
-        self.tokens.pop_front().unwrap_or(Token::EOF)
+        self.tokens.pop_front().unwrap_or(Token::Eof)
     }
 }
 
@@ -235,12 +235,12 @@ impl Parser {
     }
 
     fn parse(mut self) -> Result<FieldRef> {
-        while self.state != ParseState::EOF {
+        while self.state != ParseState::Eof {
             let token = self.lex.eat_next();
             match self.state {
                 ParseState::Collection => self.parse_coll(token)?,
                 ParseState::Chunk => self.parse_chunk(token)?,
-                ParseState::EOF => {
+                ParseState::Eof => {
                     unreachable!();
                 }
             };
@@ -267,7 +267,7 @@ impl Parser {
                 }
                 self.state = ParseState::Chunk;
             }
-            Token::EOF => {
+            Token::Eof => {
                 if self.collection.is_empty() {
                     return Err(failed!(
                         target: Release,
@@ -275,7 +275,7 @@ impl Parser {
                         "cannot have an empty collection name"
                     ));
                 }
-                self.state = ParseState::EOF;
+                self.state = ParseState::Eof;
             }
             Token::Quote => {
                 return Err(
@@ -292,7 +292,7 @@ impl Parser {
                 self.curr_chunk.push_str(&c);
             }
             Token::Dot => {
-                if self.lex.peak() == &Token::EOF {
+                if self.lex.peak() == &Token::Eof {
                     return Err(
                         failed!(target: Release, BadRequest => "cannot have a field ref that ends in a '.'"),
                     );
@@ -313,14 +313,14 @@ impl Parser {
                 }
                 self.parse_quote_content()?;
             }
-            Token::EOF => {
+            Token::Eof => {
                 if self.curr_chunk.is_empty() {
                     return Err(
                         failed!(target: Release, BadRequest => "cannot have an empty chunk in field ref"),
                     );
                 }
                 self.field_chunks.push(self.curr_chunk.clone());
-                self.state = ParseState::EOF;
+                self.state = ParseState::Eof;
             }
         }
         Ok(())
@@ -332,7 +332,7 @@ impl Parser {
             match self.lex.eat_next() {
                 Token::Char(c) => self.curr_chunk.push_str(&c),
                 Token::Dot => self.curr_chunk.push('.'),
-                Token::EOF => {
+                Token::Eof => {
                     return Err(
                         failed!(target: Release, BadRequest => "cannot have unclosed quotes"),
                     )
@@ -355,7 +355,7 @@ impl Parser {
 enum Token {
     Char(String),
     Dot,
-    EOF,
+    Eof,
     Quote,
 }
 
