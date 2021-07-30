@@ -46,7 +46,7 @@ impl TelemetryConfig {
             "Could not find a configuration directory. Your operating system may not be supported."
         )
         })?;
-        Ok(synth_config_dir.join("synth/"))
+        Ok(synth_config_dir.join("synth"))
     }
 
     fn file_path() -> Result<PathBuf> {

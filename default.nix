@@ -2,10 +2,7 @@
   naersk
 , nix-gitignore
 , makeWrapper
-, wrapInEnv
 , stdenv
-, python
-, pythonPackages
 , pkgconfig
 , sqlite
 , openssl
@@ -16,7 +13,7 @@
 , release ? true
 }:
 let
-  version = "0.5.2";
+  version = "0.5.3";
   darwinBuildInputs =
     stdenv.lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk.frameworks; [
       libiconv
@@ -25,19 +22,13 @@ let
       AppKit
     ]);
   gitignoreSource = filter: src: nix-gitignore.gitignoreSource filter src;
-  pythonEnv = python.withPackages pythonPackages;
-  synthUnwrapped = naersk.buildPackage {
-    name = "synth-unwrapped${suffix}";
+  synth = naersk.buildPackage {
+    name = "synth${suffix}";
     inherit version;
 
     src = if synthSrc == null then ./. else synthSrc;
 
     preferLocalBuild = true;
-
-    cargoBuildOptions = (opts: opts ++ [ "--features" "api"]);
-
-    # To help with tests on MacOS
-    NIX_PYTHONPATH = "${pythonEnv}/lib/python${pythonEnv.pythonVersion}/site-packages";
 
     doCheck = true;
 
@@ -49,12 +40,7 @@ let
       ncurses6.dev
       sqlite.dev
       openssl.dev
-      pythonEnv
     ] ++ darwinBuildInputs;
   };
   suffix = if release then "" else "-debug";
-in wrapInEnv {
-  inherit pythonEnv;
-  drv = synthUnwrapped;
-  name = "synth${suffix}-${version}";
-}
+in synth

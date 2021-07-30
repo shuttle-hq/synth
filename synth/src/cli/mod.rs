@@ -131,16 +131,16 @@ impl Cli {
             }
             false => {
                 let workspace_dir = ".synth";
-                let result = std::fs::create_dir_all(base_path.join(workspace_dir)).context(format!(
+                let result = std::fs::create_dir_all(base_path.join(workspace_dir)).with_context(|| format!(
                     "Failed to create working directory at: {} during initialization",
                     base_path.join(workspace_dir).to_str().unwrap()
                 ));
-                let config_path = ".synth/config.toml";
+                let config_path = self.get_synth_config_file(base_path);
                 match result {
                     Ok(()) => {
-                        File::create(base_path.join(config_path)).context(format!(
+                        File::create(config_path.as_path()).with_context(|| format!(
                             "Failed to create config file at: {} during initialization",
-                            base_path.join(config_path).to_str().unwrap()
+                            config_path.to_str().unwrap()
                         ))?;
                         Ok(())
                     }
@@ -148,9 +148,9 @@ impl Cli {
                         if e.downcast_ref::<std::io::Error>().unwrap().kind()
                             == std::io::ErrorKind::AlreadyExists =>
                     {
-                        File::create(base_path.join(config_path)).context(format!(
+                        File::create(config_path.as_path()).with_context(|| format!(
                             "Failed to initialize workspace at: {}. File already exists.",
-                            base_path.join(config_path).to_str().unwrap()
+                            config_path.to_str().unwrap()
                         ))?;
                         Ok(())
                     }
@@ -160,12 +160,16 @@ impl Cli {
         }
     }
 
+    fn get_synth_config_file(&self, base_path: PathBuf) -> PathBuf {
+        base_path.join(".synth").join("config.toml")
+    }
+
     fn workspace_initialised(&self) -> bool {
-        Path::new(".synth/config.toml").exists()
+        PathBuf::from(".synth").join("config.toml").exists()
     }
 
     fn workspace_initialised_from_path(&self, init_path: &PathBuf) -> bool {
-        let config_path = init_path.join(".synth/config.toml");
+        let config_path = init_path.join(".synth").join("config.toml");
         Path::new(&config_path).exists()
     }
 
@@ -243,7 +247,7 @@ impl Cli {
 
         to.unwrap_or_default()
             .export(params)
-            .context(format!("At namespace {:?}", ns_path))
+            .with_context(|| format!("At namespace {:?}", ns_path))
     }
 }
 
@@ -317,6 +321,9 @@ pub enum TelemetryCommand {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use std::env::temp_dir;
+    use crate::{META_OS, version};
+    use std::fs;
 
     #[test]
     fn test_derive_seed() {
@@ -324,5 +331,23 @@ pub mod tests {
         assert_eq!(Cli::derive_seed(false, Some(5)).unwrap(), 5);
         assert!(Cli::derive_seed(true, Some(5)).is_err());
         assert!(Cli::derive_seed(true, None).is_ok());
+    }
+
+    #[test]
+    fn test_init() {
+        let mut temp_dir = temp_dir();
+        temp_dir.push("synth_test_init");
+
+        // Some environments have temp dir related env vars set, making it sticky (i.e., $TMPDIR).
+        // Remove the contents from previous runs, if needed.
+        if temp_dir.exists() {
+            fs::remove_dir_all(&temp_dir).unwrap();
+            fs::create_dir(&temp_dir).unwrap();
+        }
+
+        let args = CliArgs::Init { init_path: Some(temp_dir.clone()) };
+        let cli = Cli::new(args, version(), META_OS.to_string())
+            .unwrap();
+        assert!(cli.init(Some(temp_dir)).is_ok())
     }
 }

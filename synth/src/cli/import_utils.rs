@@ -21,7 +21,7 @@ struct FieldContentWrapper(FieldContent);
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)
     -> Result<Namespace> {
     let table_names = task::block_on(datasource.get_table_names())
-        .context(format!("Failed to get table names"))?;
+        .with_context(|| format!("Failed to get table names"))?;
 
     let mut namespace = Namespace::default();
 

@@ -97,7 +97,7 @@ impl ObjectContent {
                     .ok_or_else(|| failed!(target: Release, "could not find field: '{}'", k))?;
                 v.content
                     .accepts(json_value)
-                    .context(anyhow!("in a field: '{}'", k))?;
+                    .with_context(|| anyhow!("in a field: '{}'", k))?;
             }
         }
 
@@ -173,7 +173,7 @@ impl Find<Content> for ObjectContent {
         self.get(next)?
             .content
             .project(reference)
-            .context(anyhow!("in a field: {}", next))
+            .with_context(|| anyhow!("in a field: {}", next))
     }
 
     fn project_mut<I, R>(&mut self, mut reference: Peekable<I>) -> Result<&mut Content>
@@ -188,7 +188,7 @@ impl Find<Content> for ObjectContent {
         self.get_mut(next)?
             .content
             .project_mut(reference)
-            .context(anyhow!("in a field named {}", next))
+            .with_context(|| anyhow!("in a field named {}", next))
     }
 }
 

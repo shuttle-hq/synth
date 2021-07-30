@@ -1,0 +1,29 @@
+PROJECT_SRC_DIR = "/synth"
+PROJECT_SRC_WIN_DIR = "C:\\synth"
+PROJECT_SRC_SANDBOX_WIN_DIR = "C:\\synth-sandbox"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "gusztavvargadr/windows-10"
+
+  config.vm.provider :virtualbox do |v, override|
+    v.customize ["modifyvm", :id, "--memory", "4096"]
+    v.customize ["modifyvm", :id, "--cpus", "2"]
+    v.customize ["modifyvm", :id, "--vram", 32]
+    v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    v.customize ["modifyvm", :id, "--audio", "none"]
+    v.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    v.customize ["modifyvm", :id, "--draganddrop", "hosttoguest"]
+    v.customize ["modifyvm", :id, "--usb", "off"]
+    v.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    v.linked_clone = true if Vagrant::VERSION >= '1.8.0'
+  end
+
+  config.vm.guest = :windows
+  config.vm.communicator = "winrm"
+  config.vm.network "forwarded_port", guest: 3389, host: 3389
+
+  config.vm.synced_folder "../../../../", PROJECT_SRC_WIN_DIR
+  config.vm.provision "shell",
+      inline: "Copy-Item -Path $Args[0] -Recurse -Destination $Args[1] -Container",
+      args: [PROJECT_SRC_WIN_DIR, PROJECT_SRC_SANDBOX_WIN_DIR]
+end

@@ -122,7 +122,7 @@ fn ns_from_value(value: Value) -> Result<Namespace> {
             .map(|(name, value)| {
                 collection_from_value(&value)
                     .and_then(|content| Ok((name.parse()?, content)))
-                    .context(anyhow!("While importing the collection `{}`", name))
+                    .with_context(|| anyhow!("While importing the collection `{}`", name))
             })
             .collect(),
         unacceptable => Err(anyhow!(
