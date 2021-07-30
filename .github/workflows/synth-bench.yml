@@ -4,11 +4,6 @@ on:
   push:
     branches: [ master ]
     paths: [ '**/*.rs', '.github/workflows/synth-bench.yml' ]
-  pull_request:
-    branches: [ master ]
-    paths: [ '**/*.rs', '.github/workflows/synth-bench.yml' ]
-
-  workflow_dispatch:
 
 env:
   BENCHPATH: /home/runner/work/synth/synth/synth
