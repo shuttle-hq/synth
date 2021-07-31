@@ -15,4 +15,4 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-05-17
-      - run: cargo +nightly-2021-05-17 test
+      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 test
