@@ -3,12 +3,7 @@ name: synth-bench
 on:
   push:
     branches: [ master ]
-    paths: [ '**/*.rs' ]
-  pull_request:
-    branches: [ master ]
-    paths: [ '**/*.rs' ]
-
-  workflow_dispatch:
+    paths: [ '**/*.rs', '.github/workflows/synth-bench.yml' ]
 
 env:
   BENCHPATH: /home/runner/work/synth/synth/synth
@@ -34,9 +29,12 @@ jobs:
         body="${body//$'\r'/'%0D'}" 
         echo ::set-output name=body::$body
     - name: comment with benchmark results
-      uses: JungWinter/comment@v1.1.0
+      env:
+        BODY: ${{ steps.bench.outputs.body }}
+      uses: actions/github-script@v4
+      if: github.event_name == 'pull_request'
       with:
-        type: create
-        body: ${{ steps.bench.outputs.body }}
-        issue_number: ${{ github.event.pull_request.number }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+          github.issues.createComment({ issue_number, owner, repo, body: process.env.BODY });

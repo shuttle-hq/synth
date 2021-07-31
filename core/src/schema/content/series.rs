@@ -91,10 +91,10 @@ impl SeriesVariant {
         let mut children = Vec::new();
         for child in &zip.series {
             let series = match child {
-                SeriesVariant::Incrementing(inc) => TimeSeries::Incrementing(Self::inc(&inc, fmt)?),
-                SeriesVariant::Poisson(poi) => TimeSeries::Poisson(Self::poisson(&poi, fmt)?),
-                SeriesVariant::Cyclical(cyc) => TimeSeries::Cyclical(Self::cyclical(&cyc, fmt)?),
-                SeriesVariant::Zip(zip) => TimeSeries::Zip(Self::zip(&zip, fmt)?),
+                SeriesVariant::Incrementing(inc) => TimeSeries::Incrementing(Self::inc(inc, fmt)?),
+                SeriesVariant::Poisson(poi) => TimeSeries::Poisson(Self::poisson(poi, fmt)?),
+                SeriesVariant::Cyclical(cyc) => TimeSeries::Cyclical(Self::cyclical(cyc, fmt)?),
+                SeriesVariant::Zip(zip) => TimeSeries::Zip(Self::zip(zip, fmt)?),
             };
             children.push(series);
         }

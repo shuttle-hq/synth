@@ -45,9 +45,7 @@ impl State {
                 GeneratorState::Yielded(yielded) => {
                     if stream.len() > self.max_size {
                         warn!("aborting: too large");
-                        let text = format!(
-                            "generated too many tokens: try generating less data by controlling (for example) the `length` parameter of arrays or using the `?size=` query parameter"
-                        );
+                        let text = "generated too many tokens: try generating less data by controlling (for example) the `length` parameter of arrays or using the `?size=` query parameter".to_string();
                         let body = ErrorResponseBody {
                             kind: "illegal",
                             text: Some(text),
@@ -87,7 +85,7 @@ impl std::fmt::Display for ErrorResponseBody {
             f,
             "{}: {}",
             self.kind,
-            self.text.as_ref().map(|s| s.as_str()).unwrap_or("unknown")
+            self.text.as_deref().unwrap_or("unknown")
         )
     }
 }
@@ -132,18 +130,16 @@ async fn put_compile(mut req: Request<State>) -> tide::Result {
                 };
                 let resp = Response::builder(400).body(Body::from_json(&body)?).build();
                 Ok(resp)
+            } else if let Some(app_err) = err.downcast_ref::<ErrorResponseBody>() {
+                let resp = Response::builder(400)
+                    .body(Body::from_json(&app_err)?)
+                    .build();
+                Ok(resp)
             } else {
-                if let Some(app_err) = err.downcast_ref::<ErrorResponseBody>() {
-                    let resp = Response::builder(400)
-                        .body(Body::from_json(&app_err)?)
-                        .build();
-                    Ok(resp)
-                } else {
-                    let resp = Response::builder(500)
-                        .body(Body::from_string(err.to_string()))
-                        .build();
-                    Ok(resp)
-                }
+                let resp = Response::builder(500)
+                    .body(Body::from_string(err.to_string()))
+                    .build();
+                Ok(resp)
             }
         }
     }
@@ -166,7 +162,7 @@ pub async fn serve(args: ServeCmd) -> Result<()> {
     let mut app = tide::with_state(state);
     let mut root = app.at(&mount);
 
-    root.put(|req: Request<State>| put_compile(req));
+    root.put(put_compile);
 
     let cors = CorsMiddleware::new()
         .allow_methods(allow_methods.parse::<HeaderValue>().unwrap())
@@ -199,10 +195,7 @@ pub mod tests {
         let as_value: Value = serde_json::from_str(&as_str)?;
         match as_value {
             Value::Array(arr) if arr.len() == 10 => {
-                let all_objects = arr.into_iter().all(|elt| match elt {
-                    Value::Object(_obj) => true,
-                    _ => false,
-                });
+                let all_objects = arr.into_iter().all(|elt| matches!(elt, Value::Object(_)));
                 assert!(all_objects);
             }
             _ => panic!("incorrectly generated: {}", as_str),

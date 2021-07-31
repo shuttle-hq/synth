@@ -420,6 +420,7 @@ where
 
     type Return = G::Return;
 
+    #[allow(clippy::needless_collect)]
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         if self.is_complete {
             debug!("> scoped generator cycle BEGIN");
@@ -465,7 +466,7 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         let initial_buf_len = 100;
         // Single view
-        for threshold in vec![0, 1, 10] {
+        for threshold in [0, 1, 10] {
             let seed = 1.yield_token();
             let (mut driver, mut cursor) = channel(seed);
             let mut view = cursor.view();
@@ -487,7 +488,7 @@ pub mod tests {
             );
         }
         // Multiple views
-        for threshold in vec![0, 1, 10] {
+        for threshold in [0, 1, 10] {
             struct TestView<G>
             where
                 G: Generator,
@@ -514,7 +515,7 @@ pub mod tests {
                 driver.next(&mut rng);
             }
             cursor.mark();
-            while view_pos.len() > 0 {
+            while !view_pos.is_empty() {
                 let i: usize = (rng.next_u32() as usize) % view_pos.len();
                 view_pos[i].pos += 1;
                 view_pos[i]

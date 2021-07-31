@@ -75,7 +75,7 @@ pub mod tests {
         ns.optionalise(optionalise).unwrap();
 
         let unoptionalise = Optionalise {
-            at: field.clone(),
+            at: field,
             optional: false,
         };
         ns.optionalise(unoptionalise).unwrap();
@@ -88,7 +88,7 @@ pub mod tests {
         let mut ns = USER_NAMESPACE.clone();
         let field = FieldRef::new("users.address.numbers".to_string()).unwrap();
         let optionalise = Optionalise {
-            at: field.clone(),
+            at: field,
             optional: true,
         };
         ns.optionalise(optionalise.clone()).unwrap();
@@ -106,7 +106,7 @@ pub mod tests {
             optional: true,
         };
         let unoptionalise = Optionalise {
-            at: field.clone(),
+            at: field,
             optional: false,
         };
         assert!(ns.optionalise(optionalise).is_err());
@@ -122,7 +122,7 @@ pub mod tests {
             optional: true,
         };
         let unoptionalise = Optionalise {
-            at: field.clone(),
+            at: field,
             optional: false,
         };
         assert!(ns.optionalise(optionalise).is_err());

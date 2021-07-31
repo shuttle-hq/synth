@@ -8,7 +8,7 @@ use std::ops::DerefMut;
 
 // This is not great but I don't want Serialized to be generic
 enum SerializerType {
-    JSON,
+    Json,
 }
 
 pub struct Serialized {
@@ -20,13 +20,13 @@ impl Serialized {
     pub fn new_json(inner: Graph) -> Self {
         Self {
             inner: Box::new(inner.try_aggregate()),
-            serializer: SerializerType::JSON,
+            serializer: SerializerType::Json,
         }
     }
 
     fn serialize<S: Serialize>(&self, s: &S) -> String {
         match self.serializer {
-            SerializerType::JSON => {
+            SerializerType::Json => {
                 format!(
                     "{}",
                     serde_json::to_value(&s).expect("this should always serialize")

@@ -307,9 +307,9 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
         "int4" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
         "int8" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
         "float4" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-            .ok_or(anyhow!("Failed to convert float4 data type"))?), // TODO test f32, f64
+            .ok_or_else(|| anyhow!("Failed to convert float4 data type"))?), // TODO test f32, f64
         "float8" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
-            .ok_or(anyhow!("Failed to convert float8 data type"))?),
+            .ok_or_else(|| anyhow!("Failed to convert float8 data type"))?),
         "numeric" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 

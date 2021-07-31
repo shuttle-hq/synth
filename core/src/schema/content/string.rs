@@ -173,7 +173,7 @@ impl FakerContent {
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "serializer")]
 pub enum SerializedContent {
-    JSON(JsonContent),
+    Json(JsonContent),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -447,7 +447,7 @@ pub mod datetime_content {
     }
 
     impl SerdeDateTimeContent {
-        pub(super) fn to_datetime_content(self) -> Result<DateTimeContent> {
+        pub(super) fn into_datetime_content(self) -> Result<DateTimeContent> {
             debug!("interpreting a shadow datetime content {:?}", self);
 
             let src = &self.format;
@@ -465,8 +465,8 @@ pub mod datetime_content {
                     return Err(failed!(
                         target: Release,
                         "begin is after end: begin={}, end={}",
-                        fmt.format(&begin).unwrap(), // should be alright exactly at this point
-                        fmt.format(&end).unwrap()
+                        fmt.format(begin).unwrap(), // should be alright exactly at this point
+                        fmt.format(end).unwrap()
                     ));
                 }
             }
@@ -523,7 +523,7 @@ impl<'de> Deserialize<'de> for DateTimeContent {
         D: serde::Deserializer<'de>,
     {
         datetime_content::SerdeDateTimeContent::deserialize(deserializer)
-            .and_then(|inter| inter.to_datetime_content().map_err(D::Error::custom))
+            .and_then(|inter| inter.into_datetime_content().map_err(D::Error::custom))
     }
 }
 
@@ -557,11 +557,11 @@ impl Compile for StringContent {
                     .clone()
                     .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::origin(), *type_));
                 let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
-                RandomDateTime::new(begin..end, &format).into()
+                RandomDateTime::new(begin..end, format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
             StringContent::Serialized(sc) => match sc {
-                SerializedContent::JSON(serialized_json_content) => {
+                SerializedContent::Json(serialized_json_content) => {
                     let inner = serialized_json_content.content.compile(compiler)?;
                     RandomString::from(Serialized::new_json(inner)).into()
                 }
