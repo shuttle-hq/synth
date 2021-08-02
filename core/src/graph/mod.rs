@@ -588,7 +588,6 @@ pub mod tests {
                 assert_eq!(*value, 10);
             }
         }
-        panic!();
     }
 
     #[test]
