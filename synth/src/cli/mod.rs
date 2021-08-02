@@ -1,12 +1,12 @@
 mod export;
 mod import;
+mod import_utils;
 mod mongo;
+mod mysql;
 mod postgres;
 mod stdf;
 mod store;
 mod telemetry;
-mod mysql;
-mod import_utils;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
@@ -20,12 +20,13 @@ use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 use crate::cli::telemetry::TelemetryClient;
+use crate::utils::{version, META_OS};
 use rand::RngCore;
 use synth_core::Name;
 
 pub struct Cli {
     store: Store,
-    args: CliArgs,
+    args: Args,
     telemetry: TelemetryClient,
 }
 
@@ -48,7 +49,18 @@ fn with_telemetry<F: FnOnce() -> Result<T>, T>(
 
 impl Cli {
     /// this is going to get confusing with `init` command
-    pub fn new(args: CliArgs, version: String, os: String) -> Result<Self> {
+    pub fn new(args: Args) -> Result<Self> {
+        env_logger::init();
+
+        let version = version();
+        let os = META_OS.to_string();
+
+        #[cfg(debug_assertions)]
+        {
+            let splash = crate::utils::splash::Splash::auto()?;
+            log::debug!("{}", splash);
+        }
+
         Ok(Self {
             store: Store::init()?,
             args,
@@ -70,7 +82,7 @@ impl Cli {
 
     pub async fn run(self) -> Result<()> {
         match self.args {
-            CliArgs::Generate {
+            Args::Generate {
                 ref namespace,
                 ref collection,
                 size,
@@ -86,15 +98,17 @@ impl Cli {
                     Self::derive_seed(random, seed)?,
                 )
             }),
-            CliArgs::Import {
+            Args::Import {
                 ref namespace,
                 ref collection,
                 ref from,
             } => with_telemetry("import", &self.telemetry, || {
                 self.import(namespace.clone(), collection.clone(), from.clone())
             }),
-            CliArgs::Init { ref init_path } => with_telemetry("init", &self.telemetry, || self.init(init_path.clone())),
-            CliArgs::Telemetry(telemetry) => {
+            Args::Init { ref init_path } => {
+                with_telemetry("init", &self.telemetry, || self.init(init_path.clone()))
+            }
+            Args::Telemetry(telemetry) => {
                 match telemetry {
                     TelemetryCommand::Enable => {
                         with_telemetry("telemetry::enable", &self.telemetry, telemetry::enable)
@@ -124,34 +138,39 @@ impl Cli {
             Some(path) => std::fs::canonicalize(".")?.join(path),
             None => std::fs::canonicalize(".")?,
         };
-        match self.workspace_initialised_from_path(&base_path) { // need to check workspace in base_path
-            true => {
-                println!("Workspace already initialised");
-                std::process::exit(1)
-            }
+        match self.workspace_initialised_from_path(&base_path) {
+            // need to check workspace in base_path
+            true => Err(anyhow!("Workspace already initialized!")),
             false => {
                 let workspace_dir = ".synth";
-                let result = std::fs::create_dir_all(base_path.join(workspace_dir)).with_context(|| format!(
-                    "Failed to create working directory at: {} during initialization",
-                    base_path.join(workspace_dir).to_str().unwrap()
-                ));
+                let result =
+                    std::fs::create_dir_all(base_path.join(workspace_dir)).with_context(|| {
+                        format!(
+                            "Failed to create working directory at: {} during initialization",
+                            base_path.join(workspace_dir).to_str().unwrap()
+                        )
+                    });
                 let config_path = self.get_synth_config_file(base_path);
                 match result {
                     Ok(()) => {
-                        File::create(config_path.as_path()).with_context(|| format!(
-                            "Failed to create config file at: {} during initialization",
-                            config_path.to_str().unwrap()
-                        ))?;
+                        File::create(config_path.as_path()).with_context(|| {
+                            format!(
+                                "Failed to create config file at: {} during initialization",
+                                config_path.to_str().unwrap()
+                            )
+                        })?;
                         Ok(())
                     }
                     Err(ref e)
                         if e.downcast_ref::<std::io::Error>().unwrap().kind()
                             == std::io::ErrorKind::AlreadyExists =>
                     {
-                        File::create(config_path.as_path()).with_context(|| format!(
-                            "Failed to initialize workspace at: {}. File already exists.",
-                            config_path.to_str().unwrap()
-                        ))?;
+                        File::create(config_path.as_path()).with_context(|| {
+                            format!(
+                                "Failed to initialize workspace at: {}. File already exists.",
+                                config_path.to_str().unwrap()
+                            )
+                        })?;
                         Ok(())
                     }
                     _ => result,
@@ -252,7 +271,7 @@ impl Cli {
 
 #[derive(StructOpt)]
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
-pub enum CliArgs {
+pub enum Args {
     #[structopt(about = "Initialise the workspace")]
     Init {
         #[structopt(parse(from_os_str), help = "name of directory to initialize")]
@@ -321,7 +340,6 @@ pub enum TelemetryCommand {
 pub mod tests {
     use super::*;
     use std::env::temp_dir;
-    use crate::{META_OS, version};
     use std::fs;
 
     #[test]
@@ -344,9 +362,10 @@ pub mod tests {
             fs::create_dir(&temp_dir).unwrap();
         }
 
-        let args = CliArgs::Init { init_path: Some(temp_dir.clone()) };
-        let cli = Cli::new(args, version(), META_OS.to_string())
-            .unwrap();
+        let args = Args::Init {
+            init_path: Some(temp_dir.clone()),
+        };
+        let cli = Cli::new(args).unwrap();
         assert!(cli.init(Some(temp_dir)).is_ok())
     }
 }

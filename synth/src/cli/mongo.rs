@@ -7,7 +7,7 @@ use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
@@ -166,7 +166,7 @@ fn bson_to_content(bson: &Bson) -> Content {
 impl ExportStrategy for MongoExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
         let mut client = Client::with_uri_str(&self.uri)?;
-        let sampler = Sampler::try_from(&params.namespace)?;
+        let sampler = Sampler::new(&params.namespace);
         let values =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 

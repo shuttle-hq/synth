@@ -4,7 +4,6 @@ use crate::sampler::Sampler;
 use anyhow::Result;
 use serde_json::Value;
 
-use std::convert::TryFrom;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -20,7 +19,7 @@ pub struct StdoutExportStrategy {}
 
 impl ExportStrategy for StdoutExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
-        let generator = Sampler::try_from(&params.namespace)?;
+        let generator = Sampler::new(&params.namespace);
         let values = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
         println!("{}", values);
         Ok(())

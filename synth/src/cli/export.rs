@@ -1,17 +1,16 @@
 use crate::cli::postgres::PostgresExportStrategy;
 use crate::cli::stdf::StdoutExportStrategy;
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 
 use std::str::FromStr;
-use std::convert::TryFrom;
 
 use crate::cli::mongo::MongoExportStrategy;
-use synth_core::{Name, Namespace};
-use serde_json::Value;
-use async_std::task;
+use crate::cli::mysql::MySqlExportStrategy;
 use crate::datasource::DataSource;
 use crate::sampler::Sampler;
-use crate::cli::mysql::MySqlExportStrategy;
+use async_std::task;
+use serde_json::Value;
+use synth_core::{Name, Namespace};
 
 pub trait ExportStrategy {
     fn export(self, params: ExportParams) -> Result<()>;
@@ -29,7 +28,7 @@ pub enum SomeExportStrategy {
     StdoutExportStrategy(StdoutExportStrategy),
     FromPostgres(PostgresExportStrategy),
     FromMongo(MongoExportStrategy),
-    FromMySql(MySqlExportStrategy)
+    FromMySql(MySqlExportStrategy),
 }
 
 impl ExportStrategy for SomeExportStrategy {
@@ -38,7 +37,7 @@ impl ExportStrategy for SomeExportStrategy {
             SomeExportStrategy::StdoutExportStrategy(ses) => ses.export(params),
             SomeExportStrategy::FromPostgres(pes) => pes.export(params),
             SomeExportStrategy::FromMongo(mes) => mes.export(params),
-            SomeExportStrategy::FromMySql(mes) => mes.export(params)
+            SomeExportStrategy::FromMySql(mes) => mes.export(params),
         }
     }
 }
@@ -77,9 +76,11 @@ impl FromStr for SomeExportStrategy {
     }
 }
 
-pub(crate) fn create_and_insert_values<T: DataSource>(params: ExportParams, datasource: &T)
-    -> Result<()> {
-    let sampler = Sampler::try_from(&params.namespace)?;
+pub(crate) fn create_and_insert_values<T: DataSource>(
+    params: ExportParams,
+    datasource: &T,
+) -> Result<()> {
+    let sampler = Sampler::new(&params.namespace);
     let values =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
