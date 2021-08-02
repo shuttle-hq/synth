@@ -22,7 +22,7 @@ jobs:
         with:
           toolchain: nightly-2021-05-17
       - run: |
-          cargo +nightly-2021-05-17 test
+          RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 test
   clippy_test:
     runs-on: runs-on: ${{ matrix.os }}
     strategy:
@@ -34,5 +34,5 @@ jobs:
         with:
           toolchain: nightly-2021-05-17
           components: clippy
-      - run: cargo clippy --tests --all-targets -- -D warnings
+      - run: RUSTFLAGS="-D warnings" cargo clippy --tests --all-targets -- -D warnings
 
