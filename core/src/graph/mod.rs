@@ -329,9 +329,9 @@ impl Graph {
 
 #[cfg(test)]
 pub mod tests {
-    use std::collections::HashSet;
+    use std::collections::BTreeSet;
 
-    use rand::thread_rng;
+    use rand::{thread_rng, SeedableRng};
 
     use super::*;
     use crate::schema::ChronoValueFormatter;
@@ -492,7 +492,7 @@ pub mod tests {
             }
         });
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
         let mut model = Graph::from_namespace(&schema)
             .unwrap()
@@ -541,8 +541,8 @@ pub mod tests {
 
             let sample_data = serde_json::from_str::<SampleData>(&generated_str).unwrap();
 
-            let mut all_users = HashSet::new();
-            let mut currencies = HashMap::new();
+            let mut all_users = BTreeSet::new();
+            let mut currencies = BTreeMap::new();
             for user in sample_data.users {
                 assert_eq!(user.num_logins, user.num_logins_again);
                 println!("bank_country={}", user.bank_country);
@@ -567,7 +567,7 @@ pub mod tests {
 
             println!("currencies={:?}", currencies);
 
-            let mut counts = HashMap::new();
+            let mut counts = BTreeMap::new();
             for transaction in sample_data.transactions {
                 println!("transaction={:?}", transaction);
                 assert!(all_users.contains(&transaction.username));
