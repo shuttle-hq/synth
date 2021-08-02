@@ -24,7 +24,7 @@ jobs:
       - run: |
           cargo +nightly-2021-05-17 test
   clippy_test:
-    runs-on: runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
