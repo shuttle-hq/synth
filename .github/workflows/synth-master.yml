@@ -21,7 +21,7 @@ jobs:
           service_account_key: ${{ secrets.OPENQUERY_CI_SERVICE_ACCOUNT_KEY }}
           export_default_credentials: true
       - name: Build image
-        working-directory: synth/core/
+        working-directory: synth/
         run: |
           echo building image...
           gcloud auth configure-docker
@@ -30,4 +30,4 @@ jobs:
       - name: Deploy Playground
         run: |
           echo deploying playground...
-          gcloud run deploy playground-backend --image=eu.gcr.io/${project_id}/playground:$GITHUB_SHA
+          gcloud run services update playground-backend --image=eu.gcr.io/${project_id}/playground:$GITHUB_SHA
