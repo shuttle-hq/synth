@@ -28,7 +28,7 @@ The keys of the JSON object to generate are inlined in the `object` keys (e.g. `
 ```
 
 Values of objects can be any of Synth's generator type (including an other object). In the example above, `"identifier"`
-has value a [`number`](/synth/content/number) type and `"name"` has value a [`string`](/synth/content/string) type.
+has value a [`number`](/content/number) type and `"name"` has value a [`string`](/content/string) type.
 
 Values of objects can be made *optional* by specifying the `"optional": true` attribute.
 

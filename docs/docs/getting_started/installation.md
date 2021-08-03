@@ -25,13 +25,13 @@ To skip the telemetry prompt (if you are installing Synth in CI for example) you
 
 <TabItem value='windows'>
 
-To install on Windows, [download](https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe) the Synth executable and run it from your `cmd` or `Git BASH` or `Windows PowerShell`.
+To install on Windows, [download](https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe) the `synth` executable and run it from your `cmd` or `Git BASH` or `Windows PowerShell`.
 
-Then copy the downloaded executable to a suitable folder (e.g. C:\synth\synth.exe).
+Then copy the downloaded executable to a suitable folder (e.g. `C:\synth\synth.exe`).
 
-Finally - [add Synth to your PATH](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/) via your environment variables.
+Finally [add `synth` to your PATH](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/) via your environment variables.
 
-You should now be able to use synth:
+You should now be able to use `synth`:
 
 ```
 PS C:\Users\user\workspace> synth --version

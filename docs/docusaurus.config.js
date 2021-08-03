@@ -5,7 +5,7 @@ module.exports = {
     baseUrl: '/synth/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
-    favicon: 'img/getsynth_favicon.png',
+    favicon: '/img/getsynth_favicon.png',
     organizationName: 'getsynth', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
     plugins: [
@@ -36,7 +36,7 @@ module.exports = {
             title: 'Synth',
             logo: {
                 alt: 'Synth',
-                src: 'img/getsynth_identicon.png',
+                src: '/img/getsynth_identicon.png',
             },
             items: [
                 {
