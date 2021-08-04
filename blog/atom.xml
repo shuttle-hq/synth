@@ -2,11 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://getsynth.github.io/synth/blog</id>
     <title>Synth - Documentation Blog</title>
-    <updated>2021-03-09T00:00:00.000Z</updated>
+    <updated>2021-08-04T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://getsynth.github.io/synth/blog"/>
     <subtitle>Synth - Documentation Blog</subtitle>
     <icon>https://getsynth.github.io/synth/img/getsynth_favicon.png</icon>
+    <entry>
+        <title type="html"><![CDATA[Why not to use prod data for testing - and what to do instead]]></title>
+        <id>Why not to use prod data for testing - and what to do instead</id>
+        <link href="https://getsynth.github.io/synth/synth/blog/2021/08/04/test-data"/>
+        <updated>2021-08-04T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Some thoughts on why using prod data for testing is still commonplace and why it is time to change this.]]></summary>
+    </entry>
     <entry>
         <title type="html"><![CDATA[How to Create PostgreSQL Test Data]]></title>
         <id>How to Create PostgreSQL Test Data</id>

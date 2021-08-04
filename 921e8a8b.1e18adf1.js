@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[27],{97:function(n){n.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"pseudonymisation","name":"pseudonymisation","count":1,"permalink":"/synth/blog/tags/pseudonymisation"}')}}]);

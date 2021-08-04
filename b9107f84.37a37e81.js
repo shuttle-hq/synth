@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[34],{105:function(a){a.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"data-generation","name":"data generation","count":2,"permalink":"/synth/blog/tags/data-generation"}')}}]);

@@ -4,9 +4,16 @@
         <title>Synth - Documentation Blog</title>
         <link>https://getsynth.github.io/synth/blog</link>
         <description>Synth - Documentation Blog</description>
-        <lastBuildDate>Tue, 09 Mar 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 04 Aug 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Why not to use prod data for testing - and what to do instead]]></title>
+            <link>https://getsynth.github.io/synth/synth/blog/2021/08/04/test-data</link>
+            <guid>Why not to use prod data for testing - and what to do instead</guid>
+            <pubDate>Wed, 04 Aug 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Some thoughts on why using prod data for testing is still commonplace and why it is time to change this.]]></description>
+        </item>
         <item>
             <title><![CDATA[How to Create PostgreSQL Test Data]]></title>
             <link>https://getsynth.github.io/synth/synth/blog/2021/03/09/postgres-data-gen</link>
