@@ -31,7 +31,7 @@ impl<'r> Sampler<'r> {
     ) -> Result<Value> {
         let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
-        let graph = Graph::from_namespace(&self.namespace)?;
+        let graph = Graph::from_namespace(self.namespace)?;
         let mut model = graph.into_iterator(&mut rng);
 
         let target = target as u64;
@@ -86,7 +86,7 @@ impl<'r> Sampler<'r> {
         progress_bar.finish();
 
         if let Some(name) = collection {
-            let just = output.remove(&name.to_string()).ok_or(failed!(
+            let just = output.remove(&name.to_string()).ok_or_else(|| failed!(
                 target: Release,
                 "generated namespace does not have a collection {}",
                 name
