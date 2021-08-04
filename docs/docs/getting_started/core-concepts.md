@@ -6,19 +6,18 @@ This section covers the core concepts found in Synth.
 
 ## Workspaces
 
-Workspaces are marked by `.synth/` subdirectory. A workspace represents a set of synthetic data namespaces managed by
-Synth.
+Workspaces are marked by the existence of a `.synth/` subdirectory. A workspace
+represents a set of synthetic data namespaces managed by Synth.
 
-A workspace can have *zero or more namespaces*, where the namespaces are just represented as subdirectories (as well as
-some hidden state in `.synth/` when using Synth in `daemon` mode). All information pertaining to a workspace is in its
-directory.
+A workspace can have *zero or more namespaces*. Each namespace is represented as
+a subdirectory of the workspace. All information pertaining to a workspace is in
+its directory, there is no external configuration.
 
-Below is an example directory structure for a workspace with a single namespace, `my_namepace`.
+Below is an example directory structure for a workspace with a single
+namespace, `my_namepace`.
 
 ```
 ├── .synth
-│   ├── config.toml
-│   └── db.sqlite
 └── my_namespace
     ├── my_collection_1.json
     └── my_collection_2.json
@@ -26,75 +25,169 @@ Below is an example directory structure for a workspace with a single namespace,
 
 ## Namespaces
 
-The **namespace** is the top-level abstraction in Synth. Namespaces are the equivalent of *Schemas* in SQL-land. Fields
-in a namespace can refer to other fields in a namespace - but you cannot reference data across namespaces.
+The **namespace** is the top-level abstraction in Synth. Namespaces are the
+equivalent of traditional [schemas][sql-schemas] in the world of relational
+databases likes PostgreSQL. [References](#field-references) can exist between
+fields in a given namespace, but never across namespaces.
 
-Namespaces are represented as sub-directories in your workspace. For example, a workspace with single namespace `some_namespace` would have the following structure:
+Namespaces are represented as sub-directories in a workspace. For example, a
+workspace with single namespace `some_namespace` would have the following
+structure:
 
 ```
 ├── .synth
-│   ├── config.toml
-│   └── db.sqlite
 └── my_namespace
 ``` 
 
-You can have as many namespaces as you like within a workspace, however they must have unique names:
+You can have as many namespaces as you like within a workspace:
 
 ```
 ├── .synth
-│   ├── config.toml
-│   └── db.sqlite
 ├── some_namespace
 └── some_other_namespace 
 ```
 
-
 ## Collections
 
-Every namespace has zero or more **collections**. Collections are addressable by their name and correspond to tables in SQL-land. Strictly speaking, Collections are a super-set of tables
-as they are in fact arbitrarily deep document trees.
+Every namespace has zero or more **collections**. Collections are addressable by
+their name and correspond to [tables][sql-tables] in the world of relational
+databases. Strictly speaking, collections are a super-set of tables as they are
+in fact arbitrarily deep JSON document trees.
 
-Collections are represented in a workspace as `json` files. The *name* of a collection is its filename (without the extension). For example a file `bank/transactions.json` defines a collection `transactions` in the namespace `bank`.
- 
-For a more comprehensive example, let's imagine our namespace `bank` has a collection `transactions` and another collection `users`. The workspace structure then looks like this:
+Collections are represented in a workspace as JSON files. The *name* of a
+collection (the way it is referred to by [`synth`][synth]) is its filename
+without the extension. For example the file `bank/transactions.json` defines a
+collection named `transactions` in a namespace `bank`.
+
+For a more comprehensive example, let's imagine our namespace `bank` has a
+collection `transactions` and another collection `users`. The workspace
+structure then looks like this:
 
 ```
 ├── .synth
-│   ├── config.toml
-│   └── db.sqlite
 └── bank
     ├── transactions.json
     └── users.json 
 ```
 
-Collections inside a namespace need to have unique names (you *can* however the same collection name spanning different namespaces, for example `bank/transactions.json` and `forex/transactions.json`)
+Collections inside a given namespace need to have unique names. You can however
+have the same collection name in different namespaces. For
+example `bank/transactions.json` and `forex/transactions.json` is a valid
+workspace.
 
-## Field References
+Collections must be valid instances of the [`synth` schema][schema] that
+describe an array. This means at the top-level all collections must
+be [array generators][array-generators].
 
-Field References are a way to reference fields in the Schema. It's pretty intuitive.
+## Field references
 
-Field References take the form `<collection>.<field>.<field>...` (since Field References are confined to a namespace, the namespace is not specified in the reference.). Since collections in Synth are recursive and can be arbitrarily deep, so can field references be arbitrarily long.
+A field reference is a special kind of fields that is useful for declaring
+relations between different parts of a collection or different collections in
+the same namespace.
 
-For a concrete example from the `bank` namespace above; let's assume that our `users` collection has a field `id`. This field can then be referenced from anywhere inside the namespace using the reference `users.content.id`.
+A field reference can be specified by using the [same_as][same-as] generator
+type.
+
+The value of the `"ref"` field should be the address of the field you want to
+refer to. A field address takes the
+form `<collection name>.<level_0>.<level_1>...`. For example, say we have a
+collection `users.json` containing the following schema:
+
+```json
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "subtype": "u64",
+    "range": {
+      "low": 1,
+      "high": 4,
+      "step": 1
+    }
+  },
+  "content": {
+    "type": "object",
+    "username": {
+      "type": "string",
+      "faker": {
+        "generator": "username"
+      }
+    },
+    "credit_card": {
+      "type": "string",
+      "faker": {
+        "generator": "credit_card"
+      }
+    },
+    "id": {
+      "type": "number",
+      "subtype": "u64",
+      "id": {}
+    }
+  }
+}
+```
+
+A reference to the `username` field would have the
+address `users.content.username`. If we want to add a reference to this field
+from another collection we would simply add:
+
+```json
+{
+  ...
+  "content": {
+    ...
+    "username": {
+      "type": "same_as",
+      "ref": "users.content.username"
+    },
+    ...
+  }
+}
+```
 
 ## Schema
 
-The schema is the core data structure that you need to understand to be productive with Synth. The schema represents
-your data model, it tells Synth exactly how to generate data, which fields we need, what types and so on. This is a
-little involved so there is a section devoted to just the [Schema](schema.md).
+The schema is the core data structure that you need to understand to be
+productive with Synth. The schema represents your data model, it tells Synth
+exactly how to generate data, which fields we need, what types and so on. This
+is a little involved so there is a section devoted to just the [schema][schema].
 
-## Importing Datasets
+## Importing datasets
 
-Synth can ingest and build data models (aka Synth Schemas) on the fly - assuming it is fed a syntactically correct JSON
-object.
+Synth can ingest and build schemas on the fly with
+the [`synth import`][synth-import] command.
 
-You can use the `synth import` command to import data into a namespace.
+## Generating data
 
-Not only will Synth automatically *derive* the Schema for you, inferring the types and topology of the content graph.
-Synth will also automatically adjust the Schema as new information is ingested.
+To generate data from an existing namespace use
+the [`synth generate`][synth-generate] command.
 
-## Seeding Generation
+[`synth`][synth] uses a seedable pseudo-random source of entropy. By default,
+the seed is set to a constant value of `0` using the
+Rust-native [`rand::SeedableRng::seed_from_u64`][seedable-rng] function. This
+means that, by default, the data that [`synth`][synth] generates is
+deterministic: it is only a function of your schema files.
 
-Synth generates random data in a determinstic fashion. Running `synth generate` multiple times should yield the same output. Synth can also be seeded using `--seed` flag which takes an unsigned 64-bit integer as a parameter. If a seed is not specified, the seed will default to `0`.
+This behavior can be tuned (and the seed be changed, or randomized) using
+the `--seed` or `--random` flag.
 
-The `--random` flag can be used to generate using a random seed.
+[synth]: cli.md
+
+[sql-schemas]: https://www.postgresql.org/docs/9.1/ddl-schemas.html
+
+[sql-tables]: https://www.postgresql.org/docs/9.1/sql-createtable.html
+
+[same-as]: /content/same-as
+
+[schema]: schema.md
+
+[array-generators]: /content/array
+
+[same-as]: /content/same-as
+
+[synth-import]: cli.md#command-import
+
+[synth-generate]: cli.md#command-generate
+
+[seedable-rng]: https://docs.rs/rand/0.8.4/rand/trait.SeedableRng.html#method.seed_from_u64

@@ -167,7 +167,6 @@ $ tree -a
 │   ├── transactions.json
 │   └── users.json
 └── .synth
-    └── config.toml
 ```
 
 The directory `bank_db` (remember from [Core Concepts](/getting_started/core-concepts) a subdirectory in a workspace represents a

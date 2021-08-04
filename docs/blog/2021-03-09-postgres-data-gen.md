@@ -120,7 +120,7 @@ We could define functions ourselves to generate names / phone numbers / emails e
 
 [Synth](https://github.com/getsynth/synth) is an open-source project designed to solve the problem of creating realistic testing data. It has integration with Postgres, so you won't need to write any SQL.
 
-Synth uses declarative configuration files (just JSON don't worry) to define how data should be generated. To install the `synth` binary refer to the [installation page](https://getsynth.github.io/synth/getting_started/installation).
+Synth uses declarative configuration files (just JSON don't worry) to define how data should be generated. To install the `synth` binary refer to the [installation page](/getting_started/installation).
 
 The first step to use Synth is to create a workspace. A workspace is just a directory in your filesystem that tell Synth that this is where you are going to be storing configuration:
 
@@ -181,7 +181,7 @@ $ synth generate my_app/ --size 2
 }
 ```
 
-Now we can do the same thing for the `contacts` table by create a file `my_app/contacts.json`. Here we have the added complexity of a foreign key constraints to the company table, but we can solve it easily using Synth's [`same_as`](https://getsynth.github.io/synth/content/same-as/) generator.
+Now we can do the same thing for the `contacts` table by create a file `my_app/contacts.json`. Here we have the added complexity of a foreign key constraints to the company table, but we can solve it easily using Synth's [`same_as`](/content/same-as) generator.
 
 
 ```json

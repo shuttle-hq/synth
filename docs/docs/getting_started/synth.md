@@ -23,9 +23,9 @@ The key features of Synth are:
 - **Data as Code**: Data generation is described using a declarative configuration language allowing you to specify your entire data model as code.
 
 - **Import from Existing Sources**: Synth can import data from existing sources and automatically create data models. Synth currently has Alpha support for Postgres!
- 
+
 - **Data Inference**: While ingesting data, Synth automatically infers the relations, distributions and types of the dataset.
 
-- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.  
- 
-- **Semantic Data Types**: Synth integrates with the (amazing) Python [Faker](https://pypi.org/project/Faker/) library, supporting generation of thousands of semantic types (e.g. credit card numbers, email addresses etc.) as well as locales.
+- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.
+
+- **Semantic Data Types**: Synth has a library of semantic 'faker' types to cover PII like names, addresses, credit card numbers etc.
