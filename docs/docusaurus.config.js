@@ -8,6 +8,9 @@ module.exports = {
     favicon: '/img/getsynth_favicon.png',
     organizationName: 'getsynth', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
+    customFields: {
+        blogTitle: "Synth - Blog"
+    },
     plugins: [
         require.resolve('docusaurus-plugin-fathom'),
         [
