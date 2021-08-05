@@ -255,7 +255,6 @@ impl Cli {
             .store
             .get_ns(ns_path.clone())
             .context("Unable to open the namespace")?;
-
         let params = ExportParams {
             namespace,
             collection_name: collection,

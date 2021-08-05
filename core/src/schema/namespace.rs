@@ -4,6 +4,7 @@ use serde_json::{value::Value, Map};
 use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
+use super::content::{FieldContent, ObjectContent, OneOfContent};
 use super::inference::MergeStrategy;
 use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::compile::{Compile, Compiler};
@@ -166,19 +167,13 @@ impl Namespace {
     }
     fn get_adj_list(&self) -> Vec<(Name, Name)> {
         let mut list = Vec::new();
-        for (n, c) in self.clone() {
-            match c {
-                Content::SameAs(same_as_content) => {
-                    list.push((same_as_content.ref_.collection().clone(), n));
-                }
-                _ => {}
-            }
+        for (n,c) in self.collections.iter() {
+            get_list((n,c), &mut list);
         }
         list
     }
 
     pub fn topo_sort(&self) -> Option<Vec<Name>> {
-        log::info!("namespace: {:?}", self);
         let lists: Vec<(Name, Name)> = self.get_adj_list();
         let mut q: VecDeque<Name> = VecDeque::new();
         let mut sorted: Vec<Name> = Vec::new();
@@ -222,17 +217,81 @@ impl Namespace {
     }
 }
 
+fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
+            match c {
+                Content::Object(ObjectContent{fields}) => {
+                    for (_, cont) in fields {
+                        let FieldContent {box content,.. } = cont;
+                        if let Content::SameAs(same) = content {
+                            let (l,r) = (same.ref_.collection().clone(), n.clone());
+                            if !list.contains(&(l.clone(),r.clone())) {
+                                list.push((l,r));
+                            }
+                        } else {
+                            get_list((n,content), list);
+                        }
+                    };
+                }
+                Content::Array(ArrayContent {box content,.. }) => {
+                    match content.clone() {
+                        Content::Object(obj) => {
+                            get_list((n,&Content::Object(obj)), list);
+                        }
+                        Content::Array(arr) => {
+                            get_list((n,&Content::Array(arr)), list);
+                        }
+                        Content::SameAs(same) => {
+                            get_list((n,&Content::SameAs(same)), list);
+                        }
+                        Content::OneOf(one) => {
+                            get_list((n,&Content::OneOf(one)), list);
+                        }
+                        _ => {
+
+                        }
+
+                    }
+                }
+                Content::OneOf(OneOfContent{variants}) => {
+                    for variant in variants {
+                        let box variant = variant.content.clone();
+                        match  variant {
+                            Content::Array(arr) => {
+                                get_list((n,&Content::Array(arr)), list);
+                            }
+                            Content::Object(obj) => {
+                                get_list((n,&Content::Object(obj)), list);
+                            }
+                            Content::OneOf(one) => {
+                                get_list((n,&Content::OneOf(one)), list);
+                            }
+                            Content::SameAs(same) => {
+                                get_list((n,&Content::SameAs(same)), list);
+                            }
+                            _ => {
+
+                            }
+                        }
+                    }
+                }
+                Content::SameAs(same_as_content) => {
+                    let pair = (same_as_content.ref_.collection().clone(), n.clone());
+                    if !list.contains(&pair){
+                        list.push(pair);
+                    }
+                }
+                _ => {}
+            }
+    
+}
 impl Compile for Namespace {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         // TODO: needs to wrap each top-level attribute in a variable size array model
-        let object_node = self
-            .iter()
-            .map(|(name, field)| {
-                compiler
-                    .build(name.as_ref(), field)
-                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
-            })
-            .collect::<Result<_>>()?;
+        let sorted_ns = self.topo_sort().ok_or(anyhow!("dependency is cyclic"))?;
+        let object_node = sorted_ns.iter().map(|name|{
+            let field = self.collections.get(&name).expect("field should be there");
+            compiler.build(name.as_ref(), field).map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
+        }).collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
     }
 }
