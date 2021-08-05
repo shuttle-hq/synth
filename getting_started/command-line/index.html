@@ -9,15 +9,14 @@
 <link rel="search" type="application/opensearchdescription+xml" title="Synth - Documentation" href="/synth/opensearch.xml">
 <script defer="defer" src="https://cdn.usefathom.com/script.js" spa="auto" site="ASXTKXUJ"></script><title data-react-helmet="true">Command-line | Synth - Documentation</title><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" name="docsearch:language" content="en"><meta data-react-helmet="true" name="docsearch:version" content="current"><meta data-react-helmet="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-react-helmet="true" property="og:title" content="Command-line | Synth - Documentation"><meta data-react-helmet="true" name="description" content="synth is a Unix-y command line tool wrapped around the core synthetic data engine."><meta data-react-helmet="true" property="og:description" content="synth is a Unix-y command line tool wrapped around the core synthetic data engine."><meta data-react-helmet="true" property="og:url" content="https://getsynth.github.io/synth/synth/getting_started/command-line"><link data-react-helmet="true" rel="shortcut icon" href="/synth/img/getsynth_favicon.png"><link data-react-helmet="true" rel="preconnect" href="https://BH4D9OD16A-dsn.algolia.net" crossorigin="anonymous"><link data-react-helmet="true" rel="canonical" href="https://getsynth.github.io/synth/synth/getting_started/command-line"><link rel="stylesheet" href="/synth/styles.ff7856e5.css">
 <link rel="preload" href="/synth/styles.7bad971b.js" as="script">
-<link rel="preload" href="/synth/runtime~main.0a0193ae.js" as="script">
-<link rel="preload" href="/synth/main.8440c80c.js" as="script">
-<link rel="preload" href="/synth/1.ef08631d.js" as="script">
-<link rel="preload" href="/synth/2.5d9eeca2.js" as="script">
-<link rel="preload" href="/synth/3.74e40b1a.js" as="script">
-<link rel="preload" href="/synth/1be78505.467641fa.js" as="script">
-<link rel="preload" href="/synth/54.9b72cc9d.js" as="script">
+<link rel="preload" href="/synth/runtime~main.5dceb16a.js" as="script">
+<link rel="preload" href="/synth/main.4f24c73d.js" as="script">
+<link rel="preload" href="/synth/1.c3022aee.js" as="script">
+<link rel="preload" href="/synth/2.96e92018.js" as="script">
+<link rel="preload" href="/synth/3.e2cf6242.js" as="script">
+<link rel="preload" href="/synth/1be78505.9ac187f1.js" as="script">
 <link rel="preload" href="/synth/935f2afb.19ee366d.js" as="script">
-<link rel="preload" href="/synth/17896441.e4eb5f4d.js" as="script">
+<link rel="preload" href="/synth/17896441.43ef7584.js" as="script">
 <link rel="preload" href="/synth/59931c3b.7a50e163.js" as="script">
 </head>
 <body>
@@ -32,15 +31,14 @@ the file: <code>/some/path/to/file.json</code>.</p><p>Importing from standard in
 postgres): <code>synth import tpch --from postgres://user:pass@localhost:5432/tpch</code></p></li></ul><hr><h3><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_prK2" id="command-generate"></a>Command: generate<a class="hash-link" href="#command-generate" title="Direct link to heading">#</a></h3><p>Usage: <code>synth generate [OPTIONS] &lt;namespace&gt;</code></p><p>The <code>synth generate</code> command will generate data for a given namespace. This will not mutate anything in the underlying configuration.</p><p>If there is a misconfiguration in your schema (for example referring to a field that does not exist), <code>synth generate</code> will exit with a non-zero exit code and output an error message to help you understand which part of the schema is misconfigured.</p><h4><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_prK2" id="argument-1"></a>Argument<a class="hash-link" href="#argument-1" title="Direct link to heading">#</a></h4><ul><li><code>&lt;namespace&gt;</code> - The path to the namespace you wish to generate data for. Can
 only be a path relative to the current (initialised) workspace root.</li></ul><h4><a aria-hidden="true" tabindex="-1" class="anchor enhancedAnchor_prK2" id="options-1"></a>Options<a class="hash-link" href="#options-1" title="Direct link to heading">#</a></h4><ul><li><code>--collection &lt;collection&gt;</code> - Specify a specific collection in a namespace if you don&#x27;t want to generate data from all collections.</li><li><code>--size &lt;size&gt;</code> - The number of elements which should be generated per collection. This number is not guaranteed, it serves as a lower bound.</li><li><code>--to &lt;uri&gt;</code> - The generation destination. If unspecified, generation defaults to stdout.</li><li><code>--seed &lt;seed&gt;</code> - An unsigned 64 bit integer seed to be used as a seed for generation. Defaults to 0 if unspecified.</li><li><code>--random</code> - A flag which toggles generation with a random seed. This cannot be used with --seed.</li></ul></div></article><div class="margin-vert--xl"><div class="row"><div class="col"><a href="https://github.com/getsynth/synth/edit/master/docs/docs/getting_started/cli.md" target="_blank" rel="noreferrer noopener"><svg fill="currentColor" height="1.2em" width="1.2em" preserveAspectRatio="xMidYMid meet" role="img" viewBox="0 0 40 40" class="iconEdit_2LL7"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div></div></div><div class="margin-vert--lg"><nav class="pagination-nav" aria-label="Blog list page navigation"><div class="pagination-nav__item"><a class="pagination-nav__link" href="/synth/getting_started/schema"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">« Schema</div></a></div><div class="pagination-nav__item pagination-nav__item--next"><a class="pagination-nav__link" href="/synth/getting_started/how-it-works"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">How it works »</div></a></div></nav></div></div></div><div class="col col--3"><div class="tableOfContents_2xL- thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#usage" class="table-of-contents__link">Usage</a><ul><li><a href="#command-init" class="table-of-contents__link">Command: init</a></li><li><a href="#command-import" class="table-of-contents__link">Command: import</a></li><li><a href="#command-generate" class="table-of-contents__link">Command: generate</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/synth/getting_started/synth">Getting Started</a></li><li class="footer__item"><a class="footer__link-item" href="/synth/examples/bank">Examples</a></li><li class="footer__item"><a class="footer__link-item" href="/synth/content/null">Generators</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2021 OpenQuery.</div></div></div></footer></div>
 <script src="/synth/styles.7bad971b.js"></script>
-<script src="/synth/runtime~main.0a0193ae.js"></script>
-<script src="/synth/main.8440c80c.js"></script>
-<script src="/synth/1.ef08631d.js"></script>
-<script src="/synth/2.5d9eeca2.js"></script>
-<script src="/synth/3.74e40b1a.js"></script>
-<script src="/synth/1be78505.467641fa.js"></script>
-<script src="/synth/54.9b72cc9d.js"></script>
+<script src="/synth/runtime~main.5dceb16a.js"></script>
+<script src="/synth/main.4f24c73d.js"></script>
+<script src="/synth/1.c3022aee.js"></script>
+<script src="/synth/2.96e92018.js"></script>
+<script src="/synth/3.e2cf6242.js"></script>
+<script src="/synth/1be78505.9ac187f1.js"></script>
 <script src="/synth/935f2afb.19ee366d.js"></script>
-<script src="/synth/17896441.e4eb5f4d.js"></script>
+<script src="/synth/17896441.43ef7584.js"></script>
 <script src="/synth/59931c3b.7a50e163.js"></script>
 <script>window.Papercups={config:{accountId:"41ff5b3d-e2c2-42ed-bed3-ef7a6c0dde62",baseUrl:"https://app.papercups.io",greeting:"",newMessagePlaceholder:"Start typing...",primaryColor:"#00dab8",requireEmailUpfront:!1,showAgentAvailability:!1,subtitle:"Ask us anything in the chat window below 😊",title:"Welcome to Synth"}}</script>
 <style>
