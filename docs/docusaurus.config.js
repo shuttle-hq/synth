@@ -1,8 +1,12 @@
+const isTargetVercel = () => {
+    return process.env["VERCEL"] === '1'
+}
+
 module.exports = {
     title: 'Synth - Documentation',
     tagline: 'Easy data generation',
-    url: 'https://getsynth.github.io/synth',
-    baseUrl: '/synth/',
+    url: isTargetVercel() ? 'https://www.getsynth.com/docs' : 'https://getsynth.github.io/synth',
+    baseUrl: isTargetVercel() ? '/docs/' : '/synth/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: '/img/getsynth_favicon.png',
