@@ -7,6 +7,8 @@ use std::str::FromStr;
 use crate::cli::mongo::MongoExportStrategy;
 use synth_core::{Name, Namespace};
 
+use super::synth_doc::DocExportStrategy;
+
 pub trait ExportStrategy {
     fn export(self, params: ExportParams) -> Result<()>;
 }
@@ -23,6 +25,7 @@ pub enum SomeExportStrategy {
     StdoutExportStrategy(StdoutExportStrategy),
     FromPostgres(PostgresExportStrategy),
     FromMongo(MongoExportStrategy),
+    DocExportStrategy(DocExportStrategy)
 }
 
 impl ExportStrategy for SomeExportStrategy {
@@ -31,6 +34,7 @@ impl ExportStrategy for SomeExportStrategy {
             SomeExportStrategy::StdoutExportStrategy(ses) => ses.export(params),
             SomeExportStrategy::FromPostgres(pes) => pes.export(params),
             SomeExportStrategy::FromMongo(mes) => mes.export(params),
+            SomeExportStrategy::DocExportStrategy(doc) => doc.export(params),
         }
     }
 }
