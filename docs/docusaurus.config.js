@@ -33,7 +33,7 @@ module.exports = {
     ],
     themeConfig: {
         fathomAnalytics: {
-            siteId: 'ASXTKXUJ',
+            siteId: isTargetVercel() ? 'QRVYRJEG' : 'ASXTKXUJ',
         },
         algolia: {
             apiKey: 'b0583a1f7732cee4e8c80f4a86adf57c',
