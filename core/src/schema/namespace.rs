@@ -210,6 +210,12 @@ impl Namespace {
         
         if sorted.len() == in_degrees.keys().len() {
             log::info!("{:?}", sorted);
+            //if the name has no same_as type field, it must still be in the list, but may come in any order, back or front
+            for (name, _) in &self.collections {
+                if !sorted.contains(name) {
+                    sorted.push(name.clone());
+                }
+            };
             Some(sorted)
         } else {
             None
