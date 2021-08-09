@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[38],{109:function(s){s.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"macros","name":"macros","count":1,"permalink":"/synth/blog/tags/macros"}')}}]);
