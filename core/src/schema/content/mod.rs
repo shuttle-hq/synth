@@ -24,8 +24,8 @@ pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt
 
 mod string;
 pub use string::{
-    ChronoValue, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
-    FakerContentArgument, RegexContent, StringContent, Uuid,
+    ChronoValue, ChronoValueFormatter, ChronoValueType, ContentOrRef, DateTimeContent, FakerContent,
+    FakerContentArgument, FormatContent, JsonContent, RegexContent, SerializedContent, StringContent, TruncatedContent, Uuid,
 };
 
 mod array;
@@ -50,6 +50,24 @@ use prelude::*;
 use super::FieldRef;
 use crate::schema::content::series::SeriesContent;
 use crate::schema::unique::UniqueContent;
+
+/// make an optional FieldContent
+#[bindlang::bindlang(FieldContent)]
+pub fn optional(content: Content) -> FieldContent {
+    FieldContent {
+        optional: true,
+        content: Box::new(content),
+    }
+}
+
+/// make a non-optional FieldContent
+#[bindlang::bindlang(FieldContent)]
+pub fn required(content: Content) -> FieldContent {
+    FieldContent {
+        optional: true,
+        content: Box::new(content),
+    }
+}
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -79,6 +97,7 @@ pub trait Find<C> {
         R: AsRef<str>;
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct SameAsContent {
@@ -86,6 +105,7 @@ pub struct SameAsContent {
     pub ref_: FieldRef,
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
@@ -199,6 +219,7 @@ impl Content {
     }
 }
 
+#[bindlang::bindlang]
 impl Default for Content {
     fn default() -> Self {
         Self::Null
@@ -211,8 +232,8 @@ impl std::fmt::Display for Content {
     }
 }
 
-impl<'r> From<&'r Value> for Content {
-    fn from(value: &'r Value) -> Self {
+impl From<&'_ Value> for Content {
+    fn from(value: &'_ Value) -> Self {
         match value {
             // TODO not sure what the correct behaviour is here
             Value::Null => Content::Null,
@@ -339,6 +360,7 @@ where
         .map(|suggest| format!(", did you mean '{}'?", suggest.as_ref()))
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "f64")]
 pub struct Weight(f64);
@@ -362,6 +384,12 @@ impl std::convert::TryFrom<f64> for Weight {
 impl Default for Weight {
     fn default() -> Self {
         Self(1.0)
+    }
+}
+
+impl Display for Weight {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
 

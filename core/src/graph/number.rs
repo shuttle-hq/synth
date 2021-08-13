@@ -46,6 +46,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Incrementing<N = i64> {
     count: N,
     step: N,

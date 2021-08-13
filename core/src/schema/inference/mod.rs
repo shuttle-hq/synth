@@ -470,7 +470,7 @@ pub mod tests {
         let error_margin = f64::EPSILON;
 
         OptionalMergeStrategy
-            .try_merge(&mut master, &"15".parse().unwrap())
+            .try_merge(&mut master, &"15".parse::<Number>().unwrap())
             .unwrap();
 
         match master {
@@ -483,10 +483,10 @@ pub mod tests {
         }
 
         OptionalMergeStrategy
-            .try_merge(&mut master, &"-10".parse().unwrap())
+            .try_merge(&mut master, &"-10".parse::<Number>().unwrap())
             .unwrap();
         OptionalMergeStrategy
-            .try_merge(&mut master, &"20".parse().unwrap())
+            .try_merge(&mut master, &"20".parse::<Number>().unwrap())
             .unwrap();
 
         match master {
@@ -499,10 +499,10 @@ pub mod tests {
         }
 
         OptionalMergeStrategy
-            .try_merge(&mut master, &"-13.6".parse().unwrap())
+            .try_merge(&mut master, &"-13.6".parse::<Number>().unwrap())
             .unwrap();
         OptionalMergeStrategy
-            .try_merge(&mut master, &"20.6".parse().unwrap())
+            .try_merge(&mut master, &"20.6".parse::<Number>().unwrap())
             .unwrap();
 
         match master {

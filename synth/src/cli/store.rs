@@ -68,8 +68,19 @@ impl Store {
         self.collection_path(namespace, collection).exists()
     }
 
-    /// Get a namespace given it's directory path
+    /// Get a namespace given it's directory or file path
     pub fn get_ns(&self, ns_path: PathBuf) -> Result<Namespace> {
+        //TODO: Do we want to commit on the name? Or have our own?
+        if ns_path.is_file() && ns_path.extension() == Some(std::ffi::OsStr::new("koto")) {
+            let mut runtime = synth_core::lang_runtime();
+            return synth_core::compile_namespace(
+                &mut runtime,
+                &std::fs::read_to_string(&ns_path)
+                    .with_context(|| format!("At path {:?}", ns_path))?,
+            )
+            .map_err(From::from);
+        }
+
         let mut ns = Namespace::default();
 
         for entry in ns_path

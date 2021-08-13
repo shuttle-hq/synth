@@ -8,9 +8,16 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::ops::Not;
 
+#[bindlang::bindlang]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectContent {
     pub fields: BTreeMap<String, FieldContent>,
+}
+
+impl Display for ObjectContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self) //TODO: Do something more clever than using Debug
+    }
 }
 
 fn add_type_underscore(key: &str) -> Cow<str> {
@@ -135,12 +142,19 @@ impl ObjectContent {
     }
 }
 
+#[bindlang::bindlang]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FieldContent {
     #[serde(default, skip_serializing_if = "Not::not")]
     pub optional: bool,
     #[serde(flatten)]
     pub content: Box<Content>,
+}
+
+impl Display for FieldContent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.content, if self.optional { "|null" } else { "" })
+    }
 }
 
 impl FieldContent {
@@ -156,6 +170,7 @@ impl FieldContent {
     }
 }
 
+#[bindlang::bindlang]
 impl Default for ObjectContent {
     fn default() -> Self {
         Self {

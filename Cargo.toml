@@ -1,5 +1,7 @@
 [workspace]
 members = [
+  "bindlang",
+  "lang_bindings",
   "gen",
   "core",
   "synth",

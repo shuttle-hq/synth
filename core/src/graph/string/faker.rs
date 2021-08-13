@@ -13,6 +13,7 @@ use rand::RngCore;
 
 // this needs non-camel-case types because the fake crate has the same
 #[allow(non_camel_case_types)]
+#[bindlang::bindlang]
 #[derive(Copy, Clone, Deserialize, Debug, Serialize, PartialEq, Eq)]
 /// a locale to look up names, addresses, etc.
 pub enum Locale {
@@ -28,11 +29,36 @@ impl Default for Locale {
     }
 }
 
+impl Display for Locale {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", match self {
+            Self::EN => "EN",
+            Self::FR_FR => "FR",
+            Self::ZH_TW => "TW",
+            Self::ZH_CN => "CN",
+        })
+    }
+}
+
 /// The arguments for a faker
+#[bindlang::bindlang]
 #[derive(Clone, Default, Deserialize, Debug, Serialize, PartialEq, Eq)]
 pub struct FakerArgs {
     #[serde(default)]
     locales: Vec<Locale>,
+}
+
+impl Display for FakerArgs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut locales = self.locales.iter();
+        if let Some(l) = locales.next() {
+            write!(f, "{}", l)?;
+            for l in locales {
+                write!(f, ", {}", l)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 type FakerFunction = for<'r> fn(&'r mut dyn RngCore, &FakerArgs) -> String;
