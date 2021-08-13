@@ -53,6 +53,9 @@ ctrlc = { version = "3.0", features = ["termination"] }
 synth-core = { path = "../core" }
 synth-gen = { path = "../gen" }
 
+arrow = "5.1.0"
+semantic-detection = { path = "../semdet" }
+
 rust_decimal = "1.10.3"
 indicatif = "0.15.0"
 
