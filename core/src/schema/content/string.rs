@@ -187,7 +187,7 @@ pub struct TruncatedContent {
 #[serde(rename_all = "lowercase")]
 pub struct FormatContent {
     format: String,
-    arguments: HashMap<String, Content>,
+    pub arguments: HashMap<String, Content>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

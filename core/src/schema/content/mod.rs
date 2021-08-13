@@ -25,7 +25,7 @@ pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt
 mod string;
 pub use string::{
     ChronoValue, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
-    FakerContentArgument, RegexContent, StringContent, Uuid,
+    FakerContentArgument, RegexContent, StringContent, Uuid, FormatContent
 };
 
 mod array;

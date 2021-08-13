@@ -4,7 +4,7 @@ use serde_json::{value::Value, Map};
 use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
-use super::content::{FieldContent, ObjectContent, OneOfContent};
+use super::content::{FieldContent, ObjectContent, OneOfContent, StringContent, FormatContent};
 use super::inference::MergeStrategy;
 use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::compile::{Compile, Compiler};
@@ -169,7 +169,7 @@ impl Namespace {
         let mut list = Vec::new();
         for (n,c) in self.collections.iter() {
             get_list((n,c), &mut list);
-        }
+        };
         list
     }
 
@@ -180,7 +180,7 @@ impl Namespace {
         let mut graph: NameGraph = NameGraph::new();
         for v in &lists {
             graph.entry(v.0.clone()).or_insert_with(|| Vec::new()).push(v.1.clone());
-        }
+        };
         log::info!("lists: {:?}", lists);
         let mut in_degrees: BTreeMap<Name, usize> = BTreeMap::new();
 
@@ -230,9 +230,12 @@ fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
                         let FieldContent {box content,.. } = cont;
                         if let Content::SameAs(same) = content {
                             let (l,r) = (same.ref_.collection().clone(), n.clone());
-                            if !list.contains(&(l.clone(),r.clone())) {
-                                list.push((l,r));
+                            if l != r {
+                                if !list.contains(&(l.clone(),r.clone())) {
+                                    list.push((l,r));
+                                };
                             }
+                            
                         } else {
                             get_list((n,content), list);
                         }
@@ -252,9 +255,10 @@ fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
                         Content::OneOf(one) => {
                             get_list((n,&Content::OneOf(one)), list);
                         }
-                        _ => {
-
+                        Content::String(s) => {
+                            get_list((n,&Content::String(s)), list);
                         }
+                        _ => {}
 
                     }
                 }
@@ -274,16 +278,28 @@ fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
                             Content::SameAs(same) => {
                                 get_list((n,&Content::SameAs(same)), list);
                             }
-                            _ => {
-
+                            Content::String(s) => {
+                                get_list((n,&Content::String(s)), list);
                             }
+                            _ => {}
                         }
                     }
                 }
                 Content::SameAs(same_as_content) => {
                     let pair = (same_as_content.ref_.collection().clone(), n.clone());
-                    if !list.contains(&pair){
-                        list.push(pair);
+                    if pair.0 != pair.1 {
+                        if !list.contains(&pair){
+                            list.push(pair);
+                        };
+                    };
+                }
+                Content::String(s) => {
+                    //the only variant of string that can hold a content
+                    if let StringContent::Format(form) = s {
+                        let FormatContent{ref arguments, ..} = form;
+                        for (_, c) in arguments.iter() {
+                            get_list((n,c), list);
+                        } 
                     }
                 }
                 _ => {}
