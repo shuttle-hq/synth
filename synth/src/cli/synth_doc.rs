@@ -2,7 +2,6 @@ use super::{ExportParams, ExportStrategy};
 use crate::sampler::Sampler;
 use anyhow::{Context, Result};
 use std::{
-    convert::TryFrom,
     fs::{File, OpenOptions},
     io::{BufWriter, Write},
     path::{Path, PathBuf},
@@ -20,7 +19,7 @@ pub struct DocExportStrategy {
 
 impl ExportStrategy for DocExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
-        let generator = Sampler::try_from(&params.namespace)?;
+        let generator = Sampler::new(&params.namespace);
         let values = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
         let file = OpenOptions::new()
             .create(true)

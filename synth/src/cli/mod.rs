@@ -133,7 +133,7 @@ impl Cli {
                     }
                 }
             }
-            CliArgs::Doc{ref namespace} => {
+            Args::Doc{ref namespace} => {
                 let to = SomeExportStrategy::DocExportStrategy(DocExportStrategy::new(namespace.clone()).context("could not open the namespace")?);
                 self.doc(namespace.clone(), to, 1)?;
                 Ok(())
