@@ -20,8 +20,7 @@ impl ExportStrategy for DocExportStrategy{
         writeln!(&mut file, "```json")?;
         serde_json::to_writer_pretty(&mut file, &values)?;
         writeln!(file, "")?;
-        writeln!(&mut file, "```")?;
-        writeln!(file, "> Created with [synth](https://github.com/getsynth/synth)")?;
+        writeln!(&mut file, "```\n> Created with [synth](https://github.com/getsynth/synth)")?;
         Ok(())
     }
 }
@@ -42,87 +41,90 @@ fn write_doc(ns: &Namespace, file: &mut BufWriter<File>) -> Result<()>{
         writeln!(file, "---")?;
         let pairs = ns.iter();
         for (n,c) in pairs {
-            write_coll_details((n,c), file)?;
+            let subs = write_coll_details((n,c), file)?;
+            if !subs.is_empty() {
+                for sub in subs.iter() { 
+                    let (name, arr, parent) = sub;
+                    write_subcoll(name.clone(), *arr, parent, file)?;
+                };
+            }
             writeln!(file, "---")?;
         };
-        writeln!(file, "---")?;
-        writeln!(file, "### Example")?;
+        writeln!(file, "---\n## Example")?;
         Ok(())
     }
 
 fn write_colls(ns: &Namespace, file: &mut BufWriter<File>) -> Result<()> {
-    writeln!(file, "```text\n### Description\n\n\n\n\n```")?;
-    writeln!(file, "## Collections")?;
+    writeln!(file, "\n# Description\n\n\n\n\n> Please enter a descriptive text here\n## Collections")?;
     for key in ns.keys().map(|n| n.as_ref()) {
         writeln!(file, "- [{}]({})", key, format!("#collection-{}", key)).context("error while writing to file")?;
     };
     Ok(())
 }
-fn write_coll_details((name, content ): (&Name,&Content), file: &mut BufWriter<File>) -> Result<()>{
+fn write_coll_details<'a>((name, content ): (&'a Name, &'a Content), file: &mut BufWriter<File>) -> Result<Vec<(Name, &'a ArrayContent, &'a Name)>>{
+    let mut sub_colls = Vec::new();
     match content {
         Content::Array(ArrayContent { content: box Content::Object(object_content), .. }) => {
-            let name_str = format!("Collection {}", name);
-            writeln!(file, "#### {}", name_str)?;
+            let name_str = format!("Collection **{}**", name);
+            writeln!(file, "## {}", name_str)?;
             let name = Name::from_str("Collection")?;
             write_coll_details((&name, &Content::Object(object_content.clone()) ), file)?;
-            write_foreigns((&name,  &object_content), file)?;
+            write_foreigns(&object_content, file)?;
         }
         Content::Object(obj) => {
-            writeln!(file, "##### Fields")?;
+            writeln!(file, "### Fields\n| Name   |Type  |Description( Please replace the generated texts ) |\n|--------|---------|--------|")?;
             let ObjectContent { fields } = obj;
             for (field_name, field_content) in fields.into_iter() {
                 let cont = &field_content.content;
-                let f_name = &Name::from_str(field_name)?;
+                let f_name = Name::from_str(field_name)?; 
                 if let box Content::Array(arr) = &cont {
-                    write_subcoll(name, (f_name, arr), file)?;
+                    sub_colls.push((f_name.clone(), arr, name));
                 } else {
-                    write_coll_details((f_name, cont ), file)?;
+                    write_coll_details((&f_name, cont ), file)?;
                 }
             } 
         },
         Content::Null => {
-            writeln!(file, "##### {} [Type: *Null*]", name)?;
-            writeln!(file, "> Description goes here: ")?;
-            writeln!(file, "")?;
-            writeln!(file, "")?;
+            writeln!(file, "| {} | Null | Description goes here: |", name)?;
         }
         Content::Bool(_) | Content::String(_) | Content::Number(_) | Content::SameAs(_)=> {
-            writeln!(file, "##### {} [Type: *{}*]", name, content.kind())?;
-            writeln!(file, "> Description goes here: ")?;
-            writeln!(file, "")?;
-            writeln!(file, "")?;
+            writeln!(file, "| {} | {} | Description goes here: |", name, content.kind())?;
         }
         Content::OneOf(one_of) => {
-            writeln!(file, "##### {} [Type: *{}*]", name, content.kind())?;
-            writeln!(file, "> Description goes here: ")?;
-            writeln!(file, "**Variants:**")?;
+            writeln!(file, "| {} | {} | Description goes here: |\n**Variants:**", name, content.kind())?;
+            let mut s = String::new();
             for one in one_of.iter() {
-                write_coll_details((name, one ), file)?;
+                s.push_str(format!("- {}\n", one.kind()).as_ref());
             };
+            writeln!(file, "{}", s)?;
         }
         _ => {
 
         }
     };
-    Ok(())
+    Ok(sub_colls)
 }
 
-fn write_foreigns((name, obj):(&Name, &ObjectContent), file: &mut BufWriter<File>) -> Result<()> {
-    writeln!(file, "#### Foreign Keys")?;
+fn write_foreigns(obj: &ObjectContent, file: &mut BufWriter<File>) -> Result<()> {
+    writeln!(file, "### Foreign Keys")?;
     let ObjectContent { fields } = obj;
-    for (_, field_content) in fields.into_iter() {
+    if fields.is_empty() {
+        writeln!(file, "No foreign keys")?;
+    } else {
+    for (f_name, field_content) in fields.into_iter() {
         if let box Content::SameAs(same) = &field_content.content {
             let foreign_coll = same.ref_.collection().as_ref();
             let foreign_feild = same.ref_.iter_fields().last().ok_or_else(|| anyhow::anyhow!("Could not get the last field"))?;
-            writeln!(file, "- {} refers to: **field** *{}* in **Collection** [{}](#collection-{}):", name, foreign_feild, foreign_coll, foreign_coll)?;
+            writeln!(file, "- _**{}**_ refers to: **field** *{}* in **Collection** [{}](#collection-{}):", f_name, foreign_feild, foreign_coll, foreign_coll)?;
         }
     };
+};
     Ok(())
 }
 
-fn write_subcoll(parent: &Name, (name, arr):(&Name, &ArrayContent), file: &mut BufWriter<File>)  -> Result<()> {
-    let name_str = format!("Subcollection {}: Parent: {}", name, parent);
+fn write_subcoll(name: Name, arr: &ArrayContent, parent: &Name,  file: &mut BufWriter<File>)  -> Result<()> {
+    let name_str = format!("### Sub-Collection {} of Parent {}", name, parent);
     writeln!(file, "{}", name_str)?;
-    write_coll_details((name, &Content::Array(arr.clone()) ), file)?;
+    write_coll_details((&name, &Content::Array(arr.clone()) ), file)?;
     Ok(())
 }
