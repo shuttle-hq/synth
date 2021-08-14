@@ -12,6 +12,8 @@ use async_std::task;
 use serde_json::Value;
 use synth_core::{Name, Namespace};
 
+use super::synth_doc::DocExportStrategy;
+
 pub trait ExportStrategy {
     fn export(self, params: ExportParams) -> Result<()>;
 }
@@ -29,6 +31,7 @@ pub enum SomeExportStrategy {
     FromPostgres(PostgresExportStrategy),
     FromMongo(MongoExportStrategy),
     FromMySql(MySqlExportStrategy),
+    DocExportStrategy(DocExportStrategy)
 }
 
 impl ExportStrategy for SomeExportStrategy {
@@ -38,6 +41,7 @@ impl ExportStrategy for SomeExportStrategy {
             SomeExportStrategy::FromPostgres(pes) => pes.export(params),
             SomeExportStrategy::FromMongo(mes) => mes.export(params),
             SomeExportStrategy::FromMySql(mes) => mes.export(params),
+            SomeExportStrategy::DocExportStrategy(doc) => doc.export(params),
         }
     }
 }

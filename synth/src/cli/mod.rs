@@ -7,6 +7,7 @@ mod postgres;
 mod stdf;
 mod store;
 mod telemetry;
+mod synth_doc;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
@@ -23,6 +24,8 @@ use crate::cli::telemetry::TelemetryClient;
 use crate::utils::{version, META_OS};
 use rand::RngCore;
 use synth_core::Name;
+
+use self::synth_doc::DocExportStrategy;
 
 pub struct Cli {
     store: Store,
@@ -129,6 +132,11 @@ impl Cli {
                         Ok(())
                     }
                 }
+            }
+            CliArgs::Doc{ref namespace} => {
+                let to = SomeExportStrategy::DocExportStrategy(DocExportStrategy::new(namespace.clone()).context("could not open the namespace")?);
+                self.doc(namespace.clone(), to, 1)?;
+                Ok(())
             }
         }
     }
@@ -267,6 +275,25 @@ impl Cli {
             .export(params)
             .with_context(|| format!("At namespace {:?}", ns_path))
     }
+    fn doc(&self, ns_path: PathBuf, to: SomeExportStrategy, seed: u64) -> Result<()> {
+        if !self.workspace_initialised() {
+            return Err(anyhow!(
+                "Workspace has not been initialised. To initialise the workspace run `synth init`."
+            ));
+        };
+        let namespace = self
+            .store
+            .get_ns(ns_path.clone())
+            .context("Unable to open the namespace")?;
+        let params = ExportParams {
+            namespace,
+            collection_name: None,
+            target: 2,
+            seed
+        };
+        to.export(params).context("Error generating doc")?;
+        Ok(())
+    }
 }
 
 #[derive(StructOpt)]
@@ -321,6 +348,11 @@ pub enum Args {
             help = "The source from which to import data. Can be a postgres uri, a mongodb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
         )]
         from: Option<SomeImportStrategy>,
+    },
+    #[structopt(about = "Write documentation for namespace")]
+    Doc{
+        #[structopt(about = "namespace to be documented", parse(from_os_str))]
+        namespace: PathBuf
     },
     #[structopt(about = "Toggle anonymous usage data collection")]
     Telemetry(TelemetryCommand),
