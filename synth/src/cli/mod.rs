@@ -283,7 +283,7 @@ impl Cli {
         };
         let namespace = self
             .store
-            .get_ns(ns_path.clone())
+            .get_ns(ns_path)
             .context("Unable to open the namespace")?;
         let params = ExportParams {
             namespace,

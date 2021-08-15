@@ -25,13 +25,13 @@ impl ExportStrategy for DocExportStrategy {
             .create(true)
             .read(true)
             .append(true)
-            .open(self.file_path.clone())?;
+            .open(self.file_path)?;
         let mut file = BufWriter::new(file);
         write_doc(&params.namespace, &mut file)?;
         //example result
         writeln!(&mut file, "```json")?;
         serde_json::to_writer_pretty(&mut file, &values)?;
-        writeln!(file, "")?;
+        writeln!(file)?;
         writeln!(
             &mut file,
             "```\n> Created with [synth](https://github.com/getsynth/synth)"
@@ -90,12 +90,12 @@ fn write_coll_details<'a>(
             writeln!(file, "## {}", name_str)?;
             let name = Name::from_str("Collection")?;
             write_coll_details((&name, &Content::Object(object_content.clone())), file)?;
-            write_foreigns(&object_content, file)?;
+            write_foreigns(object_content, file)?;
         }
         Content::Object(obj) => {
             writeln!(file, "### Fields\n| Name   |Type  |Description( Please replace the generated texts ) |\n|--------|---------|--------|")?;
             let ObjectContent { fields } = obj;
-            for (field_name, field_content) in fields.into_iter() {
+            for (field_name, field_content) in fields.iter() {
                 let cont = &field_content.content;
                 let f_name = Name::from_str(field_name)?;
                 if let box Content::Array(arr) = &cont {
@@ -140,7 +140,7 @@ fn write_foreigns(obj: &ObjectContent, file: &mut BufWriter<File>) -> Result<()>
     if fields.is_empty() {
         writeln!(file, "No foreign keys")?;
     } else {
-        for (f_name, field_content) in fields.into_iter() {
+        for (f_name, field_content) in fields.iter() {
             if let box Content::SameAs(same) = &field_content.content {
                 let foreign_coll = same.ref_.collection().as_ref();
                 let foreign_feild = same
