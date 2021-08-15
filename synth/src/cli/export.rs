@@ -98,7 +98,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
                     .expect("did not find Value for name")
                     .as_array()
                     .expect("This is always a collection (sampler contract)");
-                insert_data(datasource, n.to_string().clone(), &collection_json)?;
+                insert_data(datasource, n.to_string().clone(), collection_json)?;
             };
             Ok(())
         }

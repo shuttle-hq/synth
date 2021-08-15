@@ -179,7 +179,7 @@ impl Namespace {
         let mut sorted: Vec<Name> = Vec::new();
         let mut graph: NameGraph = NameGraph::new();
         for v in &lists {
-            graph.entry(v.0.clone()).or_insert_with(|| Vec::new()).push(v.1.clone());
+            graph.entry(v.0.clone()).or_insert_with(Vec::new).push(v.1.clone());
         };
         log::info!("lists: {:?}", lists);
         let mut in_degrees: BTreeMap<Name, usize> = BTreeMap::new();
@@ -201,7 +201,7 @@ impl Namespace {
             if graph.contains_key(&name) {
                 for out in graph.index(&name) {
                     in_degrees.entry(out.clone()).and_modify(|v| *v -= 1);
-                    if in_degrees.iter().find(|v| v.1 == &0usize).is_some() {
+                    if in_degrees.iter().any(|v| v.1 == &0usize) {
                         q.push_back(out.clone());
                     }
                 }
@@ -211,7 +211,7 @@ impl Namespace {
         if sorted.len() == in_degrees.keys().len() {
             log::info!("{:?}", sorted);
             //if the name has no same_as type field, it must still be in the list, but may come in any order, back or front
-            for (name, _) in &self.collections {
+            for name in self.collections.keys() {
                 if !sorted.contains(name) {
                     sorted.push(name.clone());
                 }
@@ -226,15 +226,13 @@ impl Namespace {
 fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
             match c {
                 Content::Object(ObjectContent{fields}) => {
-                    for (_, cont) in fields {
+                    for cont in fields.values() {
                         let FieldContent {box content,.. } = cont;
                         if let Content::SameAs(same) = content {
                             let (l,r) = (same.ref_.collection().clone(), n.clone());
-                            if l != r {
-                                if !list.contains(&(l.clone(),r.clone())) {
-                                    list.push((l,r));
-                                };
-                            }
+                            if l != r  && !list.contains(&(l.clone(),r.clone())) {
+                                list.push((l,r));
+                            };
                             
                         } else {
                             get_list((n,content), list);
@@ -286,21 +284,17 @@ fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
                     }
                 }
                 Content::SameAs(same_as_content) => {
-                    let pair = (same_as_content.ref_.collection().clone(), n.clone());
-                    if pair.0 != pair.1 {
-                        if !list.contains(&pair){
-                            list.push(pair);
-                        };
-                    };
+                let pair = (same_as_content.ref_.collection().clone(), n.clone());
+                if pair.0 != pair.1 && !list.contains(&pair) {
+                    list.push(pair);
+                };
                 }
-                Content::String(s) => {
+                Content::String(StringContent::Format(form)) => {
                     //the only variant of string that can hold a content
-                    if let StringContent::Format(form) = s {
-                        let FormatContent{ref arguments, ..} = form;
-                        for (_, c) in arguments.iter() {
-                            get_list((n,c), list);
-                        } 
-                    }
+                    let FormatContent{ref arguments, ..} = form;
+                    for (_, c) in arguments.iter() {
+                        get_list((n,c), list);
+                    } 
                 }
                 _ => {}
             }
@@ -309,9 +303,9 @@ fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
 impl Compile for Namespace {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         // TODO: needs to wrap each top-level attribute in a variable size array model
-        let sorted_ns = self.topo_sort().ok_or(anyhow!("dependency is cyclic"))?;
+        let sorted_ns = self.topo_sort().ok_or_else(|| anyhow!("dependency is cyclic"))?;
         let object_node = sorted_ns.iter().map(|name|{
-            let field = self.collections.get(&name).expect("field should be there");
+            let field = self.collections.get(name).expect("field should be there");
             compiler.build(name.as_ref(), field).map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
         }).collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
