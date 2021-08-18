@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
-use sqlx::Postgres;
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use sqlx::mysql::MySqlTypeInfo;
+use sqlx::{MySql, Postgres};
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
 use sqlx::{Type, Encode, encode::IsNull};
 
@@ -216,6 +217,16 @@ impl Type<Postgres> for Value {
     }
 }
 
+impl Type<MySql> for Value {
+    fn type_info() -> MySqlTypeInfo {
+        <serde_json::value::Value as Type<MySql>>::type_info()
+    }
+
+    fn compatible(ty: &MySqlTypeInfo) -> bool {
+        <serde_json::value::Value as Type<MySql>>::compatible(ty)
+    }
+}
+
 impl Encode<'_, Postgres> for Value {
     fn encode_by_ref(
         &self, 
@@ -257,6 +268,46 @@ impl Encode<'_, Postgres> for Value {
     }
 }
 
+impl Encode<'_, MySql> for Value {
+    fn encode_by_ref(
+        &self, 
+        buf: &mut Vec<u8>
+    ) -> IsNull {
+        match self {
+            Value::Null(_) => IsNull::Yes,
+            Value::Bool(b) => <bool as Encode<'_, MySql>>::encode_by_ref(b, buf),
+            Value::Number(num) => {
+                match *num {
+                    Number::I8(i) => <i8 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I16(i) => <i16 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I32(i) => <i32 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I64(i) => <i64 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I128(_i) => todo!(),
+                    Number::U8(i) => <i8 as Encode<'_, MySql>>::encode_by_ref(&(i as i8), buf),
+                    Number::U16(i) => <i16 as Encode<'_, MySql>>::encode_by_ref(&(i as i16), buf),
+                    Number::U32(i) => <u32 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::U64(i) => <i64 as Encode<'_, MySql>>::encode_by_ref(&(i as i64), buf),
+                    Number::U128(_i) => todo!(),
+                    Number::F32(f) => <f32 as Encode<'_, MySql>>::encode_by_ref(&f, buf),
+                    Number::F64(f) => <f64 as Encode<'_, MySql>>::encode_by_ref(&f, buf),
+                }
+            },
+            Value::String(s) => <String as Encode<'_, MySql>>::encode_by_ref(s, buf),
+            Value::DateTime(dt) => {
+                match dt {
+                    ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, MySql>>::encode_by_ref(nd, buf),
+                    ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, MySql>>::encode_by_ref(nt, buf),
+                    ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, MySql>>::encode_by_ref(ndt, buf),
+                    ChronoValue::DateTime(dt) => <DateTime<Utc> as Encode<'_, MySql>>::encode_by_ref(&dt.with_timezone(&Utc), buf),
+                }
+            }
+            Value::Object(_) => {
+                <serde_json::Value as Encode<'_, MySql>>::encode(serde_json::to_value(self).unwrap(), buf)
+            },
+            Value::Array(_arr) => todo!(), //TODO special-case for u8 arrays?
+        }
+    }
+}
 #[allow(unused)]
 impl Value {
     pub fn as_null(&self) -> Option<()> {
