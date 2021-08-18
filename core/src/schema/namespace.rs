@@ -411,7 +411,7 @@ mod tests {
         };
         let c = ns.get_collection(&last).unwrap();
         if let Content::SameAs(same) = c {
-            list.contains(same.ref_.collection()) && check_dep(&list[..], ns)
+            list.contains(same.ref_.collection()) && check_dep(list, ns)
         } else {
             true
         }
