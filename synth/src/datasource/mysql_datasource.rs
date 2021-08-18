@@ -52,18 +52,19 @@ impl DataSource for MySqlDataSource {
 impl RelationalDataSource for MySqlDataSource {
     type QueryResult = MySqlQueryResult;
 
-    async fn execute_query(&self, query: String, query_params: Vec<&Value>) -> Result<MySqlQueryResult> {
-        let mut query = sqlx::query(query.as_str());
+    async fn execute_query(&self, _query: String, _query_params: Vec<&Value>) -> Result<MySqlQueryResult> {
+        // let mut query = sqlx::query(query.as_str());
 
-        for param in query_params {
-            query = query.bind(param);
-        }
+        // for param in query_params {
+        //     query = query.bind(param);
+        // }
 
-        let result = query
-            .execute(&self.pool)
-            .await?;
+        // let result = query
+        //     .execute(&self.pool)
+        //     .await?;
 
-        Ok(result)
+        // Ok(result)
+        unimplemented!()
     }
 
     fn get_catalog(&self) -> Result<&str> {

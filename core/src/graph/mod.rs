@@ -2,6 +2,11 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+use sqlx::Postgres;
+use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
+use sqlx::{Type, Encode, encode::IsNull};
+
 use synth_gen::prelude::*;
 use synth_gen::value::{Token, Tokenizer};
 
@@ -197,6 +202,58 @@ derive_from! {
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", serde_json::to_string(&self).unwrap())
+    }
+}
+
+/// we maskerade as a JSON value because the semantics are quite similar
+impl Type<Postgres> for Value {
+    fn type_info() -> PgTypeInfo {
+        <serde_json::value::Value as Type<Postgres>>::type_info()
+    }
+
+    fn compatible(ty: &PgTypeInfo) -> bool {
+        <serde_json::value::Value as Type<Postgres>>::compatible(ty)
+    }
+}
+
+impl Encode<'_, Postgres> for Value {
+    fn encode_by_ref(
+        &self, 
+        buf: &mut PgArgumentBuffer
+    ) -> IsNull {
+        match self {
+            Value::Null(_) => IsNull::Yes,
+            Value::Bool(b) => <bool as Encode<'_, Postgres>>::encode_by_ref(b, buf),
+            Value::Number(num) => {
+                match *num {
+                    Number::I8(i) => <i8 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I16(i) => <i16 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I32(i) => <i32 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I64(i) => <i64 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I128(_i) => todo!(),
+                    Number::U8(i) => <i8 as Encode<'_, Postgres>>::encode_by_ref(&(i as i8), buf),
+                    Number::U16(i) => <i16 as Encode<'_, Postgres>>::encode_by_ref(&(i as i16), buf),
+                    Number::U32(i) => <u32 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::U64(i) => <i64 as Encode<'_, Postgres>>::encode_by_ref(&(i as i64), buf),
+                    Number::U128(_i) => todo!(),
+                    Number::F32(f) => <f32 as Encode<'_, Postgres>>::encode_by_ref(&f, buf),
+                    Number::F64(f) => <f64 as Encode<'_, Postgres>>::encode_by_ref(&f, buf),
+                }
+            },
+            Value::String(s) => <String as Encode<'_, Postgres>>::encode_by_ref(s, buf),
+            Value::DateTime(dt) => {
+                match dt {
+                    ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, Postgres>>::encode_by_ref(nd, buf),
+                    ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, Postgres>>::encode_by_ref(nt, buf),
+                    ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, Postgres>>::encode_by_ref(ndt, buf),
+                    ChronoValue::DateTime(dt) => <DateTime<FixedOffset> as Encode<'_, Postgres>>::encode_by_ref(dt, buf),
+                }
+            }
+            Value::Object(_) => {
+                <serde_json::Value as Encode<'_, Postgres>>::encode(serde_json::to_value(self).unwrap(), buf)
+            },
+            Value::Array(arr) => arr.encode_by_ref(buf), //TODO special-case for BYTEA
+        }
     }
 }
 

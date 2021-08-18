@@ -3449,6 +3449,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "sqlx",
  "strsim 0.10.0",
  "synth-gen",
  "tempfile",
