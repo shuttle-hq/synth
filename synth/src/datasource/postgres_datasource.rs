@@ -10,7 +10,7 @@ use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
 use synth_core::{Content, Value};
 use synth_core::schema::{BoolContent, StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType, Uuid};
-use synth_core::schema::number_content::{I64, F64};
+use synth_core::schema::number_content::{I64, F64, I32, F32};
 use std::collections::BTreeMap;
 
 pub struct PostgresDataSource {
@@ -190,7 +190,7 @@ impl RelationalDataSource for PostgresDataSource {
                 high: 1,
                 step: 1,
             }))),
-            "int4" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
+            "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep {
                 low: 0,
                 high: 1,
                 step: 1,
@@ -200,7 +200,7 @@ impl RelationalDataSource for PostgresDataSource {
                 high: 1,
                 step: 1,
             }))),
-            "float4" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
+            "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep {
                 low: 0.0,
                 high: 1.0,
                 step: 0.1, //todo

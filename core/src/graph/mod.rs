@@ -206,27 +206,25 @@ impl Display for Value {
     }
 }
 
-/// we masquerade as a JSON value because the semantics are quite similar
+/// Claim we are an unknown type since we don't have a reference to `self` to use.
 impl Type<Postgres> for Value {
     fn type_info() -> PgTypeInfo {
-        println!("Hello! I'm TI.");
-        // <serde_json::value::Value as Type<Postgres>>::type_info()
         PgTypeInfo::with_name("unknown")
     }
 
-    fn compatible(ty: &PgTypeInfo) -> bool {
-        dbg!("{}", ty);
-        <serde_json::value::Value as Type<Postgres>>::compatible(ty)
+    fn compatible(_ty: &PgTypeInfo) -> bool {
+        unreachable!("This should never happen. Please reach out to https://github.com/getsynth/synth/issues if it does.")
     }
 }
 
 impl Type<MySql> for Value {
     fn type_info() -> MySqlTypeInfo {
-        <serde_json::value::Value as Type<MySql>>::type_info()
+        <String as Type<MySql>>::type_info()
+        // <serde_json::value::Value as Type<MySql>>::type_info()
     }
 
-    fn compatible(ty: &MySqlTypeInfo) -> bool {
-        <serde_json::value::Value as Type<MySql>>::compatible(ty)
+    fn compatible(_ty: &MySqlTypeInfo) -> bool {
+        unreachable!("This should never happen. Please reach out to https://github.com/getsynth/synth/issues if it does.")
     }
 }
 
