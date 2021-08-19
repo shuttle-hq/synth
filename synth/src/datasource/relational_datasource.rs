@@ -35,10 +35,6 @@ pub struct ForeignKey {
 #[derive(Debug)]
 pub struct ValueWrapper(pub(crate) Value);
 
-/// A type alias for `Option<String>`.
-///
-type SqlType = Option<String>;
-
 /// All relational databases should define this trait and implement database specific queries in
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
 /// handle it.
