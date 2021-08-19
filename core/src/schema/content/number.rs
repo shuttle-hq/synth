@@ -7,7 +7,7 @@ use serde::{
     ser::Serializer,
     Serialize,
 };
-use crate::graph::number::RandomU32;
+use crate::graph::number::{RandomU32, RandomF32, RandomI32};
 
 #[derive(Clone, Copy)]
 pub enum NumberContentKind {
@@ -328,8 +328,23 @@ impl Compile for NumberContent {
                 };
                 random_u32.into()
             }
-            NumberContent::I32(_) => todo!(),
-            NumberContent::F32(_) => todo!()
+            Self::I32(i32_content) => {
+                let random_i32 = match i32_content {
+                    number_content::I32::Range(range) => RandomI32::range(*range)?,
+                    number_content::I32::Categorical(categorical_content) => {
+                        RandomI32::categorical(categorical_content.clone())
+                    }
+                    number_content::I32::Constant(val) => RandomI32::constant(*val),
+                };
+                random_i32.into()
+            }
+            Self::F32(f32_content) => {
+                let random_f32 = match f32_content {
+                    number_content::F32::Range(range) => RandomF32::range(*range)?,
+                    number_content::F32::Constant(val) => RandomF32::constant(*val),
+                };
+                random_f32.into()
+            }
         };
         Ok(Graph::Number(number_node))
     }
