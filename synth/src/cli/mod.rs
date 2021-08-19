@@ -7,6 +7,7 @@ mod postgres;
 mod stdf;
 mod store;
 mod telemetry;
+mod json;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};

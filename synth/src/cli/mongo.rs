@@ -7,7 +7,6 @@ use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
 use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
-use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
@@ -21,6 +20,7 @@ use synth_core::schema::{
 use synth_core::{Content, Name, Namespace};
 use synth_core::graph::Value;
 use chrono::{Utc, TimeZone};
+use std::convert::TryFrom;
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {

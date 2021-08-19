@@ -7,6 +7,7 @@ use serde_json::Value;
 use std::path::PathBuf;
 
 use crate::cli::json::synth_val_to_json;
+use std::convert::TryFrom;
 
 #[derive(Clone, Debug)]
 pub struct FileImportStrategy {
@@ -21,7 +22,7 @@ pub struct StdoutExportStrategy {}
 
 impl ExportStrategy for StdoutExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
-        let generator = Sampler::new(&params.namespace);
+        let generator = Sampler::try_from(&params.namespace)?;
         let values = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
         println!("{}", synth_val_to_json(values));
         Ok(())
