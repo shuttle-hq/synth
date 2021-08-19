@@ -7,7 +7,6 @@ use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
 use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
-use std::iter::FromIterator;
 use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
 use synth_core::graph::prelude::number_content::I64;
@@ -15,7 +14,7 @@ use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep, Number
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, FieldContent,
-    OneOfContent, RegexContent, StringContent,
+    RegexContent, StringContent,
 };
 use synth_core::{Content, Name, Namespace};
 use synth_core::graph::Value;
@@ -124,11 +123,11 @@ fn bson_to_content(bson: &Bson) -> Content {
         Bson::String(_) => Content::String(StringContent::default()),
         Bson::Array(array) => {
             let length = Content::Number(NumberContent::U64(U64::Constant(array.len() as u64)));
-            let content_iter = array.iter().map(|bson| bson_to_content(bson));
+            let content_iter = array.iter().map(bson_to_content);
 
             Content::Array(ArrayContent {
                 length: Box::new(length),
-                content: Box::new(Content::OneOf(OneOfContent::from_iter(content_iter))),
+                content: Box::new(Content::OneOf(content_iter.collect())),
             })
         }
         Bson::Document(doc) => doc_to_content(doc),
@@ -242,7 +241,7 @@ fn value_to_bson(value: Value) -> Bson {
 }
 
 fn array_to_bson(array: Vec<Value>) -> Bson {
-    Bson::Array(array.into_iter().map(|value| value_to_bson(value)).collect())
+    Bson::Array(array.into_iter().map(value_to_bson).collect())
 }
 
 fn object_to_bson(obj: BTreeMap<String, Value>) -> Bson {

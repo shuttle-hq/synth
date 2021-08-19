@@ -105,7 +105,7 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
         let values = task::block_on(datasource.get_deterministic_samples(&table))?;
         // This is temporary while we replace JSON as the core data model in namespaces.
         // namespace::try_update should take `synth_core::Value`s
-        let json_values: Vec<Value> = values.into_iter().map(|v| synth_val_to_json(v)).collect();
+        let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
 
         namespace.try_update(
             OptionalMergeStrategy,

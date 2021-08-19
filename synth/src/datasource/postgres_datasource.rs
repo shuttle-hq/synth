@@ -245,7 +245,7 @@ impl RelationalDataSource for PostgresDataSource {
         for i in 0..extend {
             query.push_str(&format!("${}", curr_index + i + 1));
             if i != extend - 1 {
-                query.push_str(",");
+                query.push(',');
             }
         }
         query.push(')');
