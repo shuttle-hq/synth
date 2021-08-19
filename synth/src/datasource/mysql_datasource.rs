@@ -221,14 +221,15 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(mut query: String, _curr_index: usize, extend: usize) -> String {
+    fn extend_parameterised_query(query: &mut String, _curr_index: usize, extend: usize) {
+        query.push('(');
         for i in 0..extend {
             query.push_str("?");
             if i != extend - 1 {
                 query.push_str(",");
             }
         }
-        query
+        query.push(')');
     }
 }
 

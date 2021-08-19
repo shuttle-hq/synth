@@ -45,7 +45,7 @@ impl DataSource for PostgresDataSource {
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection).await.unwrap();
+        self.insert_relational_data(collection_name, collection).await?;
         Ok(())
     }
 }
@@ -240,14 +240,15 @@ impl RelationalDataSource for PostgresDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(mut query: String, curr_index: usize, extend: usize) -> String {
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize) {
+        query.push('(');
         for i in 0..extend {
-            query.push_str(&format!("${}", curr_index + i));
+            query.push_str(&format!("${}", curr_index + i + 1));
             if i != extend - 1 {
                 query.push_str(",");
             }
         }
-        query
+        query.push(')');
     }
 }
 

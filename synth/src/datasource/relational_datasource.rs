@@ -66,7 +66,7 @@ pub trait RelationalDataSource: DataSource {
         let mut futures = vec![];
 
         for rows in collection.chunks(batch_size) {
-            let query = format!(
+            let mut query = format!(
                 "INSERT INTO {} ({}) VALUES \n",
                 collection_name, column_names
             );
@@ -79,21 +79,19 @@ pub trait RelationalDataSource: DataSource {
                     .as_object()
                     .expect("This is always an object (sampler contract)");
                 let extend = row_obj.values().len();
-                let mut query = Self::extend_parameterised_query(query.clone(), curr_index, extend);
+                Self::extend_parameterised_query(&mut query, curr_index, extend);
                 curr_index += extend;
-
-                // TODO
                 query_params.extend(row_obj.values());
 
-                // We should be using some form of a prepared statement here.
-                // It is not clear how this would work for our batch inserts...
                 if i == rows.len() - 1 {
-                    query.push_str(&format!(";\n"));
+                    query.push_str(";\n");
                 } else {
-                    query.push_str(&format!(",\n"));
+                    query.push_str(",\n");
                 }
-            }
 
+            }
+            println!("{}", query);
+            println!("{:#?}", query_params);
             let future = self.execute_query(query, query_params);
             futures.push(future);
         }
@@ -127,5 +125,5 @@ pub trait RelationalDataSource: DataSource {
     fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content>;
 
     // Returns extended query string + current index
-    fn extend_parameterised_query(query: String, curr_index: usize, extend: usize) -> String;
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize);
 }
