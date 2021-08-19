@@ -7,6 +7,7 @@ use serde::{
     ser::Serializer,
     Serialize,
 };
+use crate::graph::number::RandomU32;
 
 #[derive(Clone, Copy)]
 pub enum NumberContentKind {
@@ -258,6 +259,24 @@ number_content!(
     Range(RangeStep<f64>),
     Constant(f64),
     },
+    u32[is_u32, default_u32_range] as U32 {
+    #[default]
+    Range(RangeStep<u32>),
+    Categorical(Categorical<u32>),
+    Constant(u32),
+    Id(crate::schema::Id),
+    },
+    i32[is_i32, default_i32_range] as I32 {
+    #[default]
+    Range(RangeStep<i32>),
+    Categorical(Categorical<i32>),
+    Constant(i32),
+    },
+    f32[is_f32, default_f32_range] as F32 {
+    #[default]
+    Range(RangeStep<f32>),
+    Constant(f32),
+    },
 );
 
 impl Compile for NumberContent {
@@ -294,6 +313,23 @@ impl Compile for NumberContent {
                 };
                 random_f64.into()
             }
+            NumberContent::U32(u32_content) => {
+                let random_u32 = match u32_content {
+                    number_content::U32::Range(range) => RandomU32::range(*range)?,
+                    number_content::U32::Categorical(categorical_content) => {
+                        RandomU32::categorical(categorical_content.clone())
+                    }
+                    number_content::U32::Constant(val) => RandomU32::constant(*val),
+                    number_content::U32::Id(id) => {
+                        // todo fix
+                        let gen = Incrementing::new_at(id.start_at.unwrap_or_default() as u32);
+                        RandomU32::incrementing(gen)
+                    }
+                };
+                random_u32.into()
+            }
+            NumberContent::I32(_) => todo!(),
+            NumberContent::F32(_) => todo!()
         };
         Ok(Graph::Number(number_node))
     }

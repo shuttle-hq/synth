@@ -206,13 +206,16 @@ impl Display for Value {
     }
 }
 
-/// we maskerade as a JSON value because the semantics are quite similar
+/// we masquerade as a JSON value because the semantics are quite similar
 impl Type<Postgres> for Value {
     fn type_info() -> PgTypeInfo {
-        <serde_json::value::Value as Type<Postgres>>::type_info()
+        println!("Hello! I'm TI.");
+        // <serde_json::value::Value as Type<Postgres>>::type_info()
+        PgTypeInfo::with_name("unknown")
     }
 
     fn compatible(ty: &PgTypeInfo) -> bool {
+        dbg!("{}", ty);
         <serde_json::value::Value as Type<Postgres>>::compatible(ty)
     }
 }
@@ -229,7 +232,7 @@ impl Type<MySql> for Value {
 
 impl Encode<'_, Postgres> for Value {
     fn encode_by_ref(
-        &self, 
+        &self,
         buf: &mut PgArgumentBuffer
     ) -> IsNull {
         match self {
@@ -270,7 +273,7 @@ impl Encode<'_, Postgres> for Value {
 
 impl Encode<'_, MySql> for Value {
     fn encode_by_ref(
-        &self, 
+        &self,
         buf: &mut Vec<u8>
     ) -> IsNull {
         match self {

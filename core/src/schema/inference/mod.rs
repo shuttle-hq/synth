@@ -305,6 +305,7 @@ impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
                     self.try_merge(master, value)
                 }
             }
+            _ => todo!()
         }
     }
 }

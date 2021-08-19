@@ -205,4 +205,10 @@ number_node!(
     F64Range as range,
     F64Constant as constant,,,
     ) for f64,
+    RandomU32 (
+    U32Range as range,
+    U32Constant as constant,
+    U32Categorical as categorical,
+    Incrementing as incrementing,
+    ) for u32,
 );
