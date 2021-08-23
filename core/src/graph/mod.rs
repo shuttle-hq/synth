@@ -219,8 +219,7 @@ impl Type<Postgres> for Value {
 
 impl Type<MySql> for Value {
     fn type_info() -> MySqlTypeInfo {
-        <String as Type<MySql>>::type_info()
-        // <serde_json::value::Value as Type<MySql>>::type_info()
+        <serde_json::value::Value as Type<MySql>>::type_info()
     }
 
     fn compatible(_ty: &MySqlTypeInfo) -> bool {
@@ -308,9 +307,53 @@ impl Encode<'_, MySql> for Value {
             Value::Array(_arr) => todo!(), //TODO special-case for u8 arrays?
         }
     }
+
+    fn produces(&self) -> Option<MySqlTypeInfo> {
+        Some(match self {
+            Value::Bool(_) => <bool as Type<MySql>>::type_info(),
+            Value::DateTime(dt) => {
+                match dt {
+                    ChronoValue::NaiveDate(_) => <NaiveDate as Type<MySql>>::type_info(),
+                    ChronoValue::NaiveTime(_) => <NaiveTime as Type<MySql>>::type_info(),
+                    ChronoValue::NaiveDateTime(_) => <NaiveDateTime as Type<MySql>>::type_info(),
+                    ChronoValue::DateTime(_) => <DateTime<Utc> as Type<MySql>>::type_info(),
+                }
+            },
+            _ => todo!()
+        })
+    }
 }
+
 #[allow(unused)]
 impl Value {
+    pub fn is_null(&self) -> bool {
+        self.as_null().is_some()
+    }
+
+    pub fn is_bool(&self) -> bool {
+        self.as_bool().is_some()
+    }
+
+    pub fn is_number(&self) -> bool {
+        self.as_number().is_some()
+    }
+
+    pub fn is_string(&self) -> bool {
+        self.as_string().is_some()
+    }
+
+    pub fn is_datetime(&self) -> bool {
+        self.as_datetime().is_some()
+    }
+
+    pub fn is_object(&self) -> bool {
+        self.as_object().is_some()
+    }
+
+    pub fn is_array(&self) -> bool {
+        self.as_array().is_some()
+    }
+
     pub fn as_null(&self) -> Option<()> {
         match *self {
             Value::Null(()) => Some(()),

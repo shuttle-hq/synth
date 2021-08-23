@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use serde_json::{value::Value, Map};
 
 use std::collections::BTreeMap;
 use std::convert::AsRef;
@@ -9,11 +8,8 @@ use std::{default::Default, iter::FromIterator};
 use super::inference::MergeStrategy;
 use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
 use crate::compile::{Compile, Compiler};
-use crate::graph::prelude::OptionalMergeStrategy;
-use crate::graph::{Graph, KeyValueOrNothing};
-
-#[allow(dead_code)]
-type JsonObject = Map<String, Value>;
+use crate::graph::prelude::{OptionalMergeStrategy, Number};
+use crate::graph::{Value, Graph, KeyValueOrNothing};
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Namespace {
@@ -94,7 +90,7 @@ impl Namespace {
 
     pub fn collection(value: &Value) -> Content {
         Content::Array(ArrayContent {
-            length: Box::new(Content::from(&Value::from(1))),
+            length: Box::new(Content::from(&Value::Number(Number::U64(1)))),
             content: Box::new(value.into()),
         })
     }

@@ -1,12 +1,12 @@
 //! # TODO
 //! - Put the numerical content upcast logic in the corresponding function-style macro
 use anyhow::Result;
-use serde_json::{Map, Number, Value};
 
-use std::collections::HashSet;
+use std::collections::{HashSet, BTreeMap};
 use std::fmt::Display;
 
 pub mod value;
+
 pub use value::ValueMergeStrategy;
 
 use super::{
@@ -14,6 +14,8 @@ use super::{
     DateTimeContent, FieldContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
     RangeStep, StringContent, ValueKindExt,
 };
+use crate::graph::prelude::Number;
+use crate::graph::Value;
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
     fn try_merge(self, master: &mut M, candidate: &C) -> Result<()>;
@@ -44,7 +46,7 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
                 Self.try_merge(master_obj, candidate_obj)
             }
             (Content::Array(ArrayContent { content, length }), Value::Array(values)) => {
-                Self.try_merge(length.as_mut(), &Value::from(values.len()))?;
+                Self.try_merge(length.as_mut(), &Value::Number(Number::U64(values.len() as u64)))?;
                 values
                     .iter()
                     .try_for_each(|value| Self.try_merge(content.as_mut(), value))
@@ -58,7 +60,7 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             (Content::Bool(bool_content), Value::Bool(boolean)) => {
                 Self.try_merge(bool_content, boolean)
             }
-            (Content::Null, Value::Null) => Ok(()),
+            (Content::Null, Value::Null(_)) => Ok(()),
             (master, candidate) => Err(failed!(
                 target: Release,
                 "cannot merge a node of type '{}' with a value of type '{}'",
@@ -118,11 +120,11 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
     }
 }
 
-impl MergeStrategy<ObjectContent, Map<String, Value>> for OptionalMergeStrategy {
+impl MergeStrategy<ObjectContent, BTreeMap<String, Value>> for OptionalMergeStrategy {
     fn try_merge(
         self,
         master: &mut ObjectContent,
-        candidate_obj: &serde_json::Map<String, Value>,
+        candidate_obj: &BTreeMap<String, Value>,
     ) -> Result<()> {
         let master_keys: HashSet<_> = master
             .iter()
@@ -280,32 +282,25 @@ impl MergeStrategy<number_content::F64, f64> for OptionalMergeStrategy {
 
 impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut NumberContent, value: &Number) -> Result<()> {
-        match master {
-            NumberContent::U64(u64_content) => {
-                if let Some(n) = value.as_u64() {
-                    self.try_merge(u64_content, &n)
-                } else {
-                    *master = u64_content.clone().upcast(value.kind())?;
-                    self.try_merge(master, value)
-                }
+        match (master, value) {
+            (NumberContent::U64(u64_content), Number::U64(u64)) => {
+                self.try_merge(u64_content, &u64)
             }
-            NumberContent::I64(i64_content) => {
-                if let Some(n) = value.as_i64() {
-                    self.try_merge(i64_content, &n)
-                } else {
-                    *master = i64_content.clone().upcast(value.kind())?;
-                    self.try_merge(master, value)
-                }
+            (NumberContent::I64(i64_content), Number::I64(i64)) => {
+                self.try_merge(i64_content, &i64)
             }
-            NumberContent::F64(f64_content) => {
-                if let Some(n) = value.as_f64() {
-                    self.try_merge(f64_content, &n)
-                } else {
-                    *master = f64_content.clone().upcast(value.kind())?;
-                    self.try_merge(master, value)
-                }
+            (NumberContent::F64(f64_content), Number::F64(f64)) => {
+                self.try_merge(f64_content, &f64)
             }
-            _ => todo!()
+            (NumberContent::U32(u32_content), Number::U32(u32)) => {
+                self.try_merge(u32_content, u32)
+            }
+            (NumberContent::F32(f32_content), Number::F32(f32)) => {
+                self.try_merge(f32_content, f32)
+            }
+            (NumberContent::I32(i32_content), Number::I32(i32)) => {
+                self.try_merge(i32_content, i32)
+            }
         }
     }
 }
@@ -355,7 +350,7 @@ pub mod tests {
             &collection_name,
             &user_no_address_as_array,
         )
-        .unwrap();
+            .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
             .is_ok());
@@ -393,13 +388,13 @@ pub mod tests {
             &collection_name,
             &user_no_address_as_array,
         )
-        .unwrap();
+            .unwrap();
         ns.try_update(
             OptionalMergeStrategy,
             &collection_name,
             &user_no_address_as_array,
         )
-        .unwrap();
+            .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
             .is_ok());
@@ -446,7 +441,7 @@ pub mod tests {
             &collection_name,
             &user_no_address_as_array,
         )
-        .unwrap();
+            .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
             .is_ok());

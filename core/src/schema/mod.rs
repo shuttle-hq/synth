@@ -8,7 +8,7 @@ use serde::{
     de::{self, Error as DeError},
     Deserialize, Deserializer, Serialize, Serializer,
 };
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 
 #[allow(unused_macros)]
 macro_rules! from_json {
@@ -23,6 +23,7 @@ macro_rules! from_json {
 }
 
 use crate::error::Error;
+use crate::graph::Value;
 
 pub mod inference;
 pub use inference::{MergeStrategy, OptionalMergeStrategy, ValueMergeStrategy};
@@ -52,7 +53,8 @@ impl ValueKindExt for Value {
             Self::Array(_) => "array",
             Self::Object(_) => "object",
             Self::Number(_) => "number",
-            Value::Null => "null",
+            Value::Null(_) => "null",
+            Value::DateTime(_) => "datetime"
         }
     }
 }

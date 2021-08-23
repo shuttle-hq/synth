@@ -14,33 +14,41 @@
 //!   to other parts of `synth` should be re-exported here.
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use crate::graph::Value;
 
 mod r#bool;
+
 pub use self::r#bool::BoolContent;
 
 mod number;
+
 pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, RangeStep};
 
 mod string;
+
 pub use string::{
     ChronoValue, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
     FakerContentArgument, RegexContent, StringContent, Uuid,
 };
 
 mod array;
+
 pub use array::ArrayContent;
 
 mod object;
+
 pub use object::{FieldContent, ObjectContent};
 
 mod one_of;
+
 pub use one_of::{OneOfContent, VariantContent};
 
 mod categorical;
+
 pub use categorical::{Categorical, CategoricalType};
 
 pub use number::Id;
+
 pub mod prelude;
 pub(crate) mod series;
 pub(crate) mod unique;
@@ -53,30 +61,30 @@ use crate::schema::unique::UniqueContent;
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
-    where
-        I: IntoIterator<Item = R>,
-        R: AsRef<str>,
+        where
+            I: IntoIterator<Item=R>,
+            R: AsRef<str>,
     {
         self.project(reference.into_iter().peekable())
     }
 
     fn find_mut<I, R>(&mut self, reference: I) -> Result<&mut C>
-    where
-        I: IntoIterator<Item = R>,
-        R: AsRef<str>,
+        where
+            I: IntoIterator<Item=R>,
+            R: AsRef<str>,
     {
         self.project_mut(reference.into_iter().peekable())
     }
 
     fn project<I, R>(&self, reference: Peekable<I>) -> Result<&C>
-    where
-        I: Iterator<Item = R>,
-        R: AsRef<str>;
+        where
+            I: Iterator<Item=R>,
+            R: AsRef<str>;
 
     fn project_mut<I, R>(&mut self, reference: Peekable<I>) -> Result<&mut C>
-    where
-        I: Iterator<Item = R>,
-        R: AsRef<str>;
+        where
+            I: Iterator<Item=R>,
+            R: AsRef<str>;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -129,7 +137,7 @@ impl Content {
             }
             // self is a non-logical node
             _ => match value {
-                Value::Null => match self {
+                Value::Null(_) => match self {
                     Self::Null => Ok(()),
                     _ => Err(failed!(
                         target: Release,
@@ -179,6 +187,9 @@ impl Content {
                         self
                     )),
                 },
+                Value::DateTime(dt) => {
+                    unimplemented!()
+                }
             },
         }
     }
@@ -211,18 +222,17 @@ impl std::fmt::Display for Content {
     }
 }
 
-impl<'r> From<&'r Value> for Content {
-    fn from(value: &'r Value) -> Self {
+impl<'r> From<&'r crate::graph::Value> for Content {
+    fn from(value: &'r crate::graph::Value) -> Self {
         match value {
-            // TODO not sure what the correct behaviour is here
-            Value::Null => Content::Null,
+            Value::Null(_) => Content::Null,
             Value::Bool(_) => Content::Bool(BoolContent::default()),
             Value::String(_) => Content::String(StringContent::default()),
             Value::Array(arr) => {
                 let length = arr.len();
                 let one_of_content = arr.iter().collect();
                 Content::Array(ArrayContent {
-                    length: Box::new(Content::from(&Value::from(length as u64))),
+                    length: Box::new(Content::from(&Value::Number(Number::U64(length as u64)))),
                     content: Box::new(Content::OneOf(one_of_content)),
                 })
             }
@@ -234,31 +244,48 @@ impl<'r> From<&'r Value> for Content {
                 Content::Object(ObjectContent { fields })
             }
             Value::Number(number_value) => {
-                let number_content = if number_value.is_f64() {
-                    let value = number_value.as_f64().unwrap();
-                    NumberContent::F64(number_content::F64::Range(RangeStep {
+                let number_content = match number_value {
+                    Number::I8(_) => unimplemented!("Need to implemented number content for i8"),
+                    Number::I16(_) => unimplemented!("Need to implemented number content for i16"),
+                    Number::I32(value) => NumberContent::I32(number_content::I32::Range(RangeStep {
+                        low: value,
+                        high: value + 1,
+                        step: 1,
+                    })),
+                    Number::I64(value) => NumberContent::I64(number_content::I64::Range(RangeStep {
+                        low: value,
+                        high: value + 1,
+                        step: 1,
+                    })),
+                    Number::I128(_) => unimplemented!("Need to implemented number content for i128"),
+                    Number::U8(_) => unimplemented!("Need to implemented number content for u8"),
+                    Number::U16(_) => unimplemented!("Need to implemented number content for u16"),
+                    Number::U32(value) => NumberContent::U32(number_content::U32::Range(RangeStep {
+                        low: value,
+                        high: value + 1,
+                        step: 1,
+                    })),
+                    Number::U64(value) => NumberContent::U64(number_content::U64::Range(RangeStep {
+                        low: value,
+                        high: value + 1,
+                        step: 1,
+                    })),
+                    Number::U128(_) => unimplemented!("Need to implemented number content for u128"),
+                    Number::F32(value) => NumberContent::F32(number_content::F32::Range(RangeStep {
                         low: value,
                         high: value + 1.0,
-                        step: 1.,
-                    }))
-                } else if number_value.is_u64() {
-                    let value = number_value.as_u64().unwrap();
-                    NumberContent::U64(number_content::U64::Range(RangeStep {
+                        step: 1.0,
+                    })),
+                    Number::F64(value) => NumberContent::F64(number_content::F64::Range(RangeStep {
                         low: value,
-                        high: value + 1,
-                        step: 1,
+                        high: value + 1.0,
+                        step: 1.0,
                     }))
-                } else if number_value.is_i64() {
-                    let value = number_value.as_i64().unwrap();
-                    NumberContent::I64(number_content::I64::Range(RangeStep {
-                        low: value,
-                        high: value + 1,
-                        step: 1,
-                    }))
-                } else {
-                    unreachable!()
                 };
                 Content::Number(number_content)
+            }
+            Value::DateTime(date_time) => {
+                unimplemented!()
             }
         }
     }
@@ -266,9 +293,9 @@ impl<'r> From<&'r Value> for Content {
 
 impl Find<Content> for Content {
     fn project<I, R>(&self, mut reference: Peekable<I>) -> Result<&Content>
-    where
-        I: Iterator<Item = R>,
-        R: AsRef<str>,
+        where
+            I: Iterator<Item=R>,
+            R: AsRef<str>,
     {
         match reference.peek() {
             None => Ok(self),
@@ -286,9 +313,9 @@ impl Find<Content> for Content {
     }
 
     fn project_mut<I, R>(&mut self, mut reference: Peekable<I>) -> Result<&mut Content>
-    where
-        I: Iterator<Item = R>,
-        R: AsRef<str>,
+        where
+            I: Iterator<Item=R>,
+            R: AsRef<str>,
     {
         match reference.peek() {
             None => Ok(self),
@@ -331,9 +358,9 @@ impl Compile for SameAsContent {
 
 #[inline]
 pub fn suggest_closest<R, I>(iter: I, reference: &str) -> Option<String>
-where
-    I: Iterator<Item = R>,
-    R: AsRef<str>,
+    where
+        I: Iterator<Item=R>,
+        R: AsRef<str>,
 {
     iter.min_by_key(|key| strsim::levenshtein(reference, key.as_ref()))
         .map(|suggest| format!(", did you mean '{}'?", suggest.as_ref()))
@@ -560,6 +587,6 @@ pub mod tests {
             "end": "2020-11-05T09:53:10+0500",
             "begin": "2020-11-05T09:53:10+0000"
         }))
-        .is_err())
+            .is_err())
     }
 }

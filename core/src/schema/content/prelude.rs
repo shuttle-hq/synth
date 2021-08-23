@@ -5,8 +5,7 @@ pub(super) use serde::{
     ser::Error as SeError,
     Deserialize, Deserializer, Serialize,
 };
-pub(super) use serde_json::{Map, Number, Value};
-pub(super) type JsonObject = Map<String, Value>;
+pub(super) use serde_json::{Map, Number, Value as JsonValue};
 
 // std
 pub(super) use std::collections::HashMap;
@@ -37,3 +36,4 @@ pub(super) use crate::compile::{Compile, Compiler};
 pub(super) use crate::error::Error;
 pub(super) use crate::graph::*;
 pub(super) use crate::schema::{MergeStrategy, OptionalMergeStrategy};
+pub(super) use crate::graph::Value;

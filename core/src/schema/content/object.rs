@@ -81,7 +81,7 @@ impl ObjectContent {
         })
     }
 
-    pub fn accepts(&self, obj: &JsonObject) -> Result<()> {
+    pub fn accepts(&self, obj: &BTreeMap<String, crate::graph::Value>) -> Result<()> {
         // There is probably a more efficient way of doing this
         // But it's linear time
 
