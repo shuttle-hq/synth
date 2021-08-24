@@ -11,8 +11,8 @@ pub use value::ValueMergeStrategy;
 
 use super::{
     number_content, ArrayContent, BoolContent, Categorical, ChronoValueFormatter, Content,
-    DateTimeContent, FieldContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
-    RangeStep, StringContent, ValueKindExt,
+    DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent, RangeStep,
+    StringContent, ValueKindExt,
 };
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
@@ -58,7 +58,7 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             (Content::Bool(bool_content), Value::Bool(boolean)) => {
                 Self.try_merge(bool_content, boolean)
             }
-            (Content::Null, Value::Null) => Ok(()),
+            (Content::Null(_), Value::Null) => Ok(()),
             (master, candidate) => Err(failed!(
                 target: Release,
                 "cannot merge a node of type '{}' with a value of type '{}'",
@@ -113,7 +113,7 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
             StringContent::Serialized(_) => Ok(()), // we can probably do better here
             StringContent::Uuid(_) => Ok(()),
             StringContent::Truncated(_) => Ok(()),
-            StringContent::Format(_) => Ok(())
+            StringContent::Format(_) => Ok(()),
         }
     }
 }
@@ -127,7 +127,7 @@ impl MergeStrategy<ObjectContent, Map<String, Value>> for OptionalMergeStrategy 
         let master_keys: HashSet<_> = master
             .iter()
             .filter_map(|(key, value)| {
-                if !value.content.is_null() {
+                if !value.is_null() {
                     Some(key.clone())
                 } else {
                     None
@@ -147,19 +147,21 @@ impl MergeStrategy<ObjectContent, Map<String, Value>> for OptionalMergeStrategy 
             .collect();
 
         for key in master_keys.symmetric_difference(&candidate_keys) {
-            master
-                .fields
-                .entry((*key).clone())
+            if let Some(field) = master.fields.remove(key) {
+                master.fields.insert(key.clone(), field.into_nullable());
+            } else {
                 // SAFETY: if `key` is not in master then it is in candidate
-                .or_insert_with(|| FieldContent::new(candidate_obj.get(key).unwrap()))
-                .optional = true;
+                let candidate_field = candidate_obj.get(key).unwrap();
+                let field = Content::from(candidate_field).into_nullable();
+                master.fields.insert(key.clone(), field);
+            }
         }
 
         for key in master_keys.intersection(&candidate_keys) {
             // SAFETY: `key` is in both `self` and `candidate_obj`
             let master_value = master.get_mut(key).unwrap();
             let candidate_value = candidate_obj.get(key).unwrap();
-            Self.try_merge(master_value.content.as_mut(), candidate_value)?;
+            Self.try_merge(master_value, candidate_value)?;
         }
 
         Ok(())

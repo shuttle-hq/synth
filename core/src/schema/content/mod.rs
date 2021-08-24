@@ -13,7 +13,7 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::IntoDeserializer};
 use serde_json::Value;
 
 mod r#bool;
@@ -32,7 +32,7 @@ mod array;
 pub use array::ArrayContent;
 
 mod object;
-pub use object::{FieldContent, ObjectContent};
+pub use object::ObjectContent;
 
 mod one_of;
 pub use one_of::{OneOfContent, VariantContent};
@@ -42,14 +42,16 @@ pub use categorical::{Categorical, CategoricalType};
 
 pub use number::Id;
 pub mod prelude;
+
 pub(crate) mod series;
-pub(crate) mod unique;
+
+pub mod unique;
+pub use unique::{UniqueAlgorithm, UniqueContent};
 
 use prelude::*;
 
 use super::FieldRef;
 use crate::schema::content::series::SeriesContent;
-use crate::schema::unique::UniqueContent;
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -87,25 +89,196 @@ pub struct SameAsContent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "snake_case")]
-#[serde(tag = "type")]
-#[serde(deny_unknown_fields)]
-pub enum Content {
-    Null,
-    Bool(BoolContent),
-    Number(NumberContent),
-    String(StringContent),
-    Array(ArrayContent),
-    Object(ObjectContent),
-    SameAs(SameAsContent),
-    OneOf(OneOfContent),
-    Series(SeriesContent),
-    Unique(UniqueContent),
+pub struct NullContent;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ContentLabels {
+    #[serde(default)]
+    optional: bool,
+    #[serde(default)]
+    unique: bool,
+}
+
+impl ContentLabels {
+    fn try_wrap<E>(self, content: Content) -> std::result::Result<Content, E>
+    where
+        E: serde::de::Error,
+    {
+        let mut output = content;
+
+        if self.unique {
+            output = output.into_unique();
+        }
+
+        if self.optional {
+            output = output.into_nullable();
+        }
+
+        Ok(output)
+    }
+}
+
+macro_rules! content {
+    {
+        labels: $labels:ty,
+        variants: {
+            $($name:ident($variant:ty)$(,)?)+
+        }
+    } => {
+        #[derive(Debug, Serialize, Clone, PartialEq)]
+        #[serde(rename_all = "snake_case")]
+        #[serde(tag = "type")]
+        #[serde(deny_unknown_fields)]
+        pub enum Content {
+            $($name($variant),)+
+        }
+
+        impl<'de> Deserialize<'de> for Content {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+            D: Deserializer<'de>,
+            {
+                #[derive(Deserialize)]
+                #[serde(rename_all = "snake_case")]
+                #[serde(tag = "type")]
+                #[serde(deny_unknown_fields)]
+                enum __Content {
+                    $($name($variant),)+
+                }
+
+                #[derive(Deserialize)]
+                struct __ContentWithLabels {
+                    #[serde(flatten)]
+                    labels: $labels,
+                    #[serde(flatten)]
+                    content: __Content
+                }
+
+                struct Visitor;
+
+                impl<'de> serde::de::Visitor<'de> for Visitor {
+                    type Value = Content;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        write!(formatter, "a general content node, a literal string starting with `@` (for a reference), or a JSON number (for a constant)")
+                    }
+
+                    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+                    where
+                    A: serde::de::MapAccess<'de>
+                    {
+                        use serde::de::IntoDeserializer;
+                        let mut out = HashMap::<String, serde_json::Value>::new();
+                        while let Some(key) = map.next_key()? {
+                            let value = map.next_value()?;
+                            out.insert(key, value);
+                        }
+                        let __ContentWithLabels { labels, content } = __ContentWithLabels::deserialize(out.into_deserializer()).map_err(A::Error::custom)?;
+                        match content {
+                            $(__Content::$name(inner) => {
+                                let inner_as_content = Content::$name(inner);
+                                labels.try_wrap(inner_as_content)
+                            },)+
+                        }
+                    }
+
+                    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+                    where
+                    E: serde::de::Error
+                    {
+                        Ok(Content::Number(number_content::U64::from(v).into()))
+                    }
+
+                    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+                    where
+                    E: serde::de::Error
+                    {
+                        Ok(Content::Number(number_content::I64::from(v).into()))
+                    }
+
+                    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+                    where
+                    E: serde::de::Error
+                    {
+                        Ok(Content::Number(number_content::F64::from(v).into()))
+                    }
+
+                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                    where
+                    E: serde::de::Error
+                    {
+                        if let Some(s) = v.strip_prefix("@") {
+                            let ref_ = FieldRef::deserialize(s.into_deserializer())?;
+                            Ok(Content::SameAs(SameAsContent { ref_ }))
+                        } else {
+                            Err(E::custom("string literals are synonymous to `same_as` and must start with `@` followed by the address of the referent"))
+                        }
+                    }
+                }
+
+                deserializer.deserialize_any(Visitor)
+            }
+        }
+    }
+}
+
+content! {
+    labels: ContentLabels,
+    variants: {
+        Null(NullContent),
+        Bool(BoolContent),
+        Number(NumberContent),
+        String(StringContent),
+        Array(ArrayContent),
+        Object(ObjectContent),
+        SameAs(SameAsContent),
+        OneOf(OneOfContent),
+        Series(SeriesContent),
+        Unique(UniqueContent),
+    }
 }
 
 impl Content {
     pub fn is_null(&self) -> bool {
-        matches!(self, Self::Null)
+        matches!(self, Self::Null(_))
+    }
+
+    pub fn null() -> Self {
+        Self::Null(NullContent)
+    }
+
+    pub fn as_nullable(&self) -> Option<&Self> {
+        match self {
+            Self::OneOf(one_of) => one_of.as_nullable(),
+            _ => None,
+        }
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        self.as_nullable().is_some()
+    }
+
+    pub fn into_nullable(self) -> Self {
+        if !self.is_nullable() {
+            Content::OneOf(vec![self, Content::null()].into_iter().collect())
+        } else {
+            self
+        }
+    }
+
+    pub fn is_unique(&self) -> bool {
+        matches!(self, Self::Unique(_))
+    }
+
+    pub fn into_unique(self) -> Self {
+        if !self.is_unique() {
+            Content::Unique(UniqueContent {
+                algorithm: UniqueAlgorithm::default(),
+                content: Box::new(self),
+            })
+        } else {
+            self
+        }
     }
 
     pub fn accepts(&self, value: &Value) -> Result<()> {
@@ -130,7 +303,7 @@ impl Content {
             // self is a non-logical node
             _ => match value {
                 Value::Null => match self {
-                    Self::Null => Ok(()),
+                    Self::Null(_) => Ok(()),
                     _ => Err(failed!(
                         target: Release,
                         "expecting: '{}', found: 'null'",
@@ -185,7 +358,7 @@ impl Content {
 
     pub fn kind(&self) -> &'static str {
         match self {
-            Content::Null => "null",
+            Content::Null(_) => "null",
             Content::Bool(_) => "bool",
             Content::Number(_) => "number",
             Content::String(_) => "string",
@@ -201,7 +374,7 @@ impl Content {
 
 impl Default for Content {
     fn default() -> Self {
-        Self::Null
+        Self::Null(NullContent)
     }
 }
 
@@ -215,7 +388,7 @@ impl<'r> From<&'r Value> for Content {
     fn from(value: &'r Value) -> Self {
         match value {
             // TODO not sure what the correct behaviour is here
-            Value::Null => Content::Null,
+            Value::Null => Content::Null(NullContent),
             Value::Bool(_) => Content::Bool(BoolContent::default()),
             Value::String(_) => Content::String(StringContent::default()),
             Value::Array(arr) => {
@@ -229,9 +402,12 @@ impl<'r> From<&'r Value> for Content {
             Value::Object(obj) => {
                 let fields = obj
                     .iter()
-                    .map(|(key, value)| (key.to_string(), FieldContent::new(value)))
+                    .map(|(key, value)| (key.to_string(), Content::from(value)))
                     .collect();
-                Content::Object(ObjectContent { fields })
+                Content::Object(ObjectContent {
+                    fields,
+                    ..Default::default()
+                })
             }
             Value::Number(number_value) => {
                 let number_content = if number_value.is_f64() {
@@ -318,7 +494,7 @@ impl Compile for Content {
             Self::OneOf(one_of_content) => one_of_content.compile(compiler),
             Self::Series(series_content) => series_content.compile(compiler),
             Self::Unique(unique_content) => unique_content.compile(compiler),
-            Self::Null => Ok(Graph::null()),
+            Self::Null(_) => Ok(Graph::null()),
         }
     }
 }
@@ -372,6 +548,7 @@ pub mod tests {
     lazy_static! {
         pub static ref USER_SCHEMA: Content = from_json!({
             "type": "object",
+            "skip_when_null": true,
             "user_id": {
                 "type": "number",
                 "subtype": "u64",
@@ -384,6 +561,11 @@ pub mod tests {
             "type_": { // checks the underscore hack
                 "type": "string",
                 "pattern": "user|contributor|maintainer"
+            },
+            "skip_when_null_": {
+                "optional": true,
+                "type": "bool",
+                "frequency": 0.5
             },
             "first_name": {
                 "type": "string",

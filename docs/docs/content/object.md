@@ -30,12 +30,29 @@ The keys of the JSON object to generate are inlined in the `object` keys (e.g. `
 Values of objects can be any of Synth's generator type (including an other object). In the example above, `"identifier"`
 has value a [`number`](/content/number) type and `"name"` has value a [`string`](/content/string) type.
 
-Values of objects can be made *optional* by specifying the `"optional": true` attribute.
+Values of objects can be made nullable by specifying the `"optional": true` attribute.
 
 #### Example
 ```json synth
 {
   "type": "object",
+  "email": {
+    "optional": true,
+    "type": "string",
+    "faker": {
+      "generator": "ascii_email"
+    }
+  }
+}
+```
+
+By default, optional values that are generated as `null` will produce a key-value pair of the form `key: null`. This behavior can be controlled by specifying the `skip_when_null: true` attribute on the object generator.
+
+#### Example
+```json synth
+{
+  "type": "object",
+  "skip_when_null": true,
   "email": {
     "optional": true,
     "type": "string",

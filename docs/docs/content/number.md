@@ -34,6 +34,32 @@ A constant number type. This will always evaluate to the same number.
 }
 ```
 
+The constant number generator can also be simply declared by its desired output value.
+
+#### Example
+
+The schema
+
+```json synth
+{
+  "type": "object",
+  "just_the_number_42": 42
+}
+```
+
+is the same as the longer
+
+```json synth
+{
+  "type": "object",
+  "just_the_number_42": {
+    "type": "number",
+    "subtype": "u64",
+    "constant": 42
+  }
+}
+```
+
 ## id
 
 A monotonically increasing number type, most commonly used as a unique row identifier. The optional `start` field
