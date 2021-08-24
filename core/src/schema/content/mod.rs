@@ -207,8 +207,8 @@ macro_rules! content {
                     where
                     E: serde::de::Error
                     {
-                        if v.starts_with("@") {
-                            let ref_ = FieldRef::deserialize(v[1..].into_deserializer())?;
+                        if let Some(s) = v.strip_prefix("@") {
+                            let ref_ = FieldRef::deserialize(s.into_deserializer())?;
                             Ok(Content::SameAs(SameAsContent { ref_ }))
                         } else {
                             Err(E::custom("string literals are synonymous to `same_as` and must start with `@` followed by the address of the referent"))

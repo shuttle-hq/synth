@@ -8,14 +8,13 @@ use mongodb::{bson::Document, options::ClientOptions, sync::Client};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
-use std::iter::FromIterator;
 use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
 use synth_core::graph::prelude::number_content::I64;
 use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep};
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
-    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, OneOfContent,
+    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent,
     RegexContent, StringContent,
 };
 use synth_core::{Content, Name, Namespace};
@@ -129,7 +128,7 @@ fn bson_to_content(bson: &Bson) -> Content {
 
             Content::Array(ArrayContent {
                 length: Box::new(length),
-                content: Box::new(Content::OneOf(OneOfContent::from_iter(content_iter))),
+                content: Box::new(Content::OneOf(content_iter.collect())),
             })
         }
         Bson::Document(doc) => doc_to_content(doc),
