@@ -154,7 +154,7 @@ macro_rules! content {
                     content: __Content
                 }
 
-                 struct Visitor;
+                struct Visitor;
 
                 impl<'de> serde::de::Visitor<'de> for Visitor {
                     type Value = Content;
@@ -167,7 +167,6 @@ macro_rules! content {
                     where
                     A: serde::de::MapAccess<'de>
                     {
-                        use serde::de::MapAccess;
                         use serde::de::IntoDeserializer;
                         let mut out = HashMap::<String, serde_json::Value>::new();
                         while let Some(key) = map.next_key()? {
@@ -210,8 +209,7 @@ macro_rules! content {
                     {
                         if v.starts_with("@") {
                             let ref_ = FieldRef::deserialize(v[1..].into_deserializer())?;
-                            let content = Content::SameAs(SameAsContent { ref_ });
-                            Ok(content)
+                            Ok(Content::SameAs(SameAsContent { ref_ }))
                         } else {
                             Err(E::custom("string literals are synonymous to `same_as` and must start with `@` followed by the address of the referent"))
                         }
