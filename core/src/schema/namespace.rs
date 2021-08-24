@@ -409,7 +409,7 @@ mod tests {
             Some(n) => n,
             None=> return true
         };
-        let c = ns.get_collection(&last).unwrap();
+        let c = ns.get_collection(last).unwrap();
         if let Content::SameAs(same) = c {
             list.contains(same.ref_.collection()) && check_dep(list, ns)
         } else {
