@@ -6,7 +6,7 @@ use serde::{
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 
-const RESERVED_FIELDS: [&'static str; 2] = ["type", "skip_when_null"];
+const RESERVED_FIELDS: [&str; 2] = ["type", "skip_when_null"];
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct ObjectContent {
