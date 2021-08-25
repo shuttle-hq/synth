@@ -100,8 +100,6 @@ pub trait RelationalDataSource: DataSource {
                 }
             }
 
-            println!("{}", query);
-
             let future = self.execute_query(query, vec![]);
             futures.push(future);
         }
