@@ -1,9 +1,9 @@
 use crate::datasource::DataSource;
-use serde_json::Value;
-use anyhow::{Result};
+use anyhow::Result;
 use async_trait::async_trait;
-use futures::future::join_all;
 use beau_collector::BeauCollector;
+use futures::future::join_all;
+use serde_json::Value;
 use synth_core::Content;
 
 const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
@@ -39,10 +39,14 @@ pub struct ValueWrapper(pub(crate) Value);
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
 /// handle it.
 #[async_trait]
-pub trait RelationalDataSource : DataSource {
+pub trait RelationalDataSource: DataSource {
     type QueryResult: Send + Sync;
 
-    async fn insert_relational_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
+    async fn insert_relational_data(
+        &self,
+        collection_name: String,
+        collection: &[Value],
+    ) -> Result<()> {
         // how to to ordering here?
         // If we have foreign key constraints we need to traverse the tree and
         // figure out insertion order
@@ -110,7 +114,11 @@ pub trait RelationalDataSource : DataSource {
         Ok(())
     }
 
-    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<Self::QueryResult>;
+    async fn execute_query(
+        &self,
+        query: String,
+        query_params: Vec<&str>,
+    ) -> Result<Self::QueryResult>;
 
     fn get_catalog(&self) -> Result<&str>;
 

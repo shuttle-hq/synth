@@ -11,8 +11,8 @@ use crate::{
     Error, Generator, GeneratorExt, GeneratorState,
 };
 
-use serde::Deserialize;
 use ordered_float::OrderedFloat;
+use serde::Deserialize;
 
 pub type OrderedFloat32 = OrderedFloat<f32>;
 pub type OrderedFloat64 = OrderedFloat<f64>;
@@ -264,8 +264,6 @@ impl TryFrom<Number> for f64 {
         }
     }
 }
-
-
 
 impl serde::Serialize for Number {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

@@ -14,8 +14,8 @@ use synth_core::graph::prelude::number_content::I64;
 use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep};
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
-    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent,
-    RegexContent, StringContent,
+    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, RegexContent,
+    StringContent,
 };
 use synth_core::{Content, Name, Namespace};
 
@@ -89,10 +89,10 @@ impl ImportStrategy for MongoImportStrategy {
     }
 
     fn import_collection(self, name: &Name) -> Result<Content> {
-        self.import()?.collections.remove(name).ok_or_else(|| anyhow!(
-            "Could not find table '{}' in MongoDb database.",
-            name
-        ))
+        self.import()?
+            .collections
+            .remove(name)
+            .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
     }
 
     fn into_value(self) -> Result<Value> {
@@ -234,7 +234,7 @@ impl MongoExportStrategy {
 
 fn parse_db_name(uri: &str) -> Result<&str> {
     // this may require a parser instead of `split`
-    uri.split('/').last().ok_or_else(|| anyhow!(
-        "Cannot export data. No database name specified in the uri"
-    ))
+    uri.split('/')
+        .last()
+        .ok_or_else(|| anyhow!("Cannot export data. No database name specified in the uri"))
 }

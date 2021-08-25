@@ -86,11 +86,13 @@ impl<'r> Sampler<'r> {
         progress_bar.finish();
 
         if let Some(name) = collection {
-            let just = output.remove(&name.to_string()).ok_or_else(|| failed!(
-                target: Release,
-                "generated namespace does not have a collection {}",
-                name
-            ))?;
+            let just = output.remove(&name.to_string()).ok_or_else(|| {
+                failed!(
+                    target: Release,
+                    "generated namespace does not have a collection {}",
+                    name
+                )
+            })?;
             Ok(just)
         } else {
             Ok(Value::Object(output))

@@ -45,7 +45,10 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, table_names: &[String], datasource: &T) -> Result<()> {
+    namespace: &mut Namespace,
+    table_names: &[String],
+    datasource: &T,
+) -> Result<()> {
     for table_name in table_names.iter() {
         info!("Building {} collection...", table_name);
 
@@ -61,7 +64,10 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, table_names: &[String], datasource: &T) -> Result<()> {
+    namespace: &mut Namespace,
+    table_names: &[String],
+    datasource: &T,
+) -> Result<()> {
     for table_name in table_names.iter() {
         let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
 
@@ -106,7 +112,10 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_values<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, table_names: &[String], datasource: &T) -> Result<()> {
+    namespace: &mut Namespace,
+    table_names: &[String],
+    datasource: &T,
+) -> Result<()> {
     task::block_on(datasource.set_seed())?;
 
     for table in table_names {

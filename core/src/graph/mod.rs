@@ -639,9 +639,9 @@ pub mod tests {
             let sample: f64 = dist.sample(&mut rng);
             // Not using pattern matching here because of  <https://github.com/rust-lang/rust/issues/41620>.
             // As of 2020-12-01 it causes a linter warning which will be a compiler error in future releases.
-            if (sample - -2.5).abs() < error_margin || 
-                (sample - -1.0).abs() < error_margin || 
-                (sample - 0.5).abs() < error_margin 
+            if (sample - -2.5).abs() < error_margin
+                || (sample - -1.0).abs() < error_margin
+                || (sample - 0.5).abs() < error_margin
             {
             } else {
                 panic!("Generated '{}' which should not happen", sample)

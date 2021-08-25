@@ -101,7 +101,9 @@ async fn put_compile(mut req: Request<State>) -> tide::Result {
                 kind: "schema",
                 text: Some(e.to_string()),
             };
-            let response = Response::builder(422).body(Body::from_json(&error)?).build();
+            let response = Response::builder(422)
+                .body(Body::from_json(&error)?)
+                .build();
             return Ok(response);
         }
     };

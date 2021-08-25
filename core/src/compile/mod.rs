@@ -937,11 +937,7 @@ where
         let (root, relative_what) = what.relativize(to);
         let relative_to = to.as_in(&root).unwrap();
         self.get_mut(&root)
-            .with_context(|| anyhow!(
-                "looking for the common root to {} and {}",
-                what,
-                to
-            ))
+            .with_context(|| anyhow!("looking for the common root to {} and {}", what, to))
             .and_then(|local_table| local_table.issue(&relative_what, &relative_to))
     }
 }
