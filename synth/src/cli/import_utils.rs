@@ -1,14 +1,17 @@
 use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource};
-use synth_core::{Namespace, Name, Content};
 use crate::datasource::DataSource;
+use anyhow::{Context, Result};
 use async_std::task;
-use std::str::FromStr;
-use anyhow::{Result, Context};
 use log::debug;
-use synth_core::schema::{FieldRef, NumberContent, Id, SameAsContent, OptionalMergeStrategy, ObjectContent, ArrayContent, RangeStep, OneOfContent, VariantContent, FieldContent};
-use synth_core::schema::content::number_content::U64;
 use serde_json::Value;
 use std::convert::TryFrom;
+use std::str::FromStr;
+use synth_core::schema::content::number_content::U64;
+use synth_core::schema::{
+    ArrayContent, FieldRef, Id, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
+    SameAsContent,
+};
+use synth_core::{Content, Name, Namespace};
 
 #[derive(Debug)]
 pub(crate) struct Collection {
@@ -16,10 +19,11 @@ pub(crate) struct Collection {
 }
 
 /// Wrapper around `FieldContent` since we cant' impl `TryFrom` on a struct in a non-owned crate
-struct FieldContentWrapper(FieldContent);
+struct FieldContentWrapper(Content);
 
-pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(datasource: &T)
-    -> Result<Namespace> {
+pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
+    datasource: &T,
+) -> Result<Namespace> {
     let table_names = task::block_on(datasource.get_table_names())
         .with_context(|| "Failed to get table names".to_string())?;
 
@@ -62,8 +66,12 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
         let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
 
         if primary_keys.len() > 1 {
-            bail!("{} primary keys found at collection {}. Synth does not currently support \
-            composite primary keys.", primary_keys.len(), table_name)
+            bail!(
+                "{} primary keys found at collection {}. Synth does not currently support \
+            composite primary keys.",
+                primary_keys.len(),
+                table_name
+            )
         }
 
         if let Some(primary_key) = primary_keys.get(0) {
@@ -80,14 +88,15 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace, datasource: &T) -> Result<()> {
+    namespace: &mut Namespace,
+    datasource: &T,
+) -> Result<()> {
     let foreign_keys = task::block_on(datasource.get_foreign_keys())?;
 
     debug!("{} foreign keys found.", foreign_keys.len());
 
     for fk in foreign_keys {
-        let from_field =
-            FieldRef::new(&format!("{}.content.{}", fk.from_table, fk.from_column))?;
+        let from_field = FieldRef::new(&format!("{}.content.{}", fk.from_table, fk.from_column))?;
         let to_field = FieldRef::new(&format!("{}.content.{}", fk.to_table, fk.to_column))?;
         let node = namespace.get_s_node_mut(&from_field)?;
         *node = Content::SameAs(SameAsContent { ref_: to_field });
@@ -145,23 +154,14 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, &ColumnInfo)> for FieldC
 
     fn try_from(column_meta: (&T, &ColumnInfo)) -> Result<Self> {
         let data_type = &column_meta.1.data_type;
-        let mut content= column_meta.0.decode_to_content(data_type, column_meta.1.character_maximum_length)?;
+        let mut content = column_meta
+            .0
+            .decode_to_content(data_type, column_meta.1.character_maximum_length)?;
 
-        // This happens because an `optional` field in a Synth schema
-        // won't show up as a key during generation. Whereas what we
-        // want instead is a null field.
         if column_meta.1.is_nullable {
-            content = Content::OneOf(OneOfContent {
-                variants: vec![
-                    VariantContent::new(content),
-                    VariantContent::new(Content::Null),
-                ],
-            })
+            content = content.into_nullable();
         }
 
-        Ok(FieldContentWrapper(FieldContent {
-            optional: false,
-            content: Box::new(content),
-        }))
+        Ok(FieldContentWrapper(content))
     }
 }

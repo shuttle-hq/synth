@@ -276,7 +276,7 @@ pub enum Args {
         #[structopt(parse(from_os_str), help = "name of directory to initialize")]
         init_path: Option<PathBuf>,
     },
-    #[structopt(about = "Generate data from a namespace")]
+    #[structopt(about = "Generate data from a namespace", alias = "gen")]
     Generate {
         #[structopt(
             help = "the namespace directory from which to generate",

@@ -29,4 +29,4 @@ jobs:
       - name: Deploy Playground
         run: |
           echo deploying playground...
-          gcloud run services update playground-backend --image=eu.gcr.io/${project_id}/playground:$GITHUB_SHA
+          gcloud run services update playground-backend --image=eu.gcr.io/${project_id}/playground:$GITHUB_SHA --region=europe-west2

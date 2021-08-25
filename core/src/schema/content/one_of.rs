@@ -81,6 +81,25 @@ impl OneOfContent {
         }
     }
 
+    pub fn as_nullable(&self) -> Option<&Content> {
+        if self.variants.len() == 2 {
+            let mut non_null = self
+                .variants
+                .iter()
+                .filter(|variant| !variant.content.is_null())
+                .map(|vc| vc.content.as_ref());
+            let content = non_null.next()?;
+            if non_null.next().is_none() {
+                return Some(content);
+            }
+        }
+        None
+    }
+
+    pub fn is_nullable(&self) -> bool {
+        self.as_nullable().is_some()
+    }
+
     fn add_variant(&mut self, variant: Content) {
         self.variants.push(VariantContent::new(variant))
     }

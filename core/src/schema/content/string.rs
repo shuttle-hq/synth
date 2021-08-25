@@ -191,14 +191,6 @@ pub struct FormatContent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "lowercase")]
-#[serde(untagged)]
-pub enum ContentOrRef {
-    Content(Content),
-    FieldRef(FieldRef),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct JsonContent {
     content: Box<Content>,
 }
@@ -503,7 +495,6 @@ pub mod datetime_content {
 }
 
 use crate::graph::string::Serialized;
-use crate::schema::FieldRef;
 pub use datetime_content::ChronoValueFormatter;
 
 impl Serialize for DateTimeContent {
