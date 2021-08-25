@@ -1,12 +1,12 @@
-use crate::cli::export::{ExportParams, ExportStrategy, create_and_insert_values};
+use crate::cli::export::{create_and_insert_values, ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
+use crate::cli::import_utils::build_namespace_import;
+use crate::datasource::postgres_datasource::PostgresDataSource;
+use crate::datasource::DataSource;
 use anyhow::Result;
 use serde_json::Value;
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
-use crate::datasource::postgres_datasource::PostgresDataSource;
-use crate::datasource::DataSource;
-use crate::cli::import_utils::build_namespace_import;
 
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
@@ -44,4 +44,3 @@ impl ImportStrategy for PostgresImportStrategy {
         bail!("Postgres import doesn't support conversion into value")
     }
 }
-

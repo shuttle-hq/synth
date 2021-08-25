@@ -108,12 +108,11 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
     }
 }
 
-fn insert_data<T: DataSource>(datasource: &T, collection_name: String, collection_json: &[Value])
-    -> Result<()> {
-    task::block_on(
-        datasource.insert_data(
-            collection_name.clone(),
-            collection_json
-        )
-    ).with_context(|| format!("Failed to insert data for collection {}", collection_name))
+fn insert_data<T: DataSource>(
+    datasource: &T,
+    collection_name: String,
+    collection_json: &[Value],
+) -> Result<()> {
+    task::block_on(datasource.insert_data(collection_name.clone(), collection_json))
+        .with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }

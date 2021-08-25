@@ -1,4 +1,5 @@
 use crate::cli::mongo::MongoImportStrategy;
+use crate::cli::mysql::MySqlImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
 use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
 use anyhow::{Context, Result};
@@ -8,7 +9,6 @@ use std::str::FromStr;
 use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
-use crate::cli::mysql::MySqlImportStrategy;
 
 pub trait ImportStrategy: Sized {
     fn import(self) -> Result<Namespace> {
@@ -27,7 +27,7 @@ pub enum SomeImportStrategy {
     #[allow(unused)]
     FromPostgres(PostgresImportStrategy),
     FromMongo(MongoImportStrategy),
-    FromMySql(MySqlImportStrategy)
+    FromMySql(MySqlImportStrategy),
 }
 
 impl Default for SomeImportStrategy {
@@ -77,7 +77,7 @@ impl ImportStrategy for SomeImportStrategy {
             SomeImportStrategy::FromPostgres(pis) => pis.import(),
             SomeImportStrategy::StdinImportStrategy(sis) => sis.import(),
             SomeImportStrategy::FromMongo(mis) => mis.import(),
-            SomeImportStrategy::FromMySql(mis) => mis.import()
+            SomeImportStrategy::FromMySql(mis) => mis.import(),
         }
     }
     fn import_collection(self, name: &Name) -> Result<Content> {

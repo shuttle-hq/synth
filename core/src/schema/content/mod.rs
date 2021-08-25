@@ -13,7 +13,7 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
-use serde::{Deserialize, Serialize, de::IntoDeserializer};
+use serde::{de::IntoDeserializer, Deserialize, Serialize};
 use serde_json::Value;
 
 mod r#bool;
@@ -25,7 +25,7 @@ pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt
 mod string;
 pub use string::{
     ChronoValue, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
-    FakerContentArgument, RegexContent, StringContent, Uuid, FormatContent
+    FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid,
 };
 
 mod array;

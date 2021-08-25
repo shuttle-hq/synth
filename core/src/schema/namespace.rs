@@ -1,15 +1,15 @@
+use super::content::{FormatContent, ObjectContent, OneOfContent, StringContent};
+use super::inference::MergeStrategy;
+use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
+use crate::compile::{Compile, Compiler};
+use crate::graph::prelude::OptionalMergeStrategy;
+use crate::graph::{Graph, KeyValueOrNothing};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::Value, Map};
 use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
-use super::content::{FieldContent, ObjectContent, OneOfContent, StringContent, FormatContent};
-use super::inference::MergeStrategy;
-use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
-use crate::compile::{Compile, Compiler};
-use crate::graph::prelude::OptionalMergeStrategy;
-use crate::graph::{Graph, KeyValueOrNothing};
 
 use std::collections::{HashMap, VecDeque};
 use std::ops::Index;
@@ -167,9 +167,9 @@ impl Namespace {
     }
     fn get_adj_list(&self) -> Vec<(Name, Name)> {
         let mut list = Vec::new();
-        for (n,c) in self.collections.iter() {
-            get_list((n,c), &mut list);
-        };
+        for (n, c) in self.collections.iter() {
+            get_list((n, c), &mut list);
+        }
         list
     }
 
@@ -179,22 +179,25 @@ impl Namespace {
         let mut sorted: Vec<Name> = Vec::new();
         let mut graph: NameGraph = NameGraph::new();
         for v in &lists {
-            graph.entry(v.0.clone()).or_insert_with(Vec::new).push(v.1.clone());
-        };
+            graph
+                .entry(v.0.clone())
+                .or_insert_with(Vec::new)
+                .push(v.1.clone());
+        }
         log::info!("lists: {:?}", lists);
         let mut in_degrees: BTreeMap<Name, usize> = BTreeMap::new();
 
-        for (p,c) in &lists {
+        for (p, c) in &lists {
             *in_degrees.entry(c.clone()).or_insert(0) += 1;
             in_degrees.entry(p.clone()).or_insert(0);
-        };
+        }
 
         for n in &in_degrees {
             if n.1 == &0 {
                 q.push_back(n.0.clone());
             }
         }
-        
+
         while let Some(name) = q.pop_front() {
             sorted.push(name.clone());
             log::info!("name: {:?}", name);
@@ -207,7 +210,7 @@ impl Namespace {
                 }
             };
         }
-        
+
         if sorted.len() == in_degrees.keys().len() {
             log::info!("{:?}", sorted);
             //if the name has no same_as type field, it must still be in the list, but may come in any order, back or front
@@ -215,7 +218,7 @@ impl Namespace {
                 if !sorted.contains(name) {
                     sorted.push(name.clone());
                 }
-            };
+            }
             Some(sorted)
         } else {
             None
@@ -223,91 +226,92 @@ impl Namespace {
     }
 }
 
-fn get_list((n,c):(&Name, &Content), list: &mut Vec<(Name, Name)>) {
-            match c {
-                Content::Object(ObjectContent{fields}) => {
-                    for cont in fields.values() {
-                        let FieldContent {box content,.. } = cont;
-                        if let Content::SameAs(same) = content {
-                            let (l,r) = (same.ref_.collection().clone(), n.clone());
-                            if l != r  && !list.contains(&(l.clone(),r.clone())) {
-                                list.push((l,r));
-                            };
-                            
-                        } else {
-                            get_list((n,content), list);
-                        }
+fn get_list((n, c): (&Name, &Content), list: &mut Vec<(Name, Name)>) {
+    match c {
+        Content::Object(ObjectContent { fields, .. }) => {
+            for cont in fields.values() {
+                if let Content::SameAs(same) = cont {
+                    let (l, r) = (same.ref_.collection().clone(), n.clone());
+                    if l != r && !list.contains(&(l.clone(), r.clone())) {
+                        list.push((l, r));
                     };
+                } else {
+                    get_list((n, cont), list);
                 }
-                Content::Array(ArrayContent {box content,.. }) => {
-                    match content.clone() {
-                        Content::Object(obj) => {
-                            get_list((n,&Content::Object(obj)), list);
-                        }
-                        Content::Array(arr) => {
-                            get_list((n,&Content::Array(arr)), list);
-                        }
-                        Content::SameAs(same) => {
-                            get_list((n,&Content::SameAs(same)), list);
-                        }
-                        Content::OneOf(one) => {
-                            get_list((n,&Content::OneOf(one)), list);
-                        }
-                        Content::String(s) => {
-                            get_list((n,&Content::String(s)), list);
-                        }
-                        _ => {}
-
-                    }
-                }
-                Content::OneOf(OneOfContent{variants}) => {
-                    for variant in variants {
-                        let box variant = variant.content.clone();
-                        match  variant {
-                            Content::Array(arr) => {
-                                get_list((n,&Content::Array(arr)), list);
-                            }
-                            Content::Object(obj) => {
-                                get_list((n,&Content::Object(obj)), list);
-                            }
-                            Content::OneOf(one) => {
-                                get_list((n,&Content::OneOf(one)), list);
-                            }
-                            Content::SameAs(same) => {
-                                get_list((n,&Content::SameAs(same)), list);
-                            }
-                            Content::String(s) => {
-                                get_list((n,&Content::String(s)), list);
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-                Content::SameAs(same_as_content) => {
-                let pair = (same_as_content.ref_.collection().clone(), n.clone());
-                if pair.0 != pair.1 && !list.contains(&pair) {
-                    list.push(pair);
-                };
-                }
-                Content::String(StringContent::Format(form)) => {
-                    //the only variant of string that can hold a content
-                    let FormatContent{ref arguments, ..} = form;
-                    for (_, c) in arguments.iter() {
-                        get_list((n,c), list);
-                    } 
-                }
-                _ => {}
             }
-    
+        }
+        Content::Array(ArrayContent { box content, .. }) => match content.clone() {
+            Content::Object(obj) => {
+                get_list((n, &Content::Object(obj)), list);
+            }
+            Content::Array(arr) => {
+                get_list((n, &Content::Array(arr)), list);
+            }
+            Content::SameAs(same) => {
+                get_list((n, &Content::SameAs(same)), list);
+            }
+            Content::OneOf(one) => {
+                get_list((n, &Content::OneOf(one)), list);
+            }
+            Content::String(s) => {
+                get_list((n, &Content::String(s)), list);
+            }
+            _ => {}
+        },
+        Content::OneOf(OneOfContent { variants }) => {
+            for variant in variants {
+                let box variant = variant.content.clone();
+                match variant {
+                    Content::Array(arr) => {
+                        get_list((n, &Content::Array(arr)), list);
+                    }
+                    Content::Object(obj) => {
+                        get_list((n, &Content::Object(obj)), list);
+                    }
+                    Content::OneOf(one) => {
+                        get_list((n, &Content::OneOf(one)), list);
+                    }
+                    Content::SameAs(same) => {
+                        get_list((n, &Content::SameAs(same)), list);
+                    }
+                    Content::String(s) => {
+                        get_list((n, &Content::String(s)), list);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Content::SameAs(same_as_content) => {
+            let pair = (same_as_content.ref_.collection().clone(), n.clone());
+            if pair.0 != pair.1 && !list.contains(&pair) {
+                list.push(pair);
+            };
+        }
+        Content::String(StringContent::Format(form)) => {
+            //the only variant of string that can hold a content
+            let FormatContent { ref arguments, .. } = form;
+            for (_, c) in arguments.iter() {
+                get_list((n, c), list);
+            }
+        }
+        _ => {}
+    }
 }
 impl Compile for Namespace {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         // TODO: needs to wrap each top-level attribute in a variable size array model
-        let sorted_ns = self.topo_sort().ok_or_else(|| anyhow!("dependency is cyclic"))?;
-        let object_node = sorted_ns.iter().map(|name|{
-            let field = self.collections.get(name).expect("field should be there");
-            compiler.build(name.as_ref(), field).map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
-        }).collect::<Result<_>>()?;
+        let sorted_ns = self
+            .topo_sort()
+            .ok_or_else(|| anyhow!("dependency is cyclic"))?;
+        let object_node = sorted_ns
+            .iter()
+            .map(|name| {
+                let field = self.collections.get(name).expect("field should be there");
+                compiler
+                    .build(name.as_ref(), field)
+                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
+            })
+            .collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
     }
 }
@@ -315,8 +319,8 @@ impl Compile for Namespace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::schema::Content;
     use crate::schema::BoolContent;
+    use crate::schema::Content;
     #[test]
     fn test_sort_simple() {
         let mut namespace = Namespace {
@@ -337,8 +341,18 @@ mod tests {
                 Content::SameAs(crate::schema::SameAsContent { ref_: ref2 }),
             )
             .unwrap();
-        namespace.put_collection(&"visitors".parse::<Name>().unwrap(), Content::Bool(BoolContent::Constant(true))).unwrap();
-        namespace.put_collection(&"daughters".parse::<Name>().unwrap(),Content::Bool(BoolContent::Constant(false) )).unwrap();
+        namespace
+            .put_collection(
+                &"visitors".parse::<Name>().unwrap(),
+                Content::Bool(BoolContent::Constant(true)),
+            )
+            .unwrap();
+        namespace
+            .put_collection(
+                &"daughters".parse::<Name>().unwrap(),
+                Content::Bool(BoolContent::Constant(false)),
+            )
+            .unwrap();
         println!("sorted: {:?}", namespace.topo_sort());
         let sorted = namespace.topo_sort().unwrap();
         let length = sorted.len();
@@ -367,9 +381,19 @@ mod tests {
             )
             .unwrap();
         println!("sorted: {:?}", namespace.topo_sort());
-        namespace.put_collection(&"visitors".parse::<Name>().unwrap(), Content::Bool(BoolContent::Constant(true))).unwrap();
-        namespace.put_collection(&"daughters".parse::<Name>().unwrap(),Content::Bool(BoolContent::Constant(false) )).unwrap();
-        
+        namespace
+            .put_collection(
+                &"visitors".parse::<Name>().unwrap(),
+                Content::Bool(BoolContent::Constant(true)),
+            )
+            .unwrap();
+        namespace
+            .put_collection(
+                &"daughters".parse::<Name>().unwrap(),
+                Content::Bool(BoolContent::Constant(false)),
+            )
+            .unwrap();
+
         println!("sorted: {:?}", namespace.topo_sort());
         let sorted = namespace.topo_sort().unwrap();
         let length = sorted.len();
@@ -405,9 +429,9 @@ mod tests {
 
     //helper method for checking sorted dependencies
     fn check_dep(list: &[Name], ns: &Namespace) -> bool {
-        let (last, list)= match list.split_last() {
+        let (last, list) = match list.split_last() {
             Some(n) => n,
-            None=> return true
+            None => return true,
         };
         let c = ns.get_collection(last).unwrap();
         if let Content::SameAs(same) = c {

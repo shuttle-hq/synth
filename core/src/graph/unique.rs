@@ -9,7 +9,7 @@ use std::hash::{BuildHasher, Hash, Hasher};
 const MAX_RETRIES: usize = 64;
 
 type ValueFilter =
-TryFilterMap<Box<Graph>, Box<dyn FnMut(Value) -> Result<Option<Value>, Error>>, Value>;
+    TryFilterMap<Box<Graph>, Box<dyn FnMut(Value) -> Result<Option<Value>, Error>>, Value>;
 
 derive_generator! {
     yield Token,
@@ -79,7 +79,7 @@ pub mod tests {
                 high: NUM_GENERATED as u64,
                 step: 1,
             })
-                .unwrap(),
+            .unwrap(),
         ));
         let output = UniqueNode::hash(numbers, None)
             .repeat(NUM_GENERATED)

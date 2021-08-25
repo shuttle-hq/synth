@@ -1,18 +1,22 @@
-use sqlx::{Pool, MySql, Row, Column, TypeInfo};
-use anyhow::{Result, Context};
+use crate::datasource::relational_datasource::{
+    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, ValueWrapper,
+};
 use crate::datasource::DataSource;
+use anyhow::{Context, Result};
 use async_std::task;
-use sqlx::mysql::{MySqlPoolOptions, MySqlQueryResult, MySqlRow, MySqlColumn};
-use serde_json::{Value, Map, Number};
 use async_trait::async_trait;
-use crate::datasource::relational_datasource::{RelationalDataSource, ColumnInfo, PrimaryKey, ForeignKey, ValueWrapper};
-use std::prelude::rust_2015::Result::Ok;
-use std::convert::TryFrom;
-use synth_core::Content;
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
-use synth_core::schema::{StringContent, RegexContent, NumberContent, RangeStep, DateTimeContent, ChronoValueType};
-use synth_core::schema::number_content::{I64, F64, U64};
+use rust_decimal::Decimal;
+use serde_json::{Map, Number, Value};
+use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlQueryResult, MySqlRow};
+use sqlx::{Column, MySql, Pool, Row, TypeInfo};
+use std::convert::TryFrom;
+use std::prelude::rust_2015::Result::Ok;
+use synth_core::schema::number_content::{F64, I64, U64};
+use synth_core::schema::{
+    ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent,
+};
+use synth_core::Content;
 
 /// TODO
 /// Known issues:
@@ -21,7 +25,7 @@ use synth_core::schema::number_content::{I64, F64, U64};
 
 pub struct MySqlDataSource {
     pool: Pool<MySql>,
-    connect_params: String
+    connect_params: String,
 }
 
 #[async_trait]
@@ -37,13 +41,15 @@ impl DataSource for MySqlDataSource {
 
             Ok::<Self, anyhow::Error>(MySqlDataSource {
                 pool,
-                connect_params: connect_params.to_string()
+                connect_params: connect_params.to_string(),
             })
         })
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection).await.unwrap();
+        self.insert_relational_data(collection_name, collection)
+            .await
+            .unwrap();
         Ok(())
     }
 }
@@ -52,16 +58,18 @@ impl DataSource for MySqlDataSource {
 impl RelationalDataSource for MySqlDataSource {
     type QueryResult = MySqlQueryResult;
 
-    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<MySqlQueryResult> {
+    async fn execute_query(
+        &self,
+        query: String,
+        query_params: Vec<&str>,
+    ) -> Result<MySqlQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
         for param in query_params {
             query = query.bind(param);
         }
 
-        let result = query
-            .execute(&self.pool)
-            .await?;
+        let result = query.execute(&self.pool).await?;
 
         Ok(result)
     }
@@ -74,8 +82,7 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query =
-            r"SELECT table_name FROM information_schema.tables
+        let query = r"SELECT table_name FROM information_schema.tables
             WHERE table_schema = ? and table_type = 'BASE TABLE'";
 
         let table_names: Vec<String> = sqlx::query(query)
@@ -90,8 +97,7 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query =
-            r"SELECT column_name, ordinal_position, is_nullable, data_type,
+        let query = r"SELECT column_name, ordinal_position, is_nullable, data_type,
             character_maximum_length
             FROM information_schema.columns
             WHERE table_name = ? AND table_schema = ?";
@@ -109,8 +115,7 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        let query: &str =
-            r"SELECT column_name, data_type
+        let query: &str = r"SELECT column_name, data_type
             FROM information_schema.columns
             WHERE table_schema = ? AND table_name = ? AND column_key = 'PRI'";
 
@@ -125,8 +130,7 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str =
-            r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
+        let query: &str = r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
             FROM information_schema.key_column_usage
             WHERE referenced_table_schema = ?";
 
@@ -152,11 +156,12 @@ impl RelationalDataSource for MySqlDataSource {
             .await?
             .into_iter()
             .map(ValueWrapper::try_from)
-            .map(|v| {
-                match v {
-                    Ok(wrapper) => Ok(wrapper.0),
-                    Err(e) => bail!("Failed to convert to value wrapper from query results: {:?}", e)
-                }
+            .map(|v| match v {
+                Ok(wrapper) => Ok(wrapper.0),
+                Err(e) => bail!(
+                    "Failed to convert to value wrapper from query results: {:?}",
+                    e
+                ),
             })
             .collect::<Result<Vec<Value>>>()?;
 
@@ -166,31 +171,31 @@ impl RelationalDataSource for MySqlDataSource {
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
         let content = match data_type.to_lowercase().as_str() {
             "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
-                let pattern = "[a-zA-Z0-9]{0, {}}".replace(
-                    "{}",
-                    &format!("{}", char_max_len.unwrap_or(1)),
-                );
+                let pattern =
+                    "[a-zA-Z0-9]{0, {}}".replace("{}", &format!("{}", char_max_len.unwrap_or(1)));
                 Content::String(StringContent::Pattern(
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
-            },
-            "int" | "integer" | "tinyint" | "smallint" | "mediumint" | "bigint" =>
+            }
+            "int" | "integer" | "tinyint" | "smallint" | "mediumint" | "bigint" => {
                 Content::Number(NumberContent::I64(I64::Range(RangeStep {
                     low: 0,
                     high: 1,
                     step: 1,
-                }))),
+                })))
+            }
             "serial" => Content::Number(NumberContent::U64(U64::Range(RangeStep {
                 low: 0,
                 high: 1,
                 step: 1,
             }))),
-            "float" | "double" | "numeric" | "decimal" =>
+            "float" | "double" | "numeric" | "decimal" => {
                 Content::Number(NumberContent::F64(F64::Range(RangeStep {
-                low: 0.0,
-                high: 1.0,
-                step: 0.1, //todo
-            }))),
+                    low: 0.0,
+                    high: 1.0,
+                    step: 0.1, //todo
+                })))
+            }
             "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::NaiveDateTime,
@@ -243,9 +248,7 @@ impl TryFrom<MySqlRow> for ColumnInfo {
 fn extract_column_char_max_len(index: usize, row: MySqlRow) -> Result<Option<i32>> {
     let character_maximum_length = match row.try_get::<Option<i32>, usize>(index) {
         Ok(c) => c,
-        Err(_) => {
-            row.try_get::<Option<u64>, usize>(index)?.map(|c| c as i32)
-        }
+        Err(_) => row.try_get::<Option<u64>, usize>(index)?.map(|c| c as i32),
     };
 
     Ok(character_maximum_length)
@@ -270,7 +273,7 @@ impl TryFrom<MySqlRow> for ForeignKey {
             from_table: row.try_get::<String, usize>(0)?,
             from_column: row.try_get::<String, usize>(1)?,
             to_table: row.try_get::<String, usize>(2)?,
-            to_column: row.try_get::<String, usize>(3)?
+            to_column: row.try_get::<String, usize>(3)?,
         })
     }
 }
@@ -297,31 +300,43 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
         }
         "tinyint" => Value::Number(Number::from(row.try_get::<i8, &str>(column.name())?)),
         "smallint" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
-        "mediumint" | "int" | "integer" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
+        "mediumint" | "int" | "integer" => {
+            Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?))
+        }
         "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
         "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
-        "float" => Value::Number(Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-            .ok_or_else(|| anyhow!("Failed to convert float data type"))?),
-        "double" => Value::Number(Number::from_f64(row.try_get::<f64, &str>(column.name())?)
-            .ok_or_else(|| anyhow!("Failed to convert double data type"))?),
+        "float" => Value::Number(
+            Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
+                .ok_or_else(|| anyhow!("Failed to convert float data type"))?,
+        ),
+        "double" => Value::Number(
+            Number::from_f64(row.try_get::<f64, &str>(column.name())?)
+                .ok_or_else(|| anyhow!("Failed to convert double data type"))?,
+        ),
         "numeric" | "decimal" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
-                if let Some(json_number) =  Number::from_f64(truncated) {
+                if let Some(json_number) = Number::from_f64(truncated) {
                     return Ok(Value::Number(json_number));
                 }
             }
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")
         }
-        "timestamp" => Value::String(
-            row.try_get::<String, &str>(column.name())?),
-        "date" => Value::String(format!("{}", row.try_get::<chrono::NaiveDate, &str>(column.name())?)),
-        "datetime" => Value::String(
-            format!("{}", row.try_get::<chrono::NaiveDateTime, &str>(column.name())?)),
-        "time" => Value::String(
-            format!("{}", row.try_get::<chrono::NaiveTime, &str>(column.name())?)),
+        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
+        "date" => Value::String(format!(
+            "{}",
+            row.try_get::<chrono::NaiveDate, &str>(column.name())?
+        )),
+        "datetime" => Value::String(format!(
+            "{}",
+            row.try_get::<chrono::NaiveDateTime, &str>(column.name())?
+        )),
+        "time" => Value::String(format!(
+            "{}",
+            row.try_get::<chrono::NaiveTime, &str>(column.name())?
+        )),
         _ => {
             bail!(
                 "Could not convert value. Converter not implemented for {}",

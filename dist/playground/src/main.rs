@@ -31,7 +31,7 @@ pub struct ServeCmd {
     #[structopt(long, default_value = "POST,PUT,OPTIONS,GET")]
     allow_methods: String,
     #[structopt(long, default_value = "*")]
-    allow_origin: String
+    allow_origin: String,
 }
 
 #[async_std::main]
