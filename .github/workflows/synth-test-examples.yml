@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-05-17
-      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 install --debug --path=synth
+          toolchain: nightly-2021-05-24
+      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-24 install --debug --path=synth
       - run: |
           bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/test_examples.sh" ${GITHUB_WORKSPACE}/examples

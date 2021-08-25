@@ -19,8 +19,8 @@ jobs:
           docker run -p 27017:27017 --name mongo-test -d mongo:latest
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-05-17
-      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 install --debug --path=synth
+          toolchain: nightly-2021-05-24
+      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-24 install --debug --path=synth
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/mongodb/synth
