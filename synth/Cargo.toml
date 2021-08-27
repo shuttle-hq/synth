@@ -1,6 +1,6 @@
 [package]
 name = "synth"
-version = "0.5.3"
+version = "0.5.4"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>",
@@ -58,7 +58,7 @@ indicatif = "0.15.0"
 
 dirs = "3.0.2"
 uuid = { version = "0.8.2", features = ["v4"] }
-mongodb = {version = "1.2.1", features = ["sync"] , default-features = false}
+mongodb = {version = "2.0.0-beta.3", features = ["sync"] , default-features = false}
 
 sqlx = { version = "0.5.5", features = [ "postgres", "mysql", "runtime-async-std-native-tls", "decimal", "chrono" ] }
 

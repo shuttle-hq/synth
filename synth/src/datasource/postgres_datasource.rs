@@ -50,10 +50,7 @@ impl DataSource for PostgresDataSource {
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection)
-            .await
-            .unwrap();
-        Ok(())
+        self.insert_relational_data(collection_name, collection).await
     }
 }
 
