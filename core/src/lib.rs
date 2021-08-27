@@ -32,7 +32,7 @@ pub mod schema;
 pub use schema::{Content, Name, Namespace};
 
 pub mod graph;
-pub use graph::Graph;
+pub use graph::{Graph, Value};
 
 pub mod compile;
 pub use compile::{Compile, Compiler};

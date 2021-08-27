@@ -58,8 +58,8 @@ indicatif = "0.15.0"
 
 dirs = "3.0.2"
 uuid = { version = "0.8.2", features = ["v4"] }
-mongodb = {version = "2.0.0-beta.3", features = ["sync"] , default-features = false}
+mongodb = {version = "2.0.0-beta.3", features = ["sync", "bson-chrono-0_4"] , default-features = false}
 
-sqlx = { version = "0.5.5", features = [ "postgres", "mysql", "runtime-async-std-native-tls", "decimal", "chrono" ] }
+sqlx = { version = "0.5.7", features = [ "postgres", "mysql", "runtime-async-std-native-tls", "decimal", "chrono" ] }
 
 beau_collector = "0.2.1"

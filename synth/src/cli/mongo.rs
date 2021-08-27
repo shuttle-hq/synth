@@ -2,22 +2,23 @@ use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::sampler::Sampler;
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use mongodb::bson::Bson;
 use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
 use synth_core::graph::prelude::number_content::I64;
-use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep};
+use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep, Number, ChronoValue};
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, RegexContent,
     StringContent,
 };
-use synth_core::{Content, Name, Namespace};
+use synth_core::{Content, Name, Namespace, Value};
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {
@@ -95,7 +96,7 @@ impl ImportStrategy for MongoImportStrategy {
             .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
     }
 
-    fn into_value(self) -> Result<Value> {
+    fn into_value(self) -> Result<JsonValue> {
         unreachable!()
     }
 }
@@ -124,7 +125,7 @@ fn bson_to_content(bson: &Bson) -> Content {
         Bson::String(_) => Content::String(StringContent::default()),
         Bson::Array(array) => {
             let length = Content::Number(NumberContent::U64(U64::Constant(array.len() as u64)));
-            let content_iter = array.iter().map(|bson| bson_to_content(bson));
+            let content_iter = array.iter().map(bson_to_content);
 
             Content::Array(ArrayContent {
                 length: Box::new(length),
@@ -168,7 +169,7 @@ fn bson_to_content(bson: &Bson) -> Content {
 impl ExportStrategy for MongoExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
         let mut client = Client::with_uri_str(&self.uri)?;
-        let sampler = Sampler::new(&params.namespace);
+        let sampler = Sampler::try_from(&params.namespace)?;
         let values =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
@@ -210,9 +211,9 @@ impl MongoExportStrategy {
         // This is a good first step, however there is bson type information which is lost.
         // For example, using this method we'll never get types like Bson::DateTime.
         for value in collection {
-            docs.push(match value.clone().try_into()? {
+            docs.push(match value_to_bson(value.clone()) {
                 Bson::Document(doc) => doc,
-                _ => bail!("invalid json document"),
+                _ => bail!("invalid bson document"),
             });
         }
 
@@ -229,6 +230,54 @@ impl MongoExportStrategy {
         );
 
         Ok(())
+    }
+}
+
+fn value_to_bson(value: Value) -> Bson {
+    match value {
+        Value::Null(_) => Bson::Null,
+        Value::Bool(b) => Bson::Boolean(b),
+        Value::Number(n) => number_to_bson(n),
+        Value::String(s) => Bson::String(s),
+        Value::DateTime(dt) => date_time_to_bson(dt),
+        Value::Object(obj) => object_to_bson(obj),
+        Value::Array(arr) => array_to_bson(arr)
+    }
+}
+
+fn array_to_bson(array: Vec<Value>) -> Bson {
+    Bson::Array(array.into_iter().map(value_to_bson).collect())
+}
+
+fn object_to_bson(obj: BTreeMap<String, Value>) -> Bson {
+    let obj = obj.into_iter().map(|(name, value)| (name, value_to_bson(value))).collect();
+    Bson::Document(obj)
+}
+
+
+fn date_time_to_bson(datetime: ChronoValue) -> Bson {
+    match datetime {
+        ChronoValue::NaiveDate(nd) => Bson::String(nd.to_string()),
+        ChronoValue::NaiveTime(nt) => Bson::String(nt.to_string()),
+        ChronoValue::NaiveDateTime(ndt) => Bson::DateTime(mongodb::bson::DateTime::from(DateTime::<Utc>::from_utc(ndt, Utc))),
+        ChronoValue::DateTime(dt) => Bson::DateTime(dt.into()),
+    }
+}
+
+fn number_to_bson(number: Number) -> Bson {
+    match number {
+        Number::I8(i8) => Bson::Int32(i8 as i32),
+        Number::I16(i16) => Bson::Int32(i16 as i32),
+        Number::I32(i32) => Bson::Int32(i32),
+        Number::I64(i64) => Bson::Int64(i64),
+        Number::I128(i128) => Bson::Int64(i128 as i64),
+        Number::U8(u8) => Bson::Int32(u8 as i32),
+        Number::U16(u16) => Bson::Int32(u16 as i32),
+        Number::U32(u32) => Bson::Int64(u32 as i64),
+        Number::U64(u64) => Bson::Int64(u64 as i64),
+        Number::U128(u128) => Bson::Int64(u128 as i64),
+        Number::F32(f32) => Bson::Double(*f32 as f64),
+        Number::F64(f64) => Bson::Double(*f64)
     }
 }
 

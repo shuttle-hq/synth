@@ -2,6 +2,12 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use sqlx::mysql::MySqlTypeInfo;
+use sqlx::{MySql, Postgres};
+use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
+use sqlx::{Type, Encode, encode::IsNull};
+
 use synth_gen::prelude::*;
 use synth_gen::value::{Token, Tokenizer};
 
@@ -179,7 +185,7 @@ where
 }
 
 derive_from! {
-    #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+    #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
     pub enum Value {
         Null(()),
         Bool(bool),
@@ -188,6 +194,276 @@ derive_from! {
         DateTime(ChronoValue),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self).unwrap())
+    }
+}
+
+
+/// Claim we are an unknown type since we don't have a reference to `self` to use.
+impl Type<Postgres> for Value {
+    fn type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("unknown")
+    }
+
+    fn compatible(_ty: &PgTypeInfo) -> bool {
+        unreachable!("This should never happen. Please reach out to https://github.com/getsynth/synth/issues if it does.")
+    }
+}
+
+impl Type<MySql> for Value {
+    fn type_info() -> MySqlTypeInfo {
+        <serde_json::value::Value as Type<MySql>>::type_info()
+    }
+
+    fn compatible(_ty: &MySqlTypeInfo) -> bool {
+        unreachable!("This should never happen. Please reach out to https://github.com/getsynth/synth/issues if it does.")
+    }
+}
+
+impl Encode<'_, Postgres> for Value {
+    fn encode_by_ref(
+        &self,
+        buf: &mut PgArgumentBuffer
+    ) -> IsNull {
+        match self {
+            Value::Null(_) => IsNull::Yes,
+            Value::Bool(b) => <bool as Encode<'_, Postgres>>::encode_by_ref(b, buf),
+            Value::Number(num) => {
+                match *num {
+                    Number::I8(i) => <i8 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I16(i) => <i16 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I32(i) => <i32 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I64(i) => <i64 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::I128(i) => <sqlx::types::Decimal as Encode<'_, Postgres>>::encode_by_ref(&i.into(), buf),
+                    Number::U8(i) => <i8 as Encode<'_, Postgres>>::encode_by_ref(&(i as i8), buf),
+                    Number::U16(i) => <i16 as Encode<'_, Postgres>>::encode_by_ref(&(i as i16), buf),
+                    Number::U32(i) => <u32 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                    Number::U64(i) => <i64 as Encode<'_, Postgres>>::encode_by_ref(&(i as i64), buf),
+                    Number::U128(i) => <sqlx::types::Decimal as Encode<'_, Postgres>>::encode_by_ref(&i.into(), buf),
+                    Number::F32(f) => <f32 as Encode<'_, Postgres>>::encode_by_ref(&f, buf),
+                    Number::F64(f) => <f64 as Encode<'_, Postgres>>::encode_by_ref(&f, buf),
+                }
+            },
+            Value::String(s) => <String as Encode<'_, Postgres>>::encode_by_ref(s, buf),
+            Value::DateTime(dt) => {
+                match dt {
+                    ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, Postgres>>::encode_by_ref(nd, buf),
+                    ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, Postgres>>::encode_by_ref(nt, buf),
+                    ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, Postgres>>::encode_by_ref(ndt, buf),
+                    ChronoValue::DateTime(dt) => <DateTime<FixedOffset> as Encode<'_, Postgres>>::encode_by_ref(dt, buf),
+                }
+            }
+            Value::Object(_) => {
+                <serde_json::Value as Encode<'_, Postgres>>::encode(serde_json::to_value(self).unwrap(), buf)
+            },
+            Value::Array(arr) => arr.encode_by_ref(buf), //TODO special-case for BYTEA
+        }
+    }
+}
+
+impl Encode<'_, MySql> for Value {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<u8>
+    ) -> IsNull {
+        match self {
+            Value::Null(_) => IsNull::Yes,
+            Value::Bool(b) => <bool as Encode<'_, MySql>>::encode_by_ref(b, buf),
+            Value::Number(num) => {
+                match *num {
+                    Number::I8(i) => <i8 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I16(i) => <i16 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I32(i) => <i32 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I64(i) => <i64 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::I128(i) => <sqlx::types::Decimal as Encode<'_, MySql>>::encode_by_ref(&i.into(), buf),
+                    Number::U8(i) => <i8 as Encode<'_, MySql>>::encode_by_ref(&(i as i8), buf),
+                    Number::U16(i) => <i16 as Encode<'_, MySql>>::encode_by_ref(&(i as i16), buf),
+                    Number::U32(i) => <u32 as Encode<'_, MySql>>::encode_by_ref(&i, buf),
+                    Number::U64(i) => <i64 as Encode<'_, MySql>>::encode_by_ref(&(i as i64), buf),
+                    Number::U128(i) => <sqlx::types::Decimal as Encode<'_, MySql>>::encode_by_ref(&i.into(), buf),
+                    Number::F32(f) => <f32 as Encode<'_, MySql>>::encode_by_ref(&f, buf),
+                    Number::F64(f) => <f64 as Encode<'_, MySql>>::encode_by_ref(&f, buf),
+                }
+            },
+            Value::String(s) => <String as Encode<'_, MySql>>::encode_by_ref(s, buf),
+            Value::DateTime(dt) => {
+                match dt {
+                    ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, MySql>>::encode_by_ref(nd, buf),
+                    ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, MySql>>::encode_by_ref(nt, buf),
+                    ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, MySql>>::encode_by_ref(ndt, buf),
+                    ChronoValue::DateTime(dt) => <DateTime<Utc> as Encode<'_, MySql>>::encode_by_ref(&dt.with_timezone(&Utc), buf),
+                }
+            }
+            Value::Object(_) => {
+                <serde_json::Value as Encode<'_, MySql>>::encode(serde_json::to_value(self).unwrap(), buf)
+            },
+            Value::Array(_arr) => todo!()//<Vec<Value> as Encode<'_, MySql>>::encode_by_ref(arr, buf), //TODO special-case for u8 arrays?
+        }
+    }
+
+    fn produces(&self) -> Option<MySqlTypeInfo> {
+        Some(match self {
+            Value::Null(_) => return <serde_json::Value as Encode<'_, MySql>>::produces(&serde_json::Value::Null),
+            Value::Bool(_) => <bool as Type<MySql>>::type_info(),
+            Value::Number(num) => match num {
+                Number::I8(_) => <i8 as Type<MySql>>::type_info(),
+                Number::I16(_) => <i16 as Type<MySql>>::type_info(),
+                Number::I32(_) => <i32 as Type<MySql>>::type_info(),
+                Number::I64(_) => <i64 as Type<MySql>>::type_info(),
+                Number::I128(_) =><sqlx::types::Decimal as Type<MySql>>::type_info(),
+                Number::U8(_) =>  <u8 as Type<MySql>>::type_info(),
+                Number::U16(_) => <u16 as Type<MySql>>::type_info(),
+                Number::U32(_) => <u32 as Type<MySql>>::type_info(),
+                Number::U64(_) => <u64 as Type<MySql>>::type_info(),
+                Number::U128(_) =><sqlx::types::Decimal as Type<MySql>>::type_info(),
+                Number::F32(_) => <f32 as Type<MySql>>::type_info(),
+                Number::F64(_) => <f64 as Type<MySql>>::type_info(),
+            },
+            Value::DateTime(dt) => {
+                match dt {
+                    ChronoValue::NaiveDate(_) => <NaiveDate as Type<MySql>>::type_info(),
+                    ChronoValue::NaiveTime(_) => <NaiveTime as Type<MySql>>::type_info(),
+                    ChronoValue::NaiveDateTime(_) => <NaiveDateTime as Type<MySql>>::type_info(),
+                    ChronoValue::DateTime(_) => <DateTime<Utc> as Type<MySql>>::type_info(),
+                }
+            },
+            Value::String(_) => <String as Type<MySql>>::type_info(),
+            Value::Object(_) => return None, //TODO: Use JSON here?
+            Value::Array(elems) => if elems.is_empty() {
+                return None
+            } else if let Value::Number(Number::U8(_) | Number::I8(_)) = elems[0] { 
+                <Vec<u8> as Type<MySql>>::type_info()
+            } else {
+                return None //TODO: other variants that would make sense?
+            }
+        })
+    }
+}
+
+#[allow(unused)]
+impl Value {
+    pub fn is_null(&self) -> bool {
+        self.as_null().is_some()
+    }
+
+    pub fn is_bool(&self) -> bool {
+        self.as_bool().is_some()
+    }
+
+    pub fn is_number(&self) -> bool {
+        self.as_number().is_some()
+    }
+
+    pub fn is_string(&self) -> bool {
+        self.as_string().is_some()
+    }
+
+    pub fn is_datetime(&self) -> bool {
+        self.as_datetime().is_some()
+    }
+
+    pub fn is_object(&self) -> bool {
+        self.as_object().is_some()
+    }
+
+    pub fn is_array(&self) -> bool {
+        self.as_array().is_some()
+    }
+
+    pub fn as_null(&self) -> Option<()> {
+        match *self {
+            Value::Null(()) => Some(()),
+            _ => None
+        }
+    }
+
+    pub fn as_bool(&self) -> Option<&bool> {
+        match *self {
+            Value::Bool(ref bool) => Some(bool),
+            _ => None
+        }
+    }
+
+    pub fn as_number(&self) -> Option<&Number> {
+        match *self {
+            Value::Number(ref number) => Some(number),
+            _ => None
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&String> {
+        match *self {
+            Value::String(ref string) => Some(string),
+            _ => None
+        }
+    }
+
+    pub fn as_datetime(&self) -> Option<&ChronoValue> {
+        match *self {
+            Value::DateTime(ref chrono_value) => Some(chrono_value),
+            _ => None
+        }
+    }
+
+    pub fn as_object(&self) -> Option<&BTreeMap<String, Value>> {
+        match *self {
+            Value::Object(ref map) => Some(map),
+            _ => None
+        }
+    }
+
+    pub fn as_array(&self) -> Option<&Vec<Value>> {
+        match *self {
+            Value::Array(ref vec) => Some(vec),
+            _ => None
+        }
+    }
+
+    pub fn as_bool_mut(&mut self) -> Option<&mut bool> {
+        match *self {
+            Value::Bool(ref mut bool) => Some(bool),
+            _ => None
+        }
+    }
+
+    pub fn as_number_mut(&mut self) -> Option<&mut Number> {
+        match *self {
+            Value::Number(ref mut number) => Some(number),
+            _ => None
+        }
+    }
+
+    pub fn as_string_mut(&mut self) -> Option<&mut String> {
+        match *self {
+            Value::String(ref mut string) => Some(string),
+            _ => None
+        }
+    }
+
+    pub fn as_datetime_mut(&mut self) -> Option<&mut ChronoValue> {
+        match *self {
+            Value::DateTime(ref mut chrono_value) => Some(chrono_value),
+            _ => None
+        }
+    }
+
+    pub fn as_object_mut(&mut self) -> Option<&mut BTreeMap<String, Value>> {
+        match *self {
+            Value::Object(ref mut map) => Some(map),
+            _ => None
+        }
+    }
+
+    pub fn as_array_mut(&mut self) -> Option<&mut Vec<Value>> {
+        match *self {
+            Value::Array(ref mut vec) => Some(vec),
+            _ => None
+        }
     }
 }
 

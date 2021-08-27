@@ -8,7 +8,7 @@ use serde::{
     de::{self, Error as DeError},
     Deserialize, Deserializer, Serialize, Serializer,
 };
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 
 #[allow(unused_macros)]
 macro_rules! from_json {
@@ -44,7 +44,7 @@ pub trait ValueKindExt {
     fn kind(&self) -> &'static str;
 }
 
-impl ValueKindExt for Value {
+impl ValueKindExt for JsonValue {
     fn kind(&self) -> &'static str {
         match self {
             Self::Bool(_) => "bool",
@@ -52,7 +52,7 @@ impl ValueKindExt for Value {
             Self::Array(_) => "array",
             Self::Object(_) => "object",
             Self::Number(_) => "number",
-            Value::Null => "null",
+            Self::Null => "null",
         }
     }
 }

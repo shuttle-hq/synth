@@ -13,6 +13,8 @@ use synth_core::schema::{
 };
 use synth_core::{Content, Name, Namespace};
 
+use super::json::synth_val_to_json;
+
 #[derive(Debug)]
 pub(crate) struct Collection {
     pub(crate) collection: Content,
@@ -120,11 +122,11 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
 
     for table in table_names {
         let values = task::block_on(datasource.get_deterministic_samples(table))?;
-
+        let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
         namespace.try_update(
             OptionalMergeStrategy,
             &Name::from_str(table).unwrap(),
-            &Value::from(values),
+            &Value::from(json_values),
         )?;
     }
 

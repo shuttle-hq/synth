@@ -11,7 +11,7 @@ CONTAINER_NAME=mysql-synth-harness
 ######### Initialization #########
 
 # Install dependencies
-apt-get install -y mysql-client
+#apt-get install -y mysql-client
 
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
@@ -37,7 +37,7 @@ mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME < 0_hospi
 result=0
 
 # 3. Verify gen to DB crates min. expected rows
-synth generate hospital_master --to $DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME --size 30 || result=1
+synth generate hospital_master --to $DB_SCHEME://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME --size 1 || result=1
 sum_rows_query="SELECT (SELECT count(*) FROM hospitals) +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
 sum=`mysql -h $DB_HOST -u root --password=$DB_PASSWORD -P $DB_PORT $DB_NAME -e "$sum_rows_query" | grep -o '[[:digit:]]*'`
 [ "$sum" -gt "30" ] || result=1

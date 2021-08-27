@@ -3,14 +3,14 @@ use crate::cli::stdf::StdoutExportStrategy;
 use anyhow::{Context, Result};
 
 use std::str::FromStr;
+use std::convert::TryFrom;
 
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
 use crate::datasource::DataSource;
 use crate::sampler::Sampler;
 use async_std::task;
-use serde_json::Value;
-use synth_core::{Name, Namespace};
+use synth_core::{Name, Namespace, Value};
 
 pub trait ExportStrategy {
     fn export(self, params: ExportParams) -> Result<()>;
@@ -80,25 +80,25 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
     params: ExportParams,
     datasource: &T,
 ) -> Result<()> {
-    let sampler = Sampler::new(&params.namespace);
+    let sampler = Sampler::try_from(&params.namespace)?;
     let values =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
     match values {
-        Value::Array(collection_json) => {
-            insert_data(datasource, params.collection_name.unwrap().to_string(), &collection_json)
+        Value::Array(collection) => {
+            insert_data(datasource, params.collection_name.unwrap().to_string(), &collection)
         }
-        Value::Object(namespace_json) => {
+        Value::Object(namespace) => {
             let names = params.namespace.topo_sort().ok_or_else(|| {
                 error!("Dependency is cyclic, check your schema");
                 anyhow::anyhow!("dependency is cyclic")
             })?.into_iter().map(|name| name.to_string());
             for n in names {
-                let collection_json = namespace_json.get(&n.to_string())
+                let collection = namespace.get(&n.to_string())
                     .expect("did not find Value for name")
                     .as_array()
                     .expect("This is always a collection (sampler contract)");
-                insert_data(datasource, n.to_string().clone(), collection_json)?;
+                insert_data(datasource, n.to_string().clone(), collection)?;
             };
             Ok(())
         }
@@ -111,8 +111,8 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
 fn insert_data<T: DataSource>(
     datasource: &T,
     collection_name: String,
-    collection_json: &[Value],
+    collection: &[Value],
 ) -> Result<()> {
-    task::block_on(datasource.insert_data(collection_name.clone(), collection_json))
+    task::block_on(datasource.insert_data(collection_name.clone(), collection))
         .with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }
