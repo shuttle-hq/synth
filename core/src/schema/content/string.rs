@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::prelude::*;
 use super::Categorical;
 
@@ -193,6 +195,23 @@ pub struct FormatContent {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct JsonContent {
     content: Box<Content>,
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Hash, Serialize)]
+pub struct ChronoValueAndFormat {
+    pub value: ChronoValue,
+    pub format: Arc<str>,
+}
+
+impl ChronoValueAndFormat {
+    pub fn format_to_string(&self) -> String {
+        match self.value {
+            ChronoValue::NaiveDate(d) => d.format(&self.format),
+            ChronoValue::NaiveTime(t) => t.format(&self.format),
+            ChronoValue::NaiveDateTime(dt) => dt.format(&self.format),
+            ChronoValue::DateTime(dt) => dt.format(&self.format),
+        }.to_string()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Hash, Serialize)]

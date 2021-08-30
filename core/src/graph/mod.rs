@@ -14,7 +14,7 @@ use synth_gen::value::{Token, Tokenizer};
 use crate::compile::NamespaceCompiler;
 use crate::compile::{Driver, Scoped, View};
 
-use crate::schema::{ChronoValue, Namespace};
+use crate::schema::{ChronoValueAndFormat, Namespace};
 
 macro_rules! derive_generator {
     {
@@ -91,6 +91,8 @@ pub use unique::UniqueNode;
 
 pub mod one_of;
 pub(crate) mod series;
+
+pub mod json;
 
 use crate::graph::series::SeriesNode;
 pub use one_of::OneOfNode;
@@ -191,7 +193,7 @@ derive_from! {
         Bool(bool),
         Number(Number),
         String(String),
-        DateTime(ChronoValue),
+        DateTime(ChronoValueAndFormat),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
     }
@@ -250,8 +252,8 @@ impl Encode<'_, Postgres> for Value {
                 }
             },
             Value::String(s) => <String as Encode<'_, Postgres>>::encode_by_ref(s, buf),
-            Value::DateTime(dt) => {
-                match dt {
+            Value::DateTime(ChronoValueAndFormat { value, .. }) => {
+                match value {
                     ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, Postgres>>::encode_by_ref(nd, buf),
                     ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, Postgres>>::encode_by_ref(nt, buf),
                     ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, Postgres>>::encode_by_ref(ndt, buf),
@@ -259,7 +261,7 @@ impl Encode<'_, Postgres> for Value {
                 }
             }
             Value::Object(_) => {
-                <serde_json::Value as Encode<'_, Postgres>>::encode(serde_json::to_value(self).unwrap(), buf)
+                <serde_json::Value as Encode<'_, Postgres>>::encode(json::synth_val_to_json(self.clone()), buf)
             },
             Value::Array(arr) => arr.encode_by_ref(buf), //TODO special-case for BYTEA
         }
@@ -291,8 +293,8 @@ impl Encode<'_, MySql> for Value {
                 }
             },
             Value::String(s) => <String as Encode<'_, MySql>>::encode_by_ref(s, buf),
-            Value::DateTime(dt) => {
-                match dt {
+            Value::DateTime(ChronoValueAndFormat { value, .. }) => {
+                match value {
                     ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, MySql>>::encode_by_ref(nd, buf),
                     ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, MySql>>::encode_by_ref(nt, buf),
                     ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, MySql>>::encode_by_ref(ndt, buf),
@@ -300,7 +302,7 @@ impl Encode<'_, MySql> for Value {
                 }
             }
             Value::Object(_) => {
-                <serde_json::Value as Encode<'_, MySql>>::encode(serde_json::to_value(self).unwrap(), buf)
+                <serde_json::Value as Encode<'_, MySql>>::encode(json::synth_val_to_json(self.clone()), buf)
             },
             Value::Array(_arr) => todo!()//<Vec<Value> as Encode<'_, MySql>>::encode_by_ref(arr, buf), //TODO special-case for u8 arrays?
         }
@@ -324,8 +326,8 @@ impl Encode<'_, MySql> for Value {
                 Number::F32(_) => <f32 as Type<MySql>>::type_info(),
                 Number::F64(_) => <f64 as Type<MySql>>::type_info(),
             },
-            Value::DateTime(dt) => {
-                match dt {
+            Value::DateTime(ChronoValueAndFormat { value, .. }) => {
+                match value {
                     ChronoValue::NaiveDate(_) => <NaiveDate as Type<MySql>>::type_info(),
                     ChronoValue::NaiveTime(_) => <NaiveTime as Type<MySql>>::type_info(),
                     ChronoValue::NaiveDateTime(_) => <NaiveDateTime as Type<MySql>>::type_info(),
@@ -405,7 +407,7 @@ impl Value {
 
     pub fn as_datetime(&self) -> Option<&ChronoValue> {
         match *self {
-            Value::DateTime(ref chrono_value) => Some(chrono_value),
+            Value::DateTime(ref chrono_value) => Some(&chrono_value.value),
             _ => None
         }
     }
@@ -447,7 +449,7 @@ impl Value {
 
     pub fn as_datetime_mut(&mut self) -> Option<&mut ChronoValue> {
         match *self {
-            Value::DateTime(ref mut chrono_value) => Some(chrono_value),
+            Value::DateTime(ChronoValueAndFormat { value: ref mut chrono_value, ..}) => Some(chrono_value),
             _ => None
         }
     }
@@ -680,7 +682,7 @@ pub mod tests {
                     "created_at_date": {
                         "type": "string",
                         "date_time": {
-                            "format": "%Y-%m-%d"
+                            "format": "%Y/%m/%d"
                         }
                     },
                     "created_at_time": {
@@ -820,7 +822,7 @@ pub mod tests {
                 }
 
                 currencies.insert(user.username, user.currency);
-                ChronoValueFormatter::new("%Y-%m-%d")
+                ChronoValueFormatter::new("%Y/%m/%d")
                     .parse(&user.created_at_date)
                     .unwrap();
 

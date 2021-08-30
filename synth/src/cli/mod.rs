@@ -7,7 +7,6 @@ mod postgres;
 mod stdf;
 mod store;
 mod telemetry;
-mod json;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
@@ -23,8 +22,7 @@ use structopt::StructOpt;
 use crate::cli::telemetry::TelemetryClient;
 use crate::utils::{version, META_OS};
 use rand::RngCore;
-use synth_core::Name;
-
+use synth_core::{Name, graph::json};
 pub struct Cli {
     store: Store,
     args: Args,

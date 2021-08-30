@@ -78,7 +78,7 @@ derive_generator! {
     return Result<Value, Error>,
     pub enum StringNode {
         String(Valuize<Tokenizer<RandomString>, String>),
-        DateTime(Valuize<Tokenizer<RandomDateTime>, ChronoValue>)
+        DateTime(Valuize<Tokenizer<RandomDateTime>, ChronoValueAndFormat>)
     }
 }
 
@@ -93,7 +93,7 @@ impl From<RandomDateTime> for StringNode {
         Self::DateTime(
             value
                 .into_token()
-                .map_complete(value_from_ok::<ChronoValue>),
+                .map_complete(value_from_ok::<ChronoValueAndFormat>),
         )
     }
 }

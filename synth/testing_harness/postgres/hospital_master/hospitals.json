@@ -3,8 +3,8 @@
   "length": {
     "type": "number",
     "range": {
-      "high": 10,
       "low": 1,
+      "high": 10,
       "step": 1
     },
     "subtype": "u64"

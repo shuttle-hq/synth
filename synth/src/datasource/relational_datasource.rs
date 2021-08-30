@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
 use synth_core::{Content, Value};
+use synth_gen::value::Number;
 
 const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
 
@@ -56,11 +57,29 @@ pub trait RelationalDataSource: DataSource {
             return Ok(());
         }
 
-        let column_names = collection
+        let column_infos = self.get_columns_infos(&collection_name).await?;
+        let first_valueset = collection
             .get(0)
             .expect("Explicit check is done above that this collection is non-empty")
             .as_object()
-            .expect("This is always an object (sampler contract)")
+            .expect("This is always an object (sampler contract)");
+
+        for column_info in column_infos {
+            if let Some(value) = first_valueset.get(&column_info.column_name) {
+                match (value, &*column_info.data_type) {
+                    (Value::Number(Number::U64(_)), "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint") =>
+                        warn!("Trying to put an unsigned u64 into a {} typed column {}.{}", 
+                            column_info.data_type, collection_name, column_info.column_name),
+                    (Value::Number(Number::U32(_)), "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint") =>
+                        warn!("Trying to put an unsigned u32 into a {} typed column {}.{}", 
+                            column_info.data_type, collection_name, column_info.column_name),
+                    //TODO: More variants
+                    _ => {}
+                }
+            }
+        }
+        
+        let column_names = first_valueset
             .keys()
             .cloned()
             .collect::<Vec<String>>()

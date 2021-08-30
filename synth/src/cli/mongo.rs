@@ -207,9 +207,6 @@ impl MongoExportStrategy {
 
         let mut docs = Vec::new();
 
-        // Here we're going directly from JSON -> BSON.
-        // This is a good first step, however there is bson type information which is lost.
-        // For example, using this method we'll never get types like Bson::DateTime.
         for value in collection {
             docs.push(match value_to_bson(value.clone()) {
                 Bson::Document(doc) => doc,
@@ -239,7 +236,7 @@ fn value_to_bson(value: Value) -> Bson {
         Value::Bool(b) => Bson::Boolean(b),
         Value::Number(n) => number_to_bson(n),
         Value::String(s) => Bson::String(s),
-        Value::DateTime(dt) => date_time_to_bson(dt),
+        Value::DateTime(dt) => date_time_to_bson(dt.value), //TODO: format instead?
         Value::Object(obj) => object_to_bson(obj),
         Value::Array(arr) => array_to_bson(arr)
     }
@@ -256,12 +253,13 @@ fn object_to_bson(obj: BTreeMap<String, Value>) -> Bson {
 
 
 fn date_time_to_bson(datetime: ChronoValue) -> Bson {
-    match datetime {
-        ChronoValue::NaiveDate(nd) => Bson::String(nd.to_string()),
-        ChronoValue::NaiveTime(nt) => Bson::String(nt.to_string()),
-        ChronoValue::NaiveDateTime(ndt) => Bson::DateTime(mongodb::bson::DateTime::from(DateTime::<Utc>::from_utc(ndt, Utc))),
-        ChronoValue::DateTime(dt) => Bson::DateTime(dt.into()),
-    }
+    Bson::DateTime(mongodb::bson::DateTime::from(match datetime {
+        // those are not optimal as BSON doesn't have a way to specify dates or times, just both at once
+        ChronoValue::NaiveDate(nd) => DateTime::<Utc>::from_utc(nd.and_hms(0, 0, 0), Utc),
+        ChronoValue::NaiveTime(nt) => DateTime::<Utc>::from_utc(chrono::naive::MIN_DATE.and_time(nt), Utc),
+        ChronoValue::NaiveDateTime(ndt) => DateTime::<Utc>::from_utc(ndt, Utc),
+        ChronoValue::DateTime(dt) => dt.into(),
+    }))
 }
 
 fn number_to_bson(number: Number) -> Bson {
