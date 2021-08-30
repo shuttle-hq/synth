@@ -414,6 +414,7 @@ pub struct Scoped<G: Generator> {
 impl<G> Generator for Scoped<G>
 where
     G: Generator,
+    G::Return: GeneratorResult,
     GeneratorOutput<G>: Clone,
 {
     type Yield = G::Yield;
@@ -437,7 +438,9 @@ where
                     })
                     .collect::<Vec<_>>();
                 debug!(">>> drive {}", scope);
-                self.drivers.get_mut(scope).unwrap().complete(rng);
+                if let Err(err) = self.drivers.get_mut(scope).unwrap().complete(rng).into_result() {
+                    return GeneratorState::Complete(G::Return::from_err(err))
+                }
                 cursors.into_iter().for_each(|(scope, cursor)| {
                     debug!(">> mark {}", scope);
                     cursor.mark()
