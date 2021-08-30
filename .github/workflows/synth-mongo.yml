@@ -10,6 +10,9 @@ on:
 
   workflow_dispatch:
 
+env:
+  RUSTFLAGS: "-D warnings"
+
 jobs:
   e2e_tests_mongo:
     runs-on: ubuntu-latest
@@ -20,7 +23,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-05-17
-      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 install --debug --path=synth
+      - run: cargo +nightly-2021-05-17 install --debug --path=synth
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/mongodb/synth

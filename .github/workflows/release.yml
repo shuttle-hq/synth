@@ -6,8 +6,10 @@ on:
 
 name: Upload Release Asset
 
-jobs:
+env:
+  RUSTFLAGS: "-D warnings"
 
+jobs:
   build:
     name: build 
     runs-on: ${{ matrix.os }}
@@ -26,7 +28,7 @@ jobs:
         toolchain: nightly-2021-05-17
     - id: tag
       uses: dawidd6/action-get-tag@v1
-    - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 build --release
+    - run: cargo +nightly-2021-05-17 build --release
     - working-directory: target/release
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
@@ -44,7 +46,7 @@ jobs:
           toolchain: nightly-2021-05-17
       - id: tag
         uses: dawidd6/action-get-tag@v1
-      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 build --release
+      - run: cargo +nightly-2021-05-17 build --release
       - uses: actions/upload-artifact@v2
         with:
           name: synth-${{ steps.tag.outputs.tag }}-windows-x86_64
