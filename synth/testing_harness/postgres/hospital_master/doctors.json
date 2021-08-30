@@ -41,7 +41,7 @@
             "low": 0,
             "step": 1
           },
-          "subtype": "i64"
+          "subtype": "i32"
         },
         {
           "weight": 1.0,
