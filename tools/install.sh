@@ -70,9 +70,13 @@ install_based_on_os() {
 }
 
 prompt_install_telemetry() {
-  info "\nHey wonderful new user! We hate to ask you this, but there is really only one way we can build Synth into something great - by knowing the bare minimum about how users interact with it."
-  info "\nIt seems like privacy is important to you. It is to us as well! So we made sure our analytics is completely anonymous and explicitly opt-in. (see more details here: https://getsynth.github.io/synth/other/telemetry). Please support us by hitting 'y' and opting-in."
-  info "\nLove, the Synth team <3  (y/N) "
+  info "\n${BOLD}Hey wonderful new user!${RESET}\n"
+  info "We hate to ask you this, but there is really only one way we can build Synth into something great - by knowing the bare minimum about how users interact with it.\n"
+  info "It seems like privacy is important to you. It is to us as well! So we made sure our analytics are completely anonymous and explicitly opt-in. (see more details here: https://getsynth.com/docs/other/telemetry). Please support us by hitting 'y' and opting-in.\n"
+  info "You can opt-out at anytime by running \`synth telemetry disable\`.\n"
+  info "Love, the Synth team ${RED}${BOLD}<3${RESET}\n"
+
+  printf "Do you want to enable telemetry? (y/N) "
 
   read INSTALL_TELEMETRY </dev/tty
 
@@ -110,7 +114,7 @@ install_from_bin_package() {
     fi
   fi
   if [ ! -z "$OCCUPIED_PATH_ERRORS" ]; then
-    die "\nInstallation failed!\n${OCCUPIED_PATH_ERRORS}Remove listed entries manually or run the installer with --force flag to write over them:\n  curl -sSL http://sh.getsynth.com | sh -s -- --force"
+    die "\nInstallation failed!\n${OCCUPIED_PATH_ERRORS}Remove listed entries manually or run the installer with --force flag to write over them:\n  curl -sSL https://getsynth.com/install | sh -s -- --force"
   fi
 
   info "Installing Synth executable to $BIN_DST_DIR/synth."
