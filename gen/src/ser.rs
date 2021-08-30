@@ -139,10 +139,13 @@ where
                     ser.serialize(serializer)
                 }
                 Special::Error(error) => Err(S::Error::custom(error)),
-                otherwise => todo!(
-                    "uh oh! Looks like we need to complete this pattern for {}!",
-                    otherwise
-                ),
+                otherwise => {
+                    let err = format!(
+                        "Stream of generated tokens is incomplete: the generated stream is malformed. Expected new data, instead got: {}",
+                        otherwise
+                    );
+                    Err(S::Error::custom(err))
+                }
             },
             Token::Primitive(primitive) => primitive.serialize(serializer),
         }
