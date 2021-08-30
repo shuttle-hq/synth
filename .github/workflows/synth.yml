@@ -5,8 +5,10 @@ on:
     branches:
       - master
 
-jobs:
+env:
+  RUSTFLAGS: "-D warnings"
 
+jobs:
   tests:
     name: synth tests
     runs-on: ubuntu-latest
@@ -15,4 +17,4 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-05-17
-      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 test
+      - run: cargo +nightly-2021-05-17 test

@@ -6,6 +6,9 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  RUSTFLAGS: "-D warnings"
+
 jobs:
   test_examples:
     runs-on: ubuntu-latest
@@ -14,6 +17,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-05-17
-      - run: RUSTFLAGS="-D warnings" cargo +nightly-2021-05-17 install --debug --path=synth
+      - run: cargo +nightly-2021-05-17 install --debug --path=synth
       - run: |
           bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/test_examples.sh" ${GITHUB_WORKSPACE}/examples
