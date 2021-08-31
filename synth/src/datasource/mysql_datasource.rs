@@ -24,8 +24,7 @@ use synth_core::Content;
 ///   Ideally, the user can define a way to force certain fields as bool rather than i8.
 
 pub struct MySqlDataSource {
-    pool: Pool<MySql>,
-    connect_params: String,
+    pool: Pool<MySql>
 }
 
 #[async_trait]
@@ -40,8 +39,7 @@ impl DataSource for MySqlDataSource {
                 .await?;
 
             Ok::<Self, anyhow::Error>(MySqlDataSource {
-                pool,
-                connect_params: connect_params.to_string(),
+                pool
             })
         })
     }
@@ -71,19 +69,11 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(result)
     }
 
-    fn get_catalog(&self) -> Result<&str> {
-        self.connect_params
-            .split('/')
-            .last()
-            .ok_or_else(|| anyhow!("No catalog specified in the uri"))
-    }
-
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name FROM information_schema.tables
-            WHERE table_schema = ? and table_type = 'BASE TABLE'";
+            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'";
 
         let table_names: Vec<String> = sqlx::query(query)
-            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .iter()
@@ -97,11 +87,10 @@ impl RelationalDataSource for MySqlDataSource {
         let query = r"SELECT column_name, ordinal_position, is_nullable, data_type,
             character_maximum_length
             FROM information_schema.columns
-            WHERE table_name = ? AND table_schema = ?";
+            WHERE table_name = ? AND table_schema = DATABASE()";
 
         let column_infos = sqlx::query(query)
             .bind(table_name)
-            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
@@ -114,10 +103,9 @@ impl RelationalDataSource for MySqlDataSource {
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
         let query: &str = r"SELECT column_name, data_type
             FROM information_schema.columns
-            WHERE table_schema = ? AND table_name = ? AND column_key = 'PRI'";
+            WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'";
 
         sqlx::query(query)
-            .bind(self.get_catalog()?)
             .bind(table_name)
             .fetch_all(&self.pool)
             .await?
@@ -129,10 +117,9 @@ impl RelationalDataSource for MySqlDataSource {
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
         let query: &str = r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
             FROM information_schema.key_column_usage
-            WHERE referenced_table_schema = ?";
+            WHERE referenced_table_schema = DATABASE()";
 
         sqlx::query(query)
-            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
