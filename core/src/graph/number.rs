@@ -27,11 +27,11 @@ impl<N: PartialOrd + Zero + Display> TryFrom<RangeStep<N>> for UniformRangeStep<
 }
 
 impl<N> Distribution<N> for UniformRangeStep<N>
-where
-    N: Zero
-        + Add<Output = N>
-        + Sub<Output = N>
-        + Rem<Output = N>
+    where
+        N: Zero
+        + Add<Output=N>
+        + Sub<Output=N>
+        + Rem<Output=N>
         + SampleUniform
         + Copy
         + PartialOrd,
@@ -49,28 +49,31 @@ where
 pub struct Incrementing<N = i64> {
     count: N,
     step: N,
+    overflowed: bool,
 }
 
 impl<N> Incrementing<N>
-where
-    N: Zero + One,
+    where
+        N: Zero + One,
 {
     pub fn new() -> Self {
         Self {
             count: N::zero(),
             step: N::one(),
+            overflowed: false,
         }
     }
 }
 
 impl<N> Incrementing<N>
-where
-    N: One,
+    where
+        N: One,
 {
     pub fn new_at(start_at: N) -> Self {
         Self {
             count: start_at,
             step: N::one(),
+            overflowed: false,
         }
     }
 }
@@ -80,13 +83,14 @@ impl<N> Incrementing<N> {
         Self {
             count: start_at,
             step,
+            overflowed: false,
         }
     }
 }
 
 impl<N> Default for Incrementing<N>
-where
-    N: Zero + One,
+    where
+        N: Zero + One,
 {
     fn default() -> Self {
         Self::new()
@@ -94,23 +98,31 @@ where
 }
 
 impl<N> Generator for Incrementing<N>
-where
-    N: CheckedAdd + Copy,
+    where
+        N: CheckedAdd + Copy,
 {
     type Yield = N;
 
     type Return = Result<Never, Error>;
 
     fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        let prev = self.count;
         match self.count.checked_add(&self.step) {
             Some(next) => {
                 self.count = next;
-                GeneratorState::Yielded(next)
+                GeneratorState::Yielded(prev)
             }
-            None => GeneratorState::Complete(Err(failed_crate!(
-                target: Release,
-                "incrementing generator overflowed: try using a larger type"
-            ))),
+            None => {
+                if !self.overflowed {
+                    self.overflowed = true;
+                    GeneratorState::Yielded(self.count)
+                } else {
+                    GeneratorState::Complete(Err(failed_crate!(
+                        target: Release,
+                        "incrementing generator overflowed: try using a larger type"
+                    )))
+                }
+            }
         }
     }
 }
@@ -222,3 +234,26 @@ number_node!(
     F32Constant as constant,,,
     ) for f32,
 );
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+    use rand::rngs::OsRng;
+
+    #[test]
+    fn test_overflow_behaviour() {
+        let mut incrementing: Incrementing<u8> = Incrementing {
+            count: 0,
+            step: 1,
+            overflowed: false
+        };
+
+        let mut rng = OsRng::default();
+
+        for i in 0..255 {
+            assert_eq!(i, incrementing.next(&mut rng).into_yielded().unwrap())
+        }
+
+        assert!(incrementing.next(&mut rng).into_complete().is_err())
+    }
+}
