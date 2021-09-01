@@ -22,8 +22,7 @@ use structopt::StructOpt;
 use crate::cli::telemetry::TelemetryClient;
 use crate::utils::{version, META_OS};
 use rand::RngCore;
-use synth_core::Name;
-
+use synth_core::{Name, graph::json};
 pub struct Cli {
     store: Store,
     args: Args,

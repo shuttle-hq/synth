@@ -220,8 +220,8 @@ macro_rules! merge_strategy_for_numbers {
     )*}
 }
 
-merge_strategy_for_numbers!(RangeStep for u64, i64, f64,);
-merge_strategy_for_numbers!(Categorical for u64, i64,);
+merge_strategy_for_numbers!(RangeStep for u64, i64, f64, u32, i32, f32,);
+merge_strategy_for_numbers!(Categorical for u64, i64, u32, i32,);
 
 impl MergeStrategy<Id, u64> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut Id, candidate: &u64) -> Result<()> {
@@ -280,6 +280,36 @@ impl MergeStrategy<number_content::F64, f64> for OptionalMergeStrategy {
     }
 }
 
+impl MergeStrategy<number_content::U32, u32> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut number_content::U32, candidate: &u32) -> Result<()> {
+        match master {
+            number_content::U32::Range(range) => self.try_merge(range, candidate),
+            number_content::U32::Categorical(cat) => self.try_merge(cat, candidate),
+            number_content::U32::Constant(cst) => self.try_merge(cst, candidate),
+            number_content::U32::Id(id) => self.try_merge(id, &(*candidate as u64)),
+        }
+    }
+}
+
+impl MergeStrategy<number_content::I32, i32> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut number_content::I32, candidate: &i32) -> Result<()> {
+        match master {
+            number_content::I32::Range(range) => self.try_merge(range, candidate),
+            number_content::I32::Categorical(cat) => self.try_merge(cat, candidate),
+            number_content::I32::Constant(cst) => self.try_merge(cst, candidate),
+        }
+    }
+}
+
+impl MergeStrategy<number_content::F32, f32> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut number_content::F32, candidate: &f32) -> Result<()> {
+        match master {
+            number_content::F32::Range(range) => self.try_merge(range, candidate),
+            number_content::F32::Constant(cst) => self.try_merge(cst, candidate),
+        }
+    }
+}
+
 impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut NumberContent, value: &Number) -> Result<()> {
         match master {
@@ -305,6 +335,27 @@ impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
                 } else {
                     *master = f64_content.clone().upcast(value.kind())?;
                     self.try_merge(master, value)
+                }
+            }
+            NumberContent::U32(u32_content) => {
+                if let Some(n) = value.as_u64() {
+                    self.try_merge(u32_content, &(n as u32))
+                } else {
+                    todo!()
+                }
+            }
+            NumberContent::I32(i32_content) => {
+                if let Some(n) = value.as_i64() {
+                    self.try_merge(i32_content, &(n as i32))
+                } else {
+                    todo!()
+                }
+            }
+            NumberContent::F32(f32_content) => {
+                if let Some(n) = value.as_f64() {
+                    self.try_merge(f32_content, &(n as f32))
+                } else {
+                    todo!()
                 }
             }
         }

@@ -66,8 +66,8 @@ jobs:
           -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/0_hospital_schema.sql
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-05-17
-      - run: cargo +nightly-2021-05-17 install --debug --path=synth
+          toolchain: nightly
+      - run: cargo +nightly install --debug --path=synth
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/mysql

@@ -7,16 +7,16 @@ use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use serde_json::{Map, Number, Value};
 use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow};
 use sqlx::{Column, Pool, Postgres, Row, TypeInfo};
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use synth_core::schema::number_content::{F64, I64};
+use synth_core::schema::number_content::{F32, F64, I32, I64};
 use synth_core::schema::{
     BoolContent, ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent,
     StringContent, Uuid,
 };
-use synth_core::Content;
+use synth_core::{Content, Value};
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
@@ -58,7 +58,7 @@ impl DataSource for PostgresDataSource {
 impl RelationalDataSource for PostgresDataSource {
     type QueryResult = PgQueryResult;
 
-    async fn execute_query(&self, query: String, query_params: Vec<&str>) -> Result<PgQueryResult> {
+    async fn execute_query(&self, query: String, query_params: Vec<&Value>) -> Result<PgQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
         for param in query_params {
@@ -195,7 +195,7 @@ impl RelationalDataSource for PostgresDataSource {
                 high: 1,
                 step: 1,
             }))),
-            "int4" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
+            "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep {
                 low: 0,
                 high: 1,
                 step: 1,
@@ -205,7 +205,7 @@ impl RelationalDataSource for PostgresDataSource {
                 high: 1,
                 step: 1,
             }))),
-            "float4" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
+            "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep {
                 low: 0.0,
                 high: 1.0,
                 step: 0.1, //todo
@@ -243,6 +243,17 @@ impl RelationalDataSource for PostgresDataSource {
         };
 
         Ok(content)
+    }
+
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize) {
+        query.push('(');
+        for i in 0..extend {
+            query.push_str(&format!("${}", curr_index + i + 1));
+            if i != extend - 1 {
+                query.push(',');
+            }
+        }
+        query.push(')');
     }
 }
 
@@ -288,14 +299,14 @@ impl TryFrom<PgRow> for ValueWrapper {
     type Error = anyhow::Error;
 
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
-        let mut json_kv = Map::new();
+        let mut kv = BTreeMap::new();
 
         for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null);
-            json_kv.insert(column.name().to_string(), value);
+            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
+            kv.insert(column.name().to_string(), value);
         }
 
-        Ok(ValueWrapper(Value::Object(json_kv)))
+        Ok(ValueWrapper(Value::Object(kv)))
     }
 }
 
@@ -308,24 +319,16 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
         "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
             Value::String(row.try_get::<String, &str>(column.name())?)
         }
-        "int2" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
-        "int4" => Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?)),
-        "int8" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
-        "float4" => Value::Number(
-            Number::from_f64(row.try_get::<f32, &str>(column.name())? as f64)
-                .ok_or_else(|| anyhow!("Failed to convert float4 data type"))?,
-        ), // TODO test f32, f64
-        "float8" => Value::Number(
-            Number::from_f64(row.try_get::<f64, &str>(column.name())?)
-                .ok_or_else(|| anyhow!("Failed to convert float8 data type"))?,
-        ),
+        "int2" => Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
+        "int4" => Value::Number(row.try_get::<i32, &str>(column.name())?.into()),
+        "int8" => Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
+        "float4" => Value::Number(row.try_get::<f32, &str>(column.name())?.into()),
+        "float8" => Value::Number(row.try_get::<f64, &str>(column.name())?.into()),
         "numeric" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
-                if let Some(json_number) = Number::from_f64(truncated) {
-                    return Ok(Value::Number(json_number));
-                }
+                return Ok(Value::Number(truncated.into()));
             }
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")

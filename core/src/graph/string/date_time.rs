@@ -1,10 +1,10 @@
 use super::super::prelude::*;
 
-use std::ops::Range as StdRange;
+use std::{ops::Range as StdRange, sync::Arc};
 
 pub struct RandomDateTime {
     inner: OnceInfallible<Random<ChronoValue, Uniform<ChronoValue>>>,
-    format: String,
+    format: Arc<str>,
 }
 
 impl RandomDateTime {
@@ -13,7 +13,7 @@ impl RandomDateTime {
             inner: Random::new_with(Uniform::new_inclusive(range.start, range.end))
                 .infallible()
                 .try_once(),
-            format: format.to_string(),
+            format: Arc::from(format.to_owned()),
         }
     }
 }
@@ -58,7 +58,7 @@ impl UniformSampler for UniformChronoValue {
 impl Generator for RandomDateTime {
     type Yield = String;
 
-    type Return = Result<ChronoValue, Error>;
+    type Return = Result<ChronoValueAndFormat, Error>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         match self.inner.next(rng) {
@@ -68,7 +68,7 @@ impl Generator for RandomDateTime {
                     Err(err) => GeneratorState::Complete(Err(err)),
                 }
             }
-            GeneratorState::Complete(r) => GeneratorState::Complete(r),
+            GeneratorState::Complete(r) => GeneratorState::Complete(r.map(|value| ChronoValueAndFormat { value, format: Arc::clone(&self.format)})),
         }
     }
 }

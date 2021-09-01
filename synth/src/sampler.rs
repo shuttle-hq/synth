@@ -1,101 +1,159 @@
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
-use serde_json::{Map, Value};
-use synth_core::Graph;
-use synth_core::{Name, Namespace};
+use synth_core::{Graph, Name, Namespace, Value};
 use synth_gen::prelude::*;
+use std::collections::{btree_map::Entry, BTreeMap};
+use std::convert::TryFrom;
 
-pub(crate) struct Sampler<'r> {
-    namespace: &'r Namespace,
+pub(crate) struct Sampler {
+    graph: Graph,
 }
 
-impl<'r> Sampler<'r> {
-    pub fn new(namespace: &'r Namespace) -> Self {
-        Self { namespace }
-    }
+fn sampler_progress_bar(target: u64) -> ProgressBar {
+    let bar = ProgressBar::new(target as u64);
+    let style = ProgressStyle::default_bar()
+        .template("[{elapsed_precise}] {wide_bar} {pos}/{len} generated ({eta} remaining)");
+    bar.set_style(style);
+    bar
+}
 
-    fn sampler_progress_bar(target: u64) -> ProgressBar {
-        let bar = ProgressBar::new(target as u64);
-        let style = ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {wide_bar} {pos}/{len} generated ({eta} remaining)");
-        bar.set_style(style);
-        bar
-    }
-
+impl Sampler {
     pub(crate) fn sample_seeded(
-        &self,
-        collection: Option<Name>,
+        self,
+        collection_name: Option<Name>,
         target: usize,
         seed: u64,
     ) -> Result<Value> {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+        let rng = rand::rngs::StdRng::seed_from_u64(seed);
+        let model = self.graph.aggregate();
+        let sample_strategy = SampleStrategy::new(collection_name, target);
+        sample_strategy.sample(model, rng)
+    }
+}
 
-        let graph = Graph::from_namespace(self.namespace)?;
-        let mut model = graph.into_iterator(&mut rng);
+impl TryFrom<&Namespace> for Sampler {
+    type Error = anyhow::Error;
+    fn try_from(namespace: &Namespace) -> Result<Self> {
+        Ok(Self {
+            graph: Graph::from_namespace(namespace)?,
+        })
+    }
+}
 
-        let target = target as u64;
-        let progress_bar = Self::sampler_progress_bar(target);
-        let mut output = Map::new();
+enum SampleStrategy {
+    Namespace(NamespaceSampleStrategy),
+    Collection(CollectionSampleStrategy),
+}
 
-        while progress_bar.position() < target {
-            let serializable = OwnedSerializable::new(&mut model);
-            let mut is_empty = true;
+impl SampleStrategy {
+    fn new(collection_name: Option<Name>, target: usize) -> Self {
+        match collection_name {
+            None => SampleStrategy::Namespace(NamespaceSampleStrategy {
+                target
+            }),
+            Some(name) => SampleStrategy::Collection(CollectionSampleStrategy {
+                name,
+                target,
+            })
+        }
+    }
 
-            let as_value = match (serde_json::to_value(serializable), model.restart()) {
-                (Ok(value), Ok(_)) => value,
-                (_, Err(gen_err)) => return Err(gen_err.into()),
-                (Err(ser_err), Ok(_)) => {
-                    return Err(anyhow!("generated data is malformed: {}", ser_err))
-                }
-            };
+    fn sample<R: Rng>(&self, model: Aggregate<Graph>, rng: R) -> Result<Value> {
+        match self {
+            SampleStrategy::Namespace(nss) => nss.sample(model, rng),
+            SampleStrategy::Collection(css) => css.sample(model, rng)
+        }
+    }
+}
 
-            match as_value {
-                Value::Object(map) => map.into_iter().try_for_each(|(name, value)| match value {
-                    Value::Array(content) => {
-                        is_empty &= content.is_empty();
-                        progress_bar.inc(content.len() as u64);
-                        output
-                            .entry(name)
-                            .or_insert_with(|| Value::Array(Vec::new()))
-                            .as_array_mut()
-                            .unwrap()
-                            .extend(content);
-                        Ok(())
-                    }
-                    _ => Err(failed!(
-                        target: Release,
-                        "namespace content was not an array (this should not happen)"
-                    )),
-                }),
-                _ => Err(failed!(
-                    target: Release,
-                    "namespace was not an object (this should not happen)"
-                )),
-            }?;
-            if is_empty {
-                warn!(
-                    "unable to generate {} values, only {} were generated",
-                    target,
-                    progress_bar.length()
-                );
-                break;
-            }
+struct NamespaceSampleStrategy {
+    target: usize,
+}
+
+impl NamespaceSampleStrategy {
+    fn sample<R: Rng>(&self, mut model: Aggregate<Graph>, mut rng: R) -> Result<Value> {
+        let mut generated = 0;
+        let mut out = BTreeMap::new();
+        let progress_bar = sampler_progress_bar(self.target as u64);
+
+        while generated < self.target {
+            let next = model.complete(&mut rng)?;
+            // Here we are building a BTreeMap.
+            // Keys are the name of the collection and values are vectors of type synth_core::Value.
+            // If the key is absent, we insert the first vec sampled, otherwise we extend the existing Vec.
+            // In the future this should be replaced by a Sample/Samples struct which encapsulates this complexity.
+            as_object(next)?
+                .into_iter()
+                .try_for_each(|(collection, value)| {
+                    as_array(&collection, value)
+                        .map(|vec| {
+                            generated += vec.len();
+                            match out.entry(collection) {
+                                Entry::Vacant(e) => {
+                                    e.insert(Value::Array(vec));
+                                }
+                                Entry::Occupied(mut o) => {
+                                    match o.get_mut() {
+                                        Value::Array(arr) => arr.extend(vec),
+                                        _ => unreachable!("This is never not an array.")
+                                    }
+                                }
+                            }
+                        })
+                })?;
+            progress_bar.set_position(generated as u64);
         }
 
         progress_bar.finish();
+        Ok(Value::Object(out))
+    }
+}
 
-        if let Some(name) = collection {
-            let just = output.remove(&name.to_string()).ok_or_else(|| {
-                failed!(
-                    target: Release,
-                    "generated namespace does not have a collection {}",
-                    name
-                )
+struct CollectionSampleStrategy {
+    name: Name,
+    target: usize,
+}
+
+impl CollectionSampleStrategy {
+    fn sample<R: Rng>(&self, mut model: Aggregate<Graph>, mut rng: R) -> Result<Value> {
+        let mut out = vec![];
+        let mut generated = 0;
+        let progress_bar = sampler_progress_bar(self.target as u64);
+
+        while generated < self.target {
+            let next = model.complete(&mut rng)?;
+            let collection_value = as_object(next)?.remove(self.name.as_ref()).ok_or_else(|| {
+                anyhow!("generated namespace does not have a collection '{}'", self.name)
             })?;
-            Ok(just)
-        } else {
-            Ok(Value::Object(output))
+            match collection_value {
+                Value::Array(vec) => {
+                    generated += vec.len();
+                    out.extend(vec);
+                }
+                other => return Err(anyhow!("Was expecting the sampled collection to be an array. Instead found {}", other.type_()))
+            }
+            progress_bar.set_position(generated as u64);
+        }
+
+        Ok(Value::Array(out))
+    }
+}
+
+fn as_object(sample: Value) -> Result<BTreeMap<String, Value>> {
+    match sample {
+        Value::Object(obj) => Ok(obj),
+        other => Err(anyhow!("Was expecting the top-level sample to be an object. Instead found {}", other.type_()))
+    }
+}
+
+fn as_array(name: &str, value: Value) -> Result<Vec<Value>> {
+    match value {
+        Value::Array(vec) => Ok(vec),
+        _ => {
+            return Err(
+                anyhow!("generated data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.type_()),
+            );
         }
     }
 }

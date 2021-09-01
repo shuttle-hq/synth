@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use serde_json::Value;
+use synth_core::Value;
 
 pub(crate) mod mysql_datasource;
 pub(crate) mod postgres_datasource;

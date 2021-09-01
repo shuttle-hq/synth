@@ -3,8 +3,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
-use serde_json::Value;
-use synth_core::Content;
+use synth_core::{Content, Value};
+use synth_gen::value::Number;
 
 const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
 
@@ -47,10 +47,6 @@ pub trait RelationalDataSource: DataSource {
         collection_name: String,
         collection: &[Value],
     ) -> Result<()> {
-        // how to to ordering here?
-        // If we have foreign key constraints we need to traverse the tree and
-        // figure out insertion order
-        // We basically need something like an InsertionStrategy where we have a DAG of insertions
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
         if collection.is_empty() {
@@ -61,11 +57,29 @@ pub trait RelationalDataSource: DataSource {
             return Ok(());
         }
 
-        let column_names = collection
+        let column_infos = self.get_columns_infos(&collection_name).await?;
+        let first_valueset = collection
             .get(0)
             .expect("Explicit check is done above that this collection is non-empty")
             .as_object()
-            .expect("This is always an object (sampler contract)")
+            .expect("This is always an object (sampler contract)");
+
+        for column_info in column_infos {
+            if let Some(value) = first_valueset.get(&column_info.column_name) {
+                match (value, &*column_info.data_type) {
+                    (Value::Number(Number::U64(_)), "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint") =>
+                        warn!("Trying to put an unsigned u64 into a {} typed column {}.{}", 
+                            column_info.data_type, collection_name, column_info.column_name),
+                    (Value::Number(Number::U32(_)), "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint") =>
+                        warn!("Trying to put an unsigned u32 into a {} typed column {}.{}", 
+                            column_info.data_type, collection_name, column_info.column_name),
+                    //TODO: More variants
+                    _ => {}
+                }
+            }
+        }
+        
+        let column_names = first_valueset
             .keys()
             .cloned()
             .collect::<Vec<String>>()
@@ -79,28 +93,28 @@ pub trait RelationalDataSource: DataSource {
                 collection_name, column_names
             );
 
+            let mut curr_index = 0;
+            let mut query_params = vec![];
+
             for (i, row) in rows.iter().enumerate() {
                 let row_obj = row
                     .as_object()
                     .expect("This is always an object (sampler contract)");
+                
+                let extend = row_obj.values().len();
+                Self::extend_parameterised_query(&mut query, curr_index, extend);
+                curr_index += extend;
+                query_params.extend(row_obj.values());
 
-                let values = row_obj
-                    .values()
-                    .map(|v| v.to_string().replace("'", "''")) // two single quotes are the standard way to escape double quotes
-                    .map(|v| v.replace("\"", "'")) // values in the object have quotes around them by default.
-                    .collect::<Vec<String>>()
-                    .join(",");
-
-                // We should be using some form of a prepared statement here.
-                // It is not clear how this would work for our batch inserts...
                 if i == rows.len() - 1 {
-                    query.push_str(&format!("({});\n", values));
+                    query.push_str(";\n");
                 } else {
-                    query.push_str(&format!("({}),\n", values));
+                    query.push_str(",\n");
                 }
             }
-
-            let future = self.execute_query(query, vec![]);
+            println!("{}", query);
+            println!("{:#?}", query_params);
+            let future = self.execute_query(query, query_params);
             futures.push(future);
         }
 
@@ -117,7 +131,7 @@ pub trait RelationalDataSource: DataSource {
     async fn execute_query(
         &self,
         query: String,
-        query_params: Vec<&str>,
+        query_params: Vec<&Value>,
     ) -> Result<Self::QueryResult>;
 
     fn get_catalog(&self) -> Result<&str>;
@@ -135,4 +149,7 @@ pub trait RelationalDataSource: DataSource {
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
     fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content>;
+    
+    // Returns extended query string + current index
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize);
 }

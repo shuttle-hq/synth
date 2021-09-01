@@ -226,7 +226,7 @@ impl Daemon {
         target: usize,
     ) -> Result<Value> {
         let value_generator = Sampler::try_from(namespace)?;
-        value_generator.sample(collection, target)
+        value_generator.sample(collection, target).map(crate::cli::synth_val_to_json)
     }
 
     /// Test runs the model generated from the `Namespace` E2E.

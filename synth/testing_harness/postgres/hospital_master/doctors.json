@@ -3,8 +3,8 @@
   "length": {
     "type": "number",
     "range": {
-      "high": 10,
       "low": 1,
+      "high": 10,
       "step": 1
     },
     "subtype": "u64"
@@ -37,11 +37,11 @@
           "weight": 1.0,
           "type": "number",
           "range": {
-            "high": 12,
             "low": 0,
+            "high": 12,
             "step": 1
           },
-          "subtype": "i64"
+          "subtype": "i32"
         },
         {
           "weight": 1.0,
