@@ -9,9 +9,14 @@ use std::str::FromStr;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
     ArrayContent, FieldRef, Id, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
-    SameAsContent,
+    SameAsContent, StringContent, FakerContent
 };
+use synth_core::graph::string::{FakerArgs, Locale};
 use synth_core::{Content, Name, Namespace};
+use arrow::record_batch::RecordBatch;
+use arrow::array::{StringArray, ArrayRef};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub(crate) struct Collection {
@@ -56,8 +61,56 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
 
         namespace.put_collection(
             &Name::from_str(table_name)?,
-            Collection::try_from((datasource, column_infos))?.collection,
+            Collection::try_from((datasource, column_infos.clone()))?.collection,
         )?;
+
+        let module = semantic_detection::module::dummy::module();
+        let values = task::block_on(datasource.get_deterministic_samples(table_name))?;
+        let mut pivoted = HashMap::new();
+        for value in values.iter() {
+            let row = value.as_object().unwrap();
+            for (column, field) in row.iter() {
+                if let Some(content) = field.as_str() {
+                    pivoted
+                        .entry(column.to_string())
+                        .or_insert_with(Vec::new)
+                        .push(Some(content));
+                }
+
+                if field.is_null() {
+                    if let Some(values) = pivoted.get_mut(column) {
+                        values.push(None);
+                    }
+                }
+            }
+        }
+
+        let column_infos = column_infos
+            .into_iter()
+            .map(|ci| (ci.column_name.to_string(), ci))
+            .collect::<HashMap<_, _>>();
+        let pivoted = pivoted.into_iter().map(|(k, v)| (k, Arc::new(StringArray::from(v)) as ArrayRef));
+        let record_batch = RecordBatch::try_from_iter(pivoted).unwrap();
+        let target = module.forward(&record_batch).unwrap();
+        for (column, generator) in target {
+            let column_meta = column_infos.get(&column).unwrap();
+            if let Some(generator) = generator {
+                let field_ref = FieldRef::new(& if column_meta.is_nullable {
+                    format!("{}.content.{}.0", table_name, &column_meta.column_name)
+                } else {
+                    format!("{}.content.{}", table_name, &column_meta.column_name)
+                })?;
+                if let Content::String(string_content) = namespace.get_s_node_mut(&field_ref)? {
+                    *string_content = StringContent::Faker(FakerContent {
+                        generator: generator.to_string(),
+                        locales: vec![],
+                        args: FakerArgs {
+                            locales: vec![Locale::EN]
+                        }
+                    })
+                }
+            }
+        }
     }
 
     Ok(())

@@ -8,7 +8,7 @@ use synth_core::Content;
 
 const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnInfo {
     pub(crate) column_name: String,
     pub(crate) ordinal_position: i32,

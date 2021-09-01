@@ -2,6 +2,7 @@
 members = [
   "gen",
   "core",
+  "semdet",
   "synth",
   "dist/playground"
 ]
