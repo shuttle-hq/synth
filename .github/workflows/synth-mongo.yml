@@ -27,7 +27,6 @@ jobs:
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/mongodb/synth
-          synth init
           synth generate hospital --size 100 --to mongodb://localhost:27017/hospital
           cd ..
           COLLECTIONS=(hospitals doctors patients)

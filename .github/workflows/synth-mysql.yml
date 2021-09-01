@@ -71,7 +71,6 @@ jobs:
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/mysql
-          synth init || true
           synth generate hospital_master --to ${{ env.DB_SCHEME }}://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} --size 30
           bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/validate_mysql_gen_count.sh"
       ## Clear out and repopulate DB

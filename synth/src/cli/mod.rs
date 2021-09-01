@@ -15,8 +15,7 @@ use crate::cli::import::SomeImportStrategy;
 use crate::cli::store::Store;
 use anyhow::{Context, Result};
 
-use std::fs::File;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::cli::telemetry::TelemetryClient;
@@ -81,6 +80,11 @@ impl Cli {
 
     pub async fn run(self) -> Result<()> {
         match self.args {
+	    Args::Init { .. } => {
+		with_telemetry("init", &self.telemetry, || {
+		    Ok(())
+		})
+	    },
             Args::Generate {
                 ref namespace,
                 ref collection,
@@ -104,9 +108,6 @@ impl Cli {
             } => with_telemetry("import", &self.telemetry, || {
                 self.import(namespace.clone(), collection.clone(), from.clone())
             }),
-            Args::Init { ref init_path } => {
-                with_telemetry("init", &self.telemetry, || self.init(init_path.clone()))
-            }
             Args::Telemetry(telemetry) => {
                 match telemetry {
                     TelemetryCommand::Enable => {
@@ -132,83 +133,12 @@ impl Cli {
         }
     }
 
-    fn init(&self, init_path: Option<PathBuf>) -> Result<()> {
-        let base_path = match init_path {
-            Some(path) => std::fs::canonicalize(".")?.join(path),
-            None => std::fs::canonicalize(".")?,
-        };
-        match self.workspace_initialised_from_path(&base_path) {
-            // need to check workspace in base_path
-            true => Err(anyhow!("Workspace already initialized!")),
-            false => {
-                let workspace_dir = ".synth";
-                let result =
-                    std::fs::create_dir_all(base_path.join(workspace_dir)).with_context(|| {
-                        format!(
-                            "Failed to create working directory at: {} during initialization",
-                            base_path.join(workspace_dir).to_str().unwrap()
-                        )
-                    });
-                let config_path = self.get_synth_config_file(base_path);
-                match result {
-                    Ok(()) => {
-                        File::create(config_path.as_path()).with_context(|| {
-                            format!(
-                                "Failed to create config file at: {} during initialization",
-                                config_path.to_str().unwrap()
-                            )
-                        })?;
-                        Ok(())
-                    }
-                    Err(ref e)
-                        if e.downcast_ref::<std::io::Error>().unwrap().kind()
-                            == std::io::ErrorKind::AlreadyExists =>
-                    {
-                        File::create(config_path.as_path()).with_context(|| {
-                            format!(
-                                "Failed to initialize workspace at: {}. File already exists.",
-                                config_path.to_str().unwrap()
-                            )
-                        })?;
-                        Ok(())
-                    }
-                    _ => result,
-                }
-            }
-        }
-    }
-
-    fn get_synth_config_file(&self, base_path: PathBuf) -> PathBuf {
-        base_path.join(".synth").join("config.toml")
-    }
-
-    fn workspace_initialised(&self) -> bool {
-        PathBuf::from(".synth").join("config.toml").exists()
-    }
-
-    fn workspace_initialised_from_path(&self, init_path: &Path) -> bool {
-        init_path.join(".synth").join("config.toml").exists()
-    }
-
     fn import(
         &self,
         path: PathBuf,
         collection: Option<Name>,
         import_strategy: Option<SomeImportStrategy>,
     ) -> Result<()> {
-        if !self.workspace_initialised() {
-            return Err(anyhow!(
-                "Workspace has not been initialised. To initialise the workspace run `synth init [optional path]`."
-            ));
-        }
-
-        if !path.is_relative() {
-            return Err(anyhow!(
-		"The namespace path `{}` is absolute. Only paths relative to an initialised workspace root are accepted.",
-		path.display()
-	    ));
-        }
-
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
         if let Some(collection) = collection {
@@ -227,7 +157,7 @@ impl Cli {
             }
         } else if self.store.ns_exists(&path) {
             Err(anyhow!(
-                "The namespace at `{}` already exists. Will not import into an existing namespace.",
+                "The directory at `{}` already exists. Will not import into an existing directory.",
                 path.display()
             ))
         } else {
@@ -245,11 +175,6 @@ impl Cli {
         to: Option<SomeExportStrategy>,
         seed: u64,
     ) -> Result<()> {
-        if !self.workspace_initialised() {
-            return Err(anyhow!(
-                "Workspace has not been initialised. To initialise the workspace run `synth init [optional path]`."
-            ));
-        }
         let namespace = self
             .store
             .get_ns(ns_path.clone())
@@ -270,19 +195,18 @@ impl Cli {
 #[derive(StructOpt)]
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
 pub enum Args {
-    #[structopt(about = "Initialise the workspace")]
+    #[structopt(about = "(DEPRECATED). For backward compatibility and is a no-op.")]
     Init {
-        #[structopt(parse(from_os_str), help = "name of directory to initialize")]
-        init_path: Option<PathBuf>,
+	init_path: Option<PathBuf>
     },
     #[structopt(about = "Generate data from a namespace", alias = "gen")]
     Generate {
         #[structopt(
-            help = "the namespace directory from which to generate",
+            help = "The namespace directory from which to read schema files",
             parse(from_os_str)
         )]
         namespace: PathBuf,
-        #[structopt(long, help = "the specific collection from which to generate")]
+        #[structopt(long, help = "The specific collection from which to generate")]
         collection: Option<Name>,
         #[structopt(long, help = "the number of samples", default_value = "1")]
         size: usize,
@@ -305,7 +229,7 @@ pub enum Args {
     #[structopt(about = "Import data from an external source")]
     Import {
         #[structopt(
-            help = "The namespace directory into which to import",
+            help = "The namespace directory into which to save imported schema files",
             parse(from_os_str)
         )]
         namespace: PathBuf,
@@ -337,8 +261,6 @@ pub enum TelemetryCommand {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use std::env::temp_dir;
-    use std::fs;
 
     #[test]
     fn test_derive_seed() {
@@ -346,24 +268,5 @@ pub mod tests {
         assert_eq!(Cli::derive_seed(false, Some(5)).unwrap(), 5);
         assert!(Cli::derive_seed(true, Some(5)).is_err());
         assert!(Cli::derive_seed(true, None).is_ok());
-    }
-
-    #[test]
-    fn test_init() {
-        let mut temp_dir = temp_dir();
-        temp_dir.push("synth_test_init");
-
-        // Some environments have temp dir related env vars set, making it sticky (i.e., $TMPDIR).
-        // Remove the contents from previous runs, if needed.
-        if temp_dir.exists() {
-            fs::remove_dir_all(&temp_dir).unwrap();
-            fs::create_dir(&temp_dir).unwrap();
-        }
-
-        let args = Args::Init {
-            init_path: Some(temp_dir.clone()),
-        };
-        let cli = Cli::new(args).unwrap();
-        assert!(cli.init(Some(temp_dir)).is_ok())
     }
 }

@@ -58,13 +58,9 @@ For more installation options, check out the [docs](https://getsynth.com/docs/ge
 
 ### Building a data model from scratch
 
-To start generating data without having a source to import from, you need to first initialise a workspace using `synth init [opt path]` (if no optional path is specified, the current directory will be used):
+To start generating data without having a source to import from, you need to add Synth schema files to a namespace directory:
 
-```bash
-$ synth init /some/path
-```
-
-Inside the workspace we'll create a namespace for our data model and call it `my_app`:
+To get started we'll create a namespace directory for our data model and call it `my_app`:
 
 ```bash
 $ mkdir my_app
@@ -129,13 +125,7 @@ $ synth generate my_app/ --size 2 | jq
 
 If you have an existing database, Synth can automatically generate a data model by inspecting the database.
 
-To get started, initialise your Synth workspace locally:
-
-```bash
-$ mkdir synth_workspace && cd synth_workspace && synth init
-```
-
-Then use the `synth import` command to build a data model from your Postgres or MongoDB database:
+You can use the `synth import` command to automatically generate Synth schema files from your Postgres, MySQL or MongoDB database:
 
 ```bash
 $ synth import tpch --from postgres://user:pass@localhost:5432/tpch

@@ -2,37 +2,23 @@
 title: Hello world
 ---
 
-After installing [`synth`][synth], the next step is to create a **workspace**. 
+After installing [`synth`][synth], the next step is to create a **namespace**. 
 
-Workspaces are directories in your filesystem that [`synth`][synth] uses to read your schemas from. Currently [`synth`][synth] reads schemas written in a specialized JSON data model. You can find out everything there is to know about [`synth`][synth] schemas in the [Generators][generators] section or in the [Schema][schema] section. In this section we will show you how to set up a simple "hello world" data generator.
+Namespaces are directories in your filesystem that [`synth`][synth] uses to read your schemas from. Currently [`synth`][synth] reads schemas written in a specialized JSON data model. You can find out everything there is to know about [`synth`][synth] schemas in the [Generators][generators] section or in the [Schema][schema] section. In this section we will show you how to set up a simple "hello world" data generator.
 
-To create and initialise a workspace called `synth_workspace` in your current working directory, run:
-
-```bash
-mkdir synth_workspace && cd synth_workspace && synth init
-```
-
-:::note Note
-
-The command [`synth init`][synth-init] creates a marker directory called `.synth` in the directory where it is run. This marker directory acts as simply an anchor to tell [`synth`][synth] that this is a workspace.
-:::
-
-Next we need to create a **namespace**. Namespaces are directories in an
-initialized [`synth`][synth] workspace. All the schema files in a given
-namespace are collated and compiled together at runtime.
-
-Let's create a namespace called `my_namespace`:
+To create a namespace, just create a new directory:
 
 ```bash
-mkdir my_namespace
+mkdir hello_synth
 ```
 
 Finally, we need to add a **collection** to our namespace. Collections describe
 the "shape" of the data we want to generate. They are individual JSON files
-within a namespace written according to the [`synth` schema][generators].
+within a namespace directory written according to
+the [`synth` schema][generators].
 
-To create a collection called "dummy" in our namespace, simply copy/paste the content of the following example in a file
-at `synth_workspace/my_namespace/dummy.json`:
+To create a collection called "say_hello" in our namespace, simply copy/paste the content of the following example in a file
+at `hello_synth/say_hello.json`:
 
 ```json synth
 {
@@ -56,9 +42,11 @@ button that lets you preview how [`synth`][synth] would output the corresponding
 data.
 
 Finally, run
+
 ```bash
-synth generate my_namespace/
+synth generate hello_synth/
 ```
+
 and you should see an output very close to the output of the snippet.
 
 ## Where to go from here
