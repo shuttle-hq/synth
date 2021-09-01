@@ -63,7 +63,7 @@ is the same as the longer
 ## id
 
 A monotonically increasing number type, most commonly used as a unique row identifier. The optional `start` field
-defaults to 0 if unspecified.
+defaults to 1 if unspecified.
 
 Synth currently supports `u64` ids.
 

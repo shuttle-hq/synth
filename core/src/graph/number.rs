@@ -54,11 +54,11 @@ pub struct Incrementing<N = i64> {
 
 impl<N> Incrementing<N>
     where
-        N: Zero + One,
+        N: One,
 {
     pub fn new() -> Self {
         Self {
-            count: N::zero(),
+            count: N::one(),
             step: N::one(),
             overflowed: false,
         }
