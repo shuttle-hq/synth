@@ -134,8 +134,6 @@ pub trait RelationalDataSource: DataSource {
         query_params: Vec<&Value>,
     ) -> Result<Self::QueryResult>;
 
-    fn get_catalog(&self) -> Result<&str>;
-
     async fn get_table_names(&self) -> Result<Vec<String>>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;

@@ -20,8 +20,7 @@ use synth_core::{Content, Value};
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
-    single_thread_pool: Pool<Postgres>,
-    connect_params: String,
+    single_thread_pool: Pool<Postgres>
 }
 
 #[async_trait]
@@ -43,8 +42,7 @@ impl DataSource for PostgresDataSource {
 
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
-                single_thread_pool,
-                connect_params: connect_params.to_string(),
+                single_thread_pool
             })
         })
     }
@@ -70,20 +68,12 @@ impl RelationalDataSource for PostgresDataSource {
         Ok(result)
     }
 
-    fn get_catalog(&self) -> Result<&str> {
-        self.connect_params
-            .split('/')
-            .last()
-            .ok_or_else(|| anyhow!("No catalog specified in the uri"))
-    }
-
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name
         FROM information_schema.tables
-        WHERE table_catalog = $1 AND table_schema = 'public' AND table_type = 'BASE TABLE'";
+        WHERE table_catalog = current_catalog AND table_schema = 'public' AND table_type = 'BASE TABLE'";
 
         sqlx::query(query)
-            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .iter()
@@ -98,11 +88,10 @@ impl RelationalDataSource for PostgresDataSource {
         let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
         character_maximum_length
         FROM information_schema.columns
-        WHERE table_name = $1 AND table_catalog = $2";
+        WHERE table_name = $1 AND table_catalog = current_catalog";
 
         sqlx::query(query)
             .bind(table_name)
-            .bind(self.get_catalog()?)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
