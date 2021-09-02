@@ -515,6 +515,7 @@ pub mod datetime_content {
 
 use crate::graph::string::Serialized;
 pub use datetime_content::ChronoValueFormatter;
+use std::ops::Add;
 
 impl Serialize for DateTimeContent {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -565,8 +566,10 @@ impl Compile for StringContent {
             }) => {
                 let begin = begin
                     .clone()
-                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::origin(), *type_));
-                let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
+                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
+                let end = end
+                    .clone()
+                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
                 RandomDateTime::new(begin..end, format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
