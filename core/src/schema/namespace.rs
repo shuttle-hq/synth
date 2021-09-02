@@ -165,16 +165,25 @@ impl Namespace {
             Err(failed!(target: Release, NotFound => "no such collection: '{}'{}", name, suggest))
         }
     }
-    fn get_adj_list(&self) -> Vec<(Name, Name)> {
+    fn get_adj_list(&self) -> Result<Vec<(Name, Name)>> {
         let mut list = Vec::new();
         for (n, c) in self.collections.iter() {
             get_list((n, c), &mut list);
         }
+
         list
+            .iter()
+            .try_for_each(|(t, s)| {
+                self.get_collection(s)
+                    .and_then(|_| self.get_collection(t))
+                    .map(|_| ())
+            })?;
+
+        Ok(list)
     }
 
-    pub fn topo_sort(&self) -> Option<Vec<Name>> {
-        let lists: Vec<(Name, Name)> = self.get_adj_list();
+    pub fn topo_sort(&self) -> Result<Vec<Name>> {
+        let lists: Vec<(Name, Name)> = self.get_adj_list()?;
         let mut q: VecDeque<Name> = VecDeque::new();
         let mut sorted: Vec<Name> = Vec::new();
         let mut graph: NameGraph = NameGraph::new();
@@ -184,7 +193,7 @@ impl Namespace {
                 .or_insert_with(Vec::new)
                 .push(v.1.clone());
         }
-        log::info!("lists: {:?}", lists);
+        info!("lists: {:?}", lists);
         let mut in_degrees: BTreeMap<Name, usize> = BTreeMap::new();
 
         for (p, c) in &lists {
@@ -200,7 +209,7 @@ impl Namespace {
 
         while let Some(name) = q.pop_front() {
             sorted.push(name.clone());
-            log::info!("name: {:?}", name);
+            info!("name: {:?}", name);
             if graph.contains_key(&name) {
                 for out in graph.index(&name) {
                     in_degrees.entry(out.clone()).and_modify(|v| *v -= 1);
@@ -212,16 +221,16 @@ impl Namespace {
         }
 
         if sorted.len() == in_degrees.keys().len() {
-            log::info!("{:?}", sorted);
+            info!("{:?}", sorted);
             //if the name has no same_as type field, it must still be in the list, but may come in any order, back or front
             for name in self.collections.keys() {
                 if !sorted.contains(name) {
                     sorted.push(name.clone());
                 }
             }
-            Some(sorted)
+            Ok(sorted)
         } else {
-            None
+            Err(failed!(target: Release, "there is a cycle in the schema: some collections refer to one another"))
         }
     }
 }
@@ -301,8 +310,7 @@ impl Compile for Namespace {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         // TODO: needs to wrap each top-level attribute in a variable size array model
         let sorted_ns = self
-            .topo_sort()
-            .ok_or_else(|| anyhow!("dependency is cyclic"))?;
+            .topo_sort()?;
         let object_node = sorted_ns
             .iter()
             .map(|name| {
@@ -424,7 +432,24 @@ mod tests {
             )
             .unwrap();
         println!("sorted: {:?}", namespace.topo_sort());
-        assert!(namespace.topo_sort().is_none());
+        assert!(namespace.topo_sort().is_err());
+    }
+
+    #[test]
+    fn test_sort_not_exist() {
+        let mut namespace = Namespace {
+            collections: BTreeMap::new(),
+        };
+        let ref1: FieldRef = "i_dont_exist.address.postcode".parse().unwrap();
+
+        namespace
+            .put_collection(
+                &"users".parse::<Name>().unwrap(),
+                Content::SameAs(crate::schema::SameAsContent { ref_: ref1 }),
+            )
+            .unwrap();
+        println!("sorted: {:?}", namespace.topo_sort());
+        assert!(namespace.topo_sort().is_err());
     }
 
     //helper method for checking sorted dependencies

@@ -88,13 +88,10 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         Value::Array(collection) => {
             insert_data(datasource, params.collection_name.unwrap().to_string(), &collection)
         }
-        Value::Object(namespace) => {
-            let names = params.namespace.topo_sort().ok_or_else(|| {
-                error!("Dependency is cyclic, check your schema");
-                anyhow::anyhow!("dependency is cyclic")
-            })?.into_iter().map(|name| name.to_string());
+        Value::Object(namespace_json) => {
+            let names = params.namespace.topo_sort()?.into_iter().map(|name| name.to_string());
             for n in names {
-                let collection = namespace.get(&n.to_string())
+                let collection = namespace_json.get(&n.to_string())
                     .expect("did not find Value for name")
                     .as_array()
                     .expect("This is always a collection (sampler contract)");
