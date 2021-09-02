@@ -298,7 +298,7 @@ impl Compile for NumberContent {
                     }
                     number_content::U64::Constant(val) => RandomU64::constant(*val),
                     number_content::U64::Id(id) => {
-                        let gen = Incrementing::new_at(id.start_at.unwrap_or_default());
+                        let gen = Incrementing::new_at(id.start_at.unwrap_or(1));
                         RandomU64::incrementing(gen)
                     }
                 };
