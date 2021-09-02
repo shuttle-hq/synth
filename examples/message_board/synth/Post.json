@@ -1,0 +1,25 @@
+{
+  "type": "array",
+  "length": 5,
+  "content": {
+    "type": "object",
+    "id": {
+      "type": "number",
+      "id": {}
+    },
+    "postedAt": {
+      "type": "string",
+      "date_time": {
+        "format": "%Y-%m-%d %H:%M:%S",
+        "begin": "2020-01-01 12:00:00"
+      }
+    },
+    "title": {
+      "type": "string",
+      "faker": {
+        "generator": "bs"
+      }
+    },
+    "authorId": "@User.content.id"
+  }
+}

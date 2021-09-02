@@ -1,0 +1,28 @@
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb://localhost:27017/board"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["mongodb"]
+}
+
+model User {
+  objectId  Bytes    @id @map("_id")
+  id        Int      @unique @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String   @unique
+  nickname  String
+  posts     Post[]
+}
+
+model Post {
+  objectId  Bytes    @id @map("_id")
+  id        Int      @unique @default(autoincrement())
+  postedAt  DateTime @default(now())
+  title     String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+

@@ -1,0 +1,44 @@
+{
+  "name": "message-board-example",
+  "version": "0.1.0",
+  "description": "An example of using Synth with Prisma for seeding test databases",
+  "main": "src/index.js",
+  "scripts": {
+    "db": "node helpers/db.js",
+    "build": "prisma generate && tsc --project ./",
+    "test": "npm run db && npm run build && node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getsynth/synth.git"
+  },
+  "keywords": [
+    "mongo",
+    "postgres",
+    "mysql",
+    "test data",
+    "test data generation",
+    "tutorial",
+    "beginners guide",
+    "seeding",
+    "prisma",
+    "schema",
+    "data model",
+    "orm"
+  ],
+  "author": "The Synth Team",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/getsynth/synth/issues"
+  },
+  "homepage": "https://github.com/getsynth/synth#readme",
+  "devDependencies": {
+    "@types/node": "^16.7.10",
+    "prisma": "^2.30.2",
+    "shelljs": "^0.8.4",
+    "typescript": "^4.4.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^2.30.2"
+  }
+}

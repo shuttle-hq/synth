@@ -99,9 +99,9 @@ module.exports = {
             ],
             copyright: `Copyright © ${new Date().getFullYear()} OpenQuery.`,
         },
-	prism: {
-	    additionalLanguages: ['rust'],
-	},
+        prism: {
+            additionalLanguages: ['rust', 'graphql'],
+        },
     },
     presets: [
         [
