@@ -6,7 +6,7 @@
 </p>
 <br>
 <p align=center>
-  <a href="https://getsynth.github.io/synth"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
+  <a href="https://getsynth.com/docs"><img alt="docs" src="https://img.shields.io/badge/doc-reference-orange"></a>
   <a href="https://github.com/getsynth/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
   <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
   <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
@@ -49,10 +49,10 @@ The key features of Synth are:
 On Linux and MacOS you can get started with the one-liner:
 
 ```bash
-$ curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+$ curl -sSL https://getsynth.com/install | sh
 ```
 
-For more installation options, check out the [docs](https://getsynth.github.io/synth/getting_started/installation).
+For more installation options, check out the [docs](https://getsynth.com/docs/getting_started/installation).
 
 ## Examples
 
