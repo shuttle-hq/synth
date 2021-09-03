@@ -11,57 +11,9 @@ use sqlx::{Type, Encode, encode::IsNull};
 use synth_gen::prelude::*;
 use synth_gen::value::{Token, Tokenizer};
 
-use crate::compile::NamespaceCompiler;
-use crate::compile::{Driver, Scoped, View};
+use crate::compile::{NamespaceCompiler, Link};
 
 use crate::schema::{ChronoValueAndFormat, Namespace};
-
-macro_rules! derive_generator {
-    {
-	yield $yield:ty,
-	return $return:ty,
-	$vis:vis enum $id:ident {
-	    $(
-		$variant:ident($inner:ty$(,)?)$(,)?
-	    )*
-	}
-    } => {
-	$vis enum $id {
-	    $($variant($inner),)*
-	}
-
-	impl Generator for $id {
-	    type Yield = $yield;
-
-	    type Return = $return;
-
-	    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-		match self {
-		    $(
-			Self::$variant(inner) => inner.next(rng),
-		    )*
-		}
-	    }
-	}
-    };
-    {
-	yield $yield:ty,
-	return $return:ty,
-	$vis:vis struct $id:ident($inner:ty);
-    } => {
-	$vis struct $id($inner);
-
-	impl Generator for $id {
-	    type Yield = $yield;
-
-	    type Return = $return;
-
-	    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-		self.0.next(rng)
-	    }
-	}
-    }
-}
 
 pub mod prelude;
 use prelude::*;
@@ -540,11 +492,9 @@ derive_generator!(
         Object(ObjectNode),
         Array(ArrayNode),
         OneOf(OneOfNode),
-        Driver(Driver<Graph>),
-        View(Unwrapped<View<Graph>>),
-        Scoped(Scoped<Graph>),
         Series(SeriesNode),
-        Unique(UniqueNode)
+        Unique(UniqueNode),
+        Link(Box<LinkNode>)
     }
 );
 
@@ -562,6 +512,47 @@ impl Graph {
     }
 }
 
+enum LinkNodeState {
+    YieldFrom,
+    Yield(Token),
+    Return(Value)
+}
+
+pub struct LinkNode(Link<Graph, Token, Result<Value, Error>>, LinkNodeState);
+
+impl Generator for Box<LinkNode> {
+    type Yield = Token;
+    type Return = Result<Value, Error>;
+
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        match std::mem::replace(&mut (*self).1, LinkNodeState::YieldFrom) {
+            LinkNodeState::YieldFrom => match self.0.next(rng) {
+                GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
+                GeneratorState::Complete(Some(r)) => GeneratorState::Complete(r),
+                GeneratorState::Complete(None) => {
+                    (*self).1 = LinkNodeState::Yield(Token::Primitive(Primitive::Null(())));
+                    self.next(rng)
+                }
+            },
+            LinkNodeState::Yield(token) => {
+                (*self).1 = LinkNodeState::Return(Value::Null(()));
+                GeneratorState::Yielded(token)
+            },
+            LinkNodeState::Return(value) => GeneratorState::Complete(Ok(value))
+        }
+    }
+}
+
+impl crate::compile::FromLink for Graph {
+    type Yield = Token;
+
+    type Return = Result<Value, Error>;
+
+    fn from_link(link: Link<Self, Self::Yield, Self::Return>) -> Self {
+        Self::Link(Box::new(LinkNode(link, LinkNodeState::YieldFrom)))
+    }
+}
+
 pub type BoxedGraph = Box<Graph>;
 
 impl Generator for Box<Graph> {
@@ -571,51 +562,6 @@ impl Generator for Box<Graph> {
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         <Graph as Generator>::next(self, rng)
-    }
-}
-
-/// @brokad: use primitives instead, this is hacky...
-pub struct Unwrapped<G> {
-    inner: G,
-    is_complete: bool,
-    value: Option<Result<Value, Error>>,
-}
-
-impl Unwrapped<View<Graph>> {
-    pub fn wrap(inner: View<Graph>) -> Self {
-        Self {
-            inner,
-            is_complete: false,
-            value: None,
-        }
-    }
-}
-
-impl Generator for Unwrapped<View<Graph>> {
-    type Yield = Token;
-
-    type Return = Result<Value, Error>;
-
-    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        if self.is_complete {
-            self.is_complete = false;
-            let value = std::mem::replace(&mut self.value, None).unwrap();
-            GeneratorState::Complete(value)
-        } else {
-            match self.inner.next(rng) {
-                GeneratorState::Yielded(yielded) => GeneratorState::Yielded(yielded),
-                GeneratorState::Complete(complete) => {
-                    self.is_complete = true;
-                    match complete {
-                        Some(value) => {
-                            self.value = Some(value);
-                            self.next(rng)
-                        }
-                        None => GeneratorState::Yielded(Token::Primitive(Primitive::Null(()))),
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -631,7 +577,20 @@ impl Graph {
     pub fn from_namespace(ns: &Namespace) -> Result<Self> {
         NamespaceCompiler::new(ns)
             .compile()
-            .context("while compiling the namespace")
+            .context("cannot compile the namespace")
+    }
+
+    pub fn from_content(content: &Content) -> Result<Self> {
+        NamespaceCompiler::new_flat(content)
+            .compile()
+            .context("cannot compile the schema")
+    }
+
+    pub fn iter_ordered(&self) -> Option<impl Iterator<Item = &str>> {
+        match self {
+            Self::Link(box LinkNode(link, _)) => Some(link.iter_order()?),
+            _ => None
+        }
     }
 }
 
@@ -648,7 +607,8 @@ pub mod tests {
 
     #[test]
     fn schema_to_generator() {
-        let schema: Namespace = from_json!({
+        let schema: Namespace = schema!({
+            "type": "object",
             "users": {
                 "type": "array",
                 "length": 10,
@@ -791,7 +751,7 @@ pub mod tests {
                     },
                 }
             }
-        });
+        }).into_namespace().unwrap();
 
         let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 

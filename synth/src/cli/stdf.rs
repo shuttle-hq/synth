@@ -1,6 +1,5 @@
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
-use crate::cli::json::synth_val_to_json;
 use crate::sampler::Sampler;
 use anyhow::Result;
 use serde_json::Value;
@@ -23,8 +22,8 @@ pub struct StdoutExportStrategy {}
 impl ExportStrategy for StdoutExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
         let generator = Sampler::try_from(&params.namespace)?;
-        let values = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-        println!("{}", synth_val_to_json(values));
+        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
+        println!("{}", output.into_json());
         Ok(())
     }
 }

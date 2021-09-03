@@ -2,12 +2,34 @@ use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use synth_core::{Graph, Name, Namespace, Value};
+use synth_core::graph::json::synth_val_to_json;
 use synth_gen::prelude::*;
-use std::collections::{btree_map::Entry, BTreeMap};
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 
 pub(crate) struct Sampler {
     graph: Graph,
+}
+
+pub(crate) enum SamplerOutput {
+    Namespace(Vec<(String, Vec<Value>)>),
+    Collection(Vec<Value>)
+}
+
+impl SamplerOutput {
+    pub(crate) fn into_json(self) -> serde_json::Value {
+        let as_synth = match self {
+            Self::Namespace(key_values) => {
+                let object = key_values
+                    .into_iter()
+                    .map(|(key, values)| (key, Value::Array(values)))
+                    .collect();
+                Value::Object(object)
+            }
+            Self::Collection(values) => Value::Array(values)
+        };
+        synth_val_to_json(as_synth)
+    }
 }
 
 fn sampler_progress_bar(target: u64) -> ProgressBar {
@@ -24,11 +46,10 @@ impl Sampler {
         collection_name: Option<Name>,
         target: usize,
         seed: u64,
-    ) -> Result<Value> {
+    ) -> Result<SamplerOutput> {
         let rng = rand::rngs::StdRng::seed_from_u64(seed);
-        let model = self.graph.aggregate();
         let sample_strategy = SampleStrategy::new(collection_name, target);
-        sample_strategy.sample(model, rng)
+        sample_strategy.sample(self.graph, rng)
     }
 }
 
@@ -59,10 +80,10 @@ impl SampleStrategy {
         }
     }
 
-    fn sample<R: Rng>(&self, model: Aggregate<Graph>, rng: R) -> Result<Value> {
+    fn sample<R: Rng>(self, model: Graph, rng: R) -> Result<SamplerOutput> {
         match self {
-            SampleStrategy::Namespace(nss) => nss.sample(model, rng),
-            SampleStrategy::Collection(css) => css.sample(model, rng)
+            SampleStrategy::Namespace(nss) => Ok(SamplerOutput::Namespace(nss.sample(model, rng)?)),
+            SampleStrategy::Collection(css) => Ok(SamplerOutput::Collection(css.sample(model, rng)?))
         }
     }
 }
@@ -72,34 +93,30 @@ struct NamespaceSampleStrategy {
 }
 
 impl NamespaceSampleStrategy {
-    fn sample<R: Rng>(&self, mut model: Aggregate<Graph>, mut rng: R) -> Result<Value> {
+    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Vec<(String, Vec<Value>)>> {
         let mut generated = 0;
-        let mut out = BTreeMap::new();
+        let mut out = BTreeMap::<String, Vec<Value>>::new();
         let progress_bar = sampler_progress_bar(self.target as u64);
 
+        let ordered: Vec<_> = model
+            .iter_ordered()
+            .map(|iter| iter.map(|s| s.to_string()).collect())
+            .unwrap_or_else(Vec::new);
+
+        let mut model = model.aggregate();
+
         while generated < self.target {
+	    // We populate `out` by walking through the collections in the generated
+	    // namespace. We also keep track of the number of `Values` generated
+	    // for the progress bar.
             let next = model.complete(&mut rng)?;
-            // Here we are building a BTreeMap.
-            // Keys are the name of the collection and values are vectors of type synth_core::Value.
-            // If the key is absent, we insert the first vec sampled, otherwise we extend the existing Vec.
-            // In the future this should be replaced by a Sample/Samples struct which encapsulates this complexity.
             as_object(next)?
                 .into_iter()
                 .try_for_each(|(collection, value)| {
                     as_array(&collection, value)
                         .map(|vec| {
                             generated += vec.len();
-                            match out.entry(collection) {
-                                Entry::Vacant(e) => {
-                                    e.insert(Value::Array(vec));
-                                }
-                                Entry::Occupied(mut o) => {
-                                    match o.get_mut() {
-                                        Value::Array(arr) => arr.extend(vec),
-                                        _ => unreachable!("This is never not an array.")
-                                    }
-                                }
-                            }
+                            out.entry(collection).or_default().extend(vec);
                         })
                 })?;
             progress_bar.set_position(generated as u64);
@@ -107,7 +124,16 @@ impl NamespaceSampleStrategy {
 
         progress_bar.finish_and_clear();
 
-        Ok(Value::Object(out))
+        let mut ordered_out = Vec::new();
+
+        for name in ordered {
+            let value = out.remove(&name).unwrap();
+            ordered_out.push((name, value));
+        }
+
+        ordered_out.extend(out.into_iter());
+
+        Ok(ordered_out)
     }
 }
 
@@ -117,10 +143,12 @@ struct CollectionSampleStrategy {
 }
 
 impl CollectionSampleStrategy {
-    fn sample<R: Rng>(&self, mut model: Aggregate<Graph>, mut rng: R) -> Result<Value> {
+    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Vec<Value>> {
         let mut out = vec![];
         let mut generated = 0;
         let progress_bar = sampler_progress_bar(self.target as u64);
+
+        let mut model = model.aggregate();
 
         while generated < self.target {
             let next = model.complete(&mut rng)?;
@@ -139,7 +167,7 @@ impl CollectionSampleStrategy {
 
         progress_bar.finish_and_clear();
 
-        Ok(Value::Array(out))
+        Ok(out)
     }
 }
 
