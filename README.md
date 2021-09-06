@@ -222,3 +222,4 @@ This project follows the [all-contributors](https://github.com/all-contributors/
 [mysql]: https://www.mysql.com/
 [mongo]: https://www.mongodb.com/
 [fake-rs]: https://github.com/cksac/fake-rs
+[synth-install]: https://getsynth.com/docs/getting_started/installation
