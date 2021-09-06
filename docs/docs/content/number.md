@@ -1,5 +1,26 @@
-Synth's `number` type mirror the supported number types in JSON. All `number` nodes must have `subtype` field whose
-value is one of `u64`, `i64` and `f64`.
+Synth's `number` type allows for generating fixed-width numbers. 
+
+### Parameters 
+
+#### `subtype`
+All the variants of `number` accept an optional `"subtype"` field to specify
+the width and primitive kind of the values generated. The value of `"subtype"`,
+if specified, must be one of `u64`, `i64`, `f64`, `u32`, `i32`, `f32`.
+
+#### Example
+
+```json synth
+{
+  "type": "number",
+  "subtype": "u32",
+  "constant": 42
+}
+```
+
+It is not required to specify the `"subtype"` field: `synth` will try to infer
+the best value based on the value of other parameters. But it may be necessary
+to set it manually in situations where the data sink only accepts certain
+widths (e.g. postgres).
 
 ## range
 
@@ -11,7 +32,6 @@ random non-negative integer `n` and computing `low + n*step`.
 ```json synth
 {
   "type": "number",
-  "subtype": "f64",
   "range": {
       "high": 15000000.0, // temperature at sun's core in Celcius
       "low": -273.15,     // 0 Kelvin
@@ -29,7 +49,6 @@ A constant number type. This will always evaluate to the same number.
 ```json synth
 {
   "type": "number",
-  "subtype": "f64",
   "constant": 3.14159  // pi
 }
 ```
@@ -54,7 +73,6 @@ is the same as the longer
   "type": "object",
   "just_the_number_42": {
     "type": "number",
-    "subtype": "u64",
     "constant": 42
   }
 }
@@ -74,12 +92,10 @@ Synth currently supports `u64` ids.
   "type": "array",
   "length": {
     "type": "number",
-    "subtype": "u64",
     "constant": 5
   },
   "content": {
     "type": "number",
-    "subtype": "u64",
     "id": {
       "start_at": 10
     }
