@@ -4,25 +4,6 @@ title: Core concepts
 
 This section covers the core concepts found in Synth.
 
-## Workspaces
-
-Workspaces are marked by the existence of a `.synth/` subdirectory. A workspace
-represents a set of synthetic data namespaces managed by Synth.
-
-A workspace can have *zero or more namespaces*. Each namespace is represented as
-a subdirectory of the workspace. All information pertaining to a workspace is in
-its directory, there is no external configuration.
-
-Below is an example directory structure for a workspace with a single
-namespace, `my_namepace`.
-
-```
-├── .synth
-└── my_namespace
-    ├── my_collection_1.json
-    └── my_collection_2.json
-``` 
-
 ## Namespaces
 
 The **namespace** is the top-level abstraction in Synth. Namespaces are the
@@ -30,22 +11,19 @@ equivalent of traditional [schemas][sql-schemas] in the world of relational
 databases likes PostgreSQL. [References](#field-references) can exist between
 fields in a given namespace, but never across namespaces.
 
-Namespaces are represented as sub-directories in a workspace. For example, a
-workspace with single namespace `some_namespace` would have the following
+Namespaces are simply directories from which `synth` reads a collection of
+schema files. For example, a namespace `blog` could have the following
 structure:
 
 ```
-├── .synth
-└── my_namespace
+└── blog/
+    ├── users.json
+    └── posts.json 
 ``` 
 
-You can have as many namespaces as you like within a workspace:
-
-```
-├── .synth
-├── some_namespace
-└── some_other_namespace 
-```
+Any file whose extension is `.json` in a namespace directory will be opened by
+the [`synth generate`][synth-generate] subcommand and considered part of the
+namespace's schema.
 
 ## Collections
 
@@ -54,26 +32,20 @@ their name and correspond to [tables][sql-tables] in the world of relational
 databases. Strictly speaking, collections are a super-set of tables as they are
 in fact arbitrarily deep JSON document trees.
 
-Collections are represented in a workspace as JSON files. The *name* of a
-collection (the way it is referred to by [`synth`][synth]) is its filename
+Collections are represented in a namespace directory as JSON files. The *name*
+of a collection (the way it is referred to by [`synth`][synth]) is its filename
 without the extension. For example the file `bank/transactions.json` defines a
 collection named `transactions` in a namespace `bank`.
 
 For a more comprehensive example, let's imagine our namespace `bank` has a
-collection `transactions` and another collection `users`. The workspace
+collection `transactions` and another collection `users`. The directory
 structure then looks like this:
 
 ```
-├── .synth
-└── bank
+└── bank/
     ├── transactions.json
     └── users.json 
 ```
-
-Collections inside a given namespace need to have unique names. You can however
-have the same collection name in different namespaces. For
-example `bank/transactions.json` and `forex/transactions.json` is a valid
-workspace.
 
 Collections must be valid instances of the [`synth` schema][schema] that
 describe an array. This means at the top-level all collections must

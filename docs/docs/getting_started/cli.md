@@ -9,32 +9,18 @@ title: Command-line
 
 ---
 
-### Command: init
-
-Usage: `synth init`
-
-This is the first command that should be run for any new or existing when starting out with Synth. 
-This initialises the workspace and  sets up all the local data necessary to run Synth.
-A `.synth/` subdirectory is created that is typically not committed to version control.
-
-This command is always safe to run multiple times though subsequent runs
-may give errors. This command will never erase your workspace.
-
----
-
 ### Command: import
 
 Usage: `synth import [OPTIONS] <namespace>`
 
-Synth can create namespaces from different data sources using the `synth import` command.
-Accidentally running `synth import` on an existing namespace is safe - the operation will fail.
+Synth can create schema files from different data sources using the `synth import` command.
+Accidentally running `synth import` on an existing directory is safe - the operation will fail.
 
-If a subdirectory for a given namespace does not exist in your workspace, Synth will create it.
+If a subdirectory for a given namespace does not exist, Synth will create it.
 
 #### Argument
 
-- `<namespace>` - The desired path to the imported namespace directory. Can only
-  be a path relative to the current (initialised) workspace root.
+- `<namespace>` - The path to the namespace directory into which to save schema files. The directory will be created by `synth`.
   
 #### Options
  
@@ -54,14 +40,13 @@ If a subdirectory for a given namespace does not exist in your workspace, Synth 
 
 Usage: `synth generate [OPTIONS] <namespace>`
 
-The `synth generate` command will generate data for a given namespace. This will not mutate anything in the underlying configuration.
+The `synth generate` command will generate data from a collection of schema files.
 
 If there is a misconfiguration in your schema (for example referring to a field that does not exist), `synth generate` will exit with a non-zero exit code and output an error message to help you understand which part of the schema is misconfigured.
 
 #### Argument
 
-- `<namespace>` - The path to the namespace you wish to generate data for. Can
-  only be a path relative to the current (initialised) workspace root.
+- `<namespace>` - The path to the namespace directory from which to load schema files.
   
 #### Options
 

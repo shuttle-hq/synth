@@ -3,18 +3,6 @@
 
 use synth::cli::{Args, Cli};
 
-fn bench_init() {
-    async_std::task::block_on(
-        #[allow(unused_must_use)]
-        async {
-            Cli::new(Args::Init { init_path: None })
-                .unwrap()
-                .run()
-                .await;
-        },
-    )
-}
-
 fn bench_generate_1_to_stdout() {
     bench_generate_n_to_stdout(1);
 }
@@ -43,7 +31,6 @@ fn bench_generate_n_to_stdout(size: usize) {
 }
 
 iai::main!(
-    bench_init,
     bench_generate_1_to_stdout,
     bench_generate_100_to_stdout,
     bench_generate_10000_to_stdout,
