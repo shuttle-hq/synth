@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -54,8 +54,10 @@ impl TelemetryConfig {
     }
 
     fn enable_telemetry() -> Result<()> {
-        if !Self::synth_config_dir()?.exists() {
-            std::fs::create_dir(Self::synth_config_dir()?)?;
+	let config_dir = Self::synth_config_dir()?;
+        if !config_dir.exists() {
+            std::fs::create_dir_all(&config_dir)
+		.with_context(|| anyhow!("Could not create the directory: {}", config_dir.display()))?;
         }
         if !Self::is_enabled() {
             let mut config_file_path = std::fs::OpenOptions::new()
