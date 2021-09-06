@@ -14,7 +14,7 @@ values={[
 Run the following command to install the `synth` binary:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh
 ```
 
 :::note
@@ -88,7 +88,7 @@ sudo apt-get install libssl-dev libsqlite3-dev
 Run the following command to install the `synth` binary:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSL https://sh.getsynth.com | sh
+curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh
 ```
 
 :::note

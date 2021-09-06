@@ -34,15 +34,29 @@ Synth solves exactly these problems with a flexible declarative data model which
 
 The key features of Synth are:
 
-- **Data as Code**: Data generation is described using a declarative configuration language allowing you to specify your entire data model as code.
+- **Data as Code**: Data generation is described using a declarative configuration language allowing you to specify your
+  entire data model as code.
 
-- **Import from Existing Sources**: Synth can import data from existing sources and automatically create data models. Synth currently has Alpha support for Postgres!
+- **Import from Existing Sources**: Synth can import data from existing sources and automatically create data models.
+  Synth currently has Alpha support for [Postgres][postgres], [MySQL][mysql] and [mongoDB][mongo]!
 
-- **Data Inference**: While ingesting data, Synth automatically infers the relations, distributions and types of the dataset.
+- **Data Inference**: While ingesting data, Synth automatically works out the relations, distributions and types of the
+  dataset.
 
-- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and NoSQL databases.
+- **Database Agnostic**: Synth supports semi-structured data and is database agnostic - playing nicely with SQL and
+  NoSQL databases.
 
-- **Semantic Data Types**: Synth has a library of semantic 'faker' types to cover PII like names, addresses, credit card numbers etc.
+- **Semantic Data Types**: Synth uses the [fake-rs][fake-rs] crate to enable the generation of semantically rich data
+  with support for types like names, addresses, credit card numbers etc.
+
+## Status
+
+- [x] Alpha: We are testing `synth` with a closed set of users
+- [x] Public Alpha: Anyone can [install `synth`][synth-install]. But go easy on us, there are a few kinks
+- [ ] Public Beta: Stable enough for most non-enterprise use-cases
+- [ ] Public: Production-ready
+
+We are currently in Public Alpha. Watch "releases" of this repo to get notified of major updates.
 
 ## Installation & Getting Started
 
@@ -167,7 +181,6 @@ See the [contributing](./CONTRIBUTING.md) section for details.
 
 Synth is source-available and licensed under the [Apache 2.0 License](https://github.com/getsynth/synth/blob/master/LICENSE).
 
-
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
@@ -193,3 +206,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+
+[postgres]: https://www.postgresql.org/
+[mysql]: https://www.mysql.com/
+[mongo]: https://www.mongodb.com/
+[fake-rs]: https://github.com/cksac/fake-rs
+[synth-install]: https://getsynth.com/docs/getting_started/installation
