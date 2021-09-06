@@ -69,23 +69,28 @@ install_based_on_os() {
   esac
 }
 
-prompt_install_telemetry() {
-  info "\n${BOLD}Hey wonderful new user!${RESET}\n"
-  info "We hate to ask you this, but there is really only one way we can build Synth into something great - by knowing the bare minimum about how users interact with it.\n"
-  info "It seems like privacy is important to you. It is to us as well! So we made sure our analytics are completely anonymous and explicitly opt-in. (see more details here: https://getsynth.com/docs/other/telemetry). Please support us by hitting 'y' and opting-in.\n"
-  info "You can opt-out at anytime by running \`synth telemetry disable\`.\n"
-  info "Love, the Synth team ${RED}${BOLD}<3${RESET}\n"
+install_telemetry() {
+  echo -n " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+  echo -n "                                                                     \n"
+  echo -n "  Hey wonderful new user!                                            \n"
+  echo -n "                                                                     \n"
+  echo -n "  Just to let you know, we collect anonymous usage data to help us   \n"
+  echo -n "  make synth the best tool it can be for you. You can learn more     \n"
+  echo -n "  about the data we collect and why we do it at                      \n"
+  echo -n "                                                                     \n"
+  echo -n "      https://getsynth.com/docs/other/telemetry                      \n"
+  echo -n "                                                                     \n"
+  echo -n "  If this is not OK, just run                                        \n"
+  echo -n "                                                                     \n"
+  echo -n "      synth telemetry disable                                        \n"
+  echo -n "                                                                     \n"
+  echo -n "  from a terminal.                                                   \n"
+  echo -n "                                                                     \n"
+  echo -n "  With <3, the Synth team.                                           \n"
+  echo -n "                                                                     \n"
+  echo -n " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
 
-  printf "Do you want to enable telemetry? (y/N) "
-
-  read INSTALL_TELEMETRY </dev/tty
-
-  # TODO remove
-  exit 1;
-
-  if [ "$INSTALL_TELEMETRY" = "y" ]; then
-    "$BIN_DST_DIR"/synth telemetry enable
-  fi
+  "$BIN_DST_DIR"/synth telemetry enable
 }
 
 # Download a Synth binary package and install it in $HOME_LOCAL_BIN.
@@ -127,18 +132,16 @@ install_from_bin_package() {
     die "Failed to make $BIN_DST_DIR/synth executable."
   fi
 
-  info "${GREEN}Synth has been successfully installed!${RESET}"
+  info "\n${GREEN}Synth has been successfully installed!${RESET}\n"
 
   if [ "$CI" != "true" ]; then
-    prompt_install_telemetry
+      install_telemetry
   fi
 
-  info "\n${GREEN}Done!${RESET}"
-
   if ! on_path "$BIN_DST_DIR"; then
-    info "\n\n${RED}WARNING${RESET}: It looks like '$BIN_DST_DIR' is not on your PATH! You will not be able to invoke synth from the terminal by its name."
-    info "  You can add it to your PATH by adding following line into your profile file (~/.profile or ~/.zshrc or ~/.bash_profile or some other, depending on which shell you use):\n"
-    info "  ${BOLD}"'export PATH=$PATH:'"$BIN_DST_DIR${RESET}"
+      info "${RED}WARNING: It looks like '$BIN_DST_DIR' is not on your PATH! You will not be able to invoke synth from the terminal by its name.${RESET}\n"
+      info "You can add '$BIN_DST_DIR' to your PATH by adding following line to your profile file (e.g. ~/.profile):\n"
+      info "    export PATH=\$PATH:$BIN_DST_DIR\n"
   fi
 }
 
