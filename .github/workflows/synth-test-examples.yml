@@ -19,4 +19,4 @@ jobs:
           toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
       - run: |
-          bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/test_examples.sh" ${GITHUB_WORKSPACE}/examples
+          bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/test_examples.sh" ${GITHUB_WORKSPACE}/examples/bank

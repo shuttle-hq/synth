@@ -1,0 +1,30 @@
+{
+  "type": "array",
+  "length": 1,
+  "content": {
+    "type": "object",
+    "id": {
+      "type": "number",
+      "id": {}
+    },
+    "createdAt": {
+      "type": "string",
+      "date_time": {
+        "format": "%Y-%m-%d %H:%M:%S",
+        "begin": "2020-01-01 12:00:00"
+      }
+    },
+    "email": {
+      "type": "string",
+      "faker": {
+        "generator": "safe_email"
+      }
+    },
+    "nickname": {
+      "type": "string",
+      "faker": {
+        "generator": "username"
+      }
+    }
+  }
+}

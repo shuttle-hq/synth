@@ -1,7 +1,6 @@
 #!/bin/bash
 
-cd $1
-for d in */ ; do
+for d in ${@:1} ; do
     cd "$d"
     for ns in */ ; do
         if synth generate $ns --size 10; then
