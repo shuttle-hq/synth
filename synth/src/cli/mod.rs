@@ -6,52 +6,33 @@ mod mysql;
 mod postgres;
 mod stdf;
 mod store;
-mod telemetry;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::import::SomeImportStrategy;
 use crate::cli::store::Store;
+
 use anyhow::{Context, Result};
 
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use crate::cli::telemetry::TelemetryClient;
-use crate::utils::{version, META_OS};
 use rand::RngCore;
-use synth_core::{Name, graph::json};
-pub struct Cli {
-    store: Store,
-    args: Args,
-    telemetry: TelemetryClient,
-}
 
-fn with_telemetry<F: FnOnce() -> Result<T>, T>(
-    command: &str,
-    tel_client: &TelemetryClient,
-    func: F,
-) -> Result<T> {
-    match func() {
-        Ok(t) => {
-            let _ = tel_client.success(command);
-            Ok(t)
-        }
-        Err(e) => {
-            let _ = tel_client.failed(command);
-            Err(e)
-        }
-    }
+use synth_core::{Name, graph::json};
+
+#[cfg(feature = "telemetry")]
+pub mod telemetry;
+
+pub struct Cli {
+    store: Store
 }
 
 impl Cli {
     /// this is going to get confusing with `init` command
-    pub fn new(args: Args) -> Result<Self> {
+    pub fn new() -> Result<Self> {
         env_logger::init();
-
-        let version = version();
-        let os = META_OS.to_string();
 
         #[cfg(debug_assertions)]
         {
@@ -60,9 +41,7 @@ impl Cli {
         }
 
         Ok(Self {
-            store: Store::init()?,
-            args,
-            telemetry: TelemetryClient::new(version, os),
+            store: Store::init()?
         })
     }
 
@@ -78,13 +57,11 @@ impl Cli {
         }
     }
 
-    pub async fn run(self) -> Result<()> {
-        match self.args {
-	    Args::Init { .. } => {
-		with_telemetry("init", &self.telemetry, || {
-		    Ok(())
-		})
-	    },
+    pub async fn run(self, args: Args) -> Result<()> {
+        match args {
+            Args::Init { .. } => {
+                Ok(())
+            },
             Args::Generate {
                 ref namespace,
                 ref collection,
@@ -92,49 +69,43 @@ impl Cli {
                 ref to,
                 seed,
                 random,
-            } => with_telemetry("generate", &self.telemetry, || {
-                self.generate(
-                    namespace.clone(),
-                    collection.clone(),
-                    size,
-                    to.clone(),
-                    Self::derive_seed(random, seed)?,
-                )
-            }),
+            } => self.generate(
+                namespace.clone(),
+                collection.clone(),
+                size,
+                to.clone(),
+                Self::derive_seed(random, seed)?,
+            ),
             Args::Import {
                 ref namespace,
                 ref collection,
                 ref from,
-            } => with_telemetry("import", &self.telemetry, || {
-                self.import(namespace.clone(), collection.clone(), from.clone())
-            }),
-            Args::Telemetry(telemetry) => {
-                match telemetry {
-                    TelemetryCommand::Enable => {
-                        with_telemetry("telemetry::enable", &self.telemetry, telemetry::enable)
-                    }
-                    TelemetryCommand::Disable => {
-                        with_telemetry("telemetry::disable", &self.telemetry, || {
-                            telemetry::disable()
-                        })
-                    }
-                    TelemetryCommand::Status => {
-                        if telemetry::is_enabled() {
-                            println!("Telemetry is enabled. To disable it run `synth telemetry disable`.");
-                        } else {
-                            println!(
-                                "Telemetry is disabled. To enable it run `synth telemetry enable`."
-                            );
-                        }
-                        Ok(())
-                    }
+            } => self.import(namespace.clone(), collection.clone(), from.clone()),
+            #[cfg(feature = "telemetry")]
+            Args::Telemetry(cmd) => self.telemetry(cmd),
+        }
+    }
+
+    #[cfg(feature = "telemetry")]
+    fn telemetry(self, cmd: TelemetryCommand) -> Result<()> {
+        match cmd {
+            TelemetryCommand::Enable => telemetry::enable(),
+            TelemetryCommand::Disable => telemetry::disable(),
+            TelemetryCommand::Status => {
+                if telemetry::is_enabled() {
+                    println!("Telemetry is enabled. To disable it run `synth telemetry disable`.");
+                } else {
+                    println!(
+                        "Telemetry is disabled. To enable it run `synth telemetry enable`."
+                    );
                 }
+                Ok(())
             }
         }
     }
 
     fn import(
-        &self,
+        self,
         path: PathBuf,
         collection: Option<Name>,
         import_strategy: Option<SomeImportStrategy>,
@@ -168,7 +139,7 @@ impl Cli {
     }
 
     fn generate(
-        &self,
+        self,
         ns_path: PathBuf,
         collection: Option<Name>,
         target: usize,
@@ -244,10 +215,12 @@ pub enum Args {
         )]
         from: Option<SomeImportStrategy>,
     },
+    #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]
     Telemetry(TelemetryCommand),
 }
 
+#[cfg(feature = "telemetry")]
 #[derive(StructOpt)]
 pub enum TelemetryCommand {
     #[structopt(about = "Enable anonymous usage data collection")]
