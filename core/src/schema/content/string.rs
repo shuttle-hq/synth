@@ -570,7 +570,7 @@ impl Compile for StringContent {
                     .clone()
                     .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
                 if begin > end {
-                    let fmt = ChronoValueFormatter::new_with(format, Some(type_.clone()));
+                    let fmt = ChronoValueFormatter::new_with(format, Some(*type_));
                     return Err(anyhow!(
                         "begin is after end: begin={}, end={}",
                         fmt.format(&begin).unwrap(),
@@ -600,14 +600,15 @@ impl Compile for StringContent {
 pub mod tests {
     use super::*;
     use crate::compile::NamespaceCompiler;
+    use chrono::naive::{MAX_DATE, MIN_DATE};
 
-    #[test]
-    fn date_time_compile() {
-        let unspecified_begin_end = DateTimeContent {
+    macro_rules! date_time_bounds_test_ok (
+        ($begin:expr, $end:expr) => {
+            let unspecified_begin_end = DateTimeContent {
             format: "yyyy-MM-dd".to_string(),
             type_: ChronoValueType::NaiveDate,
-            begin: None,
-            end: None
+            begin: $begin,
+            end: $end
         };
 
         let content = Content::String(
@@ -617,65 +618,36 @@ pub mod tests {
         let compiler = NamespaceCompiler::new_flat(&content);
 
         assert!(compiler.compile().is_ok());
+        }
+    );
 
-        let unspecified_begin = DateTimeContent {
+    macro_rules! date_time_bounds_test_err (
+        ($begin:expr, $end:expr) => {
+            let unspecified_begin_end = DateTimeContent {
             format: "yyyy-MM-dd".to_string(),
             type_: ChronoValueType::NaiveDate,
-            begin: None,
-            end: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(3000,01,01)))
+            begin: $begin,
+            end: $end
         };
 
         let content = Content::String(
-            StringContent::DateTime(unspecified_begin)
-        );
-
-        let compiler = NamespaceCompiler::new_flat(&content);
-
-        assert!(compiler.compile().is_ok());
-
-        let unspecified_end = DateTimeContent {
-            format: "yyyy-MM-dd".to_string(),
-            type_: ChronoValueType::NaiveDate,
-            begin: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(1000,01,01))),
-            end: None
-        };
-
-        let content = Content::String(
-            StringContent::DateTime(unspecified_end)
-        );
-
-        let compiler = NamespaceCompiler::new_flat(&content);
-
-        assert!(compiler.compile().is_ok());
-
-        let unspecified_end = DateTimeContent {
-            format: "yyyy-MM-dd".to_string(),
-            type_: ChronoValueType::NaiveDate,
-            begin: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(3000,01,01))),
-            end: None
-        };
-
-        let content = Content::String(
-            StringContent::DateTime(unspecified_end)
+            StringContent::DateTime(unspecified_begin_end)
         );
 
         let compiler = NamespaceCompiler::new_flat(&content);
 
         assert!(compiler.compile().is_err());
+        }
+    );
 
-        let unspecified_begin = DateTimeContent {
-            format: "yyyy-MM-dd".to_string(),
-            type_: ChronoValueType::NaiveDate,
-            begin: None,
-            end: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(1000,01,01)))
-        };
+    #[test]
+    fn date_time_compile() {
+        date_time_bounds_test_ok!(None, None);
+        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(MAX_DATE)));
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), None);
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), Some(ChronoValue::NaiveDate(MAX_DATE)));
 
-        let content = Content::String(
-            StringContent::DateTime(unspecified_begin)
-        );
-
-        let compiler = NamespaceCompiler::new_flat(&content);
-
-        assert!(compiler.compile().is_err());
+        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX_DATE)), None);
+        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN_DATE)));
     }
 }
