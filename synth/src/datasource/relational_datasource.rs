@@ -112,8 +112,6 @@ pub trait RelationalDataSource: DataSource {
                     query.push_str(",\n");
                 }
             }
-            println!("{}", query);
-            println!("{:#?}", query_params);
             let future = self.execute_query(query, query_params);
             futures.push(future);
         }
@@ -124,7 +122,7 @@ pub trait RelationalDataSource: DataSource {
             bail!("One or more database inserts failed: {:?}", e)
         }
 
-        println!("Inserted {} rows...", collection.len());
+        info!("Inserted {} rows...", collection.len());
         Ok(())
     }
 
