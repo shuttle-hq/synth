@@ -105,7 +105,8 @@ impl NamespaceSampleStrategy {
             progress_bar.set_position(generated as u64);
         }
 
-        progress_bar.finish();
+        progress_bar.finish_and_clear();
+
         Ok(Value::Object(out))
     }
 }
@@ -135,6 +136,8 @@ impl CollectionSampleStrategy {
             }
             progress_bar.set_position(generated as u64);
         }
+
+        progress_bar.finish_and_clear();
 
         Ok(Value::Array(out))
     }
