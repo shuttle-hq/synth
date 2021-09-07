@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[23],{92:function(n){n.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"gdpr","name":"gdpr","count":1,"permalink":"/synth/blog/tags/gdpr"}')}}]);

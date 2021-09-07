@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[13],{82:function(o){o.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"orm","name":"orm","count":1,"permalink":"/synth/blog/tags/orm"}')}}]);

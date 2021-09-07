@@ -2,11 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://getsynth.github.io/synth/blog</id>
     <title>Synth - Documentation Blog</title>
-    <updated>2021-08-09T00:00:00.000Z</updated>
+    <updated>2021-08-31T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://getsynth.github.io/synth/blog"/>
     <subtitle>Synth - Documentation Blog</subtitle>
     <icon>https://getsynth.github.io/synth/img/getsynth_favicon.png</icon>
+    <entry>
+        <title type="html"><![CDATA[Seeding test databases in 2021 - best practices]]></title>
+        <id>Seeding test databases in 2021 - best practices</id>
+        <link href="https://getsynth.github.io/synth/synth/blog/2021/08/31/seeding-databases-tutorial"/>
+        <updated>2021-08-31T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this tutorial, we'll learn how to design a Prisma data model for a basic message board and how to seed test databases with mock data using open-source tools.]]></summary>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Complex Procedural Rust Macros]]></title>
         <id>Complex Procedural Rust Macros</id>

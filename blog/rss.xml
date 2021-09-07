@@ -4,9 +4,16 @@
         <title>Synth - Documentation Blog</title>
         <link>https://getsynth.github.io/synth/blog</link>
         <description>Synth - Documentation Blog</description>
-        <lastBuildDate>Mon, 09 Aug 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 31 Aug 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Seeding test databases in 2021 - best practices]]></title>
+            <link>https://getsynth.github.io/synth/synth/blog/2021/08/31/seeding-databases-tutorial</link>
+            <guid>Seeding test databases in 2021 - best practices</guid>
+            <pubDate>Tue, 31 Aug 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this tutorial, we'll learn how to design a Prisma data model for a basic message board and how to seed test databases with mock data using open-source tools.]]></description>
+        </item>
         <item>
             <title><![CDATA[Complex Procedural Rust Macros]]></title>
             <link>https://getsynth.github.io/synth/synth/blog/2021/08/09/macro</link>
