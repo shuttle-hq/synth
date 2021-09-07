@@ -43,9 +43,33 @@ synth import --from postgres://user:pass@localhost:5432/postgres my_namespace
 ```
 
 ## Generate
+`synth` can generate data directly into your PostgreSQL database. First `synth` 
+will generate as much data as require, then open a connection to your database, 
+and then perform batch insert to quickly insert as much data as you need.
+
+`synth` will also respect primary key and foreign key constraints, by 
+performing a [topologoical sort](TODO_wikipedia) on the data and inserting it 
+in the right order such that no constraints are violated. 
 
 ### Example Generation Command
 
 ```bash
 synth generate --to postgres://user:pass@localhost:5432/ my_namespace
 ```
+
+## Type Mapping
+
+`synth` has its own internal data model, and so does Postgres, therefore a 
+conversion occurs between `synth` types and Postgres types.
+
+
+
+| Synth Type | PostgreSQL Type | Casting |
+|------------|-----------------|---------|
+| Null       | Null            |         |
+| Bool       | boolean         |         |
+| Number::I8 | ?               |         |
+|    ...     |                 |         |
+|   String   | varchar / text  |         |
+...
+// TODO
