@@ -96,6 +96,10 @@ module.exports = {
                             to: '/content/null',
                             label: 'Generators',
                         },
+                        {
+                            to: '/integrations/postgres',
+                            label: 'Integrations'
+                        }
                     ],
                 },
             ],
