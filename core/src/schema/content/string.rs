@@ -569,6 +569,14 @@ impl Compile for StringContent {
                 let end = end
                     .clone()
                     .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
+                if begin > end {
+                    let fmt = ChronoValueFormatter::new_with(format, Some(type_.clone()));
+                    return Err(anyhow!(
+                        "begin is after end: begin={}, end={}",
+                        fmt.format(&begin).unwrap(),
+                        fmt.format(&end).unwrap()
+                    ))
+                }
                 RandomDateTime::new(begin..end, format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
@@ -585,5 +593,89 @@ impl Compile for StringContent {
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
         Ok(Graph::String(string_node))
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use crate::compile::NamespaceCompiler;
+
+    #[test]
+    fn date_time_compile() {
+        let unspecified_begin_end = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: None,
+            end: None
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_begin_end)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_ok());
+
+        let unspecified_begin = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: None,
+            end: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(3000,01,01)))
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_begin)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_ok());
+
+        let unspecified_end = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(1000,01,01))),
+            end: None
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_end)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_ok());
+
+        let unspecified_end = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(3000,01,01))),
+            end: None
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_end)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_err());
+
+        let unspecified_begin = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: None,
+            end: Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(1000,01,01)))
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_begin)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_err());
     }
 }
