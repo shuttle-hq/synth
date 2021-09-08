@@ -4,6 +4,7 @@ use crate::cli::json::synth_val_to_json;
 use crate::sampler::Sampler;
 use anyhow::Result;
 use serde_json::Value;
+use synth_core::{Content, Name};
 
 use std::convert::TryFrom;
 use std::path::PathBuf;
@@ -29,6 +30,13 @@ impl ExportStrategy for StdoutExportStrategy {
 }
 
 impl ImportStrategy for FileImportStrategy {
+    fn import_collection(self, name: &Name) -> Result<Content> {
+        self.import()?
+            .collections
+            .remove(name)
+            .ok_or_else(|| anyhow!("Could not find collection '{}' in file.", name))
+    }
+
     fn into_value(self) -> Result<Value> {
         Ok(serde_json::from_reader(std::fs::File::open(
             self.from_file,
