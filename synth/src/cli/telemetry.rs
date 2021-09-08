@@ -1,7 +1,14 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::future::Future;
+use std::error::Error;
+
+use crate::utils::{version, META_OS};
+
+use super::{Args, TelemetryCommand};
 
 const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
 const EVENT_NAME: &str = "synth-command";
@@ -16,6 +23,29 @@ pub(crate) fn disable() -> Result<()> {
 
 pub(crate) fn is_enabled() -> bool {
     TelemetryConfig::is_enabled()
+}
+
+pub async fn with_telemetry<F, Fut, T, E>(args: Args, func: F) -> Result<T, E>
+where
+    F: FnOnce(Args) -> Fut,
+    Fut: Future<Output = Result<T, E>>,
+    E: AsRef<dyn Error + 'static>
+{
+    let client = TelemetryClient::new();
+
+    let command_name = match &args {
+        Args::Init { .. } => "init",
+        Args::Generate { .. } => "generate",
+        Args::Import { .. } => "import",
+        Args::Telemetry(TelemetryCommand::Enable) => "telemetry::enable",
+        Args::Telemetry(TelemetryCommand::Disable) => "telemetry::disable",
+        Args::Telemetry(TelemetryCommand::Status) => "telemetry::status"
+    };
+
+    func(args)
+        .await
+        .and_then(|success| client.success(command_name, success))
+        .or_else(|err| client.failed(command_name, err))
 }
 
 #[derive(Serialize, Deserialize)]
@@ -43,8 +73,8 @@ impl TelemetryConfig {
     fn synth_config_dir() -> Result<PathBuf> {
         let synth_config_dir = dirs::config_dir().ok_or_else(|| {
             anyhow!(
-            "Could not find a configuration directory. Your operating system may not be supported."
-        )
+                "Could not find a configuration directory. Your operating system may not be supported."
+            )
         })?;
         Ok(synth_config_dir.join("synth"))
     }
@@ -106,7 +136,10 @@ pub(crate) struct TelemetryClient {
 }
 
 impl TelemetryClient {
-    pub(crate) fn new(synth_version: String, os: String) -> Self {
+    fn new() -> Self {
+        let synth_version = version();
+        let os = META_OS.to_string();
+
         Self {
             ph_client: posthog_rs::client(API_KEY),
             uuid: TelemetryConfig::initialise().uuid,
@@ -116,12 +149,25 @@ impl TelemetryClient {
         }
     }
 
-    pub fn success(&self, command_name: &str) -> Result<()> {
+    pub fn success<T, E>(&self, command_name: &str, output: T) -> Result<T, E> {
         self.send(command_name, CommandResult::Success)
+            .or_else(|err| {
+                info!("failed to push ok of command: {}", err);
+                Ok(())
+            })?;
+        Ok(output)
     }
 
-    pub fn failed(&self, command_name: &str) -> Result<()> {
+    pub fn failed<T, E>(&self, command_name: &str, error: E) -> Result<T, E>
+    where
+        E: AsRef<dyn Error + 'static>
+    {
         self.send(command_name, CommandResult::Failed)
+            .or_else(|err| {
+                info!("failed to push err of command: {}", err);
+                Ok(())
+            })?;
+        Err(error)
     }
 
     fn send(&self, command_name: &str, res: CommandResult) -> Result<()> {

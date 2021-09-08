@@ -26,7 +26,7 @@ fn bench_generate_n_to_stdout(size: usize) {
             seed: Some(0),
             random: false,
         };
-        Cli::new(args).unwrap().run().await.unwrap()
+        Cli::new().unwrap().run(args).await.unwrap()
     });
 }
 

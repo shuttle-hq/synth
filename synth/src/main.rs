@@ -1,9 +1,16 @@
 use anyhow::Result;
 use structopt::StructOpt;
 
-use synth::cli::{Args, Cli};
-
 #[async_std::main]
 async fn main() -> Result<()> {
-    Cli::new(Args::from_args())?.run().await
+    let args = synth::cli::Args::from_args();
+    let cli = synth::cli::Cli::new()?;
+
+    #[cfg(feature = "telemetry")]
+    synth::cli::telemetry::with_telemetry(args, |args| cli.run(args)).await?;
+
+    #[cfg(not(feature = "telemetry"))]
+    cli.run(args).await?;
+
+    Ok(())
 }

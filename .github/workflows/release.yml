@@ -28,7 +28,7 @@ jobs:
         toolchain: nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
-    - run: cargo +nightly build --release
+    - run: cargo +nightly build --release --features telemetry
     - working-directory: target/release
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
@@ -46,7 +46,7 @@ jobs:
           toolchain: nightly
       - id: tag
         uses: dawidd6/action-get-tag@v1
-      - run: cargo +nightly build --release
+      - run: cargo +nightly build --release --features telemetry
       - uses: actions/upload-artifact@v2
         with:
           name: synth-${{ steps.tag.outputs.tag }}-windows-x86_64
