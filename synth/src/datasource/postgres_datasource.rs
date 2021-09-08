@@ -172,7 +172,7 @@ impl RelationalDataSource for PostgresDataSource {
             "oid" => {
                 bail!("OID data type not supported")
             }
-            "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
+            "char" | "varchar" | "text" | "citext" | "bpchar" | "name" | "unknown" => {
                 let pattern =
                     "[a-zA-Z0-9]{0, {}}".replace("{}", &format!("{}", char_max_len.unwrap_or(1)));
                 Content::String(StringContent::Pattern(
@@ -305,7 +305,7 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
         "oid" => {
             bail!("OID data type not supported for Postgresql")
         }
-        "char" | "varchar" | "text" | "bpchar" | "name" | "unknown" => {
+        "char" | "varchar" | "text" | "citext" | "bpchar" | "name" | "unknown" => {
             Value::String(row.try_get::<String, &str>(column.name())?)
         }
         "int2" => Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
