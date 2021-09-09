@@ -100,16 +100,13 @@ impl RelationalDataSource for PostgresDataSource {
     }
 
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        // Unfortunately cannot use parameterised queries here
-        let query: &str = &format!(
-            r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
-            FROM pg_index i
-            JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-            WHERE  i.indrelid = '{}'::regclass AND i.indisprimary",
-            &table_name
-        );
+        let query = r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+        FROM pg_index i
+        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+        WHERE  i.indrelid = cast($1 as regclass) AND i.indisprimary";
 
         sqlx::query(query)
+            .bind(table_name)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
