@@ -62,6 +62,7 @@ synth generate --to postgres://user:pass@localhost:5432/ my_namespace
 `synth` has its own internal data model, and so does Postgres, therefore a 
 conversion occurs between `synth` types and Postgres types.
 
+// TODO default generators
 
 
 | Synth Type | PostgreSQL Type | Casting |
