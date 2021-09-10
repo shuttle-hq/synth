@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[37],{106:function(s){s.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"postgres","name":"postgres","count":2,"permalink":"/synth/blog/tags/postgres"}')}}]);

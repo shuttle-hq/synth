@@ -4,9 +4,16 @@
         <title>Synth - Documentation Blog</title>
         <link>https://getsynth.github.io/synth/blog</link>
         <description>Synth - Documentation Blog</description>
-        <lastBuildDate>Tue, 31 Aug 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 07 Sep 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[So you want to mock an API]]></title>
+            <link>https://getsynth.github.io/synth/synth/blog/2021/09/07/mocking-a-production-api</link>
+            <guid>So you want to mock an API</guid>
+            <pubDate>Tue, 07 Sep 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[This blog post is an overview of a 5 day prototyping journey building a mock API]]></description>
+        </item>
         <item>
             <title><![CDATA[Seeding test databases in 2021 - best practices]]></title>
             <link>https://getsynth.github.io/synth/synth/blog/2021/08/31/seeding-databases-tutorial</link>
