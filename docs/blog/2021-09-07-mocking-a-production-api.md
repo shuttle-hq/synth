@@ -6,7 +6,7 @@ author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [synth, prisma, testing, mocking, story]
 description: This blog post is an overview of a 5 day prototyping journey building a mock API 
-image: media/api.jpg
+image: https://storage.googleapis.com/getsynth-public/media/api.jpg
 hide_table_of_contents: false
 ---
 
