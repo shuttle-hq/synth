@@ -11,9 +11,6 @@ on:
 jobs:
   deploy-vercel:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
     steps:
       - uses: actions/checkout@v2
       - uses: amondnet/vercel-action@v20
@@ -22,6 +19,7 @@ jobs:
           vercel-args: --prod
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./docs
 
   deploy-pages:
     runs-on: ubuntu-18.04
