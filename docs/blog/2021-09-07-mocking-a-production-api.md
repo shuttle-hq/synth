@@ -5,10 +5,12 @@ author_title: Founder
 author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [synth, prisma, testing, mocking, story]
-description: This post covers three different ways to generate test data for
-your Postgres database image: https://i.imgur.com/mErPwqL.png
+description: This blog post is an overview of a 5 day prototyping journey building a mock API 
+image: media/api.jpg
 hide_table_of_contents: false
 ---
+
+![So you want to mock an API](media/api.jpg)
 
 API mocking refers to the process of simulating the behaviour of a real API
 using a fake replacement.
@@ -56,7 +58,7 @@ complained about payment processors (except for Stripe which was explicitly
 praised yet again!). A few products and companies came up repeatedly as being
 difficult to test against. We qualitatively evaluated the internet's feedback
 and reviewed documentation from the different APIs mentioned to understand 
-the implementation complexity. After all we had 3.5 days left ,so we couldn't 
+the implementation complexity. After all we had 3.5 days left, so we couldn't 
 pick anything too complex. In the end we decided to go with the [Shopify API](https://shopify.dev/api/)!
 
 Just as a disclaimer we have absolutely no issues with Shopify, it just so
@@ -214,12 +216,13 @@ a [data model](https://github.com/getsynth/model-repository/blob/main/shopify/sh
 that generates data that looks like responses from the Event API. I won't go 
 into depth on
 how this works here as it's been covered
-in [other posts](2021-08-31-seeding-databases-tutorial.md). In about 15 minutes
-we had 10 Mb data that looks like this:
+in [other posts](2021-08-31-seeding-databases-tutorial.md). In about 15 
+minutes of tweaking the `synth` schema, we generated ~10 Mb data that looks 
+like this:
 
 ```json
 [
-    {
+    {we had
         "arguments": "generate virtual platforms",
         "body": null,
         "created_at": "2019-09-17T14:16:47",
@@ -275,7 +278,7 @@ into MongoDB by `synth`. This gave us all the filtering we needed basically for
 free.
 
 Then we wrote a quick and dirty express server that maps the REST endpoint's
-querytstrings into a query for prisma. The whole thing turned out to be ~90 LOC.
+querystrings into a query for prisma. The whole thing turned out to be ~90 LOC.
 You can check the
 source [here](https://github.com/getsynth/model-repository/blob/main/shopify/src/bin.ts)
 .
@@ -330,7 +333,7 @@ working on `synth` at the same time). I can safely say this was a
 success! We got it done to spec. 
 
 An interesting thing to note is that **60%** of the time was spent on 
-ideating, researching and planing - and only 40% of the time on the actual
+ideating, researching and planning - and only 40% of the time on the actual
 implementation. However, spending all that time planning before writing code 
 definitely saved us a bunch of time, and if we didn't plan so much the project would have 
 overshot or failed.
