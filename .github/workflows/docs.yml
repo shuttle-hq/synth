@@ -20,6 +20,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./docs
+          scope: ${{ secrets.VERCEL_ORG_ID }}
 
   deploy-pages:
     runs-on: ubuntu-18.04
