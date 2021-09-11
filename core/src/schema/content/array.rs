@@ -25,7 +25,8 @@ impl ArrayContent {
 
 impl Compile for ArrayContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
-        let length = compiler.build("length", self.length.as_ref())?;
+        let length = compiler.build("length", self.length.as_ref())?
+            .into_size();
         let content = compiler.build("content", &self.content)?;
         Ok(Graph::Array(ArrayNode::new_with(length, content)))
     }

@@ -22,5 +22,5 @@ pub use anyhow::Error as AnyhowError;
 
 pub use super::{
     number_from_ok, value_from_ok, value_from_ok_number, Devaluize, Graph, JustToken,
-    OnceInfallible, OwnedDevaluize, TokenOnce, Value, Valuize,
+    OnceInfallible, OwnedDevaluize, TokenOnce, Value, Valuize, StringGenerator, SizeGenerator
 };

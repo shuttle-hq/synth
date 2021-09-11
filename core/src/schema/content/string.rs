@@ -182,7 +182,7 @@ pub enum SerializedContent {
 #[serde(rename_all = "lowercase")]
 pub struct TruncatedContent {
     content: Box<Content>,
-    length: usize,
+    length: Box<Content>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -575,9 +575,12 @@ impl Compile for StringContent {
                     RandomString::from(Serialized::new_json(inner)).into()
                 }
             },
-            StringContent::Truncated(trunc) => {
-                let inner = trunc.content.compile(compiler)?;
-                RandomString::from(Truncated::new(trunc.length, inner)?).into()
+            StringContent::Truncated(TruncatedContent { box length, box content }) => {
+                let content = compiler.build("content", content)?
+                    .into_string();
+                let length = compiler.build("length", length)?
+                    .into_size();
+                RandomString::from(Truncated::new(content, length)).into()
             }
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
