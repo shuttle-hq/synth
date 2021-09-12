@@ -471,17 +471,6 @@ pub mod datetime_content {
                 .transpose()?;
             let end = self.end.map(|end| fmt.parse(end.as_str())).transpose()?;
 
-            if let (Some(begin), Some(end)) = (begin.as_ref(), end.as_ref()) {
-                if begin > end {
-                    return Err(failed!(
-                        target: Release,
-                        "begin is after end: begin={}, end={}",
-                        fmt.format(begin).unwrap(), // should be alright exactly at this point
-                        fmt.format(end).unwrap()
-                    ));
-                }
-            }
-
             let common_variant = begin
                 .as_ref()
                 .and_then(|begin| begin.common_variant(end.as_ref()?));
