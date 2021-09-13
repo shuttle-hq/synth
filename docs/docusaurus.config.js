@@ -44,6 +44,8 @@ module.exports = {
             logo: {
                 alt: 'Synth',
                 src: '/img/getsynth_identicon.png',
+                href: 'https://getsynth.com',
+                target: '_self'
             },
             items: [
                 {
