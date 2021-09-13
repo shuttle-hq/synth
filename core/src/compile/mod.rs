@@ -41,6 +41,7 @@ pub trait Compile {
     fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph>;
 }
 
+#[derive(Default)]
 pub struct StructuredState<'a> {
     children: BTreeMap<String, CompilerState<'a>>,
     ordering: Vec<String>,
@@ -77,15 +78,6 @@ impl<'a> std::iter::Extend<(String, CompilerState<'a>)> for StructuredState<'a> 
     fn extend<T: IntoIterator<Item = (String, CompilerState<'a>)>>(&mut self, iter: T) {
         for (name, state) in iter {
             self.insert(name, state);
-        }
-    }
-}
-
-impl<'a> Default for StructuredState<'a> {
-    fn default() -> Self {
-        Self {
-            children: BTreeMap::new(),
-            ordering: Vec::new(),
         }
     }
 }

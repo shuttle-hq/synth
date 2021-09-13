@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 const RESERVED_FIELDS: [&str; 2] = ["type", "skip_when_null"];
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct ObjectContent {
     #[serde(default)]
     #[serde(skip_serializing_if = "std::ops::Not::not")]
@@ -118,15 +118,6 @@ impl ObjectContent {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-}
-
-impl Default for ObjectContent {
-    fn default() -> Self {
-        Self {
-            skip_when_null: false,
-            fields: BTreeMap::new(),
-        }
     }
 }
 
