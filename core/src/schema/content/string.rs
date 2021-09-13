@@ -471,17 +471,6 @@ pub mod datetime_content {
                 .transpose()?;
             let end = self.end.map(|end| fmt.parse(end.as_str())).transpose()?;
 
-            if let (Some(begin), Some(end)) = (begin.as_ref(), end.as_ref()) {
-                if begin > end {
-                    return Err(failed!(
-                        target: Release,
-                        "begin is after end: begin={}, end={}",
-                        fmt.format(begin).unwrap(), // should be alright exactly at this point
-                        fmt.format(end).unwrap()
-                    ));
-                }
-            }
-
             let common_variant = begin
                 .as_ref()
                 .and_then(|begin| begin.common_variant(end.as_ref()?));
@@ -565,8 +554,18 @@ impl Compile for StringContent {
             }) => {
                 let begin = begin
                     .clone()
-                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::origin(), *type_));
-                let end = end.clone().unwrap_or(begin.clone() + Duration::weeks(52));
+                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
+                let end = end
+                    .clone()
+                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
+                if begin > end {
+                    let fmt = ChronoValueFormatter::new_with(format, Some(*type_));
+                    return Err(anyhow!(
+                        "begin is after end: begin={}, end={}",
+                        fmt.format(&begin).unwrap(),
+                        fmt.format(&end).unwrap()
+                    ))
+                }
                 RandomDateTime::new(begin..end, format).into()
             }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
@@ -583,5 +582,61 @@ impl Compile for StringContent {
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
         Ok(Graph::String(string_node))
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use crate::compile::NamespaceCompiler;
+    use chrono::naive::{MAX_DATE, MIN_DATE};
+
+    macro_rules! date_time_bounds_test_ok (
+        ($begin:expr, $end:expr) => {
+            let unspecified_begin_end = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: $begin,
+            end: $end
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_begin_end)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_ok());
+        }
+    );
+
+    macro_rules! date_time_bounds_test_err (
+        ($begin:expr, $end:expr) => {
+            let unspecified_begin_end = DateTimeContent {
+            format: "yyyy-MM-dd".to_string(),
+            type_: ChronoValueType::NaiveDate,
+            begin: $begin,
+            end: $end
+        };
+
+        let content = Content::String(
+            StringContent::DateTime(unspecified_begin_end)
+        );
+
+        let compiler = NamespaceCompiler::new_flat(&content);
+
+        assert!(compiler.compile().is_err());
+        }
+    );
+
+    #[test]
+    fn date_time_compile() {
+        date_time_bounds_test_ok!(None, None);
+        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(MAX_DATE)));
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), None);
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), Some(ChronoValue::NaiveDate(MAX_DATE)));
+
+        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX_DATE)), None);
+        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN_DATE)));
     }
 }

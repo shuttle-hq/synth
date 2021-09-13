@@ -736,12 +736,5 @@ pub mod tests {
             "begin": "2020-11-05T09:53:10+0500",
             "end": "2020-11-05T09:53:10+0000"
         });
-
-        assert!(serde_json::from_value::<DateTimeContent>(json!({
-            "format": "%Y-%m-%dT%H:%M:%S%z",
-            "end": "2020-11-05T09:53:10+0500",
-            "begin": "2020-11-05T09:53:10+0000"
-        }))
-        .is_err())
     }
 }

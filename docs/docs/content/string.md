@@ -774,6 +774,31 @@ Accepted values for the `"date_time"` key are objects with the following keys:
       specification.
 - `"begin"` and `"end"`: the lower and upper bounds of the `date_time` value to generate. The formatting of these values
   must adhere to the `strftime`-string specified in the `"format"` field.
+  
+Not specifying `begin` or `end` will result in these defaulting to the current time.
+
+```json synth
+{
+  "type": "string",
+  "date_time": {
+    "format": "%Y-%m-%d",
+    "subtype": "naive_date",
+    "end": "2030-01-01"
+  }
+}
+```
+
+Or optionally both, will result in a constant time:
+
+```json synth
+{
+  "type": "string",
+  "date_time": {
+    "format": "%Y-%m-%d",
+    "subtype": "naive_date"
+  }
+}
+```
 
 #### Example
 
