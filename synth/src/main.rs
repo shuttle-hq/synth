@@ -12,5 +12,8 @@ async fn main() -> Result<()> {
     #[cfg(not(feature = "telemetry"))]
     cli.run(args).await?;
 
+    // Result ignored as this should fail silently
+    let _ = synth::utils::notify_new_version();
+
     Ok(())
 }

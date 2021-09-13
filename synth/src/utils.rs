@@ -3,6 +3,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use anyhow::Result;
+use serde_json::{Map, Value};
+use reqwest::header::USER_AGENT;
+use std::time::Duration;
 
 include!(concat!(env!("OUT_DIR"), "/meta.rs"));
 
@@ -34,6 +37,53 @@ impl FromStr for DataDirectoryPath {
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
+
+/// Notify the user if there is a new version of Synth
+/// Even though the error is not meant to be used, it
+/// makes the implementation simpler instead of returning ().
+pub fn notify_new_version() -> Result<()> {
+    let current_version = crate::utils::version();
+    let latest_version = latest_version()?;
+    notify_new_version_inner(&current_version, &latest_version)
+}
+
+fn latest_version() -> Result<String> {
+    let url = "https://api.github.com/repos/getsynth/synth/releases/latest";
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .get(url)
+        .header(USER_AGENT, "hyper/0.14")
+        .timeout(Duration::from_secs(2))
+        .send()?;
+
+    let release_info: Map<String, Value> = response.json()?;
+
+    // We're assuming here that the GH API doesn't make breaking changes
+    // otherwise these `get` and `as_str` operations are quite safe
+    let latest_version = release_info
+        .get("name")
+        .ok_or(anyhow!("Could not get the 'name' parameter"))?
+        .as_str()
+        .ok_or(anyhow!("was expecting name to be a string"))?;
+
+    // At this point it looks like 'vX.Y.Z'. Here we're removing the `v`
+    // Maybe we should use something that doesn't panic?
+    Ok(latest_version[1..].to_string())
+}
+
+pub fn notify_new_version_inner(current_version: &str, latest_version: &str) -> Result<()> {
+    // semver should be ok with lexicographical ordering, right?
+    if latest_version > current_version {
+        eprintln!("\nYour version of synth is out of date.");
+        eprintln!("The installed version is {} and the latest version is {}.", current_version, latest_version);
+        #[cfg(windows)]
+        eprintln!("You can update by downloading from: https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe\n");
+        #[cfg(not(windows))]
+        eprintln!("You can update by running: curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh -s -- --force\n");
+    }
+    Ok(())
+}
+
 
 #[cfg(debug_assertions)]
 pub mod splash {

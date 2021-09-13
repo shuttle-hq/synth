@@ -30,7 +30,6 @@ pub struct Cli {
 }
 
 impl Cli {
-    /// this is going to get confusing with `init` command
     pub fn new() -> Result<Self> {
         env_logger::init();
 
@@ -40,16 +39,9 @@ impl Cli {
             log::debug!("{}", splash);
         }
 
-        Self::notify_new_version();
-
         Ok(Self {
             store: Store::init()?
         })
-    }
-
-    /// Notify the user if there is a new version of Synth
-    fn notify_new_version() {
-
     }
 
     fn derive_seed(random: bool, seed: Option<u64>) -> Result<u64> {
@@ -102,9 +94,7 @@ impl Cli {
                 if telemetry::is_enabled() {
                     println!("Telemetry is enabled. To disable it run `synth telemetry disable`.");
                 } else {
-                    println!(
-                        "Telemetry is disabled. To enable it run `synth telemetry enable`."
-                    );
+                    println!("Telemetry is disabled. To enable it run `synth telemetry enable`.");
                 }
                 Ok(())
             }
