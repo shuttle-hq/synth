@@ -40,9 +40,16 @@ impl Cli {
             log::debug!("{}", splash);
         }
 
+        Self::notify_new_version();
+
         Ok(Self {
             store: Store::init()?
         })
+    }
+
+    /// Notify the user if there is a new version of Synth
+    fn notify_new_version() {
+
     }
 
     fn derive_seed(random: bool, seed: Option<u64>) -> Result<u64> {
