@@ -165,7 +165,7 @@ If you would like to learn more, or you would like support for your use-case, fe
 
 If your query is more sensitive, you can email [opensource@getsynth.com](mailto:opensource@getsynth.com) and we'll happily chat about your usecase.
 
-If you intend on using Synth, we would recommend joining our growing [Discord](https://discord.gg/H33rRDTm3p) community.
+If you intend on using Synth, we would recommend joining our growing [Discord](https://discord.gg/H33rRDTm3p) community. We uphold the [Synth Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## About Us
 
