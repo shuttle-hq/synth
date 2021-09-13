@@ -8,6 +8,8 @@ use synth_gen::value::Number;
 
 const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
 
+//TODO: Remove this once https://github.com/rust-lang/rust/issues/88900 gets fixed
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct ColumnInfo {
     pub(crate) column_name: String,
@@ -17,6 +19,7 @@ pub struct ColumnInfo {
     pub(crate) character_maximum_length: Option<i32>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct PrimaryKey {
     pub(crate) column_name: String,
