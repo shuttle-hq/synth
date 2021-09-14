@@ -8,6 +8,7 @@ use serde::{
     Serialize,
 };
 use crate::graph::number::{RandomU32, RandomF32, RandomI32};
+use crate::graph::prelude::content::number::number_content::{I32, I64};
 
 #[derive(Clone, Copy)]
 pub enum NumberContentKind {
@@ -154,7 +155,7 @@ macro_rules! number_content {
         }
 
         pub mod number_content {
-            use super::{RangeStep, Categorical, NumberContent, Id};
+            use super::{RangeStep, Categorical, NumberContent};
             use serde::{Serialize, Deserialize};
 
             $(
@@ -185,10 +186,10 @@ macro_rules! number_content {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(deny_unknown_fields)]
-pub struct Id {
+pub struct Id<N> {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub start_at: Option<u64>,
+    pub start_at: Option<N>,
 }
 
 impl NumberContent {
@@ -294,26 +295,28 @@ number_content!(
         Range(RangeStep<u32>),
         Categorical(Categorical<u32>),
         Constant(u32),
-        Id(Id),
+	Id(crate::schema::Id<u32>),
     },
     u64[is_u64, default_u64_range] as U64 {
         #[default]
         Range(RangeStep<u64>),
         Categorical(Categorical<u64>),
         Constant(u64),
-        Id(Id),
+	Id(crate::schema::Id<u64>),
     },
     i32[is_i32, default_i32_range] as I32 {
         #[default]
         Range(RangeStep<i32>),
         Categorical(Categorical<i32>),
         Constant(i32),
+	Id(crate::schema::Id<i32>),
     },
     i64[is_i64, default_i64_range] as I64 {
         #[default]
         Range(RangeStep<i64>),
         Categorical(Categorical<i64>),
         Constant(i64),
+	Id(crate::schema::Id<i64>),
     },
     f64[is_f64, default_f64_range] as F64 {
         #[default]
@@ -351,6 +354,7 @@ impl Compile for NumberContent {
                         RandomI64::categorical(categorical_content.clone())
                     }
                     number_content::I64::Constant(val) => RandomI64::constant(*val),
+                    I64::Id(id) => RandomI64::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
                 };
                 random_i64.into()
             }
@@ -369,9 +373,7 @@ impl Compile for NumberContent {
                     }
                     number_content::U32::Constant(val) => RandomU32::constant(*val),
                     number_content::U32::Id(id) => {
-                        // todo fix
-                        let gen = Incrementing::new_at(id.start_at.unwrap_or_default() as u32);
-                        RandomU32::incrementing(gen)
+                        RandomU32::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
                     }
                 };
                 random_u32.into()
@@ -383,6 +385,7 @@ impl Compile for NumberContent {
                         RandomI32::categorical(categorical_content.clone())
                     }
                     number_content::I32::Constant(val) => RandomI32::constant(*val),
+                    I32::Id(id) => RandomI32::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
                 };
                 random_i32.into()
             }
@@ -519,6 +522,7 @@ impl number_content::I64 {
                     Ok(number_content::F64::Constant(cast).into())
                 }
             },
+            I64::Id(_) => unimplemented!()
         }
     }
 }
