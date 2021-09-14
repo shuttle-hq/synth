@@ -44,13 +44,20 @@ fn version_semver() -> Result<Version> {
         .map_err(|e| anyhow!("failed to parse current version semver with error: {}", e))
 }
 
+pub fn notify_new_version() -> Result<()> {
+    if let Some(version_info) = version_update_info()? {
+        eprintln!("{}", version_info);
+    }
+    Ok(())
+}
+
 /// Notify the user if there is a new version of Synth
 /// Even though the error is not meant to be used, it
 /// makes the implementation simpler instead of returning ().
-pub fn notify_new_version() -> Result<()> {
+pub fn version_update_info() -> Result<Option<String>> {
     let current_version = crate::utils::version_semver()?;
     let latest_version = latest_version()?;
-    notify_new_version_inner(&current_version, &latest_version)
+    Ok(version_update_info_inner(&current_version, &latest_version))
 }
 
 fn latest_version() -> Result<Version> {
@@ -78,17 +85,20 @@ fn latest_version() -> Result<Version> {
         .map_err(|e| anyhow!("failed to parse latest version semver with error: {}", e))
 }
 
-pub fn notify_new_version_inner(current_version: &Version, latest_version: &Version) -> Result<()> {
-    // semver should be ok with lexicographical ordering, right?
+fn version_update_info_inner(current_version: &Version, latest_version: &Version) -> Option<String> {
     if latest_version > current_version {
-        eprintln!("\nYour version of synth is out of date.");
-        eprintln!("The installed version is {} and the latest version is {}.", current_version, latest_version);
+        let out_of_date = "\nYour version of synth is out of date.";
+        let version_compare = format!("The installed version is {} and the latest version is {}.", current_version, latest_version);
         #[cfg(windows)]
-        eprintln!("You can update by downloading from: https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe\n");
+        let install_advice = "You can update by downloading from: https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe";
         #[cfg(not(windows))]
-        eprintln!("You can update by running: curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh -s -- --force\n");
+        let install_advice = "You can update synth by running: curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh -s -- --force";
+
+        let formatted = format!("{}\n{}\n{}\n", out_of_date, version_compare, install_advice);
+        Some(formatted)
+    } else {
+        None
     }
-    Ok(())
 }
 
 

@@ -160,6 +160,7 @@ impl Cli {
     }
 }
 
+
 #[derive(StructOpt)]
 #[structopt(name = "synth", about = "synthetic data engine on the command line")]
 pub enum Args {
