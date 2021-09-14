@@ -13,11 +13,7 @@ pub struct ArrayContent {
 impl ArrayContent {
     pub fn from_content_default_length(content: Content) -> Self {
         Self {
-            length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep {
-                low: 1,
-                high: 2,
-                step: 1,
-            })))),
+            length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep::new(1, 2, 1))))),
             content: Box::new(content),
         }
     }

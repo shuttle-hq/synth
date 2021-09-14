@@ -412,25 +412,13 @@ impl<'r> From<&'r Value> for Content {
             Value::Number(number_value) => {
                 let number_content = if number_value.is_f64() {
                     let value = number_value.as_f64().unwrap();
-                    NumberContent::F64(number_content::F64::Range(RangeStep {
-                        low: value,
-                        high: value + 1.0,
-                        step: 1.,
-                    }))
+                    NumberContent::F64(number_content::F64::Range(RangeStep::new(value, value + 1., 1.)))
                 } else if number_value.is_u64() {
                     let value = number_value.as_u64().unwrap();
-                    NumberContent::U64(number_content::U64::Range(RangeStep {
-                        low: value,
-                        high: value + 1,
-                        step: 1,
-                    }))
+                    NumberContent::U64(number_content::U64::Range(RangeStep::new(value, value + 1, 1)))
                 } else if number_value.is_i64() {
                     let value = number_value.as_i64().unwrap();
-                    NumberContent::I64(number_content::I64::Range(RangeStep {
-                        low: value,
-                        high: value + 1,
-                        step: 1,
-                    }))
+                    NumberContent::I64(number_content::I64::Range(RangeStep::new(value, value + 1, 1)))
                 } else {
                     unreachable!()
                 };

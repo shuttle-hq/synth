@@ -27,7 +27,7 @@ fake = { version = "2.4.1", features = ["http"] }
 rand = "0.8.3"
 chrono = { version = "0.4.18", features = ["serde"] }
 bincode = "1.3.1"
-num = "0.3.1"
+num = { version = "0.4.0", features = [ "rand" ] }
 rand_regex = "0.15.1"
 synth-gen = { path = "../gen", features = [ "shared" ] }
 uuid = { version = "0.8.2", features = ["v4"] }

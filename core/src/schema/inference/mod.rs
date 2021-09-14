@@ -12,7 +12,7 @@ pub use value::ValueMergeStrategy;
 use super::{
     number_content, ArrayContent, BoolContent, Categorical, ChronoValueFormatter, Content,
     DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent, RangeStep,
-    StringContent, ValueKindExt,
+    StringContent, ValueKindExt, CategoricalType
 };
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
@@ -192,36 +192,32 @@ impl MergeStrategy<DateTimeContent, String> for OptionalMergeStrategy {
     }
 }
 
-macro_rules! merge_strategy_for_numbers {
-    (
-	RangeStep for $($num:ty,)+
-    ) => {$(
-	impl MergeStrategy<RangeStep<$num>, $num> for OptionalMergeStrategy {
-	    fn try_merge(self, master: &mut RangeStep<$num>, value: &$num) -> Result<()> {
-		master.low = (*value).min(master.low);
-		master.high = (*value).max(master.high);
-		Ok(())
-	    }
-	}
-    )+};
-    (
-	Categorical for $($num:ty,)*
-    ) => {$(
-	impl MergeStrategy<Categorical<$num>, $num> for OptionalMergeStrategy {
-	    fn try_merge(
-		self,
-		master: &mut Categorical<$num>,
-		value: &$num
-	    ) -> Result<()> {
-		master.push(*value);
-		Ok(())
-	    }
-	}
-    )*}
+impl<N> MergeStrategy<RangeStep<N>, N> for OptionalMergeStrategy
+where
+    N: PartialOrd + Copy
+{
+    fn try_merge(self, master: &mut RangeStep<N>, value: &N) -> Result<()> {
+        let low = master.low.get_or_insert(*value);
+        *low = if *value < *low { *value } else { *low };
+        let high = master.high.get_or_insert(*value);
+        *high = if *value > *high { *value } else { *high };
+        Ok(())
+    }
 }
 
-merge_strategy_for_numbers!(RangeStep for u64, i64, f64, u32, i32, f32,);
-merge_strategy_for_numbers!(Categorical for u64, i64, u32, i32,);
+impl<N> MergeStrategy<Categorical<N>, N> for OptionalMergeStrategy
+where
+    N: Copy + CategoricalType
+{
+    fn try_merge(
+        self,
+        master: &mut Categorical<N>,
+        value: &N
+    ) -> Result<()> {
+        master.push(*value);
+        Ok(())
+    }
+}
 
 impl MergeStrategy<Id, u64> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut Id, candidate: &u64) -> Result<()> {
@@ -528,9 +524,9 @@ pub mod tests {
 
         match master {
             NumberContent::U64(number_content::U64::Range(RangeStep { low, high, step })) => {
-                assert_eq!(low, 0);
-                assert_eq!(high, 15);
-                assert_eq!(step, 1);
+                assert_eq!(low, Some(0));
+                assert_eq!(high, Some(15));
+                assert_eq!(step, Some(1));
             }
             _ => unreachable!(),
         }
@@ -544,9 +540,9 @@ pub mod tests {
 
         match master {
             NumberContent::I64(number_content::I64::Range(RangeStep { low, high, step })) => {
-                assert_eq!(low, -10);
-                assert_eq!(high, 20);
-                assert_eq!(step, 1);
+                assert_eq!(low, Some(-10));
+                assert_eq!(high, Some(20));
+                assert_eq!(step, Some(1));
             }
             _ => unreachable!(),
         }
@@ -560,9 +556,9 @@ pub mod tests {
 
         match master {
             NumberContent::F64(number_content::F64::Range(RangeStep { low, high, step })) => {
-                assert!((low - -13.6).abs() < error_margin);
-                assert!((high - 20.6).abs() < error_margin);
-                assert!((step - 1.).abs() < error_margin);
+                assert!((low.unwrap() - -13.6).abs() < error_margin);
+                assert!((high.unwrap() - 20.6).abs() < error_margin);
+                assert!((step.unwrap() - 1.).abs() < error_margin);
             }
             _ => unreachable!(),
         }
