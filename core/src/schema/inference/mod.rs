@@ -223,7 +223,7 @@ where
 
 impl<N> MergeStrategy<Id<N>, N> for OptionalMergeStrategy where N: PartialOrd + Zero + Copy {
     fn try_merge(self, master: &mut Id<N>, candidate: &N) -> Result<()> {
-        let lower_bound = master.start_at.unwrap_or(N::zero());
+        let lower_bound = master.start_at.unwrap_or_else(N::zero);
         if candidate < &lower_bound {
             *master = Id {
                 start_at: Some(*candidate),
