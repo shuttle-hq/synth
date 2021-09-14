@@ -44,9 +44,17 @@ fn version_semver() -> Result<Version> {
         .map_err(|e| anyhow!("failed to parse current version semver with error: {}", e))
 }
 
+fn has_notified_for_version(version: Version) -> bool {
+    unimplemented!()
+}
+
 pub fn notify_new_version() -> Result<()> {
-    if let Some(version_info) = version_update_info()? {
-        eprintln!("{}", version_info);
+    let (version_info, latest_version) = version_update_info()?;
+    // if this is `Some`, our version is out of date.
+    if let Some(version_info) = version_info {
+        if !has_notified_for_version(latest_version) {
+            eprintln!("{}", version_info);
+        }
     }
     Ok(())
 }
@@ -54,10 +62,10 @@ pub fn notify_new_version() -> Result<()> {
 /// Notify the user if there is a new version of Synth
 /// Even though the error is not meant to be used, it
 /// makes the implementation simpler instead of returning ().
-pub fn version_update_info() -> Result<Option<String>> {
+pub fn version_update_info() -> Result<(Option<String>, Version)> {
     let current_version = crate::utils::version_semver()?;
     let latest_version = latest_version()?;
-    Ok(version_update_info_inner(&current_version, &latest_version))
+    Ok((version_update_info_inner(&current_version, &latest_version), latest_version))
 }
 
 fn latest_version() -> Result<Version> {

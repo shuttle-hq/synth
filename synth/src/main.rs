@@ -6,9 +6,11 @@ use synth::cli::Cli;
 fn version() -> String {
     let current_version = synth::utils::version();
     let version_update_info = synth::utils::version_update_info()
+        .map(|(info, _)| info)
         .unwrap_or_default()
+        .map(|info| format!("\n{}", info))
         .unwrap_or_default();
-    format!("{}\n{}", current_version, version_update_info)
+    format!("{}{}", current_version, version_update_info)
 }
 
 fn setup_args() -> Args {
