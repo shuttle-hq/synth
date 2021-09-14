@@ -6,6 +6,7 @@ use anyhow::Result;
 use serde_json::{Map, Value};
 use reqwest::header::USER_AGENT;
 use std::time::Duration;
+use semver::Version;
 
 include!(concat!(env!("OUT_DIR"), "/meta.rs"));
 
@@ -38,16 +39,21 @@ pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+fn version_semver() -> Result<Version> {
+    Version::parse(&version())
+        .map_err(|e| anyhow!("failed to parse current version semver with error: {}", e))
+}
+
 /// Notify the user if there is a new version of Synth
 /// Even though the error is not meant to be used, it
 /// makes the implementation simpler instead of returning ().
 pub fn notify_new_version() -> Result<()> {
-    let current_version = crate::utils::version();
+    let current_version = crate::utils::version_semver()?;
     let latest_version = latest_version()?;
     notify_new_version_inner(&current_version, &latest_version)
 }
 
-fn latest_version() -> Result<String> {
+fn latest_version() -> Result<Version> {
     let url = "https://api.github.com/repos/getsynth/synth/releases/latest";
     let client = reqwest::blocking::Client::new();
     let response = client
@@ -62,16 +68,17 @@ fn latest_version() -> Result<String> {
     // otherwise these `get` and `as_str` operations are quite safe
     let latest_version = release_info
         .get("name")
-        .ok_or(anyhow!("Could not get the 'name' parameter"))?
+        .ok_or(anyhow!("could not get the 'name' parameter"))?
         .as_str()
         .ok_or(anyhow!("was expecting name to be a string"))?;
 
     // At this point it looks like 'vX.Y.Z'. Here we're removing the `v`
     // Maybe we should use something that doesn't panic?
-    Ok(latest_version[1..].to_string())
+    Version::parse(&latest_version[1..])
+        .map_err(|e| anyhow!("failed to parse latest version semver with error: {}", e))
 }
 
-pub fn notify_new_version_inner(current_version: &str, latest_version: &str) -> Result<()> {
+pub fn notify_new_version_inner(current_version: &Version, latest_version: &Version) -> Result<()> {
     // semver should be ok with lexicographical ordering, right?
     if latest_version > current_version {
         eprintln!("\nYour version of synth is out of date.");
