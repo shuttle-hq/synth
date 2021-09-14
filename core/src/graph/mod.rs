@@ -243,6 +243,27 @@ impl Type<MySql> for Value {
     }
 }
 
+macro_rules! encode_num_arrays {
+    ($n:expr, $arr:expr, $buf:expr; $($variant:ident),*) => {
+        match $n {
+            $(
+            Number::$variant(_) => {
+                let nums = $arr
+                    .iter()
+                    .map(|v| if let Some(Number::$variant(i)) = v.as_number() {
+                        *i
+                    } else { 
+                        panic!("inconsistent array number types")
+                    })
+                    .collect::<Vec<_>>();
+                return nums.encode_by_ref($buf)
+            }
+            ),*
+            _ => ()
+        }
+    }
+}
+
 impl Encode<'_, Postgres> for Value {
     fn encode_by_ref(
         &self,
@@ -275,13 +296,41 @@ impl Encode<'_, Postgres> for Value {
                     ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, Postgres>>::encode_by_ref(ndt, buf),
                     ChronoValue::DateTime(dt) => <DateTime<FixedOffset> as Encode<'_, Postgres>>::encode_by_ref(dt, buf),
                 }
-            }
+            },
             Value::Object(_) => {
                 <serde_json::Value as Encode<'_, Postgres>>::encode(json::synth_val_to_json(self.clone()), buf)
             },
-            Value::Array(arr) => arr.encode_by_ref(buf), //TODO special-case for BYTEA
+            Value::Array(arr) => {
+                if let Some(Value::Number(n)) = arr.first() {
+                    encode_num_arrays!(n, arr, buf; I8, I16, I32, I64, U32);
+                } 
+                arr.encode_by_ref(buf) //TODO: This will likely not work for other array types.
+            }
         }
     }
+
+    fn produces(&self) -> Option<PgTypeInfo> {
+        if let Value::Array(a) = self {
+            if let Value::Number(n) = a.first()? {
+                return Some(match n {
+                    Number::I8(_) => <Vec<i8> as Type<Postgres>>::type_info(),
+                    Number::I16(_) => <Vec<i16> as Type<Postgres>>::type_info(),
+                    Number::I32(_) => <Vec<i32> as Type<Postgres>>::type_info(),
+                    Number::I64(_) => <Vec<i64> as Type<Postgres>>::type_info(),
+                    Number::F32(_) => <Vec<f32> as Type<Postgres>>::type_info(),
+                    Number::F64(_) => <Vec<f64> as Type<Postgres>>::type_info(),
+                    _ => return None
+                })
+            }
+        }
+        None
+    }
+
+    fn size_hint(&self) -> usize {
+        std::mem::size_of_val(self)
+    }
+
+    
 }
 
 impl Encode<'_, MySql> for Value {
