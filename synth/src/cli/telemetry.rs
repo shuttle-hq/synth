@@ -17,15 +17,24 @@ const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
 const EVENT_NAME: &str = "synth-command";
 
 pub(crate) fn enable() -> Result<()> {
-    TelemetryConfig::enable_telemetry()
+    // Initialise the `uuid` if it hasn't been initialised yet.
+    let _ = get_or_initialise_uuid();
+    Ok(config::set_telemetry_enabled(true))
 }
 
 pub(crate) fn disable() -> Result<()> {
-    TelemetryConfig::disable_telemetry()
+    Ok(config::set_telemetry_enabled(false))
 }
 
 pub(crate) fn is_enabled() -> bool {
-    TelemetryConfig::is_enabled()
+    config::get_telemetry_enabled().unwrap_or(false)
+}
+
+fn get_or_initialise_uuid() -> String {
+    if config::get_uuid().is_none() {
+        config::set_uuid(Uuid::new_v4().to_hyphenated().to_string());
+    }
+    config::get_uuid().expect("is ok here as was set earlier")
 }
 
 pub async fn with_telemetry<F, Fut, T, E>(args: Args, func: F) -> Result<T, E>
@@ -49,29 +58,6 @@ where
         .await
         .and_then(|success| client.success(command_name, success))
         .or_else(|err| client.failed(command_name, err))
-}
-
-#[derive(Serialize, Deserialize)]
-struct TelemetryConfig {
-    uuid: String,
-}
-
-impl TelemetryConfig {
-    fn enable_telemetry() -> Result<()> {
-        // Initialise the `uuid` if it hasn't been initialised yet.
-        if config::get_uuid().is_none() {
-            config::set_uuid(Uuid::new_v4().to_hyphenated().to_string());
-        }
-        Ok(config::set_telemetry_enabled(true))
-    }
-
-    fn disable_telemetry() -> Result<()> {
-        Ok(config::set_telemetry_enabled(false))
-    }
-
-    fn is_enabled() -> bool {
-        config::get_telemetry_enabled().unwrap_or(false)
-    }
 }
 
 enum CommandResult {
@@ -103,10 +89,10 @@ impl TelemetryClient {
 
         Self {
             ph_client: posthog_rs::client(API_KEY),
-            uuid: TelemetryConfig::initialise().uuid,
+            uuid: get_or_initialise_uuid(),
             synth_version,
             os,
-            enabled: TelemetryConfig::is_enabled(),
+            enabled: is_enabled(),
         }
     }
 
