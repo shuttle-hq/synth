@@ -453,7 +453,9 @@ pub mod datetime_content {
         format: String,
         #[serde(rename = "subtype")]
         type_: Option<ChronoValueType>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         begin: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         end: Option<String>,
     }
 
