@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
+use std::collections::HashSet;
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(Config::new());
@@ -11,7 +12,7 @@ lazy_static! {
 
 macro_rules! config {
     {
-        $($val_name:ident: $ty:ty => $getter:ident, $setter:ident),*
+        $($val_name:ident: $ty:ty => $getter:ident, $setter:ident)*
     } => {
         /// Note: Fields should only be added to the config.
         /// Also let's assume only a single instance of synth is running
@@ -26,7 +27,9 @@ macro_rules! config {
         $(
         #[allow(dead_code)]
         pub fn $setter($val_name: $ty) {
-            CONFIG.lock().unwrap().$val_name = Some($val_name);
+            let mut config = CONFIG.lock().unwrap();
+            config.$val_name = Some($val_name);
+            config.save();
         }
         #[allow(dead_code)]
         pub fn $getter() -> Option<$ty> {
@@ -38,26 +41,9 @@ macro_rules! config {
 }
 
 config! {
-    uuid: String => get_uuid, set_uuid,
+    uuid: String => get_uuid, set_uuid
     telemetry_enabled: bool => get_telemetry_enabled, set_telemetry_enabled
-}
-
-impl Drop for Config {
-    fn drop(&mut self) {
-        // There are way too many unwraps here.
-        // Create config dir if it doesn't exist
-        let config_dir = Self::synth_config_dir().unwrap();
-        if !config_dir.exists() {
-            std::fs::create_dir_all(&config_dir).unwrap();
-        }
-        // Save the config
-        let mut config_file_path = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(Self::file_path().unwrap())
-            .unwrap();
-        serde_json::to_writer_pretty(&mut config_file_path, &self).unwrap()
-    }
+    seen_versions: HashSet<String> => get_seen_versions, set_seen_versions
 }
 
 impl Config {
@@ -81,5 +67,21 @@ impl Config {
                 anyhow!("Could not find a configuration directory. Your operating system may not be supported.")
             })?;
         Ok(synth_config_dir.join("synth"))
+    }
+
+    fn save(&self) {
+        // There are way too many unwraps here.
+        // Create config dir if it doesn't exist
+        let config_dir = Self::synth_config_dir().unwrap();
+        if !config_dir.exists() {
+            std::fs::create_dir_all(&config_dir).unwrap();
+        }
+        // Save the config
+        let mut config_file_path = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(Self::file_path().unwrap())
+            .unwrap();
+        serde_json::to_writer_pretty(&mut config_file_path, &self).unwrap();
     }
 }

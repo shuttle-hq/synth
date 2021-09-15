@@ -7,6 +7,8 @@ use semver::Version;
 use serde_json::map::Map;
 use serde_json::value::Value;
 use reqwest::header::USER_AGENT;
+use crate::cli::config;
+
 
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -18,7 +20,17 @@ fn version_semver() -> Result<Version> {
 }
 
 fn has_notified_for_version(version: Version) -> bool {
-    unimplemented!()
+    // If no versions have been seen yet, default to empty map.
+    let mut seen_versions = config::get_seen_versions().unwrap_or_default();
+    let version_as_string = version.to_string();
+
+    // If the set did not have this value present, true is returned.
+    let has_notified = !seen_versions.insert(version_as_string);
+
+    // save seen versions
+    config::set_seen_versions(seen_versions);
+
+    has_notified
 }
 
 pub fn notify_new_version() -> Result<()> {
