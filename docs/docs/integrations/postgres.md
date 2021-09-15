@@ -157,7 +157,7 @@ will generate as much data as required, then open a connection to your database,
 and then perform batch insert to quickly insert as much data as you need.
 
 `synth` will also respect primary key and foreign key constraints, by performing
-a [topologoical sort](https://en.wikipedia.org/wiki/Topological_sorting) on the
+a [topological sort](https://en.wikipedia.org/wiki/Topological_sorting) on the
 data and inserting it in the right order such that no constraints are violated.
 
 ### Example Generation Command
