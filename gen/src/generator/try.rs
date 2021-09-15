@@ -59,6 +59,15 @@ pub trait TryGenerator {
     }
 
     fn try_next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return>;
+
+    fn try_complete<R: Rng>(&mut self, rng: &mut R) -> Self::Return {
+        loop {
+            match self.try_next(rng) {
+                GeneratorState::Yielded(_) => continue,
+                GeneratorState::Complete(r) => return r
+            }
+        }
+    }
 }
 
 pub trait FallibleGenerator {
@@ -156,6 +165,13 @@ where
         }
     }
 
+    fn try_yield(self) -> TryYield<Self> {
+        TryYield {
+            inner: self,
+            yielded: None
+        }
+    }
+
     fn map_ok<F, O>(self, f: F) -> MapOk<Self, F, O>
     where
         F: Fn(Self::Ok) -> O,
@@ -244,6 +260,36 @@ where
                     Err(err) => GeneratorState::Complete(Err(err)),
                     Ok(_) => unreachable!(),
                 },
+            }
+        }
+    }
+}
+
+pub struct TryYield<G: TryGenerator> {
+    inner: G,
+    yielded: Option<G::Ok>
+}
+
+impl<G> Generator for TryYield<G>
+where
+    G: TryGenerator,
+    G::Ok: Clone
+{
+    type Yield = G::Ok;
+    type Return = G::Return;
+
+    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+        if let Some(yielded) = std::mem::replace(&mut self.yielded, None) {
+            return GeneratorState::Complete(Self::Return::from_ok(yielded))
+        }
+
+        match self.inner.try_complete(rng).into_result() {
+            Ok(ret) => {
+                self.yielded = Some(ret.clone());
+                GeneratorState::Yielded(ret)
+            },
+            Err(err) => {
+                GeneratorState::Complete(Self::Return::from_err(err))
             }
         }
     }

@@ -32,7 +32,7 @@ impl State {
         // Build the generator graph
         let mut graph = NamespaceCompiler::new_flat(&body).compile()?;
         if let Some(size) = size {
-            let size = Graph::Number(RandomU64::constant(size).into());
+            let size = Graph::Number(RandomU64::constant(size).into()).into_size();
             graph = Graph::Array(ArrayNode::new_with(size, graph));
         }
 

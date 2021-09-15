@@ -29,7 +29,7 @@ impl Generator for RandomArray {
 }
 
 type ArrayNodeInner =
-    AndThenTry<OwnedDevaluize<Box<Graph>, u64>, Box<dyn Fn(u64) -> RandomArray>, RandomArray>;
+    AndThenTry<SizeGenerator, Box<dyn Fn(u64) -> RandomArray>, RandomArray>;
 
 derive_generator! {
     yield Token,
@@ -38,10 +38,7 @@ derive_generator! {
 }
 
 impl ArrayNode {
-    pub fn new_with(len: Graph, content: Graph) -> Self {
-        let len: OwnedDevaluize<Box<Graph>, u64> = Box::new(len)
-            .map_complete(number_from_ok::<u64> as fn(Result<Value, Error>) -> Result<u64, Error>)
-            .exhaust();
+    pub fn new_with(len: SizeGenerator, content: Graph) -> Self {
         let content = Rc::new(RefCell::new(content));
         let closure: Box<dyn Fn(u64) -> RandomArray> =
             Box::new(move |length| RandomArray::with_length(length, content.clone()));

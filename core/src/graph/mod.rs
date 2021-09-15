@@ -109,6 +109,10 @@ pub type Devaluize<G, T> =
 
 pub type OwnedDevaluize<G, T> = Exhaust<Devaluize<G, T>>;
 
+pub type StringGenerator = OwnedDevaluize<Box<Graph>, String>;
+
+pub type SizeGenerator = OwnedDevaluize<Box<Graph>, u64>;
+
 pub type OnceInfallible<G> = TryOnce<Infallible<G, Error>>;
 
 macro_rules! derive_from {
@@ -181,8 +185,20 @@ where
 {
     value.and_then(|v| v.try_into()).and_then(|n: Number| {
         n.try_into().map_err(|err| {
-            failed_crate!(target: Release, "could not convert from '{}': {}", n, err)
+            failed_crate!(target: Release, "could not convert from value '{}': {}", n, err)
         })
+    })
+}
+
+pub fn string_from_ok(value: Result<Value, Error>) -> Result<String, Error>
+{
+    value.and_then(|n| {
+        match n {
+            Value::String(s) => Ok(s),
+            otherwise => Err(
+                failed_crate!(target: Release, "could not get a string from a value '{}'", otherwise)
+            )
+        }
     })
 }
 
@@ -532,6 +548,20 @@ derive_generator!(
     }
 );
 
+impl Graph {
+    pub fn into_string(self) -> StringGenerator {
+        Box::new(self)
+            .map_complete(string_from_ok as fn(Result<Value, Error>) -> Result<String, Error>)
+            .exhaust()
+    }
+
+    pub fn into_size(self) -> SizeGenerator {
+        Box::new(self)
+            .map_complete(number_from_ok::<u64> as fn(Result<Value, Error>) -> Result<u64, Error>)
+            .exhaust()
+    }
+}
+
 pub type BoxedGraph = Box<Graph>;
 
 impl Generator for Box<Graph> {
@@ -643,7 +673,15 @@ pub mod tests {
                                 "type": "string",
                                 "pattern": "[a-zA-Z0-9]{0, 255}"
                             },
-                            "length": 5
+                            "length": {
+                                "type": "number",
+                                "subtype": "u64",
+                                "range": {
+                                    "low": 2,
+                                    "high": 6,
+                                    "step": 1
+                                }
+                            }
                         }
                     },
                     "bank_country": {

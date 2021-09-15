@@ -851,7 +851,7 @@ The `truncated` generator truncates the output of it's inner generator to a fixe
 If the output of its inner generator is less than or equal to the length, it is left untouched. 
 
 `truncated` has 2 fields,
-- `length`: The number of characters to truncate to.
+- `length`: The number of characters to truncate to. This can be any Synth generator that yields a non-negative Number.
 - `content`: The content to be truncated. This can be any Synth generator that yields a String.
 
 #### Example
