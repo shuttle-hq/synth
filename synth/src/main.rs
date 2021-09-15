@@ -4,8 +4,8 @@ use synth::cli::Args;
 use synth::cli::Cli;
 
 fn version() -> String {
-    let current_version = synth::utils::version();
-    let version_update_info = synth::utils::version_update_info()
+    let current_version = synth::version::version();
+    let version_update_info = synth::version::version_update_info()
         .map(|(info, _)| info)
         .unwrap_or_default()
         .map(|info| format!("\n{}", info))
@@ -29,13 +29,13 @@ async fn main() -> Result<()> {
     let cli = Cli::new()?;
 
     #[cfg(feature = "telemetry")]
-        synth::cli::telemetry::with_telemetry(args, |args| cli.run(args)).await?;
+    synth::cli::telemetry::with_telemetry(args, |args| cli.run(args)).await?;
 
     #[cfg(not(feature = "telemetry"))]
-        cli.run(args).await?;
+    cli.run(args).await?;
 
     // Result ignored as this should fail silently
-    let _ = synth::utils::notify_new_version();
+    let _ = synth::version::notify_new_version();
 
     Ok(())
 }

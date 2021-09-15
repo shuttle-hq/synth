@@ -24,6 +24,7 @@ use synth_core::{Name, graph::json};
 
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
+mod config;
 
 pub struct Cli {
     store: Store
