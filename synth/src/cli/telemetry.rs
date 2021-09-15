@@ -1,4 +1,9 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use backtrace::Backtrace;
+use serde::{Deserialize, Serialize};
+
+use std::io::{self, BufRead, Read, Write};
+use std::panic::{self, PanicInfo};
 use std::collections::HashMap;
 use std::future::Future;
 use std::error::Error;
@@ -12,6 +17,46 @@ use super::{Args, TelemetryCommand};
 
 const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
 const EVENT_NAME: &str = "synth-command";
+
+fn panic_hook(_: &PanicInfo) {
+    let (stdin, stdout) = (io::stdin(), io::stdout());
+    let (mut stdin, mut stdout) = (stdin.lock(), stdout.lock());
+    let mut username = String::new();
+    let mut email = None;
+
+    println!("Synth panicked!");
+    print!("What should we call you? ");
+    stdout.flush().unwrap();
+
+    stdin.read_line(&mut username).expect("Couldn't read username.");
+    let username = username.trim();
+
+    print!("Would you like to send us your e-mail? [y/n] ");
+    stdout.flush().unwrap();
+
+    // Newline character is also stored
+    let mut answer = [0; 2];
+    stdin.read_exact(&mut answer).expect("Couldn't read answer.");
+
+    if answer[0] == b'y' {
+        print!("What's your e-mail? ");
+        stdout.flush().unwrap();
+
+        let email = email.insert(String::new());
+        stdin.read_line(email).expect("Couldn't read e-mail.");
+        // Remove newline character
+        email.pop();
+    }
+    
+    let backtrace = Backtrace::new();
+
+    eprintln!("username = {:?}", username);
+    eprintln!("email = {:?}", email);
+    eprintln!("backtrace = {:?}", backtrace);
+    
+    // let client = TelemetryClient::new();
+    // let _ = client.send("Synth panicked", CommandResult::Failed);
+}
 
 pub(crate) fn enable() -> Result<()> {
     // Initialise the `uuid` if it hasn't been initialised yet.
@@ -40,6 +85,9 @@ where
     Fut: Future<Output = Result<T, E>>,
     E: AsRef<dyn Error + 'static>
 {
+    panic::set_hook(Box::new(panic_hook));
+    panic!();
+
     let client = TelemetryClient::new();
 
     let command_name = match &args {
