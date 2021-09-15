@@ -10,9 +10,9 @@ The Synth PostgreSQL integration is currently **in beta**.
 
 ## Usage
 
-`synth` can use [PostgreSQL](TODO) as a data source or sink. Connecting `synth`
-to a PostgreSQL is as simple as specifying a URI during the `import`
-or `generate`
+`synth` can use [PostgreSQL](https://www.postgresql.org/) as a data source or
+sink. Connecting `synth` to a PostgreSQL is as simple as specifying a URI during
+the `import` or `generate`
 phase.
 
 ### URI format
@@ -23,67 +23,145 @@ postgres://<username>:<password>@<host>:<port>/<schema>
 
 ## Import
 
-`synth` can import directly from a [PostgreSQL](TODO) database and create a data
-model from the database schema. During import, a new [namespace](TODO) will be
-created from your database schema, and a [collection](TODO) is created for each
-table in a separate JSON file. `synth` will map database columns to fields 
-in the collections it creates. It then provides default generators for every 
-collection (see [Type Mapping](TODO) below).
+`synth` can import directly from a [PostgreSQL](https://www.postgresql.org/)
+database and create a data model from the database schema. During import, a
+new [namespace](../getting_started/core-concepts#namespaces)
+will be created from your database schema, and
+a [collection](../getting_started/core-concepts#collections) is created for each
+table in a separate JSON file. `synth` will map database columns to fields in
+the collections it creates. It then provides default generators for every
+collection.
 
-`synth` will automatically detect things like
-[primary key](TODO) and [foreign key](TODO) constraints at import time and 
-update the namespace and
-collection to reflect them. Other constraints such as field nullability or
-maximum size for [VARCHAR](TODO) fields are also detected automatically.
+`synth` will automatically detect primary key and foreign key constraints at
+import time and update the namespace and collection to reflect them. **Primary
+keys** get mapped to `synth`'s [id](../content/number#id)
+generator, and **foreign keys** get mapped to the [same_as](../content/same-as.md)
+generator.
 
 Finally `synth` will sample data randomly from every table in order to create a
-more realistic data model by doing things like trying to infer bounds on number
-ranges.
+more realistic data model by automatically inferring bounds on types.
 
+`synth` has its own internal data model, and so does Postgres, therefore a
+conversion occurs between `synth` types and Postgres types. The inferred type
+can be seen below. The synth types link to default generator *variant*
+generated during the `import` process for that PostgreSQL type.
+
+Note, not all PostgreSQL types have been covered yet. If there is a type you
+need, [open an issue](https://github.com/getsynth/synth/issues/new?assignees=&labels=New+feature&template=feature_request.md&title=)
+on Github.
+
+<!---
+table formatter: https://codebeautify.org/markdown-formatter
+-->
+
+| PostgreSQL Type | Synth Type                                              |
+| --------------- | ------------------------------------------------------- |
+| Null \| T       | [one_of](../content/one-of)<[null](../content/null), T> |
+| boolean         | [bool](../content/bool#frequency)                       |
+| char            | [string](../content/string#pattern)                     |
+| varchar(x)      | [string](../content/string#pattern)                     |
+| text            | [string](../content/string#pattern)                     |
+| bpchar(x)       | [string](../content/string#pattern)                     |
+| name            | [string](../content/string#pattern)                     |
+| int2            | [i64](../content/number#range)                          |
+| int4            | [i32](../content/number#range)                          |
+| int8            | [i64](../content/number#range)                          |
+| float4          | [f32](../content/number#range)                          |
+| float8          | [f64](../content/number#range)                          |
+| numeric         | [f64](../content/number#range)                          |
+| timestamptz     | [date_time](../content/string#date_time)                |
+| timestamp       | [naive_date_time](../content/string#date_time)          |
+| date            | [naive_date](../content/string#date_time)               |
+| uuid            | [string](../content/string#uuid)                        |
+
+### Example Import
+
+Below is an example import for a single table.
+
+Postgres table definition:
+```sql
+create table doctors
+(
+    id          int primary key,
+    hospital_id int not null, 
+    name        varchar(255) not null,
+    date_joined date,
+    constraint hospital_fk
+    	foreign key(hospital_id)
+    		references hospitals(id)
+);
+```
+
+And the corresponding `synth` collection:
+```json
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "low": 0,
+      "high": 2,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "date_joined": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "string",
+          "date_time": {
+            "format": "%Y-%m-%d",
+            "subtype": "naive_date",
+            "begin": null,
+            "end": null
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "hospital_id": {
+      "type": "same_as",
+      "ref": "hospitals.content.id"
+    },
+    "id": {
+      "type": "number",
+      "id": {},
+      "subtype": "u64"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 255}"
+    }
+  }
+
+```
 ### Example Import Command
 
 ```bash
 synth import --from postgres://user:pass@localhost:5432/postgres my_namespace 
 ```
 
+### Example
+
 ## Generate
 
 `synth` can generate data directly into your PostgreSQL database. First `synth`
-will generate as much data as require, then open a connection to your database,
+will generate as much data as required, then open a connection to your database,
 and then perform batch insert to quickly insert as much data as you need.
 
 `synth` will also respect primary key and foreign key constraints, by performing
-a [topologoical sort](TODO_wikipedia) on the data and inserting it in the right
-order such that no constraints are violated.
+a [topologoical sort](https://en.wikipedia.org/wiki/Topological_sorting) on the
+data and inserting it in the right order such that no constraints are violated.
 
 ### Example Generation Command
 
 ```bash
 synth generate --to postgres://user:pass@localhost:5432/ my_namespace
 ```
-
-## Type Mapping
-
-`synth` has its own internal data model, and so does Postgres, therefore a
-conversion occurs between `synth` types and Postgres types. Not we haven't
-exhaustively covered all Postgres Types yet.
-
-| PostgreSQL Type | Synth Type      | Default Generator |
-|-----------------|-----------------|-------------------|
-| Null            | Null            | NullContent        | // Can you even have a Null Column type?
-| boolean         | Bool            | BoolContent        |
-| char            | String          | StringContent::Pattern([a-zA-Z0-9]{0, 1})|
-| varchar(x)      | String          | StringContent::Pattern([a-zA-Z0-9]{0, x})|
-| text            | String          | StringContent::Pattern([a-zA-Z0-9]{0, 1})|
-| bpchar(x)       | String          | StringContent::Pattern([a-zA-Z0-9]{0, x})|
-| name            | String          | StringContent::Pattern([a-zA-Z0-9]{0, 1})|
-| int2             | Number::I64     | NumberContent::I64::Range| //todo this is wrong in the implementation
-| int4             | Number::I32     | NumberContent::I32::Range|
-| int8             | Number::I64     | NumberContent::I64::Range|
-| float4             | Number::F32     | NumberContent::F32::Range|
-| float8             | Number::F64     | NumberContent::F64::Range|
-| numeric             | Number::F64     | NumberContent::F64::Range|
-| timestamptz             | ChronoValue::DateTime     | StringContent::DateTime::DateTime|
-| timestamp             | ChronoValue::NaiveDateTime     | StringContent::DateTime::NaiveDateTime|
-| date             | ChronoValue::NaiveDate     | StringContent::DateTime::NaiveDate|
-| uuid             | String     | StringContent::Uuid|
