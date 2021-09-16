@@ -1,6 +1,6 @@
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
-use crate::sampler::Sampler;
+use crate::sampler::{Sampler, SamplerOutput};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use mongodb::bson::Bson;
@@ -170,28 +170,19 @@ impl ExportStrategy for MongoExportStrategy {
     fn export(self, params: ExportParams) -> Result<()> {
         let mut client = Client::with_uri_str(&self.uri)?;
         let sampler = Sampler::try_from(&params.namespace)?;
-        let values =
+        let output =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-        match values {
-            Value::Array(collection_json) => {
-                self.insert_data(params.collection_name.unwrap().to_string(), &collection_json, &mut client)
+        match output {
+            SamplerOutput::Collection(values) => {
+                self.insert_data(params.collection_name.unwrap().to_string(), &values, &mut client)
             }
-            Value::Object(namespace_json) => {
-                for (collection_name, collection_json) in namespace_json {
-                    self.insert_data(
-                        collection_name,
-                        collection_json
-                            .as_array()
-                            .expect("This is always a collection (sampler contract)"),
-                        &mut client,
-                    )?;
+            SamplerOutput::Namespace(namespace) => {
+                for (name, values) in namespace {
+                    self.insert_data(name, &values, &mut client)?;
                 }
                 Ok(())
             }
-            _ => unreachable!(
-                "The sampler will never generate a value which is not an array or object (sampler contract)"
-            ),
         }
     }
 }

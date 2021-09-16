@@ -14,7 +14,7 @@ pub use crate::value::{
 };
 pub use crate::{
     FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, GeneratorResult,
-    TryGenerator, TryGeneratorExt,
+    TryGenerator, TryGeneratorExt, GeneratorOutput
 };
 
 pub use rand::Rng;

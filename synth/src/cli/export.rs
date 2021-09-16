@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
 use crate::datasource::DataSource;
-use crate::sampler::Sampler;
+use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
 
@@ -85,23 +85,15 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
     match values {
-        Value::Array(collection) => {
+        SamplerOutput::Collection(collection) => {
             insert_data(datasource, params.collection_name.unwrap().to_string(), &collection)
         }
-        Value::Object(namespace_json) => {
-            let names = params.namespace.topo_sort()?.into_iter().map(|name| name.to_string());
-            for n in names {
-                let collection = namespace_json.get(&n.to_string())
-                    .expect("did not find Value for name")
-                    .as_array()
-                    .expect("This is always a collection (sampler contract)");
-                insert_data(datasource, n.to_string().clone(), collection)?;
+        SamplerOutput::Namespace(namespace) => {
+            for (name, collection) in namespace {
+                insert_data(datasource, name, &collection)?;
             };
             Ok(())
         }
-        _ => bail!(
-            "The sampler will never generate a value which is not an array or object (sampler contract)"
-        ),
     }
 }
 

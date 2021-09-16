@@ -43,15 +43,15 @@ pub use categorical::{Categorical, CategoricalType};
 pub use number::Id;
 pub mod prelude;
 
-pub(crate) mod series;
+pub mod series;
+pub use series::SeriesContent;
 
 pub mod unique;
 pub use unique::{UniqueAlgorithm, UniqueContent};
 
 use prelude::*;
 
-use super::FieldRef;
-use crate::schema::content::series::SeriesContent;
+use super::{FieldRef, Namespace};
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -278,6 +278,19 @@ impl Content {
             })
         } else {
             self
+        }
+    }
+
+    pub fn into_namespace(self) -> Result<Namespace> {
+        match self {
+            Content::Object(ObjectContent { fields, .. }) => {
+                let mut namespace = Namespace::new();
+                for (key, content) in fields.into_iter() {
+                    namespace.put_collection(&key.parse()?, content)?;
+                }
+                Ok(namespace)
+            },
+            _ => Err(anyhow!("cannot convert a non-object content to a namespace"))
         }
     }
 
@@ -546,7 +559,7 @@ pub mod tests {
     use super::*;
 
     lazy_static! {
-        pub static ref USER_SCHEMA: Content = from_json!({
+        pub static ref USER_SCHEMA: Content = schema!({
             "type": "object",
             "skip_when_null": true,
             "user_id": {
@@ -627,6 +640,7 @@ pub mod tests {
                 }
             }
         });
+
         static ref USER: serde_json::Value = json!({
             "user_id" : 123,
             "type": "user",
@@ -700,7 +714,7 @@ pub mod tests {
 
     macro_rules! assert_idempotent {
 	($($inner:tt)*) => {
-	    let in_: DateTimeContent = from_json!($($inner)*);
+	    let in_: DateTimeContent = serde_json::from_value(json!($($inner)*)).unwrap();
 	    let out = serde_json::to_string(&in_).unwrap();
 	    assert_eq!(serde_json::from_str::<'_, DateTimeContent>(&out).unwrap(), in_);
 	}

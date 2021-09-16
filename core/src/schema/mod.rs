@@ -10,18 +10,6 @@ use serde::{
 };
 use serde_json::Value as JsonValue;
 
-#[allow(unused_macros)]
-macro_rules! from_json {
-    {
-	$($inner:tt)*
-    } => {
-	{
-	    let as_value = serde_json::json!( $($inner)* );
-	    serde_json::from_value(as_value).unwrap()
-	}
-    }
-}
-
 use crate::error::Error;
 
 pub mod inference;

@@ -11,6 +11,7 @@ pub enum UniqueAlgorithm {
     Hash { retries: Option<usize> },
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for UniqueAlgorithm {
     fn default() -> Self {
         Self::Hash { retries: None }

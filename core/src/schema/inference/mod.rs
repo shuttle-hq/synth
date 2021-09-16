@@ -512,14 +512,14 @@ pub mod tests {
 
     #[test]
     fn merge_numbers() {
-        let mut master: NumberContent = from_json!({
+        let mut master: NumberContent = serde_json::from_value(json!({
             "subtype": "u64",
             "range": {
             "low": 0,
             "high": 10,
             "step": 1
             }
-        });
+        })).unwrap();
         let error_margin = f64::EPSILON;
 
         OptionalMergeStrategy

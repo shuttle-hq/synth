@@ -1,5 +1,5 @@
 use crate::graph::prelude::{
-    Error, Generator, GeneratorState, Rng, Token, TryFilterMap, TryGeneratorExt, Value,
+    Error, Rng, Token, TryFilterMap, TryGeneratorExt, Value,
 };
 use crate::Graph;
 

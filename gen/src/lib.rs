@@ -68,31 +68,7 @@ pub enum GeneratorState<Y, R> {
     Complete(R),
 }
 
-/*
-impl<Y, R> std::ops::Try for GeneratorState<Y, R>
-where
-    R: std::ops::Try
-{
-    type Ok = R::Ok;
-
-    type Error = R::Error;
-
-    fn into_result(self) -> Result<Self::Ok, Self::Error> {
-        match self {
-        GeneratorState::Complete(r) => r.into_result(),
-        GeneratorState::Yielded(_) => todo!()
-    }
-    }
-
-    fn from_error(v: Self::Error) -> Self {
-        Self::Complete(R::from_error(v))
-    }
-
-    fn from_ok(v: Self::Ok) -> Self {
-        Self::Complete(R::from_ok(v))
-    }
-}
-*/
+pub type GeneratorOutput<G: Generator> = GeneratorState<G::Yield, G::Return>;
 
 impl<Y, R> GeneratorState<Y, R> {
     pub fn is_yielded(&self) -> bool {
