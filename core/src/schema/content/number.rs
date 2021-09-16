@@ -211,8 +211,11 @@ impl NumberContent {
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct RangeStep<N> {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub low: Option<N>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub high: Option<N>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub step: Option<N>,
     #[serde(skip_serializing_if = "std::clone::Clone::clone")]
     pub include_low: bool,
