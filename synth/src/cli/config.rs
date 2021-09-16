@@ -2,6 +2,8 @@ use anyhow::Result;
 use std::sync::{Mutex};
 use lazy_static::lazy_static;
 use std::collections::HashSet;
+use std::path::PathBuf;
+use serde::{Serialize, Deserialize};
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(Config::new());

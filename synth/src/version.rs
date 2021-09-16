@@ -67,9 +67,9 @@ fn latest_version() -> Result<Version> {
     // otherwise these `get` and `as_str` operations are quite safe
     let latest_version = release_info
         .get("name")
-        .ok_or(anyhow!("could not get the 'name' parameter"))?
+        .ok_or_else(|| anyhow!("could not get the 'name' parameter"))?
         .as_str()
-        .ok_or(anyhow!("was expecting name to be a string"))?;
+        .ok_or_else(|| anyhow!("was expecting name to be a string"))?;
 
     // At this point it looks like 'vX.Y.Z'. Here we're removing the `v`
     // Maybe we should use something that doesn't panic?
