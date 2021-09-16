@@ -214,7 +214,9 @@ pub struct RangeStep<N> {
     pub low: Option<N>,
     pub high: Option<N>,
     pub step: Option<N>,
+    #[serde(skip_serializing_if = "std::clone::Clone::clone")]
     pub include_low: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub include_high: bool
 }
 
