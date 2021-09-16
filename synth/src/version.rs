@@ -9,6 +9,40 @@ use serde_json::value::Value;
 use reqwest::header::USER_AGENT;
 use crate::cli::config;
 
+/// This is used when the user does `synth version`.
+/// It will always display a new version if it exists.
+pub fn print_version_message() {
+    let current_version = version();
+    let version_update_info = version_update_info()
+        .map(|(info, _)| info)
+        .unwrap_or_default()
+        .map(|info| format!("\n{}", info))
+        .unwrap_or_default();
+    println!("synth {}{}", current_version, version_update_info);
+}
+
+// This is used when the user runs any command (except for version)
+// If a new version is seen, it is notified once and then stored in
+// config.
+pub fn notify_new_version() -> Result<()> {
+    let (version_info, latest_version) = version_update_info()?;
+    // if this is `Some`, our version is out of date.
+    if let Some(version_info) = version_info {
+        if !has_notified_for_version(latest_version) {
+            eprintln!("{}", version_info);
+        }
+    }
+    Ok(())
+}
+
+/// Notify the user if there is a new version of Synth
+/// Even though the error is not meant to be used, it
+/// makes the implementation simpler instead of returning ().
+pub fn version_update_info() -> Result<(Option<String>, Version)> {
+    let current_version = version_semver();
+    let latest_version = latest_version()?;
+    Ok((version_update_info_inner(&current_version, &latest_version), latest_version))
+}
 
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -30,26 +64,6 @@ fn has_notified_for_version(version: Version) -> bool {
     config::set_seen_versions(seen_versions);
 
     has_notified
-}
-
-pub fn notify_new_version() -> Result<()> {
-    let (version_info, latest_version) = version_update_info()?;
-    // if this is `Some`, our version is out of date.
-    if let Some(version_info) = version_info {
-        if !has_notified_for_version(latest_version) {
-            eprintln!("{}", version_info);
-        }
-    }
-    Ok(())
-}
-
-/// Notify the user if there is a new version of Synth
-/// Even though the error is not meant to be used, it
-/// makes the implementation simpler instead of returning ().
-pub fn version_update_info() -> Result<(Option<String>, Version)> {
-    let current_version = version_semver();
-    let latest_version = latest_version()?;
-    Ok((version_update_info_inner(&current_version, &latest_version), latest_version))
 }
 
 fn latest_version() -> Result<Version> {

@@ -17,10 +17,13 @@ use anyhow::{Context, Result};
 
 use std::path::PathBuf;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 
 use rand::RngCore;
 
 use synth_core::{Name, graph::json};
+use crate::version::print_version_message;
+use std::process::exit;
 
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
@@ -83,6 +86,11 @@ impl Cli {
             } => self.import(namespace.clone(), collection.clone(), from.clone()),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
+            Args::Version => {
+                print_version_message();
+                // Exiting so we don't get the message twice
+                exit(0);
+            }
         }
     }
 
@@ -163,7 +171,11 @@ impl Cli {
 
 
 #[derive(StructOpt)]
-#[structopt(name = "synth", about = "synthetic data engine on the command line")]
+#[structopt(
+    name = "synth",
+    about = "synthetic data engine on the command line",
+    no_version,
+    global_settings = &[AppSettings::DisableVersion])]
 pub enum Args {
     #[structopt(about = "(DEPRECATED). For backward compatibility and is a no-op.")]
     Init {
@@ -217,6 +229,8 @@ pub enum Args {
     #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]
     Telemetry(TelemetryCommand),
+    #[structopt(about = "Version information")]
+    Version
 }
 
 #[cfg(feature = "telemetry")]
