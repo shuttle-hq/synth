@@ -56,9 +56,13 @@ impl Sampler {
 impl TryFrom<&Namespace> for Sampler {
     type Error = anyhow::Error;
     fn try_from(namespace: &Namespace) -> Result<Self> {
-        Ok(Self {
-            graph: Graph::from_namespace(namespace)?,
-        })
+        if namespace.is_empty() {
+            Err(anyhow!("cannot sample from an empty namespace, try creating a collection in the namespace to start generating data."))
+        } else {
+            Ok(Self {
+                graph: Graph::from_namespace(namespace)?,
+            })
+        }
     }
 }
 
