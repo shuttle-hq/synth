@@ -20,7 +20,8 @@ use synth_core::{Content, Value};
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
-    single_thread_pool: Pool<Postgres>
+    single_thread_pool: Pool<Postgres>,
+    schema: Option<String>
 }
 
 #[async_trait]
@@ -42,7 +43,8 @@ impl DataSource for PostgresDataSource {
 
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
-                single_thread_pool
+                single_thread_pool,
+                schema: Some("inner_main".to_string()) // TODO
             })
         })
     }
@@ -66,6 +68,24 @@ impl RelationalDataSource for PostgresDataSource {
         let result = query.execute(&self.pool).await?;
 
         Ok(result)
+    }
+
+    async fn set_schema(&self) -> Result<()> {
+        if let Some(schema) = self.schema.clone() {
+            // let query = "SET search_path = $1";
+            //
+            // sqlx::query(query)
+            //     .bind(schema)
+            //     .execute(&self.single_thread_pool)
+            //     .await?;
+
+            let query = format!("SET search_path = {}", schema);
+
+            sqlx::query(&query)
+                .execute(&self.single_thread_pool)
+                .await?;
+        }
+        Ok(())
     }
 
     async fn get_table_names(&self) -> Result<Vec<String>> {
