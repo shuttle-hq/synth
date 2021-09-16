@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[53],{122:function(s){s.exports=JSON.parse('{"allTagsPath":"/synth/blog/tags","slug":"schema","name":"schema","count":1,"permalink":"/synth/blog/tags/schema"}')}}]);
