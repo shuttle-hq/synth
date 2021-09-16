@@ -14,9 +14,8 @@ pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
-fn version_semver() -> Result<Version> {
-    Version::parse(&version())
-        .map_err(|e| anyhow!("failed to parse current version semver with error: {}", e))
+fn version_semver() -> Version {
+    Version::parse(&version()).unwrap()
 }
 
 fn has_notified_for_version(version: Version) -> bool {
@@ -48,7 +47,7 @@ pub fn notify_new_version() -> Result<()> {
 /// Even though the error is not meant to be used, it
 /// makes the implementation simpler instead of returning ().
 pub fn version_update_info() -> Result<(Option<String>, Version)> {
-    let current_version = version_semver()?;
+    let current_version = version_semver();
     let latest_version = latest_version()?;
     Ok((version_update_info_inner(&current_version, &latest_version), latest_version))
 }
