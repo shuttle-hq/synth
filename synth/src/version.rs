@@ -24,15 +24,16 @@ pub fn print_version_message() {
 // This is used when the user runs any command (except for version)
 // If a new version is seen, it is notified once and then stored in
 // config.
-pub fn notify_new_version() -> Result<()> {
+pub fn notify_new_version_message() -> Result<Option<String>> {
     let (version_info, latest_version) = version_update_info()?;
+    let mut ret = None;
     // if this is `Some`, our version is out of date.
     if let Some(version_info) = version_info {
         if !has_notified_for_version(latest_version) {
-            eprintln!("{}", version_info);
+            ret = Some(version_info);
         }
     }
-    Ok(())
+    Ok(ret)
 }
 
 /// Notify the user if there is a new version of Synth
@@ -45,7 +46,8 @@ pub fn version_update_info() -> Result<(Option<String>, Version)> {
 }
 
 pub fn version() -> String {
-    env!("CARGO_PKG_VERSION").to_string()
+    // env!("CARGO_PKG_VERSION").to_string()
+    "0.5.3".to_string()
 }
 
 fn version_semver() -> Version {
