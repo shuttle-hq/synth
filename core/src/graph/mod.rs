@@ -75,7 +75,7 @@ pub use string::{
 };
 
 pub mod number;
-pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, StandardIntRangeStep};
+pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, StandardIntRangeStep, StandardFloatRangeStep};
 
 pub mod boolean;
 pub use boolean::{BoolNode, RandomBool};
@@ -915,7 +915,7 @@ pub mod tests {
     #[test]
     fn range_distribution_u64() {
         let range = RangeStep::<u64>::new(15, 40, 5);
-        let dist = StandardIntRangeStep::try_from(range).unwrap();
+        let dist = StandardIntRangeStep::<u64, u64>::try_from_range(range).unwrap();
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
@@ -934,7 +934,7 @@ pub mod tests {
     #[test]
     fn range_distribution_i64() {
         let range = RangeStep::<i64>::new(-10, 10, 5);
-        let dist = StandardIntRangeStep::try_from(range).unwrap();
+        let dist = StandardIntRangeStep::<u64, i128>::try_from_range(range).unwrap();
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
@@ -952,7 +952,7 @@ pub mod tests {
     #[test]
     fn range_distribution_f64() {
         let range = RangeStep::new(-2.5, 1.0, 1.5);
-        let dist = StandardIntRangeStep::try_from(range).unwrap();
+        let dist = StandardFloatRangeStep::<f64>::try_from_range(range).unwrap();
         let mut rng = thread_rng();
         let error_margin = f64::EPSILON;
         for _ in 1..1000 {
@@ -972,13 +972,13 @@ pub mod tests {
     #[test]
     fn range_distribution_constant() {
         let range = RangeStep::<u64>::new(10, 10, 5);
-        assert!(StandardIntRangeStep::try_from(range).is_err())
+        assert!(StandardIntRangeStep::<u64, u64>::try_from_range(range).is_err())
     }
 
     #[test]
     fn range_distribution_step_larger_than_delta() {
         let range = RangeStep::<u64>::new(10, 15, 10);
-        let dist = StandardIntRangeStep::try_from(range).unwrap();
+        let dist = StandardIntRangeStep::<u64, u64>::try_from_range(range).unwrap();
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
@@ -993,7 +993,7 @@ pub mod tests {
     #[test]
     fn range_distribution_step_is_delta() {
         let range = RangeStep::<u64>::new(10, 15, 5);
-        let dist = StandardIntRangeStep::try_from(range).unwrap();
+        let dist = StandardIntRangeStep::<u64, u64>::try_from_range(range).unwrap();
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {

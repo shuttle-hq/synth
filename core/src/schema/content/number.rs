@@ -563,7 +563,8 @@ pub mod tests {
                     NumberContent::$as(number_content::$as::Range(RangeStep {
                         low: Some(<$ty>::MIN),
                         high: Some(<$ty>::MAX),
-                        step: None
+                        step: None,
+                        ..Default::default()
                     }))
                 );
 

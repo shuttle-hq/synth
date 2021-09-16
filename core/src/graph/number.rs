@@ -165,7 +165,7 @@ fn into_finite_bound<N>(n: N, inclusive: bool) -> Bound<N> {
 macro_rules! standard_int_range_step_impl {
     { $target:ty, $larger:ty, $unsigned:ty } => {
         impl StandardIntRangeStep<$unsigned, $larger> {
-            fn try_from_range(range_step: RangeStep<$target>) -> anyhow::Result<Self> {
+            pub fn try_from_range(range_step: RangeStep<$target>) -> anyhow::Result<Self> {
                 let low = range_step.low.unwrap_or(<$target>::MIN);
                 let high = range_step.high.unwrap_or(<$target>::MAX);
                 if low > high {
@@ -227,7 +227,7 @@ pub struct StandardFloatRangeStep<N> {
 macro_rules! standard_float_range_step_impl {
     { $target:ty } => {
         impl StandardFloatRangeStep<$target> {
-            fn try_from_range(range_step: RangeStep<$target>) -> anyhow::Result<Self> {
+            pub fn try_from_range(range_step: RangeStep<$target>) -> anyhow::Result<Self> {
                 let step = range_step.step;
                 if Some(true) == step.as_ref().map(|step| *step <= 0.) {
                     return Err(anyhow!("{} range with step={} is invalid, use positive values instead", stringify!($target), step.unwrap()));

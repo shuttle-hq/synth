@@ -523,7 +523,7 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::U64(number_content::U64::Range(RangeStep { low, high, step })) => {
+            NumberContent::U64(number_content::U64::Range(RangeStep { low, high, step, .. })) => {
                 assert_eq!(low, Some(0));
                 assert_eq!(high, Some(15));
                 assert_eq!(step, Some(1));
@@ -539,7 +539,7 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::I64(number_content::I64::Range(RangeStep { low, high, step })) => {
+            NumberContent::I64(number_content::I64::Range(RangeStep { low, high, step, .. })) => {
                 assert_eq!(low, Some(-10));
                 assert_eq!(high, Some(20));
                 assert_eq!(step, Some(1));
@@ -555,7 +555,7 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::F64(number_content::F64::Range(RangeStep { low, high, step })) => {
+            NumberContent::F64(number_content::F64::Range(RangeStep { low, high, step , .. })) => {
                 assert!((low.unwrap() - -13.6).abs() < error_margin);
                 assert!((high.unwrap() - 20.6).abs() < error_margin);
                 assert!((step.unwrap() - 1.).abs() < error_margin);
