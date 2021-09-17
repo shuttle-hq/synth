@@ -121,6 +121,16 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "cakebaker",
+      "name": "Daniel Hofstetter",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26196?v=4",
+      "profile": "https://danielhofstetter.com",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
