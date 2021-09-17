@@ -200,6 +200,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/juniorbassani"><img src="https://avatars.githubusercontent.com/u/47573050?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Júnior Bassani</b></sub></a><br /><a href="https://github.com/getsynth/synth/issues?q=author%3Ajuniorbassani" title="Bug reports">🐛</a> <a href="https://github.com/getsynth/synth/commits?author=juniorbassani" title="Code">💻</a></td>
+    <td align="center"><a href="https://danielhofstetter.com"><img src="https://avatars.githubusercontent.com/u/26196?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Hofstetter</b></sub></a><br /><a href="https://github.com/getsynth/synth/issues?q=author%3Acakebaker" title="Bug reports">🐛</a> <a href="https://github.com/getsynth/synth/commits?author=cakebaker" title="Code">💻</a></td>
   </tr>
 </table>
 
