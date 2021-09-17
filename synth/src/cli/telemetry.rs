@@ -3,7 +3,7 @@ use backtrace::Backtrace;
 use serde::{Deserialize, Serialize};
 
 use std::io::{self, BufRead, Read, Write};
-use std::panic::{self, PanicInfo};
+use std::panic;
 use std::collections::HashMap;
 use std::future::Future;
 use std::error::Error;
@@ -18,7 +18,7 @@ use super::{Args, TelemetryCommand};
 const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
 const EVENT_NAME: &str = "synth-command";
 
-fn panic_hook(_: &PanicInfo) {
+fn report_panic(synth_command: &str, telemetry_client: &TelemetryClient) {
     let (stdin, stdout) = (io::stdin(), io::stdout());
     let (mut stdin, mut stdout) = (stdin.lock(), stdout.lock());
     let mut username = String::new();
@@ -54,7 +54,6 @@ fn panic_hook(_: &PanicInfo) {
     eprintln!("email = {:?}", email);
     eprintln!("backtrace = {:?}", backtrace);
     
-    // let client = TelemetryClient::new();
     // let _ = client.send("Synth panicked", CommandResult::Failed);
 }
 
@@ -85,11 +84,13 @@ where
     Fut: Future<Output = Result<T, E>>,
     E: AsRef<dyn Error + 'static>
 {
-    panic::set_hook(Box::new(panic_hook));
+    let client = TelemetryClient::new();
+    let synth_command = serde_json::to_string(&args).unwrap();
+
+    panic::set_hook(Box::new(move |_| { report_panic(&synth_command, &client); }));
     panic!();
 
-    let client = TelemetryClient::new();
-
+    // TODO: get the command_name from synth_command
     let command_name = match &args {
         Args::Init { .. } => "init",
         Args::Generate { .. } => "generate",
