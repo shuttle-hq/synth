@@ -84,6 +84,10 @@ impl RelationalDataSource for PostgresDataSource {
             sqlx::query(&query)
                 .execute(&self.single_thread_pool)
                 .await?;
+
+            sqlx::query(&query)
+                .execute(&self.pool)
+                .await?;
         }
         Ok(())
     }
@@ -91,9 +95,10 @@ impl RelationalDataSource for PostgresDataSource {
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name
         FROM information_schema.tables
-        WHERE table_catalog = current_catalog AND table_schema = 'public' AND table_type = 'BASE TABLE'";
+        WHERE table_catalog = current_catalog AND table_schema = $1 AND table_type = 'BASE TABLE'";
 
-        sqlx::query(query)
+        let tables = sqlx::query(query)
+            .bind(self.schema.clone().unwrap_or("public".to_string()))
             .fetch_all(&self.pool)
             .await?
             .iter()
@@ -101,7 +106,18 @@ impl RelationalDataSource for PostgresDataSource {
                 row.try_get::<String, usize>(0)
                     .map_err(|e| anyhow!("{:?}", e))
             })
-            .collect()
+            .collect();
+        // TEMP
+
+        let query = "show search_path";
+        let search_path: String = sqlx::query(query)
+            .fetch_one(&self.pool)
+            .await?
+            .get(0);
+
+        info!("SP: {}", search_path);
+
+        tables
     }
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
