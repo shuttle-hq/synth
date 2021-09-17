@@ -109,6 +109,7 @@ impl NamespaceSampleStrategy {
 	    // We populate `out` by walking through the collections in the generated
 	    // namespace. We also keep track of the number of `Values` generated
 	    // for the progress bar.
+            let round_start = generated;
             let next = model.complete(&mut rng)?;
             as_object(next)?
                 .into_iter()
@@ -120,6 +121,10 @@ impl NamespaceSampleStrategy {
                         })
                 })?;
             progress_bar.set_position(generated as u64);
+            if round_start == generated {
+                warn!("could not generate {} values: try modifying the schema to generate more data instead of the --size flag", self.target);
+                break;
+            }
         }
 
         progress_bar.finish_and_clear();
@@ -151,6 +156,7 @@ impl CollectionSampleStrategy {
         let mut model = model.aggregate();
 
         while generated < self.target {
+            let round_start = generated;
             let next = model.complete(&mut rng)?;
             let collection_value = as_object(next)?.remove(self.name.as_ref()).ok_or_else(|| {
                 anyhow!("generated namespace does not have a collection '{}'", self.name)
@@ -163,6 +169,10 @@ impl CollectionSampleStrategy {
                 other => return Err(anyhow!("Was expecting the sampled collection to be an array. Instead found {}", other.type_()))
             }
             progress_bar.set_position(generated as u64);
+            if round_start == generated {
+                warn!("could not generate {} values for collection {}: try modifying the schema to generate more instead of using the --size flag", self.target, self.name);
+                break;
+            }
         }
 
         progress_bar.finish_and_clear();
