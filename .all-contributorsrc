@@ -111,6 +111,16 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "juniorbassani",
+      "name": "Júnior Bassani",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47573050?v=4",
+      "profile": "https://github.com/juniorbassani",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
