@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
     let args = Args::from_args();
     let cli = Cli::new()?;
 
-    let notify_handle = thread::spawn(|| synth::version::notify_new_version_message().unwrap());
+    let notify_handle = thread::spawn(|| synth::version::notify_new_version_message());
 
     #[cfg(feature = "telemetry")]
     synth::cli::telemetry::with_telemetry(args, |args| cli.run(args)).await?;
@@ -24,8 +24,8 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn print_notify(handle: JoinHandle<Option<String>>) {
-    if let Some(notify_message) = handle.join().unwrap_or_default() {
+fn print_notify(handle: JoinHandle<Result<Option<String>>>) {
+    if let Ok(Ok(Some(notify_message))) = handle.join() {
         eprintln!("{}", notify_message);
     }
 }
