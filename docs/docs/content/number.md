@@ -25,7 +25,7 @@ widths (e.g. postgres).
 ### Defaults
 
 If no variant (such as `range`, `constant`, etc.) is specified, `number`
-will have different default behavior base on the value of `"subtype"`.
+will have different default behavior based on the value of `"subtype"`.
 
 - For integer subtypes (`i32`, `u32`, etc.): `number` will default to generating one of the integers in the
   representable range of the subtype.
