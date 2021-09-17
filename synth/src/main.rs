@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
     let args = Args::from_args();
     let cli = Cli::new()?;
 
-    let notify_handle = thread::spawn(|| synth::version::notify_new_version_message());
+    let notify_handle = thread::spawn(synth::version::notify_new_version_message);
 
     #[cfg(feature = "telemetry")]
     synth::cli::telemetry::with_telemetry(args, |args| cli.run(args)).await?;
