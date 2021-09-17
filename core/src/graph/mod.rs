@@ -135,11 +135,18 @@ where
     T: TryFrom<Number>,
     T::Error: std::error::Error,
 {
-    value.and_then(|v| v.try_into()).and_then(|n: Number| {
-        n.try_into().map_err(|err| {
-            failed_crate!(target: Release, "could not convert from value '{}': {}", n, err)
+    value
+        .and_then(|v| v.try_into())
+        .and_then(|n: Number| {
+            n.try_into().map_err(|err| {
+                failed_crate!(target: Release, "could not convert from value '{}': {}", n, err)
+            })
         })
-    })
+}
+
+pub fn unsigned_from_ok(value: Result<Value, Error>) -> Result<u64, Error> {
+    number_from_ok::<u64>(value.clone())
+        .or_else(|_| number_from_ok::<u32>(value).map(|sm| sm as u64))
 }
 
 pub fn string_from_ok(value: Result<Value, Error>) -> Result<String, Error>
@@ -507,7 +514,7 @@ impl Graph {
 
     pub fn into_size(self) -> SizeGenerator {
         Box::new(self)
-            .map_complete(number_from_ok::<u64> as fn(Result<Value, Error>) -> Result<u64, Error>)
+            .map_complete(unsigned_from_ok as fn(Result<Value, Error>) -> Result<u64, Error>)
             .exhaust()
     }
 }
