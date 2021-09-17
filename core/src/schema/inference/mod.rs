@@ -14,6 +14,8 @@ use super::{
     DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent, RangeStep,
     StringContent, ValueKindExt, CategoricalType
 };
+use crate::graph::prelude::content::number_content::{I64, I32};
+use num::Zero;
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
     fn try_merge(self, master: &mut M, candidate: &C) -> Result<()>;
@@ -219,9 +221,9 @@ where
     }
 }
 
-impl MergeStrategy<Id, u64> for OptionalMergeStrategy {
-    fn try_merge(self, master: &mut Id, candidate: &u64) -> Result<()> {
-        let lower_bound = master.start_at.unwrap_or(0);
+impl<N> MergeStrategy<Id<N>, N> for OptionalMergeStrategy where N: PartialOrd + Zero + Copy {
+    fn try_merge(self, master: &mut Id<N>, candidate: &N) -> Result<()> {
+        let lower_bound = master.start_at.unwrap_or_else(N::zero);
         if candidate < &lower_bound {
             *master = Id {
                 start_at: Some(*candidate),
@@ -263,6 +265,7 @@ impl MergeStrategy<number_content::I64, i64> for OptionalMergeStrategy {
             number_content::I64::Range(range) => self.try_merge(range, candidate),
             number_content::I64::Categorical(cat) => self.try_merge(cat, candidate),
             number_content::I64::Constant(cst) => self.try_merge(cst, candidate),
+            I64::Id(id) => self.try_merge(id, candidate)
         }
     }
 }
@@ -282,7 +285,7 @@ impl MergeStrategy<number_content::U32, u32> for OptionalMergeStrategy {
             number_content::U32::Range(range) => self.try_merge(range, candidate),
             number_content::U32::Categorical(cat) => self.try_merge(cat, candidate),
             number_content::U32::Constant(cst) => self.try_merge(cst, candidate),
-            number_content::U32::Id(id) => self.try_merge(id, &(*candidate as u64)),
+            number_content::U32::Id(id) => self.try_merge(id, candidate),
         }
     }
 }
@@ -293,6 +296,7 @@ impl MergeStrategy<number_content::I32, i32> for OptionalMergeStrategy {
             number_content::I32::Range(range) => self.try_merge(range, candidate),
             number_content::I32::Categorical(cat) => self.try_merge(cat, candidate),
             number_content::I32::Constant(cst) => self.try_merge(cst, candidate),
+            I32::Id(id) => self.try_merge(id, candidate)
         }
     }
 }

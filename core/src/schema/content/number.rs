@@ -154,7 +154,7 @@ macro_rules! number_content {
         }
 
         pub mod number_content {
-            use super::{RangeStep, Categorical, NumberContent, Id};
+            use super::{RangeStep, Categorical, NumberContent};
             use serde::{Serialize, Deserialize};
 
             $(
@@ -185,10 +185,10 @@ macro_rules! number_content {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(deny_unknown_fields)]
-pub struct Id {
+pub struct Id<N> {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub start_at: Option<u64>,
+    pub start_at: Option<N>,
 }
 
 impl NumberContent {
@@ -294,26 +294,28 @@ number_content!(
         Range(RangeStep<u32>),
         Categorical(Categorical<u32>),
         Constant(u32),
-        Id(Id),
+	Id(crate::schema::Id<u32>),
     },
     u64[is_u64, default_u64_range] as U64 {
         #[default]
         Range(RangeStep<u64>),
         Categorical(Categorical<u64>),
         Constant(u64),
-        Id(Id),
+	Id(crate::schema::Id<u64>),
     },
     i32[is_i32, default_i32_range] as I32 {
         #[default]
         Range(RangeStep<i32>),
         Categorical(Categorical<i32>),
         Constant(i32),
+	Id(crate::schema::Id<i32>),
     },
     i64[is_i64, default_i64_range] as I64 {
         #[default]
         Range(RangeStep<i64>),
         Categorical(Categorical<i64>),
         Constant(i64),
+	Id(crate::schema::Id<i64>),
     },
     f64[is_f64, default_f64_range] as F64 {
         #[default]
@@ -351,6 +353,7 @@ impl Compile for NumberContent {
                         RandomI64::categorical(categorical_content.clone())
                     }
                     number_content::I64::Constant(val) => RandomI64::constant(*val),
+                    number_content::I64::Id(id) => RandomI64::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
                 };
                 random_i64.into()
             }
@@ -369,9 +372,7 @@ impl Compile for NumberContent {
                     }
                     number_content::U32::Constant(val) => RandomU32::constant(*val),
                     number_content::U32::Id(id) => {
-                        // todo fix
-                        let gen = Incrementing::new_at(id.start_at.unwrap_or_default() as u32);
-                        RandomU32::incrementing(gen)
+                        RandomU32::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
                     }
                 };
                 random_u32.into()
@@ -383,6 +384,7 @@ impl Compile for NumberContent {
                         RandomI32::categorical(categorical_content.clone())
                     }
                     number_content::I32::Constant(val) => RandomI32::constant(*val),
+                    number_content::I32::Id(id) => RandomI32::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
                 };
                 random_i32.into()
             }
@@ -418,23 +420,48 @@ impl Categorical<u64> {
     pub fn upcast(self, to: NumberContentKind) -> Result<NumberContent> {
         match to {
             NumberContentKind::U64 => {
-		Ok(number_content::U64::Categorical(self).into())
-	    }
+                Ok(number_content::U64::Categorical(self).into())
+            }
             NumberContentKind::I64 => {
-		let cast = Categorical {
-		    seen: self
-			.seen
-			.into_iter()
-			.map(|(k, v)| {
-			    i64::try_from(k)
-				.map(|k_cast| (k_cast, v))
-				.map_err(|err| err.into())
-			}).collect::<Result<_>>()?,
-		    total: self.total
-		};
-		Ok(number_content::I64::Categorical(cast).into())
-	    }
+                let cast = Categorical {
+                    seen: self
+                        .seen
+                        .into_iter()
+                        .map(|(k, v)| {
+                            i64::try_from(k)
+                                .map(|k_cast| (k_cast, v))
+                                .map_err(|err| err.into())
+                        }).collect::<Result<_>>()?,
+                    total: self.total,
+                };
+                Ok(number_content::I64::Categorical(cast).into())
+            }
             NumberContentKind::F64 => Err(failed!(target: Release, "cannot upcast categorical subtypes to accept floats; try changing this another numerical subtype manually"))
+        }
+    }
+}
+
+impl Id<i64> {
+    pub fn upcast(self, to: NumberContentKind) -> Result<NumberContent> {
+        match to {
+            NumberContentKind::U64 => {
+                let start_at = self.start_at.unwrap_or(1);
+                return if start_at < 0 {
+                    Err(failed!(
+                    target: Release,
+                    "cannot cast id with negative start_at to u64"
+                    ))
+                } else {
+                    Ok(number_content::U64::Id(Id {
+                        start_at: Some(start_at as u64)
+                    }).into())
+                };
+            }
+            NumberContentKind::I64 => Ok(number_content::I64::Id(self).into()),
+            NumberContentKind::F64 => Err(failed!(
+                    target: Release,
+                    "cannot cast id f64"
+                    ))
         }
     }
 }
@@ -519,6 +546,7 @@ impl number_content::I64 {
                     Ok(number_content::F64::Constant(cast).into())
                 }
             },
+            Self::Id(id) => id.upcast(to)
         }
     }
 }
