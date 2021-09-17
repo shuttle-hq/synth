@@ -198,6 +198,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/fretz12"><img src="https://avatars.githubusercontent.com/u/41805201?v=4?s=100" width="100px;" alt=""/><br /><sub><b>fretz12</b></sub></a><br /><a href="#ideas-fretz12" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/getsynth/synth/commits?author=fretz12" title="Code">💻</a> <a href="https://github.com/getsynth/synth/commits?author=fretz12" title="Documentation">📖</a> <a href="https://github.com/getsynth/synth/commits?author=fretz12" title="Tests">⚠️</a></td>
     <td align="center"><a href="https://github.com/baile320"><img src="https://avatars.githubusercontent.com/u/26841355?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tyler Bailey</b></sub></a><br /><a href="https://github.com/getsynth/synth/commits?author=baile320" title="Code">💻</a> <a href="https://github.com/getsynth/synth/commits?author=baile320" title="Documentation">📖</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/juniorbassani"><img src="https://avatars.githubusercontent.com/u/47573050?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Júnior Bassani</b></sub></a><br /><a href="https://github.com/getsynth/synth/issues?q=author%3Ajuniorbassani" title="Bug reports">🐛</a> <a href="https://github.com/getsynth/synth/commits?author=juniorbassani" title="Code">💻</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
