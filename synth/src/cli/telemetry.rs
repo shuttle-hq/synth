@@ -48,7 +48,8 @@ where
         Args::Import { .. } => "import",
         Args::Telemetry(TelemetryCommand::Enable) => "telemetry::enable",
         Args::Telemetry(TelemetryCommand::Disable) => "telemetry::disable",
-        Args::Telemetry(TelemetryCommand::Status) => "telemetry::status"
+        Args::Telemetry(TelemetryCommand::Status) => "telemetry::status",
+        Args::Version => "version"
     };
 
     func(args)
