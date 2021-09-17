@@ -139,8 +139,6 @@ macro_rules! number_content {
                         else
                     )*
                         {
-                            //TODO: generate static array with variant names and pass it to
-                            //      Error::unknown_variant()
                             Err(D::Error::unknown_variant(format!("{:?}", subtype).as_str(), &[""]))
                         }
                     }

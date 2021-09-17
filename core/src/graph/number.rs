@@ -175,7 +175,11 @@ macro_rules! standard_int_range_step_impl {
                 let delta = ((high as $larger) - (low as $larger)) as $unsigned;
 
                 let step_unchecked = range_step.step.unwrap_or(1);
-                if step_unchecked <= 0 {
+
+                #[allow(unused_comparisons)]
+                if step_unchecked == 0 {
+                    return Err(anyhow!("integer range 'step'=0 is invalid, use the constant generator instead"))
+                } else if step_unchecked < 0 {
                     return Err(anyhow!("integer range 'step'={} is invalid, use a positive value instead", step_unchecked))
                 }
 
