@@ -1,12 +1,12 @@
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
-
+use anyhow::Result;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::future::Future;
 use std::error::Error;
+use uuid::Uuid;
 
-use crate::utils::{version, META_OS};
+use crate::utils::META_OS;
+use crate::version::version;
+use crate::cli::config;
 
 use super::{Args, TelemetryCommand};
 
@@ -14,15 +14,24 @@ const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
 const EVENT_NAME: &str = "synth-command";
 
 pub(crate) fn enable() -> Result<()> {
-    TelemetryConfig::enable_telemetry()
+    // Initialise the `uuid` if it hasn't been initialised yet.
+    let _ = get_or_initialise_uuid();
+    Ok(config::set_telemetry_enabled(true))
 }
 
 pub(crate) fn disable() -> Result<()> {
-    TelemetryConfig::disable_telemetry()
+    Ok(config::set_telemetry_enabled(false))
 }
 
 pub(crate) fn is_enabled() -> bool {
-    TelemetryConfig::is_enabled()
+    config::get_telemetry_enabled().unwrap_or(false)
+}
+
+fn get_or_initialise_uuid() -> String {
+    if config::get_uuid().is_none() {
+        config::set_uuid(Uuid::new_v4().to_hyphenated().to_string());
+    }
+    config::get_uuid().expect("is ok here as was set earlier")
 }
 
 pub async fn with_telemetry<F, Fut, T, E>(args: Args, func: F) -> Result<T, E>
@@ -39,78 +48,14 @@ where
         Args::Import { .. } => "import",
         Args::Telemetry(TelemetryCommand::Enable) => "telemetry::enable",
         Args::Telemetry(TelemetryCommand::Disable) => "telemetry::disable",
-        Args::Telemetry(TelemetryCommand::Status) => "telemetry::status"
+        Args::Telemetry(TelemetryCommand::Status) => "telemetry::status",
+        Args::Version => "version"
     };
 
     func(args)
         .await
         .and_then(|success| client.success(command_name, success))
         .or_else(|err| client.failed(command_name, err))
-}
-
-#[derive(Serialize, Deserialize)]
-struct TelemetryConfig {
-    uuid: String,
-}
-
-impl TelemetryConfig {
-    pub fn initialise() -> Self {
-        Self::from_file().unwrap_or_else(|_| Self::new())
-    }
-
-    fn new() -> Self {
-        Self {
-            uuid: uuid::Uuid::new_v4().to_hyphenated().to_string(),
-        }
-    }
-
-    fn from_file() -> Result<Self> {
-        let file_contents = std::fs::read_to_string(Self::file_path()?)?;
-        let tc = serde_json::from_str(&file_contents)?;
-        Ok(tc)
-    }
-
-    fn synth_config_dir() -> Result<PathBuf> {
-        let synth_config_dir = dirs::config_dir().ok_or_else(|| {
-            anyhow!(
-                "Could not find a configuration directory. Your operating system may not be supported."
-            )
-        })?;
-        Ok(synth_config_dir.join("synth"))
-    }
-
-    fn file_path() -> Result<PathBuf> {
-        Ok(Self::synth_config_dir()?.join("config.json"))
-    }
-
-    fn enable_telemetry() -> Result<()> {
-	let config_dir = Self::synth_config_dir()?;
-        if !config_dir.exists() {
-            std::fs::create_dir_all(&config_dir)
-		.with_context(|| anyhow!("Could not create the directory: {}", config_dir.display()))?;
-        }
-        if !Self::is_enabled() {
-            let mut config_file_path = std::fs::OpenOptions::new()
-                .write(true)
-                .create(true)
-                .open(Self::file_path()?)
-                .map_err(|e| anyhow!("There was an issue enabling telemetry: {}", e))?;
-            serde_json::to_writer_pretty(&mut config_file_path, &TelemetryConfig::new())?;
-        }
-        Ok(())
-    }
-
-    fn disable_telemetry() -> Result<()> {
-        if Self::is_enabled() {
-            std::fs::remove_file(Self::file_path()?)
-                .map_err(|e| anyhow!("There was an issue disabling telemetry: {}", e))?;
-        }
-        Ok(())
-    }
-
-    fn is_enabled() -> bool {
-        Self::file_path().map(|path| path.exists()).unwrap_or(false)
-    }
 }
 
 enum CommandResult {
@@ -142,10 +87,10 @@ impl TelemetryClient {
 
         Self {
             ph_client: posthog_rs::client(API_KEY),
-            uuid: TelemetryConfig::initialise().uuid,
+            uuid: get_or_initialise_uuid(),
             synth_version,
             os,
-            enabled: TelemetryConfig::is_enabled(),
+            enabled: is_enabled(),
         }
     }
 

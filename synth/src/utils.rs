@@ -31,9 +31,6 @@ impl FromStr for DataDirectoryPath {
     }
 }
 
-pub fn version() -> String {
-    env!("CARGO_PKG_VERSION").to_string()
-}
 
 #[cfg(debug_assertions)]
 pub mod splash {
@@ -42,6 +39,7 @@ pub mod splash {
     use sysinfo::{System, SystemExt};
 
     use super::*;
+    use crate::version::version;
 
     pub struct Splash {
         synth_ver: String,

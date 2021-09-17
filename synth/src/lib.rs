@@ -1,4 +1,4 @@
-#![feature(format_args_capture, async_closure, map_first_last, box_patterns)]
+#![feature(format_args_capture, async_closure, map_first_last, box_patterns, concat_idents)]
 #![feature(error_iter)]
 #![allow(type_alias_bounds)]
 
@@ -16,3 +16,4 @@ pub mod cli;
 pub mod datasource;
 pub mod sampler;
 pub mod utils;
+pub mod version;

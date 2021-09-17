@@ -17,20 +17,23 @@ use anyhow::{Context, Result};
 
 use std::path::PathBuf;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 
 use rand::RngCore;
 
 use synth_core::{Name, graph::json};
+use crate::version::print_version_message;
+use std::process::exit;
 
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
+pub(crate) mod config;
 
 pub struct Cli {
     store: Store
 }
 
 impl Cli {
-    /// this is going to get confusing with `init` command
     pub fn new() -> Result<Self> {
         env_logger::init();
 
@@ -83,6 +86,11 @@ impl Cli {
             } => self.import(namespace.clone(), collection.clone(), from.clone()),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
+            Args::Version => {
+                print_version_message();
+                // Exiting so we don't get the message twice
+                exit(0);
+            }
         }
     }
 
@@ -95,9 +103,7 @@ impl Cli {
                 if telemetry::is_enabled() {
                     println!("Telemetry is enabled. To disable it run `synth telemetry disable`.");
                 } else {
-                    println!(
-                        "Telemetry is disabled. To enable it run `synth telemetry enable`."
-                    );
+                    println!("Telemetry is disabled. To enable it run `synth telemetry enable`.");
                 }
                 Ok(())
             }
@@ -163,8 +169,13 @@ impl Cli {
     }
 }
 
+
 #[derive(StructOpt)]
-#[structopt(name = "synth", about = "synthetic data engine on the command line")]
+#[structopt(
+    name = "synth",
+    about = "synthetic data engine on the command line",
+    no_version,
+    global_settings = &[AppSettings::DisableVersion])]
 pub enum Args {
     #[structopt(about = "(DEPRECATED). For backward compatibility and is a no-op.")]
     Init {
@@ -218,6 +229,8 @@ pub enum Args {
     #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]
     Telemetry(TelemetryCommand),
+    #[structopt(about = "Version information")]
+    Version
 }
 
 #[cfg(feature = "telemetry")]
