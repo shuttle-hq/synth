@@ -149,11 +149,7 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Co
 
         Ok(Collection {
             collection: Content::Array(ArrayContent {
-                length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep {
-                    low: 1,
-                    high: 2,
-                    step: 1,
-                })))),
+                length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep::new(1, 2, 1))))),
                 content: Box::new(Content::Object(collection)),
             }),
         })

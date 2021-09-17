@@ -117,11 +117,7 @@ fn doc_to_content(doc: &Document) -> Content {
 
 fn bson_to_content(bson: &Bson) -> Content {
     match bson {
-        Bson::Double(d) => Content::Number(NumberContent::F64(F64::Range(RangeStep {
-            low: *d,
-            high: *d + 1.0,
-            step: 0.1,
-        }))),
+        Bson::Double(d) => Content::Number(NumberContent::F64(F64::Range(RangeStep::new(*d, *d + 1., 0.1)))),
         Bson::String(_) => Content::String(StringContent::default()),
         Bson::Array(array) => {
             let length = Content::Number(NumberContent::U64(U64::Constant(array.len() as u64)));
@@ -144,16 +140,8 @@ fn bson_to_content(bson: &Bson) -> Content {
         Bson::JavaScriptCodeWithScope(_) => {
             Content::String(StringContent::Categorical(Categorical::default()))
         }
-        Bson::Int32(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep {
-            low: *i as i64,
-            high: *i as i64 + 1,
-            step: 1,
-        }))),
-        Bson::Int64(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep {
-            low: *i,
-            high: *i + 1,
-            step: 1,
-        }))),
+        Bson::Int32(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(*i as i64, *i as i64 + 1, 1)))),
+        Bson::Int64(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(*i, *i + 1, 1)))),
         Bson::DateTime(_) => Content::String(StringContent::DateTime(DateTimeContent {
             format: "".to_string(),
             type_: ChronoValueType::DateTime,

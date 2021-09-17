@@ -74,12 +74,7 @@ pub mod tests {
         assert_eq!(output.len(), NUM_GENERATED);
 
         let numbers = Graph::Number(NumberNode::from(
-            RandomU64::range(RangeStep {
-                low: 0,
-                high: NUM_GENERATED as u64,
-                step: 1,
-            })
-            .unwrap(),
+            RandomU64::range(RangeStep::new(0, NUM_GENERATED as u64, 1)).unwrap(),
         ));
         let output = UniqueNode::hash(numbers, None)
             .repeat(NUM_GENERATED)

@@ -16,7 +16,6 @@ pub mod inference;
 pub use inference::{MergeStrategy, OptionalMergeStrategy, ValueMergeStrategy};
 
 pub mod optionalise;
-pub mod s_override;
 
 pub mod namespace;
 pub use namespace::Namespace;

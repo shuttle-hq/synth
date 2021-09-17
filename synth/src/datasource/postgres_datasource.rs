@@ -176,36 +176,12 @@ impl RelationalDataSource for PostgresDataSource {
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
             }
-            "int2" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
-                low: 0,
-                high: 1,
-                step: 1,
-            }))),
-            "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep {
-                low: 0,
-                high: 1,
-                step: 1,
-            }))),
-            "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep {
-                low: 0,
-                high: 1,
-                step: 1,
-            }))),
-            "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep {
-                low: 0.0,
-                high: 1.0,
-                step: 0.1, //todo
-            }))),
-            "float8" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
-                low: 0.0,
-                high: 1.0,
-                step: 0.1, //todo
-            }))),
-            "numeric" => Content::Number(NumberContent::F64(F64::Range(RangeStep {
-                low: 0.0,
-                high: 1.0,
-                step: 0.1, //todo
-            }))),
+            "int2" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
+            "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
+            "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
+            "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep::default()))),
+            "float8" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
+            "numeric" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
             "timestamptz" => Content::String(StringContent::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::DateTime,

@@ -163,23 +163,11 @@ impl RelationalDataSource for MySqlDataSource {
                 ))
             }
             "int" | "integer" | "tinyint" | "smallint" | "mediumint" | "bigint" => {
-                Content::Number(NumberContent::I64(I64::Range(RangeStep {
-                    low: 0,
-                    high: 1,
-                    step: 1,
-                })))
+                Content::Number(NumberContent::I64(I64::Range(RangeStep::default())))
             }
-            "serial" => Content::Number(NumberContent::U64(U64::Range(RangeStep {
-                low: 0,
-                high: 1,
-                step: 1,
-            }))),
+            "serial" => Content::Number(NumberContent::U64(U64::Range(RangeStep::default()))),
             "float" | "double" | "numeric" | "decimal" => {
-                Content::Number(NumberContent::F64(F64::Range(RangeStep {
-                    low: 0.0,
-                    high: 1.0,
-                    step: 0.1, //todo
-                })))
+                Content::Number(NumberContent::F64(F64::Range(RangeStep::default())))
             }
             "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
                 format: "".to_string(), // todo

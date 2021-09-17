@@ -1,7 +1,7 @@
 use super::prelude::*;
 
 use super::Categorical;
-use num::Zero;
+
 use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,
@@ -66,224 +66,264 @@ macro_rules! number_content {
 	    $ty:ty[$is:ident, $def:ident] as $as:ident {
 		$(
 		    $(#[$default:meta])?
-		    $variant:ident($variant_ty:ty),
+		    $variant:ident($variant_ty:path),
 		)*
 	    },
 	)*
     } => {
-	#[derive(Debug, Clone, PartialEq)]
-    //TODO: With custom implementation for `Serialize` we
-    //      have to implement this on our own:
-	// #[serde(deny_unknown_fields)]
-	pub enum NumberContent {
-	    $(
-		$as(number_content::$as),
-	    )*
-	}
+        #[derive(Debug, Clone, PartialEq)]
+        pub enum NumberContent {
+            $($as(number_content::$as),)*
+        }
 
-    impl Serialize for NumberContent
-    {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+        impl NumberContent {
+            pub fn kind(&self) -> &'static str {
+                match self {
+                    $($(Self::$as(number_content::$as::$variant(_)) => {
+                        concat!(stringify!($as), "::", stringify!($variant))
+                    },)*)*
+                }
+            }
+
+            $(
+            pub fn $def() -> Self {
+                Self::$as(number_content::$as::Range(RangeStep::default()))
+            }
+
+            pub fn $is(&self) -> bool {
+                match self {
+                Self::$as(_) => true,
+                _ => false
+                }
+            }
+            )*
+        }
+
+        impl Serialize for NumberContent
         {
-            match &self {
-                $(
-                    NumberContent::$as(value) => {
-                        let mut obj = serde_json::to_value(value).map_err(S::Error::custom)?;
-                        let obj_map = obj.as_object_mut().ok_or(S::Error::custom("Object value expected"))?;
-                        obj_map.insert("subtype".to_string(), serde_convert_case!($as, "snake_case"));
-                        obj_map.serialize(serializer)
-                    }
-                )*
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match &self {
+                    $(
+                        NumberContent::$as(value) => {
+                            let mut obj = serde_json::to_value(value).map_err(S::Error::custom)?;
+                            let obj_map = obj.as_object_mut().ok_or(S::Error::custom("Object value expected"))?;
+                            obj_map.insert("subtype".to_string(), serde_convert_case!($as, "snake_case"));
+                            obj_map.serialize(serializer)
+                        }
+                    )*
+                }
             }
         }
-    }
 
-    impl<'de> Deserialize<'de> for NumberContent {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+        impl<'de> Deserialize<'de> for NumberContent {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let mut v: serde_json::Value = Value::deserialize(deserializer)?;
+                let as_object = v.as_object_mut().ok_or(D::Error::custom("Object value expected"))?;
+                match as_object.remove("subtype") {
+                    Some(subtype) => {
+                    $(
+                        if subtype == stringify!($ty) {
+                            if as_object.is_empty() {
+                                Ok(Self::$def())
+                            } else {
+                                let inner = number_content::$as::deserialize(v).map_err(D::Error::custom)?;
+                                Ok(NumberContent::$as(inner))
+                            }
+                        }
+                        else
+                    )*
+                        {
+                            Err(D::Error::unknown_variant(format!("{:?}", subtype).as_str(), &[""]))
+                        }
+                    }
+                    None => {
+                        $( if let Ok(inner) = number_content::$as::deserialize(&v) {
+                            Ok(NumberContent::$as(inner))
+                        } else )* {
+                            Err(D::Error::custom("Failed to infer numeric type from its value: try specifying the 'subtype' parameter"))
+                        }
+                    }
+                }
+            }
+        }
+
+        pub mod number_content {
+            use super::{RangeStep, Categorical, NumberContent, Id};
+            use serde::{Serialize, Deserialize};
+
+            $(
+            #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+            #[serde(rename_all = "snake_case")]
+            #[serde(deny_unknown_fields)]
+            pub enum $as {
+                $($variant($variant_ty),)*
+            }
+
+            $(
+            impl From<$variant_ty> for $as {
+                fn from(value: $variant_ty) -> Self {
+                    Self::$variant(value)
+                }
+            }
+            )*
+
+            impl From<$as> for NumberContent {
+                fn from(value: $as) -> Self {
+                    Self::$as(value)
+                }
+            }
+            )*
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
+#[serde(deny_unknown_fields)]
+pub struct Id {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start_at: Option<u64>,
+}
+
+impl NumberContent {
+    pub fn accepts(&self, number: &Number) -> Result<()> {
+        if self.is_u64() && number.is_u64()
+            || self.is_i64() && number.is_i64()
+            || self.is_f64() && number.is_f64()
         {
-            let mut v: serde_json::Value = Value::deserialize(deserializer)?;
-            v.as_object_mut().ok_or(D::Error::custom("Object value expected"))?.remove("type");
-            match Option::<serde_json::Value>::deserialize(&v["subtype"]).map_err(D::Error::custom)? {
-                Some(subtype) => {
-                $(
-                    if subtype == serde_convert_case!($as, "snake_case") {
-                        v.as_object_mut().ok_or(D::Error::custom("Object value expected"))?
-                                         .remove("subtype");
-                        let inner = number_content::$as::deserialize(v).map_err(D::Error::custom)?;
-                        Ok(NumberContent::$as(inner))
-                    }
-                    else
-                )*
-                    {
-                        //TODO: generate static array with variant names and pass it to
-                        //      Error::unknown_variant()
-                        Err(D::Error::unknown_variant(format!("{:?}", subtype).as_str(), &[""]))
-                    }
-                }
-                None => {
-                    if let Ok(inner) = number_content::U64::deserialize(&v) {
-                        Ok(NumberContent::U64(inner))
-                    } else
-                    if let Ok(inner) = number_content::I64::deserialize(&v) {
-                        Ok(NumberContent::I64(inner))
-                    } else
-                    if let Ok(inner) = number_content::F64::deserialize(&v) {
-                        Ok(NumberContent::F64(inner))
-                    } else {
-                        Err(D::Error::custom("Failed to infer numeric type from it's value"))
-                    }
-                }
-            }
+            Ok(())
+        } else {
+            // TODO: better error
+            Err(failed!(target: Release, "numerical type mismatch"))
         }
-    }
-
-	pub mod number_content {
-	    use super::{RangeStep, Categorical, NumberContent};
-	    use serde::{Serialize, Deserialize};
-
-	    $(
-		#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-		#[serde(rename_all = "snake_case")]
-		#[serde(deny_unknown_fields)]
-		pub enum $as {
-		    $(
-			$variant($variant_ty),
-		    )*
-		}
-
-        $(
-        impl From<$variant_ty> for $as {
-            fn from(value: $variant_ty) -> Self {
-                Self::$variant(value)
-            }
-        }
-        )*
-
-		impl From<$as> for NumberContent {
-		    fn from(value: $as) -> Self {
-			Self::$as(value)
-		    }
-		}
-	    )*
-	}
-
-	#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
-	#[serde(deny_unknown_fields)]
-    pub struct Id {
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub start_at: Option<u64>,
-    }
-
-	impl NumberContent {
-	    pub fn accepts(&self, number: &Number) -> Result<()> {
-		if self.is_u64() && number.is_u64()
-                    || self.is_i64() && number.is_i64()
-                    || self.is_f64() && number.is_f64()
-                {
-                    Ok(())
-                } else {
-		    // TODO: better error
-                    Err(failed!(target: Release, "numerical type mismatch"))
-                }
-	    }
-
-	    pub fn kind(&self) -> &'static str {
-		match self {
-		    $(
-			$(
-			    Self::$as(number_content::$as::$variant(_)) => {
-				concat!(stringify!($as), "::", stringify!($variant))
-			    },
-			)*
-		    )*
-		}
-	    }
-
-	    $(
-		pub fn $def() -> Self {
-		    Self::$as(number_content::$as::Range(RangeStep::default()))
-		}
-
-		pub fn $is(&self) -> bool {
-		    match self {
-			Self::$as(_) => true,
-			_ => false
-		    }
-		}
-	    )*
-	}
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 #[serde(deny_unknown_fields)]
+#[serde(default)]
 pub struct RangeStep<N> {
-    pub low: N,
-    pub high: N,
-    pub step: N,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub low: Option<N>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub high: Option<N>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub step: Option<N>,
+    #[serde(skip_serializing_if = "std::clone::Clone::clone")]
+    pub include_low: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub include_high: bool
 }
 
-impl<N: PartialOrd + Zero + Display> RangeStep<N> {
-    #[allow(dead_code)]
-    pub(crate) fn new(low: N, high: N, step: N) -> Self {
-        Self { low, high, step }
-    }
-}
-
-impl<N: PartialOrd + Zero + Display> Default for RangeStep<N>
-where
-    N: Bounded + One,
-{
+impl<N> Default for RangeStep<N> {
     fn default() -> Self {
         Self {
-            low: N::min_value(),
-            high: N::max_value(),
-            step: N::one(),
+            low: None,
+            high: None,
+            step: None,
+            include_low: true,
+            include_high: false
         }
     }
 }
 
+impl<N> RangeStep<N> {
+    pub fn new(low: N, high: N, step: N) -> Self {
+        Self {
+            low: Some(low),
+            high: Some(high),
+            step: Some(step),
+            ..Default::default()
+        }
+    }
+
+    fn bound(value: Option<&N>, inclusive: bool) -> std::ops::Bound<&N> {
+        match value {
+            Some(n) if inclusive => std::ops::Bound::Included(n),
+            Some(n) => std::ops::Bound::Excluded(n),
+            None => std::ops::Bound::Unbounded
+        }
+    }
+
+    fn cast<F, M>(self,  f: F) -> RangeStep<M>
+        where
+            F: Fn(N) -> M
+    {
+        self.try_cast::<_, _, std::convert::Infallible>(|value| Ok(f(value))).unwrap()
+    }
+
+    fn try_cast<F, M, E>(self, f: F) -> Result<RangeStep<M>, E>
+        where
+            F: Fn(N) -> Result<M, E>
+    {
+        Ok(RangeStep::<M> {
+            low: self.low.map(&f).transpose()?,
+            high: self.high.map(&f).transpose()?,
+            step: self.step.map(&f).transpose()?,
+            include_low: self.include_low,
+            include_high: self.include_high
+        })
+    }
+}
+
+impl<N: Copy> RangeStep<N> {
+    pub fn step(&self) -> Option<N> {
+        self.step.as_ref().cloned()
+    }
+}
+
+impl<N> std::ops::RangeBounds<N> for RangeStep<N> {
+    fn start_bound(&self) -> std::ops::Bound<&N> {
+        RangeStep::bound(self.low.as_ref(), self.include_low)
+    }
+
+    fn end_bound(&self) -> std::ops::Bound<&N> {
+        RangeStep::bound(self.high.as_ref(), self.include_high)
+    }
+}
+
 number_content!(
-    u64[is_u64, default_u64_range] as U64 {
-    #[default]
-    Range(RangeStep<u64>),
-    Categorical(Categorical<u64>),
-    Constant(u64),
-    Id(crate::schema::Id),
-    },
-    i64[is_i64, default_i64_range] as I64 {
-    #[default]
-    Range(RangeStep<i64>),
-    Categorical(Categorical<i64>),
-    Constant(i64),
-    },
-    f64[is_f64, default_f64_range] as F64 {
-    #[default]
-    Range(RangeStep<f64>),
-    Constant(f64),
-    },
     u32[is_u32, default_u32_range] as U32 {
-    #[default]
-    Range(RangeStep<u32>),
-    Categorical(Categorical<u32>),
-    Constant(u32),
-    Id(crate::schema::Id),
+        #[default]
+        Range(RangeStep<u32>),
+        Categorical(Categorical<u32>),
+        Constant(u32),
+        Id(Id),
+    },
+    u64[is_u64, default_u64_range] as U64 {
+        #[default]
+        Range(RangeStep<u64>),
+        Categorical(Categorical<u64>),
+        Constant(u64),
+        Id(Id),
     },
     i32[is_i32, default_i32_range] as I32 {
-    #[default]
-    Range(RangeStep<i32>),
-    Categorical(Categorical<i32>),
-    Constant(i32),
+        #[default]
+        Range(RangeStep<i32>),
+        Categorical(Categorical<i32>),
+        Constant(i32),
+    },
+    i64[is_i64, default_i64_range] as I64 {
+        #[default]
+        Range(RangeStep<i64>),
+        Categorical(Categorical<i64>),
+        Constant(i64),
+    },
+    f64[is_f64, default_f64_range] as F64 {
+        #[default]
+        Range(RangeStep<f64>),
+        Constant(f64),
     },
     f32[is_f32, default_f32_range] as F32 {
-    #[default]
-    Range(RangeStep<f32>),
-    Constant(f32),
+        #[default]
+        Range(RangeStep<f32>),
+        Constant(f32),
     },
 );
 
@@ -363,19 +403,11 @@ impl RangeStep<u64> {
         match to {
             NumberContentKind::U64 => Ok(number_content::U64::Range(self).into()),
             NumberContentKind::I64 => {
-                let cast = RangeStep {
-                    low: i64::try_from(self.low)?,
-                    high: i64::try_from(self.high)?,
-                    step: i64::try_from(self.step)?,
-                };
+                let cast = self.try_cast(i64::try_from)?;
                 Ok(number_content::I64::Range(cast).into())
             }
             NumberContentKind::F64 => {
-                let cast = RangeStep {
-                    low: self.low as f64,
-                    high: self.high as f64,
-                    step: self.step as f64,
-                };
+                let cast = self.cast(|value| value as f64);
                 Ok(number_content::F64::Range(cast).into())
             }
         }
@@ -416,11 +448,7 @@ impl RangeStep<i64> {
             )),
             NumberContentKind::I64 => Ok(number_content::I64::Range(self).into()),
             NumberContentKind::F64 => {
-                let cast = RangeStep {
-                    low: self.low as f64,
-                    high: self.high as f64,
-                    step: self.step as f64,
-                };
+                let cast = self.cast(|value| value as f64);
                 Ok(number_content::F64::Range(cast).into())
             }
         }
@@ -518,79 +546,49 @@ impl number_content::F64 {
 pub mod tests {
     use super::*;
 
-    #[test]
-    fn test_number_content_no_subtype() {
-        // I64
-        let number_content_as_json = json!(
-            {
-                "range": {
-                    "low": -10,
-                    "high": 4,
-                    "step": 1
-                }
+    use num::One;
+
+    // TODO: f32 deserializes successfully to `inf` when OOR
+    macro_rules! test_number_variants {
+        ($($test:ident -> $name:literal $as:ident: $ty:ty $(,)?)+) => { $(
+            #[test]
+            fn $test() {
+                // Inferred
+                let number_content_as_json = json!({
+                    "range": {
+                        "low": <$ty>::MIN,
+                        "high": <$ty>::MAX
+                    }
+                });
+                let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
+                assert_eq!(
+                    number_content,
+                    NumberContent::$as(number_content::$as::Range(RangeStep {
+                        low: Some(<$ty>::MIN),
+                        high: Some(<$ty>::MAX),
+                        step: None,
+                        ..Default::default()
+                    }))
+                );
+
+                // Specified
+                let number_content_as_json = json!({
+                    "subtype": $name,
+                    "constant": <$ty>::one()
+                });
+                let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
+                assert_eq!(
+                    number_content,
+                    NumberContent::$as(number_content::$as::Constant(<$ty>::one()))
+                );
             }
-        );
-        let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
-        assert_eq!(
-            number_content,
-            NumberContent::I64(number_content::I64::Range(RangeStep {
-                low: -10,
-                high: 4,
-                step: 1
-            }))
-        );
-        // U64
-        let number_content_as_json = json!(
-            {
-                "range": {
-                    "low": 1,
-                    "high": 4,
-                    "step": 1
-                }
-            }
-        );
-        let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
-        assert_eq!(
-            number_content,
-            NumberContent::U64(number_content::U64::Range(RangeStep {
-                low: 1,
-                high: 4,
-                step: 1
-            }))
-        );
-        // F64
-        let number_content_as_json = json!(
-            {
-                "range": {
-                    "low": 274.4,
-                    "high": 6597.5,
-                    "step": 0.1
-                }
-            }
-        );
-        let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
-        assert_eq!(
-            number_content,
-            NumberContent::F64(number_content::F64::Range(RangeStep {
-                low: 274.4,
-                high: 6597.5,
-                step: 0.1
-            }))
-        );
+        )+ }
     }
 
-    #[test]
-    fn test_number_content_subtype() {
-        let number_content_as_json = json!(
-            {
-                "subtype": "i64",
-                "constant": -10
-            }
-        );
-        let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
-        assert_eq!(
-            number_content,
-            NumberContent::I64(number_content::I64::Constant(-10))
-        );
-    }
+    test_number_variants!(
+        test_u32 -> "u32" U32: u32,
+        test_u64 -> "u64" U64: u64,
+        test_i32 -> "i32" I32: i32,
+        test_i64 -> "i64" I64: i64,
+    );
 }

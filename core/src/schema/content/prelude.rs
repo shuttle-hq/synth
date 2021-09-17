@@ -21,7 +21,6 @@ pub(super) use std::time::Duration as StdDuration;
 pub(super) use chrono::{
     DateTime, Duration, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc,
 };
-pub(super) use num::{Bounded, One};
 pub(super) use rand::{
     distributions::{Bernoulli, Distribution},
     Rng,
