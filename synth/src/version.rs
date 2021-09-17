@@ -46,8 +46,7 @@ pub fn version_update_info() -> Result<(Option<String>, Version)> {
 }
 
 pub fn version() -> String {
-    // env!("CARGO_PKG_VERSION").to_string()
-    "0.5.3".to_string()
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 fn version_semver() -> Version {
