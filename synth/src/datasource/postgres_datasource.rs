@@ -21,7 +21,7 @@ use synth_core::{Content, Value};
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
     single_thread_pool: Pool<Postgres>,
-    schema: Option<String>
+    schema: String, // default to public
 }
 
 #[async_trait]
@@ -44,7 +44,7 @@ impl DataSource for PostgresDataSource {
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
                 single_thread_pool,
-                schema: Some("inner_main".to_string()) // TODO
+                schema: "inner_main".to_string(), // TODO
             })
         })
     }
@@ -71,24 +71,16 @@ impl RelationalDataSource for PostgresDataSource {
     }
 
     async fn set_schema(&self) -> Result<()> {
-        if let Some(schema) = self.schema.clone() {
-            // let query = "SET search_path = $1";
-            //
-            // sqlx::query(query)
-            //     .bind(schema)
-            //     .execute(&self.single_thread_pool)
-            //     .await?;
+        let query = format!("SET search_path = {}", self.schema);
 
-            let query = format!("SET search_path = {}", schema);
+        sqlx::query(&query)
+            .execute(&self.single_thread_pool)
+            .await?;
 
-            sqlx::query(&query)
-                .execute(&self.single_thread_pool)
-                .await?;
+        sqlx::query(&query)
+            .execute(&self.pool)
+            .await?;
 
-            sqlx::query(&query)
-                .execute(&self.pool)
-                .await?;
-        }
         Ok(())
     }
 
@@ -98,8 +90,8 @@ impl RelationalDataSource for PostgresDataSource {
         WHERE table_catalog = current_catalog AND table_schema = $1 AND table_type = 'BASE TABLE'";
 
         let tables = sqlx::query(query)
-            .bind(self.schema.clone().unwrap_or("public".to_string()))
-            .fetch_all(&self.pool)
+            .bind(self.schema.clone())
+            .fetch_all(&self.single_thread_pool)
             .await?
             .iter()
             .map(|row| {
@@ -111,7 +103,7 @@ impl RelationalDataSource for PostgresDataSource {
 
         let query = "show search_path";
         let search_path: String = sqlx::query(query)
-            .fetch_one(&self.pool)
+            .fetch_one(&self.single_thread_pool)
             .await?
             .get(0);
 
@@ -128,7 +120,7 @@ impl RelationalDataSource for PostgresDataSource {
 
         sqlx::query(query)
             .bind(table_name)
-            .fetch_all(&self.pool)
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
@@ -143,7 +135,7 @@ impl RelationalDataSource for PostgresDataSource {
 
         sqlx::query(query)
             .bind(table_name)
-            .fetch_all(&self.pool)
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(PrimaryKey::try_from)
@@ -158,10 +150,13 @@ impl RelationalDataSource for PostgresDataSource {
             ON tc.constraint_name = kcu.constraint_name
             JOIN information_schema.constraint_column_usage AS ccu 
             ON ccu.constraint_name = tc.constraint_name
-            WHERE constraint_type = 'FOREIGN KEY'";
+            WHERE constraint_type = 'FOREIGN KEY'
+            and tc.table_schema = $1
+            and tc.table_catalog = current_catalog";
 
         sqlx::query(query)
-            .fetch_all(&self.pool)
+            .bind(self.schema.clone())
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(ForeignKey::try_from)

@@ -50,6 +50,9 @@ pub trait RelationalDataSource: DataSource {
         collection_name: String,
         collection: &[Value],
     ) -> Result<()> {
+
+        self.set_schema().await?;
+
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
         if collection.is_empty() {
