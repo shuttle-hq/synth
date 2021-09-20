@@ -324,7 +324,7 @@ pages of the official documentation.
 Once the installer script is done, try running
 
 ```bash
-$ synth --version
+$ synth version
 synth 0.5.4
 ```
 

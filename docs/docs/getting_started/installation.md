@@ -34,7 +34,7 @@ Finally [add `synth` to your PATH](https://www.architectryan.com/2018/03/17/add-
 You should now be able to use `synth`:
 
 ```
-PS C:\Users\user\workspace> synth --version
+PS C:\Users\user\workspace> synth version
 ```
 
 </TabItem>
