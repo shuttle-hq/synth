@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use backtrace::Backtrace;
-use serde::{Deserialize, Serialize};
 
 use std::io::{self, BufRead, Read, Write};
 use std::panic;
@@ -18,43 +17,61 @@ use super::{Args, TelemetryCommand};
 const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
 const EVENT_NAME: &str = "synth-command";
 
-fn report_panic(synth_command: &str, telemetry_client: &TelemetryClient) {
-    let (stdin, stdout) = (io::stdin(), io::stdout());
-    let (mut stdin, mut stdout) = (stdin.lock(), stdout.lock());
-    let mut username = String::new();
-    let mut email = None;
+fn report_panic(synth_command: &Args, telemetry_client: &TelemetryClient) {
+    // This function exists only to return early in case of a panic inside this panic hook
+    fn report_panic_impl(
+        synth_command: &Args, 
+        telemetry_client: &TelemetryClient
+    ) -> Result<()> 
+    {
+        let (stdin, stdout) = (io::stdin(), io::stdout());
+        let (mut stdin, mut stdout) = (stdin.lock(), stdout.lock());
+        let mut username = String::new();
+        let mut email = None;
 
-    println!("Synth panicked!");
-    print!("What should we call you? ");
-    stdout.flush().unwrap();
+        println!("Synth panicked!");
+        print!("What should we call you? ");
+        stdout.flush()?;
 
-    stdin.read_line(&mut username).expect("Couldn't read username.");
-    let username = username.trim();
+        stdin.read_line(&mut username).context("Couldn't read username.")?;
+        let username = username.trim();
 
-    print!("Would you like to send us your e-mail? [y/n] ");
-    stdout.flush().unwrap();
+        print!("Would you like to send us your e-mail? [y/n] ");
+        stdout.flush()?;
 
-    // Newline character is also stored
-    let mut answer = [0; 2];
-    stdin.read_exact(&mut answer).expect("Couldn't read answer.");
+        // Newline character is also stored
+        let mut answer = [0; 2];
+        stdin.read_exact(&mut answer).context("Couldn't read answer.")?;
 
-    if answer[0] == b'y' {
-        print!("What's your e-mail? ");
-        stdout.flush().unwrap();
+        if answer[0] == b'y' {
+            print!("What's your e-mail? ");
+            stdout.flush()?;
 
-        let email = email.insert(String::new());
-        stdin.read_line(email).expect("Couldn't read e-mail.");
-        // Remove newline character
-        email.pop();
+            let email = email.insert(String::new());
+            stdin.read_line(email).context("Couldn't read e-mail.")?;
+            // Remove newline character
+            email.pop();
+        }
+        
+        let synth_command = serde_json::to_string(&synth_command).unwrap();
+        let backtrace = Backtrace::new();
+
+        eprintln!("username = {:?}", username);
+        eprintln!("email = {:?}", email);
+        eprintln!("synth_command = {:?}", synth_command);
+        eprintln!("backtrace = {:?}", backtrace);
+        
+        // let _ = client.send("Synth panicked", CommandResult::Failed);
+
+        Ok(())
     }
-    
-    let backtrace = Backtrace::new();
 
-    eprintln!("username = {:?}", username);
-    eprintln!("email = {:?}", email);
-    eprintln!("backtrace = {:?}", backtrace);
-    
-    // let _ = client.send("Synth panicked", CommandResult::Failed);
+    report_panic_impl(synth_command, telemetry_client).map_or_else(|e| { 
+        println!("Error sending report: {}", e);
+    }, 
+    |_| {
+        println!("Report sent with success"); 
+    });
 }
 
 pub(crate) fn enable() -> Result<()> {
@@ -85,12 +102,12 @@ where
     E: AsRef<dyn Error + 'static>
 {
     let client = TelemetryClient::new();
-    let synth_command = serde_json::to_string(&args).unwrap();
 
-    panic::set_hook(Box::new(move |_| { report_panic(&synth_command, &client); }));
-    panic!();
+    // if is_enabled() {
+        panic::set_hook(Box::new(move |_| { report_panic(&args, &client); }));
+        panic!();
+    // }
 
-    // TODO: get the command_name from synth_command
     let command_name = match &args {
         Args::Init { .. } => "init",
         Args::Generate { .. } => "generate",
