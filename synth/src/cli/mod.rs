@@ -9,9 +9,9 @@ mod store;
 
 use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
-use crate::cli::import::ImportStrategy;
-use crate::cli::import::SomeImportStrategy;
+use crate::cli::import::{ImportStrategy, ImportParams};
 use crate::cli::store::Store;
+use crate::version::print_version_message;
 
 use anyhow::{Context, Result};
 
@@ -22,8 +22,8 @@ use structopt::clap::AppSettings;
 use rand::RngCore;
 
 use synth_core::{Name, graph::json};
-use crate::version::print_version_message;
 use std::process::exit;
+use std::convert::TryInto;
 
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
@@ -83,7 +83,8 @@ impl Cli {
                 ref namespace,
                 ref collection,
                 ref from,
-            } => self.import(namespace.clone(), collection.clone(), from.clone()),
+                ref schema
+            } => self.import(namespace.clone(), collection.clone(), from.clone(), schema.clone()),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
             Args::Version => {
@@ -114,22 +115,24 @@ impl Cli {
         self,
         path: PathBuf,
         collection: Option<Name>,
-        import_strategy: Option<SomeImportStrategy>,
+        import_strategy: Option<String>,
+        schema: Option<String>
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
+
+        let import_strategy: Box<dyn ImportStrategy> = ImportParams {
+            import_strategy,
+            schema
+        }.try_into()?;
+
         if let Some(collection) = collection {
             if self.store.collection_exists(&path, &collection) {
-                return Err(anyhow!(
-                    "The collection `{}` already exists. Will not import into an existing collection.",
-		    Store::relative_collection_path(&path, &collection).display()
-		));
+                return Err(anyhow!("The collection `{}` already exists. Will not import into an existing collection.",Store::relative_collection_path(&path, &collection).display()));
             } else {
                 let content = import_strategy
-                    .unwrap_or_default()
                     .import_collection(&collection)?;
-                self.store
-                    .save_collection_path(&path, collection, content)?;
+                self.store.save_collection_path(&path, collection, content)?;
                 Ok(())
             }
         } else if self.store.ns_exists(&path) {
@@ -138,7 +141,7 @@ impl Cli {
                 path.display()
             ))
         } else {
-            let ns = import_strategy.unwrap_or_default().import()?;
+            let ns = import_strategy.import()?;
             self.store.save_ns_path(path, ns)?;
             Ok(())
         }
@@ -222,9 +225,14 @@ pub enum Args {
         collection: Option<Name>,
         #[structopt(
             long,
-            help = "The source from which to import data. Can be a postgres uri, a mongodb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
+            help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
         )]
-        from: Option<SomeImportStrategy>,
+        from: Option<String>,
+        #[structopt(
+        long,
+        help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
+        )]
+        schema: Option<String>,
     },
     #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]

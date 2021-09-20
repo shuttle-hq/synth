@@ -31,7 +31,7 @@ pub struct MongoImportStrategy {
 }
 
 impl ImportStrategy for MongoImportStrategy {
-    fn import(self) -> Result<Namespace> {
+    fn import(&self) -> Result<Namespace> {
         let client_options = ClientOptions::parse(&self.uri)?;
 
         info!("Connecting to database at {} ...", &self.uri);
@@ -89,14 +89,14 @@ impl ImportStrategy for MongoImportStrategy {
         Ok(namespace)
     }
 
-    fn import_collection(self, name: &Name) -> Result<Content> {
+    fn import_collection(&self, name: &Name) -> Result<Content> {
         self.import()?
             .collections
             .remove(name)
             .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
     }
 
-    fn into_value(self) -> Result<JsonValue> {
+    fn into_value(&self) -> Result<JsonValue> {
         unreachable!()
     }
 }

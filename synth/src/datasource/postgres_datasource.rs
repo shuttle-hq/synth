@@ -18,33 +18,43 @@ use synth_core::schema::{
 };
 use synth_core::{Content, Value};
 
+pub struct PostgresConnectParams {
+    pub(crate) uri: String,
+    pub(crate) schema: Option<String>
+}
+
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
     single_thread_pool: Pool<Postgres>,
-    schema: String, // default to public
+    schema: String, // consider adding a type schema
 }
 
 #[async_trait]
 impl DataSource for PostgresDataSource {
-    type ConnectParams = String;
+    type ConnectParams = PostgresConnectParams;
 
     fn new(connect_params: &Self::ConnectParams) -> Result<Self> {
         task::block_on(async {
             let pool = PgPoolOptions::new()
                 .max_connections(3) //TODO expose this as a user config?
-                .connect(connect_params.as_str())
+                .connect(connect_params.uri.as_str())
                 .await?;
 
             // Needed for queries that require explicit synchronous order, i.e. setseed + random
             let single_thread_pool = PgPoolOptions::new()
                 .max_connections(1)
-                .connect(connect_params.as_str())
+                .connect(connect_params.uri.as_str())
                 .await?;
+
+            let schema = connect_params
+                .schema
+                .clone()
+                .unwrap_or_else(|| "public".to_string());
 
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
                 single_thread_pool,
-                schema: "inner_main".to_string(), // TODO
+                schema
             })
         })
     }
@@ -99,15 +109,6 @@ impl RelationalDataSource for PostgresDataSource {
                     .map_err(|e| anyhow!("{:?}", e))
             })
             .collect();
-        // TEMP
-
-        let query = "show search_path";
-        let search_path: String = sqlx::query(query)
-            .fetch_one(&self.single_thread_pool)
-            .await?
-            .get(0);
-
-        info!("SP: {}", search_path);
 
         tables
     }
