@@ -126,6 +126,7 @@ pub trait RelationalDataSource: DataSource {
 
         if let Err(e) = results.into_iter().bcollect::<Vec<Self::QueryResult>>() {
             bail!("One or more database inserts failed: {:?}", e)
+
         }
 
         info!("Inserted {} rows...", collection.len());

@@ -11,13 +11,14 @@ use synth_core::{Content, Name};
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
     pub uri: String,
+    pub schema: Option<String>
 }
 
 impl ExportStrategy for PostgresExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<()> {
         let connect_params = PostgresConnectParams {
-            uri: self.uri,
-            schema: None // TODO
+            uri: self.uri.clone(),
+            schema: self.schema.clone()
         };
 
         let datasource = PostgresDataSource::new(&connect_params)?;

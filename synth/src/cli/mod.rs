@@ -1,3 +1,17 @@
+use std::convert::TryInto;
+use std::path::PathBuf;
+
+use anyhow::{Context, Result};
+use rand::RngCore;
+use structopt::StructOpt;
+
+use db_utils::DataSourceParams;
+use synth_core::{graph::json, Name};
+
+use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::import::ImportStrategy;
+use crate::cli::store::Store;
+
 mod export;
 mod import;
 mod import_utils;
@@ -72,12 +86,14 @@ impl Cli {
                 ref to,
                 seed,
                 random,
+                schema
             } => self.generate(
                 namespace.clone(),
                 collection.clone(),
                 size,
                 to.clone(),
                 Self::derive_seed(random, seed)?,
+                schema
             ),
             Args::Import {
                 ref namespace,
@@ -115,14 +131,14 @@ impl Cli {
         self,
         path: PathBuf,
         collection: Option<Name>,
-        import_strategy: Option<String>,
+        from: Option<String>,
         schema: Option<String>
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
 
-        let import_strategy: Box<dyn ImportStrategy> = ImportParams {
-            import_strategy,
+        let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
+            uri: from,
             schema
         }.try_into()?;
 
@@ -152,13 +168,21 @@ impl Cli {
         ns_path: PathBuf,
         collection: Option<Name>,
         target: usize,
-        to: Option<SomeExportStrategy>,
+        to: Option<String>,
         seed: u64,
+        schema: Option<String>
     ) -> Result<()> {
+
         let namespace = self
             .store
             .get_ns(ns_path.clone())
             .context("Unable to open the namespace")?;
+
+        let export_strategy: Box<dyn ExportStrategy> = DataSourceParams {
+            uri: to,
+            schema
+        }.try_into()?;
+
         let params = ExportParams {
             namespace,
             collection_name: collection,
@@ -166,7 +190,7 @@ impl Cli {
             seed,
         };
 
-        to.unwrap_or_default()
+        export_strategy
             .export(params)
             .with_context(|| format!("At namespace {:?}", ns_path))
     }
@@ -199,7 +223,7 @@ pub enum Args {
             long,
             help = "The sink into which to generate data. Can be a postgres uri, a mongodb uri. If not specified, data will be written to stdout"
         )]
-        to: Option<SomeExportStrategy>,
+        to: Option<String>,
         #[structopt(
             long,
             help = "an unsigned 64 bit integer seed to be used as a seed for generation"
@@ -210,6 +234,11 @@ pub enum Args {
             help = "generation will use a random seed - this cannot be used with --seed"
         )]
         random: bool,
+        #[structopt(
+        long,
+        help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
+        )]
+        schema: Option<String>,
     },
     #[structopt(about = "Import data from an external source")]
     Import {

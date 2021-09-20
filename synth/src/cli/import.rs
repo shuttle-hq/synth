@@ -1,15 +1,19 @@
+use std::convert::TryFrom;
+use std::path::PathBuf;
+use std::str::FromStr;
+
+use anyhow::{Context, Result};
+use serde_json::Value;
+
+use synth_core::{Content, Name};
+use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
+use synth_core::schema::Namespace;
+
+use crate::cli::db_utils::DataSourceParams;
 use crate::cli::mongo::MongoImportStrategy;
 use crate::cli::mysql::MySqlImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
 use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
-use anyhow::{Context, Result};
-use serde_json::Value;
-use std::path::PathBuf;
-use std::str::FromStr;
-use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
-use synth_core::schema::Namespace;
-use synth_core::{Content, Name};
-use std::convert::TryFrom;
 
 pub trait ImportStrategy {
     fn import(&self) -> Result<Namespace> {
@@ -21,22 +25,17 @@ pub trait ImportStrategy {
     fn into_value(&self) -> Result<Value>;
 }
 
-pub struct ImportParams {
-    pub import_strategy: Option<String>,
-    pub schema: Option<String>
-}
-
-impl TryFrom<ImportParams> for Box<dyn ImportStrategy> {
+impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
     type Error = anyhow::Error;
 
-    fn try_from(value: ImportParams) -> Result<Self, Self::Error> {
-        match value.import_strategy {
+    fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
+        match params.uri {
             None => Ok(Box::new(StdinImportStrategy {})),
             Some(uri) => {
                 let import_strategy: Box<dyn ImportStrategy> = if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
                     Box::new(PostgresImportStrategy {
                         uri,
-                        schema: value.schema
+                        schema: params.schema
                     })
                 } else if uri.starts_with("mongodb://") {
                     Box::new(MongoImportStrategy {

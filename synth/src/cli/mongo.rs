@@ -155,7 +155,7 @@ fn bson_to_content(bson: &Bson) -> Content {
 }
 
 impl ExportStrategy for MongoExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<()> {
         let mut client = Client::with_uri_str(&self.uri)?;
         let sampler = Sampler::try_from(&params.namespace)?;
         let output =

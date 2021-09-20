@@ -2,7 +2,6 @@ use crate::cli::postgres::PostgresExportStrategy;
 use crate::cli::stdf::StdoutExportStrategy;
 use anyhow::{Context, Result};
 
-use std::str::FromStr;
 use std::convert::TryFrom;
 
 use crate::cli::mongo::MongoExportStrategy;
@@ -11,9 +10,10 @@ use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
+use crate::cli::db_utils::DataSourceParams;
 
 pub trait ExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()>;
+    fn export(&self, params: ExportParams) -> Result<()>;
 }
 
 pub struct ExportParams {
@@ -23,56 +23,38 @@ pub struct ExportParams {
     pub seed: u64,
 }
 
-#[derive(Clone, Debug)]
-pub enum SomeExportStrategy {
-    StdoutExportStrategy(StdoutExportStrategy),
-    FromPostgres(PostgresExportStrategy),
-    FromMongo(MongoExportStrategy),
-    FromMySql(MySqlExportStrategy),
-}
-
-impl ExportStrategy for SomeExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
-        match self {
-            SomeExportStrategy::StdoutExportStrategy(ses) => ses.export(params),
-            SomeExportStrategy::FromPostgres(pes) => pes.export(params),
-            SomeExportStrategy::FromMongo(mes) => mes.export(params),
-            SomeExportStrategy::FromMySql(mes) => mes.export(params),
-        }
-    }
-}
-
-impl Default for SomeExportStrategy {
-    fn default() -> Self {
-        SomeExportStrategy::StdoutExportStrategy(StdoutExportStrategy {})
-    }
-}
-
-impl FromStr for SomeExportStrategy {
-    type Err = anyhow::Error;
+impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
+    type Error = anyhow::Error;
 
     /// Here we exhaustively try to pattern match strings until we get something
     /// that successfully parses. Starting from a file, could be a url to a database etc.
     /// We assume that these can be unambiguously identified for now.
     /// For example, `postgres://...` is not going to be a file on the FS
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // for postgres, `postgres` or `postgresql` are fine
-        if s.starts_with("postgres://") || s.starts_with("postgresql://") {
-            return Ok(SomeExportStrategy::FromPostgres(PostgresExportStrategy {
-                uri: s.to_string(),
-            }));
-        } else if s.starts_with("mongodb://") {
-            return Ok(SomeExportStrategy::FromMongo(MongoExportStrategy {
-                uri: s.to_string(),
-            }));
-        } else if s.starts_with("mysql://") || s.starts_with("mariadb://") {
-            return Ok(SomeExportStrategy::FromMySql(MySqlExportStrategy {
-                uri: s.to_string(),
-            }));
+    fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
+        match params.uri {
+            None => Ok(Box::new(StdoutExportStrategy {})),
+            Some(uri) => {
+                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
+                    Box::new(PostgresExportStrategy {
+                        uri,
+                        schema: params.schema,
+                    })
+                } else if uri.starts_with("mongodb://") {
+                    Box::new(MongoExportStrategy {
+                        uri
+                    })
+                } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
+                    Box::new(MySqlExportStrategy {
+                        uri
+                    })
+                } else {
+                    return Err(anyhow!(
+                            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb'"
+                    ));
+                };
+                Ok(export_strategy)
+            }
         }
-        Err(anyhow!(
-            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres'"
-        ))
     }
 }
 

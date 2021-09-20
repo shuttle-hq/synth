@@ -14,7 +14,7 @@ pub struct MySqlExportStrategy {
 }
 
 impl ExportStrategy for MySqlExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<()> {
         let datasource = MySqlDataSource::new(&self.uri)?;
 
         create_and_insert_values(params, &datasource)

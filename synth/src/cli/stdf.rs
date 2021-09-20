@@ -20,7 +20,7 @@ pub struct StdinImportStrategy {}
 pub struct StdoutExportStrategy {}
 
 impl ExportStrategy for StdoutExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<()> {
         let generator = Sampler::try_from(&params.namespace)?;
         let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
         println!("{}", output.into_json());
