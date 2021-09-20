@@ -48,7 +48,7 @@ generated during the `import` process for that PostgreSQL type.
 
 Note, not all PostgreSQL types have been covered yet. If there is a type you
 need, [open an issue](https://github.com/getsynth/synth/issues/new?assignees=&labels=New+feature&template=feature_request.md&title=)
-on Github.
+on GitHub.
 
 <!---
 table formatter: https://codebeautify.org/markdown-formatter

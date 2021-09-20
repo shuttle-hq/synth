@@ -161,7 +161,7 @@ We decided to build Synth from the ground up in Rust. We love Rust, and given th
 
 ## Get in touch
 
-If you would like to learn more, or you would like support for your use-case, feel free to open an issue on Github.
+If you would like to learn more, or you would like support for your use-case, feel free to open an issue on GitHub.
 
 If your query is more sensitive, you can email [opensource@getsynth.com](mailto:opensource@getsynth.com) and we'll happily chat about your usecase.
 
