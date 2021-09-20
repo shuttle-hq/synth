@@ -358,4 +358,4 @@ We'd like to keep iterating on the Shopify API and improve it. If there is
 interest we'll add more endpoints and improve the existing Event data model.
 
 If you'd like to contribute, or are interested mocks for other APIs other than 
-Shopify, feel free to open an issue on Github!
+Shopify, feel free to open an issue on GitHub!
