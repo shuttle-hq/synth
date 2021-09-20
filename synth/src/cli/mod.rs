@@ -1,17 +1,3 @@
-use std::convert::TryInto;
-use std::path::PathBuf;
-
-use anyhow::{Context, Result};
-use rand::RngCore;
-use structopt::StructOpt;
-
-use db_utils::DataSourceParams;
-use synth_core::{graph::json, Name};
-
-use crate::cli::export::{ExportParams, ExportStrategy};
-use crate::cli::import::ImportStrategy;
-use crate::cli::store::Store;
-
 mod export;
 mod import;
 mod import_utils;
@@ -21,20 +7,17 @@ mod postgres;
 mod stdf;
 mod store;
 
-use crate::cli::export::SomeExportStrategy;
 use crate::cli::export::{ExportParams, ExportStrategy};
-use crate::cli::import::{ImportStrategy, ImportParams};
+use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
+use crate::cli::db_utils::DataSourceParams;
 use crate::version::print_version_message;
 
 use anyhow::{Context, Result};
-
 use std::path::PathBuf;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
-
 use rand::RngCore;
-
 use synth_core::{Name, graph::json};
 use std::process::exit;
 use std::convert::TryInto;
@@ -42,6 +25,7 @@ use std::convert::TryInto;
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
 pub(crate) mod config;
+mod db_utils;
 
 pub struct Cli {
     store: Store
