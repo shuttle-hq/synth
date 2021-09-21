@@ -36,7 +36,7 @@ impl ImportStrategy for FileImportStrategy {
             .ok_or_else(|| anyhow!("Could not find collection '{}' in file.", name))
     }
 
-    fn into_value(&self) -> Result<Value> {
+    fn as_value(&self) -> Result<Value> {
         Ok(serde_json::from_reader(std::fs::File::open(
             self.from_file.clone(),
         )?)?)
@@ -44,7 +44,7 @@ impl ImportStrategy for FileImportStrategy {
 }
 
 impl ImportStrategy for StdinImportStrategy {
-    fn into_value(&self) -> Result<Value> {
+    fn as_value(&self) -> Result<Value> {
         Ok(serde_json::from_reader(std::io::stdin())?)
     }
 }

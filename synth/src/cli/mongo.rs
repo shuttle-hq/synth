@@ -96,7 +96,7 @@ impl ImportStrategy for MongoImportStrategy {
             .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
     }
 
-    fn into_value(&self) -> Result<JsonValue> {
+    fn as_value(&self) -> Result<JsonValue> {
         unreachable!()
     }
 }

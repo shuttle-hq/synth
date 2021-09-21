@@ -85,11 +85,11 @@ impl DataSource for PostgresDataSource {
 }
 
 impl PostgresDataSource {
-    async fn check_schema_exists(pool: &Pool<Postgres>, schema: &String) -> Result<()> {
-        // select schema_name from information_schema.schemata where catalog_name = current_catalog ;
+    async fn check_schema_exists(pool: &Pool<Postgres>, schema: &str) -> Result<()> {
         let query = r"SELECT schema_name
         FROM information_schema.schemata
         WHERE catalog_name = current_catalog;";
+
         let available_schemas: Vec<String> = sqlx::query(query)
             .fetch_all(pool)
             .await?
@@ -97,7 +97,7 @@ impl PostgresDataSource {
             .map(|row| row.get(0))
             .collect();
 
-        if !available_schemas.contains(schema) {
+        if !available_schemas.contains(&schema.to_string()) {
             let formatted_schemas = available_schemas.join(", ");
             bail!("the schema '{}' could not be found on the database. Available schemas are: {}.", schema, formatted_schemas);
         }

@@ -17,12 +17,12 @@ use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
 
 pub trait ImportStrategy {
     fn import(&self) -> Result<Namespace> {
-        ns_from_value(self.into_value()?)
+        ns_from_value(self.as_value()?)
     }
     fn import_collection(&self, _name: &Name) -> Result<Content> {
-        collection_from_value(&self.into_value()?)
+        collection_from_value(&self.as_value()?)
     }
-    fn into_value(&self) -> Result<Value>;
+    fn as_value(&self) -> Result<Value>;
 }
 
 impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
