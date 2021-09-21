@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow};
-use sqlx::{Column, Pool, Postgres, Row, TypeInfo};
+use sqlx::{Column, Pool, Postgres, Row, TypeInfo, Executor};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
@@ -17,6 +17,7 @@ use synth_core::schema::{
     StringContent, Uuid,
 };
 use synth_core::{Content, Value};
+use async_std::sync::Arc;
 
 pub struct PostgresConnectParams {
     pub(crate) uri: String,
@@ -35,21 +36,37 @@ impl DataSource for PostgresDataSource {
 
     fn new(connect_params: &Self::ConnectParams) -> Result<Self> {
         task::block_on(async {
-            let pool = PgPoolOptions::new()
-                .max_connections(3) //TODO expose this as a user config?
-                .connect(connect_params.uri.as_str())
-                .await?;
-
-            // Needed for queries that require explicit synchronous order, i.e. setseed + random
-            let single_thread_pool = PgPoolOptions::new()
-                .max_connections(1)
-                .connect(connect_params.uri.as_str())
-                .await?;
-
             let schema = connect_params
                 .schema
                 .clone()
                 .unwrap_or_else(|| "public".to_string());
+
+            let mut arc = Arc::new(schema.clone());
+            let pool = PgPoolOptions::new()
+                .max_connections(3) //TODO expose this as a user config?
+                .after_connect(move |conn| {
+                    let schema = arc.clone();
+                    Box::pin(async move {
+                        conn.execute(&*format!("SET search_path = '{}';", schema)).await?;
+                        Ok(())
+                    })
+                })
+                .connect(connect_params.uri.as_str())
+                .await?;
+
+            // Needed for queries that require explicit synchronous order, i.e. setseed + random
+            arc = Arc::new(schema.clone());
+            let single_thread_pool = PgPoolOptions::new()
+                .max_connections(1)
+                .after_connect(move |conn|{
+                    let schema = arc.clone();
+                    Box::pin(async move {
+                        conn.execute(&*format!("SET search_path = '{}';", schema)).await?;
+                        Ok(())
+                    })
+                })
+                .connect(connect_params.uri.as_str())
+                .await?;
 
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
@@ -81,15 +98,16 @@ impl RelationalDataSource for PostgresDataSource {
     }
 
     async fn set_schema(&self) -> Result<()> {
-        let query = format!("SET search_path = {}", self.schema);
-
-        sqlx::query(&query)
-            .execute(&self.single_thread_pool)
-            .await?;
-
-        sqlx::query(&query)
-            .execute(&self.pool)
-            .await?;
+        // let query = format!("SET search_path = {}", self.schema);
+        //
+        // sqlx::query(&query)
+        //     .execute(&self.single_thread_pool)
+        //     .await?;
+        //
+        //
+        // sqlx::query(&query)
+        //     .execute(&self.pool)
+        //     .await?;
 
         Ok(())
     }
@@ -117,10 +135,13 @@ impl RelationalDataSource for PostgresDataSource {
         let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
         character_maximum_length
         FROM information_schema.columns
-        WHERE table_name = $1 AND table_catalog = current_catalog";
+        WHERE table_name = $1
+        AND table_schema = $2
+        AND table_catalog = current_catalog";
 
         sqlx::query(query)
             .bind(table_name)
+            .bind(self.schema.clone())
             .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
