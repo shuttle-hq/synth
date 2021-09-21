@@ -27,8 +27,6 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
     datasource: &T,
 ) -> Result<Namespace> {
 
-    task::block_on(datasource.set_schema())?;
-
     let table_names = task::block_on(datasource.get_table_names())
         .with_context(|| "Failed to get table names".to_string())?;
 

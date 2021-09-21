@@ -51,8 +51,6 @@ pub trait RelationalDataSource: DataSource {
         collection: &[Value],
     ) -> Result<()> {
 
-        self.set_schema().await?;
-
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
         if collection.is_empty() {
@@ -138,8 +136,6 @@ pub trait RelationalDataSource: DataSource {
         query: String,
         query_params: Vec<&Value>,
     ) -> Result<Self::QueryResult>;
-
-    async fn set_schema(&self) -> Result<()>;
 
     async fn get_table_names(&self) -> Result<Vec<String>>;
 

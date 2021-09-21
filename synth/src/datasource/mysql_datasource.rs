@@ -70,11 +70,6 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(result)
     }
 
-    async fn set_schema(&self) -> Result<()> {
-        // no-op since MySQL doesn't have a concept of a schema
-        Ok(())
-    }
-
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name FROM information_schema.tables
             WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'";

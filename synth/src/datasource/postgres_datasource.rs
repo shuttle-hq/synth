@@ -97,21 +97,6 @@ impl RelationalDataSource for PostgresDataSource {
         Ok(result)
     }
 
-    async fn set_schema(&self) -> Result<()> {
-        // let query = format!("SET search_path = {}", self.schema);
-        //
-        // sqlx::query(&query)
-        //     .execute(&self.single_thread_pool)
-        //     .await?;
-        //
-        //
-        // sqlx::query(&query)
-        //     .execute(&self.pool)
-        //     .await?;
-
-        Ok(())
-    }
-
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name
         FROM information_schema.tables
