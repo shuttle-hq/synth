@@ -68,6 +68,9 @@ impl DataSource for PostgresDataSource {
                 .connect(connect_params.uri.as_str())
                 .await?;
 
+            // Better to do the check now and return a helpful error
+            Self::check_schema_exists(&single_thread_pool, &schema).await?;
+
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
                 single_thread_pool,
@@ -78,6 +81,28 @@ impl DataSource for PostgresDataSource {
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
         self.insert_relational_data(collection_name, collection).await
+    }
+}
+
+impl PostgresDataSource {
+    async fn check_schema_exists(pool: &Pool<Postgres>, schema: &String) -> Result<()> {
+        // select schema_name from information_schema.schemata where catalog_name = current_catalog ;
+        let query = r"SELECT schema_name
+        FROM information_schema.schemata
+        WHERE catalog_name = current_catalog;";
+        let available_schemas: Vec<String> = sqlx::query(query)
+            .fetch_all(pool)
+            .await?
+            .into_iter()
+            .map(|row| row.get(0))
+            .collect();
+
+        if !available_schemas.contains(schema) {
+            let formatted_schemas = available_schemas.join(", ");
+            bail!("the schema '{}' could not be found on the database. Available schemas are: {}.", schema, formatted_schemas);
+        }
+
+        Ok(())
     }
 }
 
@@ -100,7 +125,9 @@ impl RelationalDataSource for PostgresDataSource {
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name
         FROM information_schema.tables
-        WHERE table_catalog = current_catalog AND table_schema = $1 AND table_type = 'BASE TABLE'";
+        WHERE table_catalog = current_catalog
+        AND table_schema = $1
+        AND table_type = 'BASE TABLE'";
 
         let tables = sqlx::query(query)
             .bind(self.schema.clone())
