@@ -3178,6 +3178,7 @@ dependencies = [
  "beau_collector",
  "chrono",
  "colored",
+ "console",
  "ctrlc",
  "dirs",
  "env_logger",

@@ -5,7 +5,6 @@ use synth::cli::Cli;
 use std::thread;
 use std::thread::JoinHandle;
 
-
 #[async_std::main]
 async fn main() -> Result<()> {
     let args = Args::from_args();

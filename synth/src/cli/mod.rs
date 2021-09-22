@@ -213,6 +213,7 @@ pub enum Args {
             long,
             help = "The sink into which to generate data. Can be a postgres uri, a mongodb uri. If not specified, data will be written to stdout"
         )]
+        #[serde(skip)]
         to: Option<String>,
         #[structopt(
             long,
@@ -228,6 +229,7 @@ pub enum Args {
         long,
         help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
         )]
+        #[serde(skip)]
         schema: Option<String>,
     },
     #[structopt(about = "Import data from an external source")]
@@ -248,11 +250,13 @@ pub enum Args {
             long,
             help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
         )]
+        #[serde(skip)]
         from: Option<String>,
         #[structopt(
         long,
         help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
         )]
+        #[serde(skip)]
         schema: Option<String>,
     },
     #[cfg(feature = "telemetry")]
