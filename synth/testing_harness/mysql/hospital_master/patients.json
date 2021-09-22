@@ -63,9 +63,20 @@
       ]
     },
     "id": {
-      "type": "number",
-      "id": {},
-      "subtype": "u64"
+      "type": "unique",
+      "algorithm": {
+        "Hash": {
+          "retries": null
+        }
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": 4,
+          "high": 62
+        },
+        "subtype": "i64"
+      }
     },
     "name": {
       "type": "one_of",

@@ -40,9 +40,20 @@
       ]
     },
     "id": {
-      "type": "number",
-      "id": {},
-      "subtype": "u64"
+      "type": "unique",
+      "algorithm": {
+        "Hash": {
+          "retries": null
+        }
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 14
+        },
+        "subtype": "i64"
+      }
     }
   }
 }
