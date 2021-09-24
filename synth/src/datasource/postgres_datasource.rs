@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow};
-use sqlx::{Column, Pool, Postgres, Row, TypeInfo};
+use sqlx::{Column, Pool, Postgres, Row, TypeInfo, Executor};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
@@ -17,38 +17,92 @@ use synth_core::schema::{
     StringContent, Uuid,
 };
 use synth_core::{Content, Value};
+use async_std::sync::Arc;
+
+pub struct PostgresConnectParams {
+    pub(crate) uri: String,
+    pub(crate) schema: Option<String>
+}
 
 pub struct PostgresDataSource {
     pool: Pool<Postgres>,
-    single_thread_pool: Pool<Postgres>
+    single_thread_pool: Pool<Postgres>,
+    schema: String, // consider adding a type schema
 }
 
 #[async_trait]
 impl DataSource for PostgresDataSource {
-    type ConnectParams = String;
+    type ConnectParams = PostgresConnectParams;
 
     fn new(connect_params: &Self::ConnectParams) -> Result<Self> {
         task::block_on(async {
+            let schema = connect_params
+                .schema
+                .clone()
+                .unwrap_or_else(|| "public".to_string());
+
+            let mut arc = Arc::new(schema.clone());
             let pool = PgPoolOptions::new()
                 .max_connections(3) //TODO expose this as a user config?
-                .connect(connect_params.as_str())
+                .after_connect(move |conn| {
+                    let schema = arc.clone();
+                    Box::pin(async move {
+                        conn.execute(&*format!("SET search_path = '{}';", schema)).await?;
+                        Ok(())
+                    })
+                })
+                .connect(connect_params.uri.as_str())
                 .await?;
 
             // Needed for queries that require explicit synchronous order, i.e. setseed + random
+            arc = Arc::new(schema.clone());
             let single_thread_pool = PgPoolOptions::new()
                 .max_connections(1)
-                .connect(connect_params.as_str())
+                .after_connect(move |conn|{
+                    let schema = arc.clone();
+                    Box::pin(async move {
+                        conn.execute(&*format!("SET search_path = '{}';", schema)).await?;
+                        Ok(())
+                    })
+                })
+                .connect(connect_params.uri.as_str())
                 .await?;
+
+            // Better to do the check now and return a helpful error
+            Self::check_schema_exists(&single_thread_pool, &schema).await?;
 
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
-                single_thread_pool
+                single_thread_pool,
+                schema
             })
         })
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
         self.insert_relational_data(collection_name, collection).await
+    }
+}
+
+impl PostgresDataSource {
+    async fn check_schema_exists(pool: &Pool<Postgres>, schema: &str) -> Result<()> {
+        let query = r"SELECT schema_name
+        FROM information_schema.schemata
+        WHERE catalog_name = current_catalog;";
+
+        let available_schemas: Vec<String> = sqlx::query(query)
+            .fetch_all(pool)
+            .await?
+            .into_iter()
+            .map(|row| row.get(0))
+            .collect();
+
+        if !available_schemas.contains(&schema.to_string()) {
+            let formatted_schemas = available_schemas.join(", ");
+            bail!("the schema '{}' could not be found on the database. Available schemas are: {}.", schema, formatted_schemas);
+        }
+
+        Ok(())
     }
 }
 
@@ -71,28 +125,36 @@ impl RelationalDataSource for PostgresDataSource {
     async fn get_table_names(&self) -> Result<Vec<String>> {
         let query = r"SELECT table_name
         FROM information_schema.tables
-        WHERE table_catalog = current_catalog AND table_schema = 'public' AND table_type = 'BASE TABLE'";
+        WHERE table_catalog = current_catalog
+        AND table_schema = $1
+        AND table_type = 'BASE TABLE'";
 
-        sqlx::query(query)
-            .fetch_all(&self.pool)
+        let tables = sqlx::query(query)
+            .bind(self.schema.clone())
+            .fetch_all(&self.single_thread_pool)
             .await?
             .iter()
             .map(|row| {
                 row.try_get::<String, usize>(0)
                     .map_err(|e| anyhow!("{:?}", e))
             })
-            .collect()
+            .collect();
+
+        tables
     }
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
         let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
         character_maximum_length
         FROM information_schema.columns
-        WHERE table_name = $1 AND table_catalog = current_catalog";
+        WHERE table_name = $1
+        AND table_schema = $2
+        AND table_catalog = current_catalog";
 
         sqlx::query(query)
             .bind(table_name)
-            .fetch_all(&self.pool)
+            .bind(self.schema.clone())
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
@@ -107,7 +169,7 @@ impl RelationalDataSource for PostgresDataSource {
 
         sqlx::query(query)
             .bind(table_name)
-            .fetch_all(&self.pool)
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(PrimaryKey::try_from)
@@ -122,10 +184,13 @@ impl RelationalDataSource for PostgresDataSource {
             ON tc.constraint_name = kcu.constraint_name
             JOIN information_schema.constraint_column_usage AS ccu 
             ON ccu.constraint_name = tc.constraint_name
-            WHERE constraint_type = 'FOREIGN KEY'";
+            WHERE constraint_type = 'FOREIGN KEY'
+            and tc.table_schema = $1
+            and tc.table_catalog = current_catalog";
 
         sqlx::query(query)
-            .fetch_all(&self.pool)
+            .bind(self.schema.clone())
+            .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
             .map(ForeignKey::try_from)

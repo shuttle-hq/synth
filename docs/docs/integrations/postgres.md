@@ -1,3 +1,4 @@
+
 ---
 title: PostgreSQL
 ---
@@ -11,14 +12,14 @@ The Synth PostgreSQL integration is currently **in beta**.
 ## Usage
 
 `synth` can use [PostgreSQL](https://www.postgresql.org/) as a data source or
-sink. Connecting `synth` to a PostgreSQL is as simple as specifying a URI during
-the `import` or `generate`
+sink. Connecting `synth` to a PostgreSQL is as simple as specifying a URI 
+and schema during the `import` or `generate`
 phase.
 
 ### URI format
 
 ```bash
-postgres://<username>:<password>@<host>:<port>/<schema>
+postgres://<username>:<password>@<host>:<port>/<catalog>
 ```
 
 ## Import
@@ -30,7 +31,8 @@ will be created from your database schema, and
 a [collection](../getting_started/core-concepts#collections) is created for each
 table in a separate JSON file. `synth` will map database columns to fields in
 the collections it creates. It then provides default generators for every
-collection.
+collection. Synth will default to the `public` schema but this can be 
+overriden with the `--schema` flag.
 
 `synth` will automatically detect primary key and foreign key constraints at
 import time and update the namespace and collection to reflect them. **Primary
@@ -145,7 +147,8 @@ And the corresponding `synth` collection:
 ### Example Import Command
 
 ```bash
-synth import --from postgres://user:pass@localhost:5432/postgres my_namespace 
+synth import --from postgres://user:pass@localhost:5432/postgres --schema 
+main my_namespace 
 ```
 
 ### Example
@@ -163,5 +166,6 @@ data and inserting it in the right order such that no constraints are violated.
 ### Example Generation Command
 
 ```bash
-synth generate --to postgres://user:pass@localhost:5432/ my_namespace
+synth generate --to postgres://user:pass@localhost:5432/ --schema 
+main my_namespace
 ```

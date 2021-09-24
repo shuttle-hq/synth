@@ -50,6 +50,7 @@ pub trait RelationalDataSource: DataSource {
         collection_name: String,
         collection: &[Value],
     ) -> Result<()> {
+
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
         if collection.is_empty() {
@@ -123,6 +124,7 @@ pub trait RelationalDataSource: DataSource {
 
         if let Err(e) = results.into_iter().bcollect::<Vec<Self::QueryResult>>() {
             bail!("One or more database inserts failed: {:?}", e)
+
         }
 
         info!("Inserted {} rows...", collection.len());

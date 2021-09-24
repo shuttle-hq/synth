@@ -14,7 +14,7 @@ pub struct MySqlExportStrategy {
 }
 
 impl ExportStrategy for MySqlExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<()> {
         let datasource = MySqlDataSource::new(&self.uri)?;
 
         create_and_insert_values(params, &datasource)
@@ -27,20 +27,20 @@ pub struct MySqlImportStrategy {
 }
 
 impl ImportStrategy for MySqlImportStrategy {
-    fn import(self) -> Result<Namespace> {
+    fn import(&self) -> Result<Namespace> {
         let datasource = MySqlDataSource::new(&self.uri)?;
 
         build_namespace_import(&datasource)
     }
 
-    fn import_collection(self, name: &Name) -> Result<Content> {
+    fn import_collection(&self, name: &Name) -> Result<Content> {
         self.import()?
             .collections
             .remove(name)
             .ok_or_else(|| anyhow!("Could not find table '{}' in Postgres database.", name))
     }
 
-    fn into_value(self) -> Result<Value> {
+    fn as_value(&self) -> Result<Value> {
         bail!("MySql import doesn't support conversion into value")
     }
 }

@@ -20,7 +20,7 @@ pub struct StdinImportStrategy {}
 pub struct StdoutExportStrategy {}
 
 impl ExportStrategy for StdoutExportStrategy {
-    fn export(self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<()> {
         let generator = Sampler::try_from(&params.namespace)?;
         let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
         println!("{}", output.into_json());
@@ -29,22 +29,22 @@ impl ExportStrategy for StdoutExportStrategy {
 }
 
 impl ImportStrategy for FileImportStrategy {
-    fn import_collection(self, name: &Name) -> Result<Content> {
+    fn import_collection(&self, name: &Name) -> Result<Content> {
         self.import()?
             .collections
             .remove(name)
             .ok_or_else(|| anyhow!("Could not find collection '{}' in file.", name))
     }
 
-    fn into_value(self) -> Result<Value> {
+    fn as_value(&self) -> Result<Value> {
         Ok(serde_json::from_reader(std::fs::File::open(
-            self.from_file,
+            self.from_file.clone(),
         )?)?)
     }
 }
 
 impl ImportStrategy for StdinImportStrategy {
-    fn into_value(self) -> Result<Value> {
+    fn as_value(&self) -> Result<Value> {
         Ok(serde_json::from_reader(std::io::stdin())?)
     }
 }
