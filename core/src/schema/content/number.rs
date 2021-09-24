@@ -63,7 +63,7 @@ macro_rules! serde_convert_case {
 macro_rules! number_content {
     {
 	$(
-	    $ty:ty[$is:ident, $def:ident] as $as:ident {
+	    $ty:ty[$is:ident, $def_range:ident] as $as:ident {
 		$(
 		    $(#[$default:meta])?
 		    $variant:ident($variant_ty:path),
@@ -86,7 +86,7 @@ macro_rules! number_content {
             }
 
             $(
-            pub fn $def() -> Self {
+            pub fn $def_range() -> Self {
                 Self::$as(number_content::$as::Range(RangeStep::default()))
             }
 
@@ -130,7 +130,7 @@ macro_rules! number_content {
                     $(
                         if subtype == stringify!($ty) {
                             if as_object.is_empty() {
-                                Ok(Self::$def())
+                                Ok(Self::$def_range())
                             } else {
                                 let inner = number_content::$as::deserialize(v).map_err(D::Error::custom)?;
                                 Ok(NumberContent::$as(inner))
@@ -202,6 +202,33 @@ impl NumberContent {
             // TODO: better error
             Err(failed!(target: Release, "numerical type mismatch"))
         }
+    }
+
+    pub fn try_transmute_to_id(self) -> Result<Self> {
+        match self {
+            NumberContent::U32(_) => Ok(Self::u32_default_id()),
+            NumberContent::U64(_) => Ok(Self::u64_default_id()),
+            NumberContent::I32(_) => Ok(Self::i32_default_id()),
+            NumberContent::I64(_) => Ok(Self::i64_default_id()),
+            NumberContent::F64(_) => bail!("blabla"),
+            NumberContent::F32(_) => bail!("blabla"),
+        }
+    }
+
+    pub fn u32_default_id() -> Self {
+        NumberContent::U32(number_content::U32::Id(Id::default()))
+    }
+
+    pub fn u64_default_id() -> Self {
+        NumberContent::U64(number_content::U64::Id(Id::default()))
+    }
+
+    pub fn i32_default_id() -> Self {
+        NumberContent::I32(number_content::I32::Id(Id::default()))
+    }
+
+    pub fn i64_default_id() -> Self {
+        NumberContent::I64(number_content::I64::Id(Id::default()))
     }
 }
 

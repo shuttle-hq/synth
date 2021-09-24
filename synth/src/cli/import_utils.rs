@@ -7,10 +7,11 @@ use serde_json::Value;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use synth_core::schema::content::number_content::U64;
-use synth_core::schema::{ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep, SameAsContent, UniqueContent};
+use synth_core::schema::{ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep, SameAsContent, UniqueContent, Id};
 use synth_core::{Content, Name, Namespace};
 
 use super::json::synth_val_to_json;
+use synth_gen::value::Number::U32;
 
 #[derive(Debug)]
 pub(crate) struct Collection {
@@ -85,9 +86,13 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
                 table_name, primary_key.column_name
             ))?;
             let node = namespace.get_s_node_mut(&field)?;
+            let pk_node = match node {
+                Content::Number(n) => n.clone().try_transmute_to_id().ok().map(|n| Content::Number(n)),
+                _ => None
+            };
             *node = Content::Unique(UniqueContent {
                 algorithm: Default::default(),
-                content: Box::new(node.clone())
+                content: Box::new(pk_node.unwrap_or(node.clone()))
             });
         }
     }
