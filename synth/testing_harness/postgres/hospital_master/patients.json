@@ -71,10 +71,7 @@
       },
       "content": {
         "type": "number",
-        "range": {
-          "low": 7,
-          "high": 70
-        },
+        "id": {},
         "subtype": "i32"
       }
     },

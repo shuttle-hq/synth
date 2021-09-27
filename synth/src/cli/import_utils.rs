@@ -87,12 +87,12 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
             let node = namespace.get_s_node_mut(&field)?;
             // if the primary key is a number, use an id generator.
             let pk_node = match node {
-                Content::Number(n) => n.clone().try_transmute_to_id().ok().map(|n| Content::Number(n)),
+                Content::Number(n) => n.clone().try_transmute_to_id().ok().map(Content::Number),
                 _ => None
             };
             *node = Content::Unique(UniqueContent {
                 algorithm: Default::default(),
-                content: Box::new(pk_node.unwrap_or(node.clone()))
+                content: Box::new(pk_node.unwrap_or_else(|| node.clone()))
             });
         }
     }

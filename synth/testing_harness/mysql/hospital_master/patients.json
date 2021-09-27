@@ -71,10 +71,7 @@
       },
       "content": {
         "type": "number",
-        "range": {
-          "low": 4,
-          "high": 62
-        },
+        "id": {},
         "subtype": "i64"
       }
     },
