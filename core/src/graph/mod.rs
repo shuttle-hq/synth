@@ -250,11 +250,13 @@ macro_rules! encode_num_arrays {
             Number::$variant(_) => {
                 let nums = $arr
                     .iter()
-                    .map(|v| if let Some(Number::$variant(i)) = v.as_number() {
-                        *i
-                    } else { 
-                        panic!("inconsistent array number types")
-                    })
+                    .map(|e| 
+                        match e {
+                            Value::Number(Number::$variant(i)) => Some(i),
+                            Value::Null(_) => None,
+                            _ => panic!("inconsistent array number types")
+                        }
+                    )
                     .collect::<Vec<_>>();
                 return nums.encode_by_ref($buf)
             }
@@ -301,7 +303,7 @@ impl Encode<'_, Postgres> for Value {
                 <serde_json::Value as Encode<'_, Postgres>>::encode(json::synth_val_to_json(self.clone()), buf)
             },
             Value::Array(arr) => {
-                if let Some(Value::Number(n)) = arr.first() {
+                if let Some(Value::Number(n)) = arr.iter().find(|e| !e.is_null()) {
                     encode_num_arrays!(n, arr, buf; I8, I16, I32, I64, U32);
                 } 
                 arr.encode_by_ref(buf) //TODO: This will likely not work for other array types.
