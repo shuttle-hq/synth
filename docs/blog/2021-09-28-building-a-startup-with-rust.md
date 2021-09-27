@@ -5,8 +5,7 @@ author_title: Founder
 author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [rust, startup]
-description: This blog post is a compilation of thoughts around building a 
-company with Rust
+description: This blog post is a compilation of thoughts around building a company with Rust
 image: https://storage.googleapis.com/getsynth-public/media/api.jpg
 hide_table_of_contents: false
 ---
