@@ -63,7 +63,7 @@ macro_rules! serde_convert_case {
 macro_rules! number_content {
     {
 	$(
-	    $ty:ty[$is:ident, $def_range:ident] as $as:ident {
+	    $ty:ty[$is:ident, $def:ident] as $as:ident {
 		$(
 		    $(#[$default:meta])?
 		    $variant:ident($variant_ty:path),
@@ -86,7 +86,7 @@ macro_rules! number_content {
             }
 
             $(
-            pub fn $def_range() -> Self {
+            pub fn $def() -> Self {
                 Self::$as(number_content::$as::Range(RangeStep::default()))
             }
 
@@ -130,7 +130,7 @@ macro_rules! number_content {
                     $(
                         if subtype == stringify!($ty) {
                             if as_object.is_empty() {
-                                Ok(Self::$def_range())
+                                Ok(Self::$def())
                             } else {
                                 let inner = number_content::$as::deserialize(v).map_err(D::Error::custom)?;
                                 Ok(NumberContent::$as(inner))
@@ -210,8 +210,8 @@ impl NumberContent {
             NumberContent::U64(_) => Ok(Self::u64_default_id()),
             NumberContent::I32(_) => Ok(Self::i32_default_id()),
             NumberContent::I64(_) => Ok(Self::i64_default_id()),
-            NumberContent::F64(_) => bail!("blabla"),
-            NumberContent::F32(_) => bail!("blabla"),
+            NumberContent::F64(_) => bail!("could not transmute f64 into id"),
+            NumberContent::F32(_) => bail!("could not transmute f32 into id"),
         }
     }
 
