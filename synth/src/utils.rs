@@ -31,7 +31,6 @@ impl FromStr for DataDirectoryPath {
     }
 }
 
-
 #[cfg(debug_assertions)]
 pub mod splash {
     use anyhow::Result;

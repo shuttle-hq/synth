@@ -50,3 +50,18 @@ jobs:
           synth init || true
           synth import --from postgres://postgres:postgres@localhost:5432/postgres hospital_import
           diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*)
+      - run: |
+          psql -f synth/testing_harness/postgres/warnings/0_warnings.sql postgres://postgres:postgres@localhost:5432/postgres
+          cd synth/testing_harness/postgres
+          WARNINGS=$(synth generate --size 10 --to postgres://postgres:postgres@localhost:5432/postgres warnings 2>&1)
+          if [[ "$WARNINGS" == *"warnings.int32"* && "$WARNINGS" == *"warnings.int64"* ]]
+          then
+            echo "expected warnings were emitted"
+          else
+            echo "expected"
+            echo "[yyyy-mm-ddThh:MM:ssZ WARN synth::datasource::relational_datasource] Trying to put an unsigned u32 into a int4 typed column warnings.int32"
+            echo "[yyyy-mm-ddThh:MM:ssZ WARN synth::datasource::relational_datasource] Trying to put an unsigned u64 into a int8 typed column warnings.int64"
+            echo "got"
+            echo $WARNINGS
+            exit 1
+          fi
