@@ -42,7 +42,7 @@
     "id": {
       "type": "number",
       "id": {},
-      "subtype": "i32"
+      "subtype": "i64"
     }
   }
 }
