@@ -90,9 +90,12 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
                 Content::Number(n) => n.clone().try_transmute_to_id().ok().map(Content::Number),
                 _ => None
             };
-            *node = Content::Unique(UniqueContent {
-                algorithm: Default::default(),
-                content: Box::new(pk_node.unwrap_or_else(|| node.clone()))
+
+            *node = pk_node.unwrap_or_else(|| {
+                Content::Unique(UniqueContent {
+                    algorithm: Default::default(),
+                    content: Box::new(node.clone())
+                })
             });
         }
     }
