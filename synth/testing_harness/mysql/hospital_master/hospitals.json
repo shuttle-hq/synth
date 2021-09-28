@@ -40,17 +40,9 @@
       ]
     },
     "id": {
-      "type": "unique",
-      "algorithm": {
-        "Hash": {
-          "retries": null
-        }
-      },
-      "content": {
-        "type": "number",
-        "id": {},
-        "subtype": "i64"
-      }
+      "type": "number",
+      "id": {},
+      "subtype": "i32"
     }
   }
 }
