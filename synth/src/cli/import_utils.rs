@@ -7,10 +7,7 @@ use serde_json::Value;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use synth_core::schema::content::number_content::U64;
-use synth_core::schema::{
-    ArrayContent, FieldRef, Id, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
-    SameAsContent,
-};
+use synth_core::schema::{ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep, SameAsContent, UniqueContent};
 use synth_core::{Content, Name, Namespace};
 
 use super::json::synth_val_to_json;
@@ -89,7 +86,18 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
                 table_name, primary_key.column_name
             ))?;
             let node = namespace.get_s_node_mut(&field)?;
-            *node = Content::Number(NumberContent::U64(U64::Id(Id::default())));
+            // if the primary key is a number, use an id generator.
+            let pk_node = match node {
+                Content::Number(n) => n.clone().try_transmute_to_id().ok().map(Content::Number),
+                _ => None
+            };
+
+            *node = pk_node.unwrap_or_else(|| {
+                Content::Unique(UniqueContent {
+                    algorithm: Default::default(),
+                    content: Box::new(node.clone())
+                })
+            });
         }
     }
 

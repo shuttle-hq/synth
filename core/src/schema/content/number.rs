@@ -203,6 +203,33 @@ impl NumberContent {
             Err(failed!(target: Release, "numerical type mismatch"))
         }
     }
+
+    pub fn try_transmute_to_id(self) -> Result<Self> {
+        match self {
+            NumberContent::U32(_) => Ok(Self::u32_default_id()),
+            NumberContent::U64(_) => Ok(Self::u64_default_id()),
+            NumberContent::I32(_) => Ok(Self::i32_default_id()),
+            NumberContent::I64(_) => Ok(Self::i64_default_id()),
+            NumberContent::F64(_) => bail!("could not transmute f64 into id"),
+            NumberContent::F32(_) => bail!("could not transmute f32 into id"),
+        }
+    }
+
+    pub fn u32_default_id() -> Self {
+        NumberContent::U32(number_content::U32::Id(Id::default()))
+    }
+
+    pub fn u64_default_id() -> Self {
+        NumberContent::U64(number_content::U64::Id(Id::default()))
+    }
+
+    pub fn i32_default_id() -> Self {
+        NumberContent::I32(number_content::I32::Id(Id::default()))
+    }
+
+    pub fn i64_default_id() -> Self {
+        NumberContent::I64(number_content::I64::Id(Id::default()))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]

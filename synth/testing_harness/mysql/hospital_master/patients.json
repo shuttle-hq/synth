@@ -65,7 +65,7 @@
     "id": {
       "type": "number",
       "id": {},
-      "subtype": "u64"
+      "subtype": "i64"
     },
     "name": {
       "type": "one_of",

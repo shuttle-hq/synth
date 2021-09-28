@@ -16,6 +16,7 @@ use super::{
 };
 use crate::graph::prelude::content::number_content::{I64, I32};
 use num::Zero;
+use crate::schema::UniqueContent;
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
     fn try_merge(self, master: &mut M, candidate: &C) -> Result<()>;
@@ -40,6 +41,9 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             }
             (Content::OneOf(one_of_content), candidate) => {
                 Self.try_merge(one_of_content, candidate)
+            },
+            (Content::Unique(unique_content), candidate) => {
+                Self.try_merge(unique_content, candidate)
             }
             // Non-logical nodes go after
             (Content::Object(master_obj), Value::Object(candidate_obj)) => {
@@ -68,6 +72,12 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
                 candidate.kind()
             )),
         }
+    }
+}
+
+impl MergeStrategy<UniqueContent, Value> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut UniqueContent, candidate: &Value) -> Result<()> {
+        Self.try_merge(&mut *master.content, candidate)
     }
 }
 
