@@ -47,6 +47,24 @@ jobs:
       - id: tag
         uses: dawidd6/action-get-tag@v1
       - run: cargo +nightly build --release --features telemetry
+      - id: install-wix
+        run: nuget install WiX -Version 3.11.2
+      - id: install-cargo-wix
+        run: cargo +nightly install cargo-wix
+      - id: copy-target
+        name: Move synth.exe into wix friendly directory
+        run: |
+          mkdir synth/target/release
+          copy target/release/synth.exe synth/target/release
+      - id: wix
+        name: Run cargo wix
+        run: |
+          cd synth
+          cargo wix --nocapture
+      - uses: actions/upload-artifact@v2
+        with:
+          name: synth-${{ steps.tag.outputs.tag }}-windows-msi-x86_64
+          path: ./synth/target/wix/synth-${{ steps.tag.outputs.tag }}-x86_64.msi
       - uses: actions/upload-artifact@v2
         with:
           name: synth-${{ steps.tag.outputs.tag }}-windows-x86_64
@@ -168,4 +186,18 @@ jobs:
           upload_url: ${{ steps.release.outputs.upload_url }}
           asset_path: ./synth.exe
           asset_name: synth-windows-latest-x86_64.exe
+          asset_content_type: application/octet-stream
+      - uses: actions/download-artifact@v2
+        with:
+          name: synth-${{ steps.tag.outputs.tag }}-windows-msi-x86_64
+          path: ./
+      - name: Upload Windows installer
+        id: upload-windows-installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: ./synth-${{ steps.tag.outputs.tag }}-x86_64.msi
+          asset_name: synth-windows-msi-latest-x86_64.msi
           asset_content_type: application/octet-stream

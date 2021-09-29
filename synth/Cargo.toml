@@ -7,6 +7,7 @@ authors = [
   "Andre Bogus <andre@getsynth.com>"
 ]
 edition = "2018"
+homepage = "https://getsynth.com"
 license = "Apache-2.0"
 
 [[bench]]
@@ -16,6 +17,12 @@ harness = false
 [features]
 default = []
 telemetry = ["posthog-rs", "uuid"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.i686-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
 
 [build-dependencies]
 git2 = "0.13.20"
