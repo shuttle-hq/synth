@@ -46,6 +46,11 @@ jobs:
           toolchain: nightly
       - id: tag
         uses: dawidd6/action-get-tag@v1
+      - id: version
+        shell: bash
+        run: |
+          VERSION=$(cargo metadata --format-version 1 | jq '.packages[] | select (.name == "synth") | .version' -r)
+          echo "::set-output name=version::${VERSION}"
       - run: cargo +nightly build --release --features telemetry
       - id: install-wix
         run: nuget install WiX -Version 3.11.2
@@ -61,6 +66,12 @@ jobs:
         run: |
           cd synth
           cargo wix --nocapture
+      - name: Rename output
+        shell: bash
+        run: |
+          cd synth
+          mv ./target/wix/synth-${{ steps.version.outputs.version }}-x86_64.msi \
+             ./target/wix/synth-${{ steps.tag.outputs.tag }}-x86_64.msi
       - uses: actions/upload-artifact@v2
         with:
           name: synth-${{ steps.tag.outputs.tag }}-windows-msi-x86_64
