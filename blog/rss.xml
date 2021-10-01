@@ -4,9 +4,16 @@
         <title>Synth - Documentation Blog</title>
         <link>https://getsynth.github.io/synth/blog</link>
         <description>Synth - Documentation Blog</description>
-        <lastBuildDate>Tue, 07 Sep 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 27 Sep 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[50 ways to crash our product]]></title>
+            <link>https://getsynth.github.io/synth/synth/blog/2021/09/27/crash</link>
+            <guid>50 ways to crash our product</guid>
+            <pubDate>Mon, 27 Sep 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Trying to break our own code for fun and profit]]></description>
+        </item>
         <item>
             <title><![CDATA[So you want to mock an API]]></title>
             <link>https://getsynth.github.io/synth/synth/blog/2021/09/07/mocking-a-production-api</link>

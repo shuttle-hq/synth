@@ -2,11 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://getsynth.github.io/synth/blog</id>
     <title>Synth - Documentation Blog</title>
-    <updated>2021-09-07T00:00:00.000Z</updated>
+    <updated>2021-09-27T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://getsynth.github.io/synth/blog"/>
     <subtitle>Synth - Documentation Blog</subtitle>
     <icon>https://getsynth.github.io/synth/img/getsynth_favicon.png</icon>
+    <entry>
+        <title type="html"><![CDATA[50 ways to crash our product]]></title>
+        <id>50 ways to crash our product</id>
+        <link href="https://getsynth.github.io/synth/synth/blog/2021/09/27/crash"/>
+        <updated>2021-09-27T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Trying to break our own code for fun and profit]]></summary>
+    </entry>
     <entry>
         <title type="html"><![CDATA[So you want to mock an API]]></title>
         <id>So you want to mock an API</id>
