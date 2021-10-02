@@ -41,7 +41,7 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             }
             (Content::OneOf(one_of_content), candidate) => {
                 Self.try_merge(one_of_content, candidate)
-            },
+            }
             (Content::Unique(unique_content), candidate) => {
                 Self.try_merge(unique_content, candidate)
             }
@@ -57,6 +57,9 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             }
             (Content::String(string_content), Value::String(string)) => {
                 Self.try_merge(string_content, string)
+            }
+            (Content::DateTime(date_time_content), Value::String(string)) => {
+                Self.try_merge(date_time_content, string)
             }
             (Content::Number(number_content), Value::Number(number)) => {
                 Self.try_merge(number_content, number)
@@ -120,7 +123,6 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
                 string_categorical.push(value.clone());
                 Ok(())
             }
-            StringContent::DateTime(date_time_content) => self.try_merge(date_time_content, value),
             StringContent::Faker(_) => Ok(()),
             StringContent::Serialized(_) => Ok(()), // we can probably do better here
             StringContent::Uuid(_) => Ok(()),

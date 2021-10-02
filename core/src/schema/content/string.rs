@@ -9,7 +9,6 @@ use super::Categorical;
 pub enum StringContent {
     Pattern(RegexContent),
     Faker(FakerContent),
-    DateTime(DateTimeContent),
     Categorical(Categorical<String>),
     Serialized(SerializedContent),
     Uuid(Uuid),
@@ -25,7 +24,6 @@ impl StringContent {
         match self {
             Self::Pattern(_) => "pattern",
             Self::Faker(faker) => faker.kind(),
-            Self::DateTime(date_time) => date_time.kind(),
             Self::Categorical(_) => "categorical",
             Self::Serialized(_) => "serialized",
             Self::Uuid(_) => "uuid",
@@ -326,12 +324,6 @@ pub struct DateTimeContent {
     pub end: Option<ChronoValue>,
 }
 
-impl DateTimeContent {
-    fn kind(&self) -> &str {
-        self.format.as_str()
-    }
-}
-
 pub mod datetime_content {
     use super::{ChronoValue, ChronoValueType, DateTimeContent, Error};
     use anyhow::Result;
@@ -528,6 +520,29 @@ impl<'de> Deserialize<'de> for DateTimeContent {
     }
 }
 
+impl Compile for DateTimeContent {
+    fn compile<'a, C: Compiler<'a>>(&'a self, _compiler: C) -> Result<Graph> {
+        let begin = self
+            .begin
+            .clone()
+            .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), self.type_));
+        let end = self
+            .end
+            .clone()
+            .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), self.type_));
+        if begin > end {
+            let fmt = ChronoValueFormatter::new_with(&self.format, Some(self.type_));
+            return Err(anyhow!(
+                "begin is after end: begin={}, end={}",
+                fmt.format(&begin).unwrap(),
+                fmt.format(&end).unwrap()
+            ));
+        }
+        let string_node = RandomDateTime::new(begin..end, &self.format).into();
+        Ok(Graph::String(string_node))
+    }
+}
+
 impl Compile for StringContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
         let string_node = match self {
@@ -548,28 +563,6 @@ impl Compile for StringContent {
                 locales: _, // to combine locales from the 'locales' field and the args::locales,
                             // we should impl Hash on locale and then put them in a Set
             }) => RandomString::from(RandFaker::new(generator.clone(), args.clone())?).into(),
-            StringContent::DateTime(DateTimeContent {
-                begin,
-                end,
-                format,
-                type_,
-            }) => {
-                let begin = begin
-                    .clone()
-                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
-                let end = end
-                    .clone()
-                    .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), *type_));
-                if begin > end {
-                    let fmt = ChronoValueFormatter::new_with(format, Some(*type_));
-                    return Err(anyhow!(
-                        "begin is after end: begin={}, end={}",
-                        fmt.format(&begin).unwrap(),
-                        fmt.format(&end).unwrap()
-                    ))
-                }
-                RandomDateTime::new(begin..end, format).into()
-            }
             StringContent::Categorical(cat) => RandomString::from(cat.clone()).into(),
             StringContent::Serialized(sc) => match sc {
                 SerializedContent::Json(serialized_json_content) => {
@@ -605,9 +598,7 @@ pub mod tests {
             end: $end
         };
 
-        let content = Content::String(
-            StringContent::DateTime(unspecified_begin_end)
-        );
+        let content = Content::DateTime(unspecified_begin_end);
 
         let compiler = NamespaceCompiler::new_flat(&content);
 
@@ -624,9 +615,7 @@ pub mod tests {
             end: $end
         };
 
-        let content = Content::String(
-            StringContent::DateTime(unspecified_begin_end)
-        );
+        let content = Content::DateTime(unspecified_begin_end);
 
         let compiler = NamespaceCompiler::new_flat(&content);
 

@@ -142,12 +142,12 @@ fn bson_to_content(bson: &Bson) -> Content {
         }
         Bson::Int32(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(*i as i64, *i as i64 + 1, 1)))),
         Bson::Int64(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(*i, *i + 1, 1)))),
-        Bson::DateTime(_) => Content::String(StringContent::DateTime(DateTimeContent {
+        Bson::DateTime(_) => Content::DateTime(DateTimeContent {
             format: "".to_string(),
             type_: ChronoValueType::DateTime,
             begin: None,
             end: None,
-        })),
+        }),
         // There should be a more explicit enumeration here, but we don't support
         // all the required types here.
         _ => Content::String(StringContent::default()),
