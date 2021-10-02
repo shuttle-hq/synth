@@ -23,10 +23,10 @@ mod number;
 pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, RangeStep};
 
 mod string;
-pub use string::{
-    ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
-    FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid,
-};
+pub use string::{FakerContent, FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid};
+
+mod date_time;
+pub use date_time::{ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent};
 
 mod array;
 pub use array::ArrayContent;
