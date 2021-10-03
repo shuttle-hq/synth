@@ -2,6 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use synth_core::Value;
 
+pub(crate) mod sqlite_datasource;
 pub(crate) mod mysql_datasource;
 pub(crate) mod postgres_datasource;
 pub(crate) mod relational_datasource;

@@ -6,6 +6,7 @@ use std::convert::TryFrom;
 
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
+use crate::cli::sqlite::SqliteExportStrategy;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
@@ -47,9 +48,13 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
                     Box::new(MySqlExportStrategy {
                         uri
                     })
+                } else if uri.starts_with("sqlite://")  {
+                    Box::new(SqliteExportStrategy {
+                        uri
+                    })
                 } else {
                     return Err(anyhow!(
-                            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb'"
+                        "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'sqlite' or 'mariadb'"
                     ));
                 };
                 Ok(export_strategy)

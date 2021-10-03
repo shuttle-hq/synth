@@ -4,7 +4,8 @@ use anyhow::{Context, Result};
 
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use sqlx::mysql::MySqlTypeInfo;
-use sqlx::{MySql, Postgres};
+use sqlx::sqlite::SqliteTypeInfo;
+use sqlx::{Sqlite, MySql, Postgres};
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
 use sqlx::{Type, Encode, encode::IsNull};
 
@@ -202,6 +203,16 @@ impl Type<MySql> for Value {
     }
 }
 
+impl Type<Sqlite> for Value {
+    fn type_info() -> SqliteTypeInfo {
+        <serde_json::value::Value as Type<Sqlite>>::type_info()
+    }
+
+    fn compatible(_ty: &SqliteTypeInfo) -> bool {
+        unreachable!("This should never happen. Please reach out to https://github.com/getsynth/synth/issues if it does.")
+    }
+}
+
 impl Encode<'_, Postgres> for Value {
     fn encode_by_ref(
         &self,
@@ -315,6 +326,93 @@ impl Encode<'_, MySql> for Value {
                 return None
             } else if let Value::Number(Number::U8(_) | Number::I8(_)) = elems[0] { 
                 <Vec<u8> as Type<MySql>>::type_info()
+            } else {
+                return None //TODO: other variants that would make sense?
+            }
+        })
+    }
+}
+
+impl Encode<'_, Sqlite> for Value {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue>
+    ) -> IsNull {
+        match self {
+            Value::Null(_) => IsNull::Yes,
+            Value::Bool(b) => <bool as Encode<'_, Sqlite>>::encode_by_ref(b, buf),
+            Value::Number(num) => {
+                match *num {
+                    Number::I8(i) => <i8 as Encode<'_, Sqlite>>::encode_by_ref(&i, buf),
+                    Number::I16(i) => <i16 as Encode<'_, Sqlite>>::encode_by_ref(&i, buf),
+                    Number::I32(i) => <i32 as Encode<'_, Sqlite>>::encode_by_ref(&i, buf),
+                    Number::I64(i) => <i64 as Encode<'_, Sqlite>>::encode_by_ref(&i, buf),
+                    Number::I128(_i) => unreachable!("not supported in sqlite"),
+                    Number::U8(i) => <i8 as Encode<'_, Sqlite>>::encode_by_ref(&(i as i8), buf),
+                    Number::U16(i) => <i16 as Encode<'_, Sqlite>>::encode_by_ref(&(i as i16), buf),
+                    Number::U32(i) => <u32 as Encode<'_, Sqlite>>::encode_by_ref(&i, buf),
+                    Number::U64(i) => {
+                        if let Ok(i) = u32::try_from(i) {
+                            <u32 as Encode<'_, Sqlite>>::encode_by_ref(&i, buf)
+                        } else {
+                            panic!("sqlx (the lib for Sqlite) does not support u64. As a workaround we currently use u32 as a fallback, \
+                            but it appears that the supplied number `{}` could not fit in an u32.", i);
+                        }
+                    },
+                    Number::U128(_i) => unreachable!("not supported in sqlite"),
+                    Number::F32(f) => <f32 as Encode<'_, Sqlite>>::encode_by_ref(&f, buf),
+                    Number::F64(f) => <f64 as Encode<'_, Sqlite>>::encode_by_ref(&f, buf),
+                }
+            },
+            Value::String(s) => <String as Encode<'_, Sqlite>>::encode_by_ref(s, buf),
+            Value::DateTime(ChronoValueAndFormat { value, .. }) => {
+                match value {
+                    ChronoValue::NaiveDate(nd) => <NaiveDate as Encode<'_, Sqlite>>::encode_by_ref(nd, buf),
+                    ChronoValue::NaiveTime(nt) => <NaiveTime as Encode<'_, Sqlite>>::encode_by_ref(nt, buf),
+                    ChronoValue::NaiveDateTime(ndt) => <NaiveDateTime as Encode<'_, Sqlite>>::encode_by_ref(ndt, buf),
+                    ChronoValue::DateTime(dt) => <DateTime<Utc> as Encode<'_, Sqlite>>::encode_by_ref(&dt.with_timezone(&Utc), buf),
+                }
+            }
+            Value::Object(_) => {
+                <serde_json::Value as Encode<'_, Sqlite>>::encode(json::synth_val_to_json(self.clone()), buf)
+            },
+            Value::Array(_arr) => todo!()//<Vec<Value> as Encode<'_, Sqlite>>::encode_by_ref(arr, buf), //TODO special-case for u8 arrays?
+        }
+    }
+
+    fn produces(&self) -> Option<SqliteTypeInfo> {
+        Some(match self {
+            Value::Null(_) => return <serde_json::Value as Encode<'_, Sqlite>>::produces(&serde_json::Value::Null),
+            Value::Bool(_) => <bool as Type<Sqlite>>::type_info(),
+            Value::Number(num) => match num {
+                Number::I8(_) => <i8 as Type<Sqlite>>::type_info(),
+                Number::I16(_) => <i16 as Type<Sqlite>>::type_info(),
+                Number::I32(_) => <i32 as Type<Sqlite>>::type_info(),
+                Number::I64(_) => <i64 as Type<Sqlite>>::type_info(),
+                Number::I128(_) => unreachable!("not supported in sqlite"),
+                Number::U8(_) =>  <u8 as Type<Sqlite>>::type_info(),
+                Number::U16(_) => <u16 as Type<Sqlite>>::type_info(),
+                Number::U32(_) => <u32 as Type<Sqlite>>::type_info(),
+                // FIXME:(rasvi) [2021-10-03] 
+                Number::U64(_) =>  <u32 as Type<Sqlite>>::type_info(),
+                Number::U128(_) => unreachable!("not supported in sqlite"),
+                Number::F32(_) => <f32 as Type<Sqlite>>::type_info(),
+                Number::F64(_) => <f64 as Type<Sqlite>>::type_info(),
+            },
+            Value::DateTime(ChronoValueAndFormat { value, .. }) => {
+                match value {
+                    ChronoValue::NaiveDate(_) => <NaiveDate as Type<Sqlite>>::type_info(),
+                    ChronoValue::NaiveTime(_) => <NaiveTime as Type<Sqlite>>::type_info(),
+                    ChronoValue::NaiveDateTime(_) => <NaiveDateTime as Type<Sqlite>>::type_info(),
+                    ChronoValue::DateTime(_) => <DateTime<Utc> as Type<Sqlite>>::type_info(),
+                }
+            },
+            Value::String(_) => <String as Type<Sqlite>>::type_info(),
+            Value::Object(_) => return None, //TODO: Use JSON here?
+            Value::Array(elems) => if elems.is_empty() {
+                return None
+            } else if let Value::Number(Number::U8(_) | Number::I8(_)) = elems[0] {
+                <Vec<u8> as Type<Sqlite>>::type_info()
             } else {
                 return None //TODO: other variants that would make sense?
             }

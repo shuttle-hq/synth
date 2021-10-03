@@ -3,6 +3,7 @@ mod import;
 mod import_utils;
 mod mongo;
 mod mysql;
+mod sqlite;
 mod postgres;
 mod stdf;
 mod store;
