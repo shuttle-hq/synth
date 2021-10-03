@@ -23,8 +23,11 @@ pub use null::NullNode;
 
 pub mod string;
 pub use string::{
-    Format, FormatArgs, RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen,
+    Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated, UuidGen,
 };
+
+pub mod date_time;
+pub use date_time::{RandomDateTime, DateTimeNode};
 
 pub mod number;
 pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, StandardIntRangeStep, StandardFloatRangeStep};
@@ -511,6 +514,7 @@ derive_generator!(
         Bool(BoolNode),
         Number(NumberNode),
         String(StringNode),
+        DateTime(DateTimeNode),
         Object(ObjectNode),
         Array(ArrayNode),
         OneOf(OneOfNode),

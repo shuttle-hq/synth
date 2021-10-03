@@ -336,8 +336,8 @@ impl Compile for DateTimeContent {
                 fmt.format(&end).unwrap()
             ));
         }
-        let string_node = RandomDateTime::new(begin..end, &self.format).into();
-        Ok(Graph::String(string_node))
+        let date_time_node = RandomDateTime::new(begin..end, &self.format).into();
+        Ok(Graph::DateTime(date_time_node))
     }
 }
 

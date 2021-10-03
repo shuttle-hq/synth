@@ -2,9 +2,6 @@ use super::prelude::*;
 
 use rand_regex::Regex as RandRegex;
 
-pub mod date_time;
-pub use date_time::RandomDateTime;
-
 pub mod faker;
 pub mod format;
 pub mod serialized;
@@ -76,18 +73,16 @@ impl From<Format> for RandomString {
 derive_generator! {
     yield Token,
     return Result<Value, Error>,
-    pub enum StringNode {
-        String(Valuize<Tokenizer<RandomString>, String>),
-        DateTime(Valuize<Tokenizer<RandomDateTime>, ChronoValueAndFormat>)
-    }
+    pub struct StringNode(Valuize<Tokenizer<RandomString>, String>);
 }
 
 impl From<RandomString> for StringNode {
     fn from(value: RandomString) -> Self {
-        Self::String(value.into_token().map_complete(value_from_ok::<String>))
+        Self(value.into_token().map_complete(value_from_ok::<String>))
     }
 }
 
+/*
 impl From<RandomDateTime> for StringNode {
     fn from(value: RandomDateTime) -> Self {
         Self::DateTime(
@@ -97,3 +92,4 @@ impl From<RandomDateTime> for StringNode {
         )
     }
 }
+*/

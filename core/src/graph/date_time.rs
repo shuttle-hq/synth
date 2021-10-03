@@ -1,6 +1,18 @@
-use super::super::prelude::*;
+use super::prelude::*;
 
 use std::{ops::Range as StdRange, sync::Arc};
+
+derive_generator! {
+    yield Token,
+    return Result<Value, Error>,
+    pub struct DateTimeNode(Valuize<Tokenizer<RandomDateTime>, ChronoValueAndFormat>);
+}
+
+impl From<RandomDateTime> for DateTimeNode {
+    fn from(value: RandomDateTime) -> Self {
+        Self(value.into_token().map_complete(value_from_ok::<ChronoValueAndFormat>))
+    }
+}
 
 pub struct RandomDateTime {
     inner: OnceInfallible<Random<ChronoValue, Uniform<ChronoValue>>>,
