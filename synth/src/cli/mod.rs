@@ -137,9 +137,9 @@ impl Cli {
                 self.store.save_collection_path(&path, collection, content)?;
                 Ok(())
             }
-        } else if self.store.ns_exists(&path) {
+        } else if self.store.ns_exists(&path) && !self.store.ns_is_empty_dir(&path) {
             Err(anyhow!(
-                "The directory at `{}` already exists. Will not import into an existing directory.",
+                "The directory at `{}` already exists and is not empty. Will not import into an existing directory.",
                 path.display()
             ))
         } else {

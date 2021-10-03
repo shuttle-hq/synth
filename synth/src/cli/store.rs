@@ -64,6 +64,11 @@ impl Store {
         self.ns_path(namespace).exists()
     }
 
+    pub fn ns_is_empty_dir(&self, namespace: &Path) -> bool {
+        self.ns_path(namespace).is_dir() 
+            && self.ns_path(namespace).read_dir().map(|mut dir| dir.next().is_none()).unwrap_or_default()
+    }
+
     pub fn collection_exists(&self, namespace: &Path, collection: &Name) -> bool {
         self.collection_path(namespace, collection).exists()
     }
