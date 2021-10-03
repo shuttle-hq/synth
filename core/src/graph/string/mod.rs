@@ -81,15 +81,3 @@ impl From<RandomString> for StringNode {
         Self(value.into_token().map_complete(value_from_ok::<String>))
     }
 }
-
-/*
-impl From<RandomDateTime> for StringNode {
-    fn from(value: RandomDateTime) -> Self {
-        Self::DateTime(
-            value
-                .into_token()
-                .map_complete(value_from_ok::<ChronoValueAndFormat>),
-        )
-    }
-}
-*/
