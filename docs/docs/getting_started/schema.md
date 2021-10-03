@@ -35,7 +35,7 @@ complexity than the JSON schema?
 
 ### Synth Schema Nodes
 
-Much like the `Value` node in a JSON tree, the `Schema` nodes in the synth Schema give us the recursive data structure
+Much like the `Value` node in a JSON tree, the `Schema` nodes in the Synth schema give us a recursive data structure
 which Synth can use to generate data.
 
 ```rust
@@ -44,12 +44,13 @@ enum Schema {
     Bool(BoolSchema),
     Number(NumberSchema),
     String(StringSchema), // here
+    DateTime(DateTimeSchema),
     Array(ArraySchema),
     Object(ObjectSchema),
     SameAs(SameAsSchema),
     OneOf(OneOfSchema),
 }
-``` 
+```
 
 Each of these `Schema` variants, cover a bunch of different types of `Schema` nodes, just to give an example,
 the `StringSchema` variant looks like this under the hood:
@@ -57,14 +58,17 @@ the `StringSchema` variant looks like this under the hood:
 ```rust
 enum StringSchema {
     Pattern(RegexSchema),
-    DateTime(DateTimeSchema),
-    Categorical(Categorical<String>),
     Faker(FakerSchema),
+    Categorical(Categorical<String>),
+    Serialized(SerializedSchema),
+    Uuid(Uuid),
+    Truncated(TruncatedSchema),
+    Format(FormatSchema),
 }
 ```
 
-Where `String` types can be generated from regular expressions, date time generators and so on. For a comprehensive list
-see the [String](../content/string.md) docs.
+Where `String` types can be generated from regular expressions, [faker](/content/string.md#faker) providers, and so on.
+For a comprehensive list see the [String](/content/string.md) docs.
 
 ### Writing Synth Schemas
 
@@ -140,12 +144,10 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
       ]
     },
     "timestamp": {
-      "type": "string",
-      "date_time": {
-        "format": "%Y-%m-%dT%H:%M:%S%z",
-        "begin": "2000-01-01T00:00:00+0000",
-        "end": "2020-01-01T00:00:00+0000"
-      }
+      "type": "date_time",
+      "format": "%Y-%m-%dT%H:%M:%S%z",
+      "begin": "2000-01-01T00:00:00+0000",
+      "end": "2020-01-01T00:00:00+0000"
     },
     "user_id": {
       "type": "same_as",
