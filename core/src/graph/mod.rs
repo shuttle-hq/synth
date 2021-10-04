@@ -164,6 +164,7 @@ impl TryFrom<Value> for String {
         match value {
             Value::String(str) => Ok(str),
             Value::Number(num) => Ok(num.to_string()),
+            Value::DateTime(date) => Ok(date.format_to_string()),
             otherwise => Err(failed_crate!(
                 target: Release,
                 "invalid type: expected 'String', found '{}'",

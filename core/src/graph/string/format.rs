@@ -86,7 +86,11 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::graph::{Graph, NumberNode, RandFaker, RandomI64, RandomString, StringNode};
+    use crate::graph::{
+        ChronoValue, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64, RandomString,
+        StringNode,
+    };
+    use chrono::naive::NaiveDate;
 
     fn faker_graph(name: &str) -> Graph {
         Graph::String(StringNode::from(RandomString::from(
@@ -158,5 +162,33 @@ pub mod tests {
             .unwrap();
 
         assert_eq!(gen[0], "42_suffix");
+    }
+
+    #[test]
+    fn format_with_date_args() {
+        let mut rng = rand::thread_rng();
+
+        let args = FormatArgs {
+            named: vec![(
+                "date".to_string(),
+                Graph::String(StringNode::from(RandomDateTime::new(
+                    ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4))
+                        ..ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4)),
+                    "%Y-%m-%d",
+                ))),
+            )]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
+        let formatted = Format::new("{date}.png".to_string(), args);
+        let gen = formatted
+            .repeat(1024)
+            .complete(&mut rng)
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(gen[0], "2021-10-04.png");
     }
 }
