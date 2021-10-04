@@ -150,11 +150,13 @@ pub mod tests {
             ..Default::default()
         };
         let formatted = Format::new("{id}_suffix".to_string(), args);
-        formatted
+        let gen = formatted
             .repeat(1024)
             .complete(&mut rng)
             .into_iter()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
+
+        assert_eq!(gen[0], "42_suffix");
     }
 }
