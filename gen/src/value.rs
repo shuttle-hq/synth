@@ -35,6 +35,16 @@ macro_rules! generate_enum {
 	    )*
 	}
 
+	impl std::fmt::Display for $id {
+	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+		    $(
+			Self::$variant(inner) => write!(f, "{:?}", inner),
+		    )*
+		}
+	    }
+	}
+
 	impl std::fmt::Debug for $id {
 	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {

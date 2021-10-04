@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Debug};
 
 use crate::value::{IntoToken, Special, Token};
 
