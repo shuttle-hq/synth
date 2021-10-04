@@ -86,7 +86,7 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::graph::{Graph, RandFaker, RandomString, StringNode};
+    use crate::graph::{Graph, NumberNode, RandFaker, RandomI64, RandomString, StringNode};
 
     fn faker_graph(name: &str) -> Graph {
         Graph::String(StringNode::from(RandomString::from(
@@ -128,6 +128,28 @@ pub mod tests {
             ..Default::default()
         };
         let formatted = Format::new("my email is {} and my username is {}".to_string(), args);
+        formatted
+            .repeat(1024)
+            .complete(&mut rng)
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+    }
+
+    #[test]
+    fn format_with_number_args() {
+        let mut rng = rand::thread_rng();
+
+        let args = FormatArgs {
+            named: vec![(
+                "id".to_string(),
+                Graph::Number(NumberNode::from(RandomI64::constant(42))),
+            )]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
+        let formatted = Format::new("{id}_suffix".to_string(), args);
         formatted
             .repeat(1024)
             .complete(&mut rng)
