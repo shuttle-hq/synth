@@ -11,10 +11,10 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn type_<T1: ToString, T2: ToString>(expected: T1, got: T2) -> Self {
+    pub fn type_<T1: ToString, T2: Debug>(expected: T1, got: T2) -> Self {
         Self::Type {
             expected: expected.to_string(),
-            got: got.to_string(),
+            got: format!("{:?}", got),
         }
     }
 
