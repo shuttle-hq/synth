@@ -163,6 +163,7 @@ impl TryFrom<Value> for String {
     fn try_from(value: Value) -> Result<String, Self::Error> {
         match value {
             Value::String(str) => Ok(str),
+            Value::Number(num) => Ok(num.to_string()),
             otherwise => Err(failed_crate!(
                 target: Release,
                 "invalid type: expected 'String', found '{}'",
