@@ -94,23 +94,6 @@ macro_rules! derive_from {
 			Self::$variant(value)
 		    }
 		}
-
-		impl TryInto<$ty> for $id {
-		    type Error = Error;
-		    fn try_into(self) -> Result<$ty, Self::Error> {
-			match self {
-			    Self::$variant(value) => Ok(value),
-			    otherwise => Err(
-				failed_crate!(
-				    target: Release,
-				    "invalid type: expected '{}', found '{}'",
-				    stringify!($variant),
-				    otherwise.type_()
-				)
-			    )
-			}
-		    }
-		}
 	    )?
 	)*
     };
@@ -171,6 +154,36 @@ derive_from! {
         DateTime(ChronoValueAndFormat),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
+    }
+}
+
+impl TryFrom<Value> for String {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<String, Self::Error> {
+        match value {
+            Value::String(str) => Ok(str),
+            otherwise => Err(failed_crate!(
+                target: Release,
+                "invalid type: expected 'String', found '{}'",
+                otherwise.type_()
+            )),
+        }
+    }
+}
+
+impl TryFrom<Value> for Number {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<Number, Self::Error> {
+        match value {
+            Value::Number(num) => Ok(num),
+            otherwise => Err(failed_crate!(
+                target: Release,
+                "invalid type: expected 'Number', found '{}'",
+                otherwise.type_()
+            )),
+        }
     }
 }
 
