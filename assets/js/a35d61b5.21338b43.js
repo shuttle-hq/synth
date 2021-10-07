@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[5775],{8590:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/best-practice","name":"best practice","count":1,"permalink":"/blog/tags/best-practice"}')}}]);

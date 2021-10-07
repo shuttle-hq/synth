@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[4756],{500:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/mern","name":"mern","count":1,"permalink":"/blog/tags/mern"}')}}]);

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
                        xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-  <ShortName>Synth - Documentation</ShortName>
-  <Description>Search Synth - Documentation</Description>
+  <ShortName>Synth</ShortName>
+  <Description>Search Synth</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Image width="16" height="16" type="image/x-icon">https://getsynth.github.io/synth/img/getsynth_favicon.png</Image>
-  <Url type="text/html" method="get" template="https://getsynth.github.io/synth/search?q={searchTerms}"/>
-  <Url type="application/opensearchdescription+xml" rel="self" template="https://getsynth.github.io/synth/opensearch.xml" />
-  <moz:SearchForm>https://getsynth.github.io/synth</moz:SearchForm>
+  <Image width="16" height="16" type="image/x-icon">https://getsynth.com/favicon.ico</Image>
+  <Url type="text/html" method="get" template="https://getsynth.com/search?q={searchTerms}"/>
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://getsynth.com/opensearch.xml" />
+  <moz:SearchForm>https://getsynth.com/</moz:SearchForm>
 </OpenSearchDescription>

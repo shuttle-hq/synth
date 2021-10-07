@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[827],{7091:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/schema","name":"schema","count":1,"permalink":"/blog/tags/schema"}')}}]);

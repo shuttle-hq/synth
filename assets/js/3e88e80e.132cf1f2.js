@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[1916],{4750:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/gdpr","name":"gdpr","count":1,"permalink":"/blog/tags/gdpr"}')}}]);

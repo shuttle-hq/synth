@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[8248],{8491:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/pseudonymisation","name":"pseudonymisation","count":1,"permalink":"/blog/tags/pseudonymisation"}')}}]);

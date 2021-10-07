@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[4569],{4489:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/prisma","name":"prisma","count":2,"permalink":"/blog/tags/prisma"}')}}]);

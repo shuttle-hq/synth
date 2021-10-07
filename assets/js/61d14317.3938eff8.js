@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[4427],{1708:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/beginners-guide","name":"beginners guide","count":3,"permalink":"/blog/tags/beginners-guide"}')}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[5423],{2537:function(a){a.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/data-generation","name":"data generation","count":4,"permalink":"/blog/tags/data-generation"}')}}]);
