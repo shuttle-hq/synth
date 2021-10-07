@@ -138,8 +138,7 @@ be overwhelming.
 What ends up happening over time is certain libraries become implicitly
 canonical as they receive overwhelming support and start becoming serious
 dependencies differentiating from their alternatives. Also in a project 
-update from  RustConf 2021 it [was mentioned](https://youtu.be/ylOpCXI2EMM?
-t=1048) that the idea of having 'recommended crates' may be visited in the 
+update from  RustConf 2021 it [was mentioned](https://youtu.be/ylOpCXI2EMM?t=1048) that the idea of having 'recommended crates' may be visited in the 
 future. 
 
 The lack of canonical non-standard libraries is an issue when you're getting
