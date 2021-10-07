@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunksynth_docs=self.webpackChunksynth_docs||[]).push([[7690],{9010:function(s){s.exports=JSON.parse('{"allTagsPath":"/blog/tags","slug":"/blog/tags/rust","name":"rust","count":1,"permalink":"/blog/tags/rust"}')}}]);

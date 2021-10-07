@@ -2,11 +2,22 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://getsynth.com/blog</id>
     <title>Synth Blog</title>
-    <updated>2021-09-27T00:00:00.000Z</updated>
+    <updated>2021-10-07T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://getsynth.com/blog"/>
     <subtitle>Synth Blog</subtitle>
     <icon>https://getsynth.com/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Building a startup with Rust]]></title>
+        <id>Building a startup with Rust</id>
+        <link href="https://getsynth.com/blog/2021/10/07/building-a-startup-with-rust"/>
+        <updated>2021-10-07T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This blog post is a compilation of thoughts around building a company with Rust]]></summary>
+        <author>
+            <name>Christos Hadjiaslanis</name>
+            <uri>https://github.com/getsynth</uri>
+        </author>
+    </entry>
     <entry>
         <title type="html"><![CDATA[50 ways to crash our product]]></title>
         <id>50 ways to crash our product</id>

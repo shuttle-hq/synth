@@ -4,9 +4,16 @@
         <title>Synth Blog</title>
         <link>https://getsynth.com/blog</link>
         <description>Synth Blog</description>
-        <lastBuildDate>Mon, 27 Sep 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 07 Oct 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Building a startup with Rust]]></title>
+            <link>https://getsynth.com/blog/2021/10/07/building-a-startup-with-rust</link>
+            <guid>Building a startup with Rust</guid>
+            <pubDate>Thu, 07 Oct 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[This blog post is a compilation of thoughts around building a company with Rust]]></description>
+        </item>
         <item>
             <title><![CDATA[50 ways to crash our product]]></title>
             <link>https://getsynth.com/blog/2021/09/27/crash</link>
