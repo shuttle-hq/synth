@@ -39,6 +39,16 @@ macro_rules! generate_enum {
 	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
 		    $(
+			Self::$variant(inner) => write!(f, "{:?}", inner),
+		    )*
+		}
+	    }
+	}
+
+	impl std::fmt::Debug for $id {
+	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+		    $(
 			Self::$variant(inner) => write!(f, "{}({:?})", stringify!($type_), inner),
 		    )*
 		}
@@ -144,7 +154,7 @@ macro_rules! generate_special_enum {
 			    Token::$id($id::$variant$(($($var,)*))?) => Ok(($($($var,)*)*)),
 			    otherwise => {
 				let err = format!(
-				    "unexpected: wanted {}, got {}",
+				    "unexpected: wanted {}, got {:?}",
 				    stringify!($variant),
 				    otherwise
 				);
@@ -216,7 +226,7 @@ macro_rules! data_model_variant_impl_ext {
 generate_enum!(
     /// Token variant for serde primitive numerical types.
     #[allow(missing_docs)]
-    #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+    #[derive(Clone, Copy, Hash, PartialEq, Eq)]
     pub enum Number {
         I8(i8),
         I16(i16),
@@ -290,7 +300,7 @@ impl serde::Serialize for Number {
 generate_enum!(
     /// Token variant for all serde primitive (non-composite) types.
     #[allow(missing_docs)]
-    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, PartialEq, Eq, Hash)]
     pub enum Primitive {
         Bool(bool),
         String(String),
@@ -342,7 +352,7 @@ generate_special_enum!(
 
 generate_enum!(
     /// A custom tokenization for the serde data model.
-    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, PartialEq, Eq, Hash)]
     pub enum Token {
         /// A token encoding serde primitive types.
         Primitive(Primitive),
