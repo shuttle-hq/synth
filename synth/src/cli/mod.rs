@@ -13,6 +13,7 @@ use crate::cli::store::Store;
 use crate::cli::db_utils::DataSourceParams;
 use crate::version::print_version_message;
 
+use serde::Serialize;
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -182,8 +183,10 @@ impl Cli {
     }
 }
 
-
-#[derive(StructOpt)]
+// The serialization of this enum is used for telemetry when synth panics and we want our logs to
+// contain the command that caused the panic. When modifying this, pay attention to skip
+// serialization of any privacy sensitive information.
+#[derive(StructOpt, Serialize)]
 #[structopt(
     name = "synth",
     about = "synthetic data engine on the command line",
@@ -192,7 +195,8 @@ impl Cli {
 pub enum Args {
     #[structopt(about = "(DEPRECATED). For backward compatibility and is a no-op.")]
     Init {
-	init_path: Option<PathBuf>
+        #[serde(skip)]
+        init_path: Option<PathBuf>
     },
     #[structopt(about = "Generate data from a namespace", alias = "gen")]
     Generate {
@@ -200,8 +204,10 @@ pub enum Args {
             help = "The namespace directory from which to read schema files",
             parse(from_os_str)
         )]
+        #[serde(skip)]
         namespace: PathBuf,
         #[structopt(long, help = "The specific collection from which to generate")]
+        #[serde(skip)]
         collection: Option<Name>,
         #[structopt(long, help = "the number of samples", default_value = "1")]
         size: usize,
@@ -209,6 +215,7 @@ pub enum Args {
             long,
             help = "The sink into which to generate data. Can be a postgres uri, a mongodb uri. If not specified, data will be written to stdout"
         )]
+        #[serde(skip)]
         to: Option<String>,
         #[structopt(
             long,
@@ -224,6 +231,7 @@ pub enum Args {
         long,
         help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
         )]
+        #[serde(skip)]
         schema: Option<String>,
     },
     #[structopt(about = "Import data from an external source")]
@@ -232,21 +240,25 @@ pub enum Args {
             help = "The namespace directory into which to save imported schema files",
             parse(from_os_str)
         )]
+        #[serde(skip)]
         namespace: PathBuf,
         #[structopt(
             long,
             help = "The name of a collection into which the data will be imported"
         )]
+        #[serde(skip)]
         collection: Option<Name>,
         #[structopt(
             long,
             help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
         )]
+        #[serde(skip)]
         from: Option<String>,
         #[structopt(
         long,
         help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
         )]
+        #[serde(skip)]
         schema: Option<String>,
     },
     #[cfg(feature = "telemetry")]
@@ -257,7 +269,7 @@ pub enum Args {
 }
 
 #[cfg(feature = "telemetry")]
-#[derive(StructOpt)]
+#[derive(StructOpt, Serialize)]
 pub enum TelemetryCommand {
     #[structopt(about = "Enable anonymous usage data collection")]
     Enable,
