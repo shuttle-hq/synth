@@ -1,63 +1,40 @@
 import React, {useState, useEffect} from 'react';
-import CodeBlock from '../CodeBlock'
 
-type ErrorResponse = {
-    status: number,
-    kind?: string,
-    text?: string
-}
+import CodeBlock from '@theme/CodeBlock'
 
-class PlaygroundError extends Error {
-    response: ErrorResponse;
+import {PlaygroundError, pgGenerate} from '../../lib/playground';
 
-    constructor(response: ErrorResponse) {
-        super(`status=${response.status} kind=${response.kind} text=${response.text}`);
-        this.response = response;
+type Querying = {
+    step: "querying"
+};
+
+const Querying: Querying = {step: "querying"};
+
+type Failed = {
+    step: "failed",
+    error: PlaygroundError
+};
+
+const Failed = (error: PlaygroundError): Failed => {
+    return {
+        step: "failed",
+        error
     }
 }
 
-const pgGenerate = async function (
-    req: any,
-    size: number | null = null,
-    baseUrl: string = "https://dev.getsynth.com"
-): Promise<any> {
-    const params = {
-        method: "PUT",
-        body: req,
-        headers: {
-            "Content-Type": "application/json"
-        }
-    };
-    const query = size === null ? "" : `?size=${size}`;
-    const url = `${baseUrl}/playground${query}`;
-    return fetch(url, params)
-        .then((response) => {
-            if (response.status != 200) {
-                if (response.headers.get("Content-Type") == "application/json") {
-                    return response
-                        .json()
-                        .then((err) => {
-                            throw new PlaygroundError({
-                                status: response.status,
-                                kind: err["kind"],
-                                text: err["text"]
-                            })
-                        })
-                } else {
-                    throw new PlaygroundError({status: response.status})
-                }
-            } else {
-                return response.json();
-            }
-        })
+type Ok = {
+    step: "ok",
+    generated: any
+};
+
+const Ok = (generated: any): Ok => {
+    return {
+        step: "ok",
+        generated
+    }
 }
 
-export {ErrorResponse, PlaygroundError, pgGenerate};
-
-type PlaygroundState =
-    { step: "querying" } |
-    { step: "failed", response?: ErrorResponse } |
-    { step: "ok", generated: any };
+type PlaygroundState = Querying | Failed | Ok;
 
 type PlaygroundProps = {
     schema: any,
@@ -65,25 +42,25 @@ type PlaygroundProps = {
     seed: number
 }
 
-const PlaygroundBlock = ({ schema, size, seed }: PlaygroundProps) => {
-    let [state,setState] = useState<PlaygroundState>({step: "querying"});
+const PlaygroundBlock = ({schema, size, seed}: PlaygroundProps) => {
+    let [state, setState] = useState<PlaygroundState>(Querying);
     let [seedState, setSeedState] = useState<number | null>(null);
 
     useEffect(() => {
         if (seedState != seed) {
             setSeedState(seed);
-            setState({step: "querying"});
+            setState(Querying);
         }
-        if (state.step == "querying") {
+        if (state.step === "querying") {
             const baseUrl = process.env.NODE_ENV === "development"
                 ? "http://localhost:8182"
                 : "https://dev.getsynth.com";
             pgGenerate(schema, size, baseUrl)
                 .then((generated) => {
-                    setState({ step: "ok", generated });
+                    setState(Ok(generated));
                 })
                 .catch((err: PlaygroundError) => {
-                    setState({ step: "failed", response: err.response });
+                    setState(Failed(err));
                 })
         }
     });
@@ -98,7 +75,7 @@ const PlaygroundBlock = ({ schema, size, seed }: PlaygroundProps) => {
                     && JSON.stringify(state.generated, null, 2)
                 ) || (
                     state.step == "failed"
-                    && `Error with ${state.response.kind}: ${state.response.text}`
+                    && `${state.error}`
                 )
             }
         </CodeBlock>

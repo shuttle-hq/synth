@@ -7,14 +7,53 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: rgb(33, 175, 144);
-  --ifm-color-primary-darker: rgb(31, 165, 136);
-  --ifm-color-primary-darkest: rgb(26, 136, 112);
-  --ifm-color-primary-light: rgb(70, 203, 174);
-  --ifm-color-primary-lighter: rgb(102, 212, 189);
-  --ifm-color-primary-lightest: rgb(146, 224, 208);
+  --ifm-color-primary: #00dab8;
+  --ifm-color-primary-dark: #00c4a6;
+  --ifm-color-primary-darker: #00b99c;
+  --ifm-color-primary-darkest: #009981;
+  --ifm-color-primary-light: #00f0ca;
+  --ifm-color-primary-lighter: #00fbd4;
+  --ifm-color-primary-lightest: #1cffdc;
   --ifm-code-font-size: 95%;
+  --ifm-color-dark-600: #2a2a2a;
+  --ifm-color-dark-400: #c3c3c3;
+  --ifm-color-dark-500: rgb(238, 238, 238);
+  --ifm-color-dark-600: rgb(45, 45, 45);
+  --ifm-color-dark-700: rgb(31, 31, 31);
+  --ifm-color-gray-100: rgb(224, 224, 224);
+  --ifm-color-gray-500: rgb(68, 68, 68);
+  --ifm-color-gray-600: rgb(42, 42, 42);
+  --ifm-pre-background: var(--ifm-color-dark-600);
+}
+
+html[data-theme='dark'] .footer {
+  --ifm-footer-background-color: var(--ifm-color-dark-600);
+  --ifm-footer-link-color: var(--ifm-color-dark-500);
+}
+
+html[data-theme='dark'] :root {
+  --ifm-code-background: var(--ifm-color-gray-600);
+}
+
+.footer {
+  --ifm-footer-background-color: var(--ifm-color-white);
+  --ifm-footer-link-color: var(--ifm-color-gray-500);
+  --ifm-footer-title-color: var(--ifm-color-dark-400);
+  font-weight: bold;
+  font-size: 14px;
+  border-top: var(--ifm-global-border-width) solid var(--ifm-toc-border-color);
+}
+
+.footer__copyright {
+  font-weight: lighter;
+}
+
+html[dark-theme='light'] .footer__copyright {
+  color: var(--ifm-color-gray-500);
+}
+
+div.footer {
+  border-style: solid;
 }
 
 .docusaurus-highlight-code-line {
@@ -22,4 +61,31 @@
   display: block;
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
+}
+
+div[class^='announcementBar_'] {
+  --site-announcement-bar-stripe-color1: hsl(
+          var(--site-primary-hue-saturation),
+          85%
+  );
+  --site-announcement-bar-stripe-color2: hsl(
+          var(--site-primary-hue-saturation),
+          95%
+  );
+  background-color: #20BEB6;
+  color: rgb(253, 253, 253);
+  font-weight: bold;
+}
+
+[class^='announcementBar'] .close {
+  color: rgb(253, 253, 253);
+  opacity: 0.9;
+}
+
+a[class^='footerLogoLink'] {
+  opacity: 0.9;
+}
+
+.navbar {
+
 }

@@ -5,29 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-.codeBlockContent {
-  position: relative;
-}
-
-.resultBlockContent {
-  background-color: #404661;
-  border-bottom-left-radius: var(--ifm-global-radius);
-  border-bottom-right-radius: var(--ifm-global-radius);
-}
-
-.codeBlockTitle {
-  border-top-left-radius: var(--ifm-global-radius);
-  border-top-right-radius: var(--ifm-global-radius);
-  border-bottom: 1px solid var(--ifm-color-emphasis-200);
-  font-family: var(--ifm-font-family-monospace);
-  font-weight: bold;
-  padding: 0.75rem var(--ifm-pre-padding);
-  width: 100%;
-}
-
-.codeBlock {
-  overflow: auto;
+.codeBlockContainer {
+  margin-bottom: var(--ifm-leading);
   border-radius: var(--ifm-global-radius);
+  box-shadow: var(--ifm-global-shadow-lw);
+  overflow: hidden;
 }
 
 .codeBlockWithTitle {
@@ -40,6 +22,33 @@
   border-bottom-right-radius: 0;
 }
 
+.codeBlockContent {
+  position: relative;
+  /*rtl:ignore*/
+  direction: ltr;
+}
+
+.resultBlockContent {
+  background-color: var(--ifm-color-gray-600);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: var(--ifm-global-radius);
+  border-bottom-right-radius: var(--ifm-global-radius);
+}
+
+.codeBlockTitle {
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  font-size: var(--ifm-code-font-size);
+  font-weight: 500;
+  padding: 0.75rem var(--ifm-pre-padding);
+}
+
+.codeBlock {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
 .buttonsBlock {
   position: absolute;
   right: calc(var(--ifm-pre-padding) / 2);
@@ -48,6 +57,7 @@
 
 .codeButton {
   border: none;
+  background: rgba(0, 0, 0, 0.3);
   border-radius: var(--ifm-global-radius);
   color: var(--ifm-color-white);
   cursor: pointer;
@@ -58,11 +68,16 @@
 }
 
 .copyButton {
-  background: rgba(0, 0, 0, 0.3);
+}
+
+.outputButton {
+  color: var(--ifm-color-dark-400);
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .runButton {
-  background: var(--ifm-color-primary);
+  background: var(--ifm-color-primary-dark);
   margin-left: 0.5rem;
 }
 
@@ -73,13 +88,13 @@
 }
 
 .codeBlockLines {
-  font-family: var(--ifm-font-family-monospace);
-  font-size: inherit;
-  line-height: var(--ifm-pre-line-height);
-  white-space: pre;
+  font: inherit;
+  /*rtl:ignore*/
   float: left;
   min-width: 100%;
   padding: var(--ifm-pre-padding);
+  display: flex;
+  flex-direction: column;
 }
 
 @media print {

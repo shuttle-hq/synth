@@ -784,7 +784,7 @@ community would be happy to help if you encounter an issue!
 
 [synth-repo]: https://github.com/getsynth/synth
 
-[installation]: /getting_started/installation
+[installation]: /docs/getting_started/installation
 
 [development-cycle]: https://en.wikipedia.org/wiki/Systems_development_life_cycle
 
@@ -814,37 +814,37 @@ community would be happy to help if you encounter an issue!
 
 [table]: https://en.wikipedia.org/wiki/Table_(information)
 
-[synth-array]: /content/array
+[synth-array]: /docs/content/array
 
 [prng]: https://en.wikipedia.org/wiki/Pseudorandom_number_generator
 
-[synth-schema]: /getting_started/schema
+[synth-schema]: /docs/getting_started/schema
 
-[synth-generators]: /content/null
+[synth-generators]: /docs/content/null
 
-[synth-number]: /content/number
+[synth-number]: /docs/content/number
 
-[synth-id]: /content/number#id
+[synth-id]: /docs/content/number#id
 
-[synth-constant]: /content/number#constant
+[synth-constant]: /docs/content/number#constant
 
-[synth-range]: /content/number#range
+[synth-range]: /docs/content/number#range
 
-[synth-string]: /content/string
+[synth-string]: /docs/content/string
 
-[synth-faker]: /content/string#faker
+[synth-faker]: /docs/content/string#faker
 
-[synth-object]: /content/object
+[synth-object]: /docs/content/object
 
-[synth-modifiers]: /modifiers
+[synth-modifiers]: /docs/content/modifiers
 
-[synth-datetime]: /content/string#date_time
+[synth-datetime]: /docs/content/string#date_time
 
-[synth-optional]: /modifiers#optional
+[synth-optional]: /docs/content/modifiers#optional
 
-[synth-unique]: /modifiers#unique
+[synth-unique]: /docs/content/modifiers#unique
 
-[synth-same-as]: /content/same-as
+[synth-same-as]: /docs/content/same-as
 
 [n-to-1]: https://www.prisma.io/docs/concepts/components/prisma-schema/relations/one-to-many-relations
 
@@ -854,7 +854,7 @@ community would be happy to help if you encounter an issue!
 
 [synth-twitter]: https://twitter.com/getsynth
 
-[synth-cli]: /getting_started/command-line
+[synth-cli]: /docs/getting_started/command-line
 
 [docker-mongo]: https://hub.docker.com/_/mongo
 

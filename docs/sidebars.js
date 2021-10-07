@@ -1,9 +1,9 @@
 module.exports = {
     docsSidebar: {
-        "Getting Started": ['getting_started/synth', 'getting_started/installation', 'getting_started/hello-world', 'getting_started/core-concepts', 'getting_started/schema', 'getting_started/command-line', 'getting_started/how-it-works'],
-        "Examples": ['examples/bank'],
-        "Integrations": ['integrations/postgres'],
-        "Generators": ['content/toc', 'content/modifiers', 'content/null', 'content/bool', 'content/number', 'content/string', 'content/object', 'content/array', 'content/one-of', 'content/same-as', 'content/unique', 'content/series'],
+        "Getting Started": ['docs/getting_started/synth', 'docs/getting_started/installation', 'docs/getting_started/hello-world', 'docs/getting_started/core-concepts', 'docs/getting_started/schema', 'docs/getting_started/command-line', 'docs/getting_started/how-it-works'],
+        "Examples": ['docs/examples/bank'],
+        "Integrations": ['docs/integrations/postgres'],
+        "Generators": ['docs/content/index', 'docs/content/modifiers', 'docs/content/null', 'docs/content/bool', 'docs/content/number', 'docs/content/string', 'docs/content/object', 'docs/content/array', 'docs/content/one-of', 'docs/content/same-as', 'docs/content/unique', 'docs/content/series'],
         "Other": ['other/telemetry']
     },
 };

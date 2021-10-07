@@ -1,6 +1,6 @@
 {
   "name": "synth-docs",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -12,15 +12,17 @@
     "clear": "docusaurus clear"
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-alpha.70",
-    "@docusaurus/preset-classic": "2.0.0-alpha.70",
-    "@mdx-js/react": "^1.6.21",
+    "@docusaurus/core": "^2.0.0-beta.6",
+    "@docusaurus/preset-classic": "^2.0.0-beta.6",
+    "@docusaurus/theme-common": "^2.0.0-beta.6",
+    "@docusaurus/mdx-loader": "^2.0.0-beta.6",
     "@papercups-io/docusaurus-plugin": "1.0.0",
+    "prism-react-renderer": "^1.2.1",
     "clsx": "^1.1.1",
-    "docusaurus-plugin-fathom": "1.1.0",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
-    "url-join": "^4.0.1"
+    "url-join": "^4.0.1",
+    "@mdx-js/react": "^1.6.21"
   },
   "browserslist": {
     "production": [
@@ -35,7 +37,7 @@
     ]
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^2.0.0-alpha.70",
+    "@docusaurus/module-type-aliases": "^2.0.0-beta.6",
     "@tsconfig/docusaurus": "^1.0.2",
     "@types/react": "^17.0.2",
     "@types/react-helmet": "^6.1.0",

@@ -1,22 +1,17 @@
-const isTargetVercel = () => {
-    return process.env["VERCEL"] === '1'
-}
-
 module.exports = {
-    title: 'Synth - Documentation',
-    tagline: 'Easy data generation',
-    url: isTargetVercel() ? 'https://www.getsynth.com/docs' : 'https://getsynth.github.io/synth',
-    baseUrl: isTargetVercel() ? '/docs/' : '/synth/',
+    title: 'Synth',
+    tagline: 'Open-source data generation',
+    url: "https://getsynth.com",
+    baseUrl: '/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
-    favicon: '/img/getsynth_favicon.png',
+    favicon: '/favicon.ico',
     organizationName: 'getsynth', // Usually your GitHub org/user name.
     projectName: 'synth', // Usually your repo name.
     customFields: {
         blogTitle: "Synth - Blog"
     },
     plugins: [
-        require.resolve('docusaurus-plugin-fathom'),
         [
             "@papercups-io/docusaurus-plugin",
             {
@@ -32,44 +27,59 @@ module.exports = {
         ]
     ],
     themeConfig: {
-        fathomAnalytics: {
-            siteId: isTargetVercel() ? 'QRVYRJEG' : 'ASXTKXUJ',
-        },
         algolia: {
             apiKey: 'b0583a1f7732cee4e8c80f4a86adf57c',
             indexName: 'synth',
         },
+        hideableSidebar: true,
+        colorMode: {
+            defaultMode: 'dark',
+            disableSwitch: false,
+            respectPrefersColorScheme: true,
+        },
         navbar: {
-            title: 'Synth',
+            hideOnScroll: true,
             logo: {
                 alt: 'Synth',
-                src: '/img/getsynth_identicon.png',
+                src: '/img/synth_logo_large.png',
                 href: 'https://getsynth.com',
                 target: '_self'
             },
             items: [
                 {
-                    to: '/getting_started/synth',
-                    activeBasePath: 'getting_started',
+                    to: '/docs/getting_started/synth',
+                    activeBasePath: '/docs/getting_started',
                     label: 'Getting Started',
                     position: 'left',
                 },
                 {
-                    to: '/examples/bank',
-                    activeBasePath: 'examples',
+                    to: '/docs/examples/bank',
+                    activeBasePath: '/docs/examples',
                     label: 'Examples',
                     position: 'left',
                 },
                 {
-                    to: '/content/null',
-                    activeBasePath: 'content',
+                    to: '/docs/integrations/postgres',
+                    activeBasePath: '/docs/integrations',
+                    label: 'Integrations',
+                    position: 'left',
+                },
+                {
+                    to: '/docs/content/index',
+                    activeBasePath: '/docs/content',
                     label: 'Generators',
                     position: 'left',
                 },
                 {
                     to: 'blog',
                     label: 'Blog',
-                    position: 'left'
+                    activeBasePath: '/blog',
+                    position: 'right'
+                },
+                {
+                    href: 'https://discord.gg/H33rRDTm3p',
+                    label: 'Discord',
+                    position: 'right'
                 },
                 {
                     href: 'https://github.com/getsynth/synth',
@@ -82,28 +92,85 @@ module.exports = {
             style: 'dark',
             links: [
                 {
-                    title: 'Docs',
+                    title: 'Learn',
                     items: [
                         {
-                            to: '/getting_started/synth',
+                            to: '/',
+                            label: 'What is Synth?',
+                        },
+                        {
+                            to: '/docs/getting_started/synth',
                             label: 'Getting Started',
                         },
                         {
-                            to: '/examples/bank',
+                            to: '/docs/examples/bank',
                             label: 'Examples',
                         },
+                    ],
+                },
+                {
+                    title: 'More',
+                    items: [
                         {
-                            to: '/content/null',
+                            to: '/download',
+                            label: 'Download',
+                        },
+                        {
+                            to: '/docs/content/index',
                             label: 'Generators',
                         },
                         {
-                            to: '/integrations/postgres',
+                            to: '/docs/integrations/postgres',
                             label: 'Integrations'
                         }
                     ],
                 },
+                {
+                    title: 'Community',
+                    items: [
+                        {
+                            to: '/blog',
+                            label: 'Blog',
+                        },
+                        {
+                            href: 'https://github.com/getsynth/synth',
+                            label: 'GitHub',
+                        },
+                        {
+                            href: 'https://discord.gg/H33rRDTm3p',
+                            label: 'Discord',
+                        }
+                    ],
+                },
+                {
+                    title: 'Legal',
+                    items: [
+                        {
+                            to: '/terms',
+                            label: 'Terms and Conditions',
+                        },
+                        {
+                            to: '/privacy',
+                            label: 'Privacy Policy',
+                        }
+                    ],
+                }
             ],
+            logo: {
+                alt: 'Built with <3 by OpenQuery in London',
+                src: 'img/synth_logo_large.png',
+                href: 'https://getsynth.com',
+            },
             copyright: `Copyright © ${new Date().getFullYear()} OpenQuery.`,
+        },
+        announcementBar: {
+            id: 'announcementBar', // Increment on change
+            content: `⭐️ If you like Synth, <a
+                    href="https://github.com/getsynth/synth"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >give it a star on GitHub!</a>`,
+            isCloseable: true
         },
         prism: {
             additionalLanguages: ['rust', 'graphql'],
@@ -119,6 +186,10 @@ module.exports = {
                     // Please change this to your repo.
                     editUrl:
                         'https://github.com/getsynth/synth/edit/master/docs/',
+                },
+                blog: {
+                    blogSidebarTitle: 'All posts',
+                    blogSidebarCount: 'ALL',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css')
