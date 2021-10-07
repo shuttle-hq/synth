@@ -1,5 +1,5 @@
 <p align=center>
-  <img height="150px" src="docs/static/img/getsynth_identicon.png"/>
+  <img height="150px" src="docs/static/img/getsynth_favicon.png.png"/>
 </p>
 <p align=center>
   <b>The Declarative Data Generator</b>
