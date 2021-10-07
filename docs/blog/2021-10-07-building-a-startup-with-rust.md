@@ -6,16 +6,18 @@ author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [rust, startup]
 description: This blog post is a compilation of thoughts around building a company with Rust
-image: https://storage.googleapis.com/getsynth-public/media/api.jpg
+image: https://storage.googleapis.com/getsynth-public/media/rust.jpeg
 hide_table_of_contents: false
 ---
+
+![Rust](media/rust.jpeg)
 
 When building a company you are setting out to fundamentally solve a problem.
 For this reason, engineers have been systematically attracted by this romantic
 idea of changing the world with your brain and a laptop. We are at heart problem
 solvers.
 
-As engineers we can (and most of us have) become zealous at times about our
+As engineers, we can (and most of us have) become zealous at times about our
 solutions to these problems. We have pragmatists who just get stuff done - they
 address the symptom fast and effectively. We have idealists who will grind at an
 elegant scalable solution and try to treat the disease. Whichever camp you
@@ -124,29 +126,31 @@ amazing.
 ## Libraries
 
 Rust has an ecosystem of incredibly high quality libraries. The Rust core team
-has led by example and focused on an incredibly high quality and tight standard
+has led by example and focused on a high quality and tight standard
 library. The result of a highly focused standard library is (unfortunately) a
 lack of canonical libraries for doing things outside the standard library. So
 you want a webserver, pick from one of the 100s available. You want a crate (
 Rust lingo for library) for working with JWT tokens? Here's 9, pick one. I mean,
 even something as fundamental as an asynchronous runtime is split
-between `tokio`
-and `async-std`. As a young Rustaecean this can be overwhelming.
+between `tokio` and `async-std` and others. As a young rustacean this can 
+be overwhelming.
 
 What ends up happening over time is certain libraries become implicitly
 canonical as they receive overwhelming support and start becoming serious
-dependecies differentiating from their alternatives. I predict this will get
-better as the ecosystem matures, but predictions are dangerous. // TODO: I think
-niko matsakis talked about them standardising this
+dependencies differentiating from their alternatives. Also in a project 
+update from  RustConf 2021 it [was mentioned](https://youtu.be/ylOpCXI2EMM?
+t=1048) that the idea of having 'recommended crates' may be visited in the 
+future. 
 
 The lack of canonical non-standard libraries is an issue when you're getting
 started - but over time this diminishes as you get a better understanding of the
 ecosystem. What *has* been constantly detrimental to our development velocity
-has been the lack of *integration* libraries for Rust. We've had to write a
-bunch of different integrations ourselves but they're often clunky as we don't
-have the time to invest in making them really high quality. For example most of
-Google's products have at best an unofficial crate maintained by the community,
-and at worst absolutely nothing. You need to write it from scratch.
+has been the lack of *client* libraries for Rust. We've had to write a
+bunch of different integrations ourselves but they're often clunky as we 
+don't  have the time to invest in making them really high quality. For 
+example most of Google's products have at best an unofficial code-generated 
+crate maintained by the community, and at worst absolutely nothing. You 
+need to write it from scratch.
 
 ## Should you build your startup with Rust?
 
@@ -157,7 +161,7 @@ building, I would be inclined to say no. Development velocity and being able to
 make rapid iterations is so important for an early stage startup that it
 outweighs a lot of the benefits that Rust brings to the table.
 
-If your company is later stage and you know understand exactly what you should
-be building (assuming this is every the case) then I would say yes. The '
-correctness' of Rust programs and the propensity of Rust to attract great
-engineers can help in building a great engineering culture and a great company.
+If your company is later stage, and you know understand exactly what you should
+be building (assuming this is every the case) then I would say yes. The 
+'correctness' of Rust programs and the propensity of Rust to attract great
+engineers can help in building a great engineering culture and a great company. 
