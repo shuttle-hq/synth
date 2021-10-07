@@ -2,7 +2,7 @@ module.exports = {
     title: 'Synth',
     tagline: 'Open-source data generation',
     url: "https://getsynth.com",
-    baseUrl: '/',
+    baseUrl: '/docs/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: '/favicon.ico',
@@ -35,7 +35,7 @@ module.exports = {
         colorMode: {
             defaultMode: 'dark',
             disableSwitch: false,
-            respectPrefersColorScheme: true,
+            respectPrefersColorScheme: false,
         },
         navbar: {
             hideOnScroll: true,

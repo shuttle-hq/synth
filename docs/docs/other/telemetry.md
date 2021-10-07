@@ -123,4 +123,4 @@ activity:
 [synth-telemetry]: https://github.com/getsynth/synth/blob/master/synth/src/cli/telemetry.rs
 [synth-installer]: https://github.com/getsynth/synth/blob/master/tools/install.sh
 [synth-build]: https://github.com/getsynth/synth/blob/master/.github/workflows/release.yml
-[synth-schema]: ../docs/getting_started/schema.md
+[synth-schema]: ../getting_started/schema.md
