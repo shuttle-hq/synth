@@ -71,6 +71,10 @@ impl<T: CategoricalType> From<CategoricalShadow<T>> for Categorical<T> {
 
 impl<T: CategoricalType> Distribution<T> for Categorical<T> {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> T {
+        if self.seen.len() == 1 {
+            // unwrap() is always OK here because len == 1
+            return self.seen.keys().next().unwrap().clone();
+        }
         let f = rng.gen_range(0.0..1.0);
         let mut index = (f * self.total as f64).floor() as i64;
         for (k, v) in self.seen.iter() {
@@ -128,5 +132,15 @@ pub mod tests {
     fn test_categorical_empty_invariant() {
         let categorical_json = json!({});
         assert!(serde_json::from_value::<Categorical<String>>(categorical_json).is_err())
+    }
+
+    #[test]
+    fn test_weightless_single_invariant() {
+        let categorical_json = json!({ "foo": 0 });
+        assert_eq!(
+            "foo",
+            serde_json::from_value::<Categorical<String>>(categorical_json)
+                .unwrap()
+                .sample(&mut rand::thread_rng()))
     }
 }
