@@ -1,3 +1,7 @@
+const isTargetVercel = () => {
+    return process.env["VERCEL"] === '1'
+}
+
 module.exports = {
     title: 'Synth',
     tagline: 'Open-source data generation',
@@ -12,6 +16,7 @@ module.exports = {
         blogTitle: "Synth - Blog"
     },
     plugins: [
+        require('./src/lib/fathom.js'),
         [
             "@papercups-io/docusaurus-plugin",
             {
@@ -27,6 +32,9 @@ module.exports = {
         ]
     ],
     themeConfig: {
+        fathomAnalytics: {
+            siteId: isTargetVercel() ? 'QRVYRJEG' : 'HSFEOKWQ',
+        },
         algolia: {
             apiKey: 'b0583a1f7732cee4e8c80f4a86adf57c',
             indexName: 'synth',
