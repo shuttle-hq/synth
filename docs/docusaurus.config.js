@@ -2,7 +2,7 @@ module.exports = {
     title: 'Synth',
     tagline: 'Open-source data generation',
     url: "https://getsynth.com",
-    baseUrl: '/',
+    baseUrl: '/docs/',
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: '/favicon.ico',
@@ -35,7 +35,7 @@ module.exports = {
         colorMode: {
             defaultMode: 'dark',
             disableSwitch: false,
-            respectPrefersColorScheme: true,
+            respectPrefersColorScheme: false,
         },
         navbar: {
             hideOnScroll: true,
@@ -95,11 +95,11 @@ module.exports = {
                     title: 'Learn',
                     items: [
                         {
-                            to: '/',
+                            href: '/docs/getting_started/synth',
                             label: 'What is Synth?',
                         },
                         {
-                            to: '/docs/getting_started/synth',
+                            to: '/docs/getting_started/hello-world',
                             label: 'Getting Started',
                         },
                         {
@@ -111,10 +111,6 @@ module.exports = {
                 {
                     title: 'More',
                     items: [
-                        {
-                            to: '/download',
-                            label: 'Download',
-                        },
                         {
                             to: '/docs/content/index',
                             label: 'Generators',
@@ -139,19 +135,6 @@ module.exports = {
                         {
                             href: 'https://discord.gg/H33rRDTm3p',
                             label: 'Discord',
-                        }
-                    ],
-                },
-                {
-                    title: 'Legal',
-                    items: [
-                        {
-                            to: '/terms',
-                            label: 'Terms and Conditions',
-                        },
-                        {
-                            to: '/privacy',
-                            label: 'Privacy Policy',
                         }
                     ],
                 }
