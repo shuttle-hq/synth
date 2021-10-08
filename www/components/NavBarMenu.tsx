@@ -10,7 +10,9 @@ type NavBarMenuProps = {
 
 const NavBarMenu = ({children}: NavBarMenuProps) => {
     const [defaultActive, setDefaultActive] = useState(0);
-    const [active, setActive] = useState(null);
+    const [childActive, setActive] = useState(null);
+    let [dropDownActive, setDropDownActive] = useState(false);
+
 
     let childrenItems = [];
     Children.forEach(children, ({props}, index) => {
@@ -25,7 +27,7 @@ const NavBarMenu = ({children}: NavBarMenuProps) => {
                     >
                         <div
                             className={
-                                (index == active || index == defaultActive ? "border-opacity-100" : "border-opacity-0")
+                                (index == childActive || index == defaultActive ? "border-opacity-100" : "border-opacity-0")
                                 + " border-b-2 border-brand-600 hover:border-brand-400 transition font-medium"
                             }
                         >
@@ -39,6 +41,21 @@ const NavBarMenu = ({children}: NavBarMenuProps) => {
 
     return (
         <>
+            {
+                dropDownActive ? (
+                    <>
+                        <div className="list-none fixed z-10 inset-0  bg-dark-700"
+                             onClick={() => {
+                                 setDropDownActive(!dropDownActive);
+                             }}>
+
+                            {childrenItems.map(child => (
+                                <div className="text-center">{child}</div>
+                            ))}
+                        </div>
+                    </>
+                ) : null
+            }
             <ul className="hidden md:inline-flex text-medium">
                 {
                     childrenItems[0]
@@ -51,6 +68,9 @@ const NavBarMenu = ({children}: NavBarMenuProps) => {
             <FontAwesomeIcon
                 icon={faBars}
                 className="cursor-pointer inline-flex md:hidden h-7 my-auto"
+                onClick={() => {
+                    setDropDownActive(!dropDownActive);
+                }}
             />
         </>
     );
