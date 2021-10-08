@@ -2,16 +2,20 @@ use super::prelude::*;
 
 use rand_regex::Regex as RandRegex;
 
+pub mod constant;
 pub mod faker;
 pub mod format;
 pub mod serialized;
+pub mod sliced;
 pub mod truncated;
 pub mod uuid;
 
 pub use self::uuid::UuidGen;
+pub use constant::Constant;
 pub use faker::{FakerArgs, Locale, RandFaker};
 pub use format::{Format, FormatArgs};
 pub use serialized::Serialized;
+pub use sliced::Sliced;
 pub use truncated::Truncated;
 
 derive_generator! {
@@ -24,7 +28,9 @@ derive_generator! {
         Categorical(OnceInfallible<Random<String, Categorical<String>>>)
         Uuid(OnceInfallible<UuidGen>),
         Format(Format),
-        Truncated(Truncated)
+        Truncated(Truncated),
+        Sliced(Sliced),
+        Constant(Constant)
     }
 }
 
@@ -61,6 +67,18 @@ impl From<UuidGen> for RandomString {
 impl From<Truncated> for RandomString {
     fn from(trunc: Truncated) -> Self {
         Self::Truncated(trunc)
+    }
+}
+
+impl From<Sliced> for RandomString {
+    fn from(trunc: Sliced) -> Self {
+        Self::Sliced(trunc)
+    }
+}
+
+impl From<Constant> for RandomString {
+    fn from(trunc: Constant) -> Self {
+        Self::Constant(trunc)
     }
 }
 
