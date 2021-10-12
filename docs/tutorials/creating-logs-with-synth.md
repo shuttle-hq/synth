@@ -9,8 +9,6 @@ with synth image: https://storage.googleapis.com/getsynth-public/media/rust.jpeg
 hide_table_of_contents: false
 ---
 
-[comment]: <> (![Rust]&#40;media/rust.jpeg&#41;)
-
 In this tutorial we're going to be creating fake HTTP logs
 with [synth](http://getsynth.com). Whether you're benchmarking some
 log-collector or are experimenting with log compression, this tutorial aims to
@@ -427,5 +425,44 @@ And we're done!
 
 ## Tying it all together
 
-// TODO need parse here
+Now we have our raw data structure - we need to compose it into the proper 
+log string. To do this, we'll create a separate collection `formatted` by 
+creating another file in our namespace called `formatted.json`. We'll then 
+use a combination of the `format` and [`same_as`](TODO) generators to compose 
+together fields from our original collection `logs.json`.
+
+```json
+{
+    "type": "array",
+    "length": 1,
+    "content": {
+        "type": "string",
+        "format": {
+            "format": "{host} {ident} {authuser} [{date}] {request} {status} {bytes}",
+            "arguments": {
+                "host": "@logs.content.host",
+                "ident": "@logs.content.ident",
+                "authuser": "@logs.content.authuser",
+                "date": "@logs.content.date",
+                "request": "@logs.content.request",
+                "status": "@logs.content.status",
+                "bytes": "@logs.content.bytes"
+            }
+        }   
+    }
+}
+```
+
+And we're done!
+
+```console
+$ synth generate . --collection formatted --size 5 | jq
+[
+  "187.123.85.239 - Margarete [10/Oct/2000:13:58:04] GET /woman.7z HTTP/1.0 200 274906",
+  "151.58.227.40 - Ewald [10/Oct/2000:14:41:24] POST /oliver.mp3 HTTP/1.0 404 912953",
+  "90.255.24.42 - Demarcus [10/Oct/2000:14:51:11] POST /young.doc HTTP/1.0 200 1047925",
+  "123.174.213.110 - Carlos [10/Oct/2000:15:07:59] GET /way.rar HTTP/1.0 200 49926",
+  "253.115.73.9 - Paolo [10/Oct/2000:15:14:53] PATCH /next.png HTTP/1.0 200 884672"
+]
+```
 
