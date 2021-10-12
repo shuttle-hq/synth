@@ -1,11 +1,13 @@
 use crate::cli::postgres::PostgresExportStrategy;
 use crate::cli::stdf::StdoutExportStrategy;
+use crate::cli::mongo::MongoExportStrategy;
+use crate::cli::mysql::MySqlExportStrategy;
+use crate::cli::jsonlines::JsonLinesExportStrategy;
+
 use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
 
-use crate::cli::mongo::MongoExportStrategy;
-use crate::cli::mysql::MySqlExportStrategy;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
@@ -18,7 +20,9 @@ pub trait ExportStrategy {
 
 pub struct ExportParams {
     pub namespace: Namespace,
+    /// The name of the single collection to generate from if one is specified (via --collection).
     pub collection_name: Option<Name>,
+    /// The number of values to generate (specified via --size).
     pub target: usize,
     pub seed: u64,
 }
@@ -47,9 +51,11 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
                     Box::new(MySqlExportStrategy {
                         uri
                     })
+                } else if uri == "jsonl" {
+                    Box::new(JsonLinesExportStrategy {})
                 } else {
                     return Err(anyhow!(
-                            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb'"
+                            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb' or 'jsonl'"
                     ));
                 };
                 Ok(export_strategy)

@@ -30,6 +30,31 @@ impl SamplerOutput {
         };
         synth_val_to_json(as_synth)
     }
+
+    pub(crate) fn into_json_lines(self) -> Vec<serde_json::Value> {
+        match self {
+            Self::Namespace(key_values) => {
+                let mut jsonl = Vec::new();
+
+                for (collection, values) in key_values {
+                    let lines = values.into_iter().map(|synth_val| {
+                        // When no specific collection to generate data with is specified with --collection, each
+                        // output line is to labeled to indicate which collection in the namespace it was generated
+                        // from.
+                        serde_json::json!({
+                            "collection": collection,
+                            "data": synth_val_to_json(synth_val)
+                        })
+                    });
+
+                    jsonl.extend(lines);
+                }
+
+                jsonl
+            }
+            Self::Collection(values) => values.into_iter().map(synth_val_to_json).collect()
+        }
+    }
 }
 
 fn sampler_progress_bar(target: u64) -> ProgressBar {

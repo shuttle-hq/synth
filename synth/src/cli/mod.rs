@@ -6,6 +6,7 @@ mod mysql;
 mod postgres;
 mod stdf;
 mod store;
+mod jsonlines;
 
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
@@ -213,7 +214,7 @@ pub enum Args {
         size: usize,
         #[structopt(
             long,
-            help = "The sink into which to generate data. Can be a postgres uri, a mongodb uri. If not specified, data will be written to stdout"
+            help = "The sink into which to generate data. Can be a Postgres URI, a MongoDB URI to write data directly to a database. If 'jsonl' then JSON Lines data will be generated and written to stdout, or regular JSON otherwise."
         )]
         #[serde(skip)]
         to: Option<String>,
