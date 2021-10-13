@@ -41,5 +41,5 @@ jobs:
         with:
           toolchain: stable
           override: true
-          components: fmt
+          components: rustfmt
       - run: cargo fmt --all -- --check
