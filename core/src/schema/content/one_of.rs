@@ -210,7 +210,11 @@ impl Compile for OneOfContent {
             .variants
             .iter()
             .enumerate()
-            .map(move |(idx, variant)| compiler.build(&idx.to_string(), &variant.content))
+            .map(|(idx, variant)| {
+                compiler
+                    .build(&idx.to_string(), &variant.content)
+                    .map(|graph| (variant.weight.0, graph))
+            })
             .collect::<Result<OneOfNode>>()?;
         Ok(Graph::OneOf(one_of_node))
     }
