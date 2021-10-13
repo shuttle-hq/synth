@@ -792,7 +792,7 @@ where
                     "Already checked that all weights are positive and the iterator is not empty.",
                 );
                 let idx = dist.sample(rng);
-                let (weight, v) = self.inners.remove(idx);
+                let (weight, v) = self.inners.swap_remove(idx);
                 self.cursor = Some((idx, weight, Box::new(v)));
                 self.next(rng)
             }
