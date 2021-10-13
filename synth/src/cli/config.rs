@@ -1,14 +1,13 @@
 use anyhow::Result;
-use std::sync::{Mutex};
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+use std::sync::Mutex;
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(Config::new());
 }
-
 
 macro_rules! config {
     {

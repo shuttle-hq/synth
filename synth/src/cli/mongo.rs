@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
 use synth_core::graph::prelude::number_content::I64;
-use synth_core::graph::prelude::{NumberContent, ObjectContent, RangeStep, Number, ChronoValue};
+use synth_core::graph::prelude::{ChronoValue, Number, NumberContent, ObjectContent, RangeStep};
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, RegexContent,
@@ -117,7 +117,11 @@ fn doc_to_content(doc: &Document) -> Content {
 
 fn bson_to_content(bson: &Bson) -> Content {
     match bson {
-        Bson::Double(d) => Content::Number(NumberContent::F64(F64::Range(RangeStep::new(*d, *d + 1., 0.1)))),
+        Bson::Double(d) => Content::Number(NumberContent::F64(F64::Range(RangeStep::new(
+            *d,
+            *d + 1.,
+            0.1,
+        )))),
         Bson::String(_) => Content::String(StringContent::default()),
         Bson::Array(array) => {
             let length = Content::Number(NumberContent::U64(U64::Constant(array.len() as u64)));
@@ -162,9 +166,11 @@ impl ExportStrategy for MongoExportStrategy {
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
         match output {
-            SamplerOutput::Collection(values) => {
-                self.insert_data(params.collection_name.unwrap().to_string(), &values, &mut client)
-            }
+            SamplerOutput::Collection(values) => self.insert_data(
+                params.collection_name.unwrap().to_string(),
+                &values,
+                &mut client,
+            ),
             SamplerOutput::Namespace(namespace) => {
                 for (name, values) in namespace {
                     self.insert_data(name, &values, &mut client)?;
@@ -217,7 +223,7 @@ fn value_to_bson(value: Value) -> Bson {
         Value::String(s) => Bson::String(s),
         Value::DateTime(dt) => date_time_to_bson(dt.value), //TODO: format instead?
         Value::Object(obj) => object_to_bson(obj),
-        Value::Array(arr) => array_to_bson(arr)
+        Value::Array(arr) => array_to_bson(arr),
     }
 }
 
@@ -226,16 +232,20 @@ fn array_to_bson(array: Vec<Value>) -> Bson {
 }
 
 fn object_to_bson(obj: BTreeMap<String, Value>) -> Bson {
-    let obj = obj.into_iter().map(|(name, value)| (name, value_to_bson(value))).collect();
+    let obj = obj
+        .into_iter()
+        .map(|(name, value)| (name, value_to_bson(value)))
+        .collect();
     Bson::Document(obj)
 }
-
 
 fn date_time_to_bson(datetime: ChronoValue) -> Bson {
     Bson::DateTime(mongodb::bson::DateTime::from(match datetime {
         // those are not optimal as BSON doesn't have a way to specify dates or times, just both at once
         ChronoValue::NaiveDate(nd) => DateTime::<Utc>::from_utc(nd.and_hms(0, 0, 0), Utc),
-        ChronoValue::NaiveTime(nt) => DateTime::<Utc>::from_utc(chrono::naive::MIN_DATE.and_time(nt), Utc),
+        ChronoValue::NaiveTime(nt) => {
+            DateTime::<Utc>::from_utc(chrono::naive::MIN_DATE.and_time(nt), Utc)
+        }
         ChronoValue::NaiveDateTime(ndt) => DateTime::<Utc>::from_utc(ndt, Utc),
         ChronoValue::DateTime(dt) => dt.into(),
     }))
@@ -254,7 +264,7 @@ fn number_to_bson(number: Number) -> Bson {
         Number::U64(u64) => Bson::Int64(u64 as i64),
         Number::U128(u128) => Bson::Int64(u128 as i64),
         Number::F32(f32) => Bson::Double(*f32 as f64),
-        Number::F64(f64) => Bson::Double(*f64)
+        Number::F64(f64) => Bson::Double(*f64),
     }
 }
 

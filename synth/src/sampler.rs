@@ -1,11 +1,11 @@
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
-use synth_core::{Graph, Name, Namespace, Value};
-use synth_core::graph::json::synth_val_to_json;
-use synth_gen::prelude::*;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
+use synth_core::graph::json::synth_val_to_json;
+use synth_core::{Graph, Name, Namespace, Value};
+use synth_gen::prelude::*;
 
 pub(crate) struct Sampler {
     graph: Graph,
@@ -13,7 +13,7 @@ pub(crate) struct Sampler {
 
 pub(crate) enum SamplerOutput {
     Namespace(Vec<(String, Vec<Value>)>),
-    Collection(Vec<Value>)
+    Collection(Vec<Value>),
 }
 
 impl SamplerOutput {
@@ -26,7 +26,7 @@ impl SamplerOutput {
                     .collect();
                 Value::Object(object)
             }
-            Self::Collection(values) => Value::Array(values)
+            Self::Collection(values) => Value::Array(values),
         };
         synth_val_to_json(as_synth)
     }
@@ -70,20 +70,17 @@ enum SampleStrategy {
 impl SampleStrategy {
     fn new(collection_name: Option<Name>, target: usize) -> Self {
         match collection_name {
-            None => SampleStrategy::Namespace(NamespaceSampleStrategy {
-                target
-            }),
-            Some(name) => SampleStrategy::Collection(CollectionSampleStrategy {
-                name,
-                target,
-            })
+            None => SampleStrategy::Namespace(NamespaceSampleStrategy { target }),
+            Some(name) => SampleStrategy::Collection(CollectionSampleStrategy { name, target }),
         }
     }
 
     fn sample<R: Rng>(self, model: Graph, rng: R) -> Result<SamplerOutput> {
         match self {
             SampleStrategy::Namespace(nss) => Ok(SamplerOutput::Namespace(nss.sample(model, rng)?)),
-            SampleStrategy::Collection(css) => Ok(SamplerOutput::Collection(css.sample(model, rng)?))
+            SampleStrategy::Collection(css) => {
+                Ok(SamplerOutput::Collection(css.sample(model, rng)?))
+            }
         }
     }
 }
@@ -106,19 +103,18 @@ impl NamespaceSampleStrategy {
         let mut model = model.aggregate();
 
         while generated < self.target {
-	    // We populate `out` by walking through the collections in the generated
-	    // namespace. We also keep track of the number of `Values` generated
-	    // for the progress bar.
+            // We populate `out` by walking through the collections in the generated
+            // namespace. We also keep track of the number of `Values` generated
+            // for the progress bar.
             let round_start = generated;
             let next = model.complete(&mut rng)?;
             as_object(next)?
                 .into_iter()
                 .try_for_each(|(collection, value)| {
-                    as_array(&collection, value)
-                        .map(|vec| {
-                            generated += vec.len();
-                            out.entry(collection).or_default().extend(vec);
-                        })
+                    as_array(&collection, value).map(|vec| {
+                        generated += vec.len();
+                        out.entry(collection).or_default().extend(vec);
+                    })
                 })?;
             progress_bar.set_position(generated as u64);
             if round_start == generated {
@@ -158,15 +154,24 @@ impl CollectionSampleStrategy {
         while generated < self.target {
             let round_start = generated;
             let next = model.complete(&mut rng)?;
-            let collection_value = as_object(next)?.remove(self.name.as_ref()).ok_or_else(|| {
-                anyhow!("generated namespace does not have a collection '{}'", self.name)
-            })?;
+            let collection_value =
+                as_object(next)?.remove(self.name.as_ref()).ok_or_else(|| {
+                    anyhow!(
+                        "generated namespace does not have a collection '{}'",
+                        self.name
+                    )
+                })?;
             match collection_value {
                 Value::Array(vec) => {
                     generated += vec.len();
                     out.extend(vec);
                 }
-                other => return Err(anyhow!("Was expecting the sampled collection to be an array. Instead found {}", other.type_()))
+                other => {
+                    return Err(anyhow!(
+                        "Was expecting the sampled collection to be an array. Instead found {}",
+                        other.type_()
+                    ))
+                }
             }
             progress_bar.set_position(generated as u64);
             if round_start == generated {
@@ -184,7 +189,10 @@ impl CollectionSampleStrategy {
 fn as_object(sample: Value) -> Result<BTreeMap<String, Value>> {
     match sample {
         Value::Object(obj) => Ok(obj),
-        other => Err(anyhow!("Was expecting the top-level sample to be an object. Instead found {}", other.type_()))
+        other => Err(anyhow!(
+            "Was expecting the top-level sample to be an object. Instead found {}",
+            other.type_()
+        )),
     }
 }
 

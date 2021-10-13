@@ -80,7 +80,12 @@ impl Generator for RandomDateTime {
                     Err(err) => GeneratorState::Complete(Err(err)),
                 }
             }
-            GeneratorState::Complete(r) => GeneratorState::Complete(r.map(|value| ChronoValueAndFormat { value, format: Arc::clone(&self.format)})),
+            GeneratorState::Complete(r) => {
+                GeneratorState::Complete(r.map(|value| ChronoValueAndFormat {
+                    value,
+                    format: Arc::clone(&self.format),
+                }))
+            }
         }
     }
 }

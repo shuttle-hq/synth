@@ -2,7 +2,7 @@ use super::prelude::*;
 
 use rand::distributions::uniform::SampleRange;
 
-use num::{One, Zero, CheckedAdd};
+use num::{CheckedAdd, One, Zero};
 
 use std::ops::{Bound, RangeBounds};
 
@@ -11,7 +11,7 @@ use std::ops::{Bound, RangeBounds};
 #[derive(Clone)]
 struct AnyRange<N> {
     low: Bound<N>,
-    high: Bound<N>
+    high: Bound<N>,
 }
 
 macro_rules! any_range_int_impl {
@@ -103,14 +103,14 @@ impl<N: std::fmt::Display> AnyRange<N> {
         match bound {
             Bound::Included(n) => write!(f, "{} (inclusive)", n),
             Bound::Excluded(n) => write!(f, "{} (exclusive)", n),
-            Bound::Unbounded => write!(f, "unbounded")
+            Bound::Unbounded => write!(f, "unbounded"),
         }
     }
 }
 
 impl<N> std::fmt::Display for AnyRange<N>
 where
-    N: std::fmt::Display
+    N: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "low=")?;
@@ -124,7 +124,7 @@ impl<N: Clone> AnyRange<N> {
     fn from_range_bounds<R: RangeBounds<N>>(r: &R) -> Self {
         Self {
             low: r.start_bound().cloned(),
-            high: r.end_bound().cloned()
+            high: r.end_bound().cloned(),
         }
     }
 }
@@ -132,13 +132,13 @@ impl<N: Clone> AnyRange<N> {
 pub struct StandardIntRangeStep<R, L> {
     range: AnyRange<R>,
     step: R,
-    low: L
+    low: L,
 }
 
 impl<R, L> std::fmt::Display for StandardIntRangeStep<R, L>
 where
     R: std::fmt::Display,
-    L: std::fmt::Display
+    L: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.range.fmt(f)?;
@@ -225,7 +225,7 @@ standard_int_range_step_impl! { u64, u64, u64 }
 pub struct StandardFloatRangeStep<N> {
     range: AnyRange<N>,
     low: Option<N>,
-    step: Option<N>
+    step: Option<N>,
 }
 
 macro_rules! standard_float_range_step_impl {
@@ -297,8 +297,8 @@ pub struct Incrementing<N = i64> {
 }
 
 impl<N> Incrementing<N>
-    where
-        N: One,
+where
+    N: One,
 {
     pub fn new() -> Self {
         Self {
@@ -310,8 +310,8 @@ impl<N> Incrementing<N>
 }
 
 impl<N> Incrementing<N>
-    where
-        N: One,
+where
+    N: One,
 {
     pub fn new_at(start_at: N) -> Self {
         Self {
@@ -333,8 +333,8 @@ impl<N> Incrementing<N> {
 }
 
 impl<N> Default for Incrementing<N>
-    where
-        N: Zero + One,
+where
+    N: Zero + One,
 {
     fn default() -> Self {
         Self::new()
@@ -342,8 +342,8 @@ impl<N> Default for Incrementing<N>
 }
 
 impl<N> Generator for Incrementing<N>
-    where
-        N: CheckedAdd + Copy,
+where
+    N: CheckedAdd + Copy,
 {
     type Yield = N;
 
@@ -481,7 +481,7 @@ pub mod test {
         let mut incrementing: Incrementing<u8> = Incrementing {
             count: 0,
             step: 1,
-            overflowed: false
+            overflowed: false,
         };
 
         let mut rng = OsRng::default();

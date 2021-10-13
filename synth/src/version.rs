@@ -1,13 +1,13 @@
+use crate::cli::config;
 use anyhow::Result;
 use core::option::Option;
 use core::option::Option::{None, Some};
 use core::result::Result::Ok;
 use core::time::Duration;
+use reqwest::header::USER_AGENT;
 use semver::Version;
 use serde_json::map::Map;
 use serde_json::value::Value;
-use reqwest::header::USER_AGENT;
-use crate::cli::config;
 
 /// This is used when the user does `synth version`.
 /// It will always display a new version if it exists.
@@ -42,7 +42,10 @@ pub fn notify_new_version_message() -> Result<Option<String>> {
 pub fn version_update_info() -> Result<(Option<String>, Version)> {
     let current_version = version_semver();
     let latest_version = latest_version()?;
-    Ok((version_update_info_inner(&current_version, &latest_version), latest_version))
+    Ok((
+        version_update_info_inner(&current_version, &latest_version),
+        latest_version,
+    ))
 }
 
 pub fn version() -> String {
@@ -92,10 +95,16 @@ fn latest_version() -> Result<Version> {
         .map_err(|e| anyhow!("failed to parse latest version semver with error: {}", e))
 }
 
-fn version_update_info_inner(current_version: &Version, latest_version: &Version) -> Option<String> {
+fn version_update_info_inner(
+    current_version: &Version,
+    latest_version: &Version,
+) -> Option<String> {
     if latest_version > current_version {
         let out_of_date = "\nYour version of synth is out of date.";
-        let version_compare = format!("The installed version is {} and the latest version is {}.", current_version, latest_version);
+        let version_compare = format!(
+            "The installed version is {} and the latest version is {}.",
+            current_version, latest_version
+        );
         #[cfg(windows)]
         let install_advice = "You can update by downloading from: https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe";
         #[cfg(not(windows))]

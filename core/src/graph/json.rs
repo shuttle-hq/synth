@@ -1,7 +1,7 @@
+use crate::Value;
 use serde_json::Map;
 use std::collections::BTreeMap;
 use synth_gen::value::Number;
-use crate::Value;
 
 pub fn synth_val_to_json(val: Value) -> serde_json::Value {
     match val {
@@ -27,8 +27,10 @@ fn synth_num_to_json(n: Number) -> serde_json::Number {
         Number::U32(u32) => serde_json::Number::from(u32),
         Number::U64(u64) => serde_json::Number::from(u64),
         Number::U128(u128) => serde_json::Number::from(u128 as u64),
-        Number::F32(f32) => serde_json::Number::from_f64(*f32 as f64).unwrap_or_else(|| panic!("Could not convert value '{}' to JSON f64", f32)),
-        Number::F64(f64) => serde_json::Number::from_f64(*f64).unwrap_or_else(|| panic!("Could not convert value '{}' to JSON f64", f64)),
+        Number::F32(f32) => serde_json::Number::from_f64(*f32 as f64)
+            .unwrap_or_else(|| panic!("Could not convert value '{}' to JSON f64", f32)),
+        Number::F64(f64) => serde_json::Number::from_f64(*f64)
+            .unwrap_or_else(|| panic!("Could not convert value '{}' to JSON f64", f64)),
     }
 }
 

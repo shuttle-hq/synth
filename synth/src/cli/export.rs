@@ -4,13 +4,13 @@ use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
 
+use crate::cli::db_utils::DataSourceParams;
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
-use crate::cli::db_utils::DataSourceParams;
 
 pub trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()>;
@@ -34,19 +34,17 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
         match params.uri {
             None => Ok(Box::new(StdoutExportStrategy {})),
             Some(uri) => {
-                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
+                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://")
+                    || uri.starts_with("postgresql://")
+                {
                     Box::new(PostgresExportStrategy {
                         uri,
                         schema: params.schema,
                     })
                 } else if uri.starts_with("mongodb://") {
-                    Box::new(MongoExportStrategy {
-                        uri
-                    })
+                    Box::new(MongoExportStrategy { uri })
                 } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                    Box::new(MySqlExportStrategy {
-                        uri
-                    })
+                    Box::new(MySqlExportStrategy { uri })
                 } else {
                     return Err(anyhow!(
                             "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb'"
@@ -67,13 +65,15 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
     match values {
-        SamplerOutput::Collection(collection) => {
-            insert_data(datasource, params.collection_name.unwrap().to_string(), &collection)
-        }
+        SamplerOutput::Collection(collection) => insert_data(
+            datasource,
+            params.collection_name.unwrap().to_string(),
+            &collection,
+        ),
         SamplerOutput::Namespace(namespace) => {
             for (name, collection) in namespace {
                 insert_data(datasource, name, &collection)?;
-            };
+            }
             Ok(())
         }
     }
