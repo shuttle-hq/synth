@@ -2,11 +2,11 @@ name: synth-cargo-test
 
 on:
   push:
-    branches: [ master ]
-    paths: [ '**/*.rs' ]
+    branches: [master]
+    paths: ["**/*.rs"]
   pull_request:
-    branches: [ master ]
-    paths: [ '**/*.rs' ]
+    branches: [master]
+    paths: ["**/*.rs"]
 
   workflow_dispatch:
 
@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -33,4 +33,13 @@ jobs:
           override: true
           components: clippy
       - run: cargo clippy --tests --all-targets -- -D warnings
-
+  fmt_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: fmt
+      - run: cargo fmt --all -- --check
