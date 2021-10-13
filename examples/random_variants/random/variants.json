@@ -1,0 +1,21 @@
+{
+  "type": "array",
+  "length": 10000,
+  "content": {
+    "type": "one_of",
+    "variants": [
+      {
+        "weight": 99,
+        "type": "number",
+        "subtype": "u64",
+        "constant": 1
+      },
+      {
+        "weight": 1,
+        "type": "number",
+        "subtype": "u64",
+        "constant": 2
+      }
+    ]
+  }
+}
