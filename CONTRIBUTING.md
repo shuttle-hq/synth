@@ -21,3 +21,5 @@ We use the [Angular Commit Guidelines](https://github.com/angular/angular/blob/m
 Furthermore, commits should be squashed before being merged to master.
 
 Also, make sure your commits don't trigger any warnings from Clippy by running: `cargo clippy --tests --all-targets`. If you have a good reason to contradict Clippy, insert an #allow[] macro, so that it won't complain.
+
+Plus, make sure your commits are properly formatted. You can automate this process by copying over the `pre-commit` file in `hooks/pre-commit` to `.git/hooks/pre-commit` which will make git automatically format your code before committing them.
