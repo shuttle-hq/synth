@@ -16,7 +16,7 @@ use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
-    schema::StringContent,
+    schema::{number_content, NumberContent, StringContent},
     Compile, Compiler, Content, Graph, Namespace,
 };
 
@@ -165,6 +165,24 @@ impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
             Content::String(StringContent::Faker(faker)) => self
                 .context
                 .add_generator(format!("string::faker::{}", faker.generator)),
+            Content::Number(NumberContent::I64(number_content::I64::Range(_))) => {
+                self.context.add_generator("number::i64::range".to_string())
+            }
+            Content::Number(NumberContent::U64(number_content::U64::Range(_))) => {
+                self.context.add_generator("number::u64::range".to_string())
+            }
+            Content::Number(NumberContent::F64(number_content::F64::Range(_))) => {
+                self.context.add_generator("number::f64::range".to_string())
+            }
+            Content::Number(NumberContent::I32(number_content::I32::Range(_))) => {
+                self.context.add_generator("number::i32::range".to_string())
+            }
+            Content::Number(NumberContent::U32(number_content::U32::Range(_))) => {
+                self.context.add_generator("number::u32::range".to_string())
+            }
+            Content::Number(NumberContent::F32(number_content::F32::Range(_))) => {
+                self.context.add_generator("number::f32::range".to_string())
+            }
             _ => {}
         }
 
@@ -416,6 +434,72 @@ pub mod tests {
                 "string::faker::credit_card",
                 "string::faker::safe_email",
                 "string::faker::username"
+            )
+        );
+    }
+
+    #[test]
+    fn telemetry_context_from_namespace_number_ranges() {
+        let schema: Namespace = schema!({
+            "type": "object",
+            "int_64": {
+                "type": "number",
+                "subtype": "i64",
+                "range": {
+                    "low": -5
+                }
+            },
+            "uint_64": {
+                "type": "number",
+                "subtype": "u64",
+                "range": {
+                    "high": 5
+                }
+            },
+            "f_64": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "high": 3.2
+                }
+            },
+            "int_32": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": -13
+                }
+            },
+            "uint_32": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "high": 23
+                }
+            },
+            "f_32": {
+                "type": "number",
+                "subtype": "f32",
+                "range": {
+                    "high": 21.2
+                }
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        let mut context = TelemetryContext::new();
+        context.from_namespace(&schema).unwrap();
+
+        assert_eq!(
+            context.generators,
+            vec!(
+                "number::f32::range",
+                "number::f64::range",
+                "number::i32::range",
+                "number::i64::range",
+                "number::u32::range",
+                "number::u64::range"
             )
         );
     }
