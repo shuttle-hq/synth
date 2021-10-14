@@ -25,6 +25,11 @@ use synth_core::{graph::json, Name};
 
 pub(crate) mod config;
 mod db_utils;
+
+#[cfg(feature = "telemetry")]
+use std::cell::RefCell;
+#[cfg(feature = "telemetry")]
+use synth_core::Namespace;
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
 
@@ -34,7 +39,7 @@ use telemetry::TelemetryContext;
 pub struct Cli {
     store: Store,
     #[cfg(feature = "telemetry")]
-    telemetry_context: TelemetryContext,
+    telemetry_context: RefCell<TelemetryContext>,
 }
 
 impl Cli {
@@ -50,13 +55,13 @@ impl Cli {
         Ok(Self {
             store: Store::init()?,
             #[cfg(feature = "telemetry")]
-            telemetry_context: TelemetryContext::new(),
+            telemetry_context: RefCell::new(TelemetryContext::new()),
         })
     }
 
     #[cfg(feature = "telemetry")]
     pub fn get_telemetry_context(&self) -> TelemetryContext {
-        self.telemetry_context.clone()
+        self.telemetry_context.borrow().clone()
     }
 
     fn derive_seed(random: bool, seed: Option<u64>) -> Result<u64> {
@@ -180,6 +185,9 @@ impl Cli {
         let export_strategy: Box<dyn ExportStrategy> =
             DataSourceParams { uri: to, schema }.try_into()?;
 
+        #[cfg(feature = "telemetry")]
+        self.fill_telemetry(&namespace)?;
+
         let params = ExportParams {
             namespace,
             collection_name: collection,
@@ -190,6 +198,15 @@ impl Cli {
         export_strategy
             .export(params)
             .with_context(|| format!("At namespace {:?}", ns_path))
+    }
+
+    #[cfg(feature = "telemetry")]
+    fn fill_telemetry(&self, namespace: &Namespace) -> Result<()> {
+        self.telemetry_context
+            .borrow_mut()
+            .from_namespace(&namespace)?;
+
+        Ok(())
     }
 }
 

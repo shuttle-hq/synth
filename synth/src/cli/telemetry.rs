@@ -14,6 +14,11 @@ use crate::cli::config;
 use crate::utils::META_OS;
 use crate::version::version;
 
+use synth_core::{
+    compile::{Address, CompilerState, FromLink, Source},
+    Compile, Compiler, Content, Graph, Namespace,
+};
+
 use super::{Args, TelemetryCommand};
 
 const API_KEY: &str = "L-AQtrFVtZGL_PjK2FbFLBR3oXNtfv8OrCD8ObyeBQo";
@@ -109,6 +114,60 @@ impl TelemetryContext {
         TelemetryContext {
             generators: Vec::new(),
         }
+    }
+
+    pub fn from_namespace(&mut self, namespace: &Namespace) -> Result<()> {
+        let crawler = TelemetryCrawler {
+            state: &mut CompilerState::namespace(namespace),
+            position: Address::new_root(),
+            context: self,
+        };
+
+        namespace.compile(crawler)?;
+
+        Ok(())
+    }
+}
+
+pub(self) struct TelemetryCrawler<'t, 'a> {
+    state: &'t mut CompilerState<'a, Graph>,
+    position: Address,
+    context: &'t mut TelemetryContext,
+}
+
+impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
+    fn as_at(&mut self, field: &str, content: &'a Content) -> TelemetryCrawler<'_, 'a> {
+        let position = self.position.clone().into_at(field);
+        TelemetryCrawler {
+            state: self.state.entry(field).or_init(content),
+            position,
+            context: self.context,
+        }
+    }
+
+    fn compile(self) -> Result<()> {
+        match self.state.source() {
+            Source::Namespace(namespace) => namespace.compile(self)?,
+            Source::Content(content) => content.compile(self)?,
+        };
+        Ok(())
+    }
+}
+
+impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
+    fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
+        if let Err(err) = self.as_at(field, content).compile() {
+            warn!(
+                "could not crawl into field `{}` at `{}`",
+                field, self.position
+            );
+            return Err(err);
+        }
+        Ok(Graph::dummy())
+    }
+
+    fn get<S: Into<Address>>(&mut self, _target: S) -> Result<Graph> {
+        Ok(Graph::dummy())
     }
 }
 
