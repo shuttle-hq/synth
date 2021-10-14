@@ -177,9 +177,11 @@ impl Cli {
             seed,
         };
 
+        let ns_name = self.store.get_ns_name(&ns_path);
+
         export_strategy
             .export(params)
-            .with_context(|| format!("At namespace {:?}", ns_path))
+            .with_context(|| format!("At namespace {:?}", ns_name))
     }
 }
 

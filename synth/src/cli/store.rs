@@ -106,6 +106,19 @@ impl Store {
         Ok(())
     }
 
+    /// Get the name of a namespace
+    /// This is the name of the directory where it's stored.
+    pub fn get_ns_name(&self, ns_path: &Path) -> Result<String> {
+        let ns_name = ns_path
+            .canonicalize()?
+            .file_name()
+            .expect("Directory should have name")
+            .to_str()
+            .expect("Directory should have name")
+            .to_string();
+        Ok(ns_name)
+    }
+
     /// Save a namespace given it's directory path
     pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Namespace) -> Result<()> {
         let abs_ns_path = self.ns_path(&ns_path);
