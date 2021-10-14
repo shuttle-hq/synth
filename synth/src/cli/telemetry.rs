@@ -99,11 +99,29 @@ fn get_or_initialise_uuid() -> String {
     config::get_uuid().expect("is ok here as was set earlier")
 }
 
-pub async fn with_telemetry<F, Fut, T, E>(args: Args, func: F) -> Result<T, E>
+#[derive(Clone)]
+pub struct TelemetryContext {
+    generators: Vec<String>,
+}
+
+impl TelemetryContext {
+    pub fn new() -> Self {
+        TelemetryContext {
+            generators: Vec::new(),
+        }
+    }
+}
+
+pub async fn with_telemetry<F, Fut, T, E, G>(
+    args: Args,
+    func: F,
+    func_telemetry_context: G,
+) -> Result<T, E>
 where
     F: FnOnce(Args) -> Fut,
     Fut: Future<Output = Result<T, E>>,
     E: AsRef<dyn Error + 'static>,
+    G: FnOnce() -> TelemetryContext,
 {
     if !is_enabled() {
         return func(args).await;
@@ -130,7 +148,9 @@ where
 
     func(args)
         .await
-        .and_then(|success| TELEMETRY_CLIENT.success(command_name, success))
+        .and_then(|success| {
+            TELEMETRY_CLIENT.success(command_name, success, func_telemetry_context())
+        })
         .or_else(|err| TELEMETRY_CLIENT.failed(command_name, err))
 }
 
@@ -199,10 +219,22 @@ impl TelemetryClient {
         prop_map
     }
 
-    pub fn success<T, E>(&self, command_name: &str, output: T) -> Result<T, E> {
+    pub fn success<T, E>(
+        &self,
+        command_name: &str,
+        output: T,
+        telemetry_context: TelemetryContext,
+    ) -> Result<T, E> {
         let mut prop_map = self.default_telemetry_properties();
         prop_map.insert("command".to_string(), command_name.to_string());
         prop_map.insert("success".to_string(), CommandResult::Success.to_string());
+
+        if telemetry_context.generators.len() > 0 {
+            prop_map.insert(
+                "generators".to_string(),
+                telemetry_context.generators.join(", "),
+            );
+        }
 
         self.send(EVENT_NAME.to_string(), prop_map).or_else(|err| {
             info!("failed to push ok of command: {}", err);
