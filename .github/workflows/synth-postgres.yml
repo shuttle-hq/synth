@@ -2,11 +2,11 @@ name: synth-postgres
 
 on:
   push:
-    branches: [master]
-    paths: ["**/*.rs"]
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
   pull_request:
-    branches: [master]
-    paths: ["**/*.rs"]
+    branches: [ master ]
+    paths: [ '**/*.rs' ]
 
   workflow_dispatch:
 
@@ -42,7 +42,7 @@ jobs:
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/postgres
-          synth generate --size 10 hospital_master --seed 100 > hospital_data_generated.json
+          synth generate --size 10 hospital_master > hospital_data_generated.json
           diff hospital_data_generated.json hospital_data_generated_master.json || exit 1
       - run: |
           echo "Testing import"
