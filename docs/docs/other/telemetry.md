@@ -54,7 +54,7 @@ contact `opensource@getsynth.com`.
 
 ## What does Synth collect?
 
-Synth's telemetry collects 6 fields:
+Synth's telemetry collects 7 fields:
 
 - `distinct_id`: A randomly generated UUID stored
   at `~/.config/synth/config.json`
@@ -75,6 +75,7 @@ Synth's telemetry collects 6 fields:
   - `macos`
 - `timestamp`: The time at which the command was issued. For
   example `2021-05-06T16:13:40.084Z`.
+- `generators`: A list of generators that were used by the `generate` command. This includes only string fakers and number ranges. For example `string::faker::title, number::i32::range`.
 
 Below is the [Synth schema][synth-schema] of PostHog events posted by `synth`'s
 activity:
@@ -114,6 +115,90 @@ activity:
       "subtype": "naive_date_time",
       "begin": "2015-01-01T00:00:00",
       "end": "2020-01-01T12:00:00"
+      }
+    },
+    "generators": {
+      "type": "string",
+      "serialized": {
+        "serializer": "json",
+        "content": {
+          "type": "array",
+          "length": {
+            "type": "number",
+            "subtype": "u64",
+            "range": {
+              "low": 2,
+              "high": 20
+            }
+          },
+          "content": {
+            "type": "string",
+            "categorical": {
+              "string::faker::first_name": 2,
+              "string::faker::last_name": 2,
+              "string::faker::title": 2,
+              "string::faker::suffix": 2,
+              "string::faker::name": 2,
+              "string::faker::name_with_title": 2,
+              "string::faker::credit_card": 2,
+              "string::faker::free_email_provider": 2,
+              "string::faker::domain_suffix": 2,
+              "string::faker::free_email": 2,
+              "string::faker::safe_email": 2,
+              "string::faker::username": 2,
+              "string::faker::ipv4": 2,
+              "string::faker::ipv6": 2,
+              "string::faker::ip": 2,
+              "string::faker::mac_address": 2,
+              "string::faker::color": 2,
+              "string::faker::user_agent": 2,
+              "string::faker::rfc_status_code": 2,
+              "string::faker::valid_status_code": 2,
+              "string::faker::company_suffix": 2,
+              "string::faker::company_name": 2,
+              "string::faker::buzzword": 2,
+              "string::faker::buzzword_muddle": 2,
+              "string::faker::buzzword_tail": 2,
+              "string::faker::catch_phrase": 2,
+              "string::faker::bs_verb": 2,
+              "string::faker::bs_adj": 2,
+              "string::faker::bs_noun": 2,
+              "string::faker::bs": 2,
+              "string::faker::profession": 2,
+              "string::faker::industry": 2,
+              "string::faker::city_prefix": 2,
+              "string::faker::city_suffix": 2,
+              "string::faker::city_name": 2,
+              "string::faker::country_name": 2,
+              "string::faker::country_code": 2,
+              "string::faker::street_suffix": 2,
+              "string::faker::street_name": 2,
+              "string::faker::time_zone": 2,
+              "string::faker::state_name": 2,
+              "string::faker::state_abbr": 2,
+              "string::faker::secondary_address_type": 2,
+              "string::faker::secondary_address": 2,
+              "string::faker::zip_code": 2,
+              "string::faker::post_code": 2,
+              "string::faker::building_number": 2,
+              "string::faker::latitude": 2,
+              "string::faker::longitude": 2,
+              "string::faker::phone_number": 2,
+              "string::faker::cell_number": 2,
+              "string::faker::file_path": 2,
+              "string::faker::file_name": 2,
+              "string::faker::file_extension": 2,
+              "string::faker::dir_path": 2,
+              "number::i32::range": 10,
+              "number::u32::range": 10,
+              "number::f32::range": 10,
+              "number::i64::range": 10,
+              "number::u64::range": 10,
+              "number::f64::range": 10
+            }
+          }
+        }
+      }
     }
 }
 ```
