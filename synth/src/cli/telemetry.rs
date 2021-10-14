@@ -16,6 +16,7 @@ use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
+    schema::StringContent,
     Compile, Compiler, Content, Graph, Namespace,
 };
 
@@ -127,6 +128,10 @@ impl TelemetryContext {
 
         Ok(())
     }
+
+    pub fn add_generator(&mut self, name: String) {
+        self.generators.push(name);
+    }
 }
 
 pub(self) struct TelemetryCrawler<'t, 'a> {
@@ -156,6 +161,13 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
 
 impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
+        match content {
+            Content::String(StringContent::Faker(faker)) => self
+                .context
+                .add_generator(format!("string::faker::{}", faker.generator)),
+            _ => {}
+        }
+
         if let Err(err) = self.as_at(field, content).compile() {
             warn!(
                 "could not crawl into field `{}` at `{}`",
@@ -353,5 +365,58 @@ impl TelemetryClient {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::{Namespace, TelemetryContext};
+
+    macro_rules! schema {
+    {
+        $($inner:tt)*
+    } => {
+        serde_json::from_value::<synth_core::schema::Content>(serde_json::json!($($inner)*))
+            .expect("could not deserialize value into a schema")
+    }
+}
+
+    #[test]
+    fn telemetry_context_from_namespace_string_generators() {
+        let schema: Namespace = schema!({
+            "type": "object",
+            "username": {
+                "type": "string",
+                "faker": {
+                    "generator": "username"
+                }
+            },
+            "credit_card": {
+                "type": "string",
+                "faker": {
+                    "generator": "credit_card"
+                }
+            },
+            "email": {
+                "type": "string",
+                "faker": {
+                    "generator": "safe_email"
+                }
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        let mut context = TelemetryContext::new();
+        context.from_namespace(&schema).unwrap();
+
+        assert_eq!(
+            context.generators,
+            vec!(
+                "string::faker::credit_card",
+                "string::faker::safe_email",
+                "string::faker::username"
+            )
+        );
     }
 }
