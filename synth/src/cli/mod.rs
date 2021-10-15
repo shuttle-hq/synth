@@ -152,6 +152,10 @@ impl Cli {
                 let content = import_strategy.import_collection(&collection)?;
                 self.store
                     .save_collection_path(&path, collection, content)?;
+
+                #[cfg(feature = "telemetry")]
+                self.telemetry_context.borrow_mut().set_num_collections(1);
+
                 Ok(())
             }
         } else if self.store.ns_exists(&path) {
@@ -161,7 +165,14 @@ impl Cli {
             ))
         } else {
             let ns = import_strategy.import()?;
+
+            #[cfg(feature = "telemetry")]
+            self.telemetry_context
+                .borrow_mut()
+                .set_num_collections(ns.collections.len());
+
             self.store.save_ns_path(path, ns)?;
+
             Ok(())
         }
     }
@@ -186,7 +197,7 @@ impl Cli {
             DataSourceParams { uri: to, schema }.try_into()?;
 
         #[cfg(feature = "telemetry")]
-        self.fill_telemetry(&namespace)
+        self.fill_telemetry(&namespace, collection.clone())
             .or_else::<anyhow::Error, _>(|err| {
                 format!(
                     "Failed to get telemetry data. Please report this bug: {}",
@@ -209,10 +220,10 @@ impl Cli {
     }
 
     #[cfg(feature = "telemetry")]
-    fn fill_telemetry(&self, namespace: &Namespace) -> Result<()> {
+    fn fill_telemetry(&self, namespace: &Namespace, collection: Option<Name>) -> Result<()> {
         self.telemetry_context
             .borrow_mut()
-            .from_namespace(&namespace)?;
+            .from_namespace(&namespace, collection)?;
 
         Ok(())
     }

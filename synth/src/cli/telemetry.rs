@@ -14,7 +14,7 @@ use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
-    Compile, Compiler, Content, Graph, Namespace,
+    Compile, Compiler, Content, Graph, Name, Namespace,
 };
 
 use super::{Args, TelemetryCommand};
@@ -105,16 +105,22 @@ fn get_or_initialise_uuid() -> String {
 #[derive(Clone)]
 pub struct TelemetryContext {
     generators: Vec<String>,
+    num_collections: Option<usize>,
 }
 
 impl TelemetryContext {
     pub fn new() -> Self {
         TelemetryContext {
             generators: Vec::new(),
+            num_collections: None,
         }
     }
 
-    pub fn from_namespace(&mut self, namespace: &Namespace) -> Result<()> {
+    pub fn from_namespace(
+        &mut self,
+        namespace: &Namespace,
+        collection: Option<Name>,
+    ) -> Result<()> {
         let crawler = TelemetryCrawler {
             state: &mut CompilerState::namespace(namespace),
             position: Address::new_root(),
@@ -123,11 +129,24 @@ impl TelemetryContext {
 
         namespace.compile(crawler)?;
 
+        if let Some(name) = collection {
+            if namespace.collections.contains_key(&name) {
+                self.num_collections = Some(1);
+                return Ok(());
+            }
+        }
+
+        self.num_collections = Some(namespace.collections.len());
+
         Ok(())
     }
 
     pub fn add_generator(&mut self, name: String) {
         self.generators.push(name);
+    }
+
+    pub fn set_num_collections(&mut self, num: usize) {
+        self.num_collections = Some(num);
     }
 }
 
@@ -296,6 +315,10 @@ impl TelemetryClient {
             event.insert_prop("generators", telemetry_context.generators)?;
         }
 
+        if let Some(num_collections) = telemetry_context.num_collections {
+            event.insert_prop("num_collections", num_collections)?;
+        }
+
         self.send(event).or_else::<Error, _>(|err| {
             info!("failed to push ok of command: {}", err);
             Ok(())
@@ -380,7 +403,7 @@ pub mod tests {
         .unwrap();
 
         let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
+        context.from_namespace(&schema, None).unwrap();
 
         assert_eq!(
             context.generators,
@@ -390,6 +413,8 @@ pub mod tests {
                 "string::username"
             )
         );
+
+        assert_eq!(context.num_collections, Some(3));
     }
 
     #[test]
@@ -443,7 +468,9 @@ pub mod tests {
         .unwrap();
 
         let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
+        context
+            .from_namespace(&schema, "f_32".parse().ok())
+            .unwrap();
 
         assert_eq!(
             context.generators,
@@ -456,6 +483,8 @@ pub mod tests {
                 "number::U64::Range"
             )
         );
+
+        assert_eq!(context.num_collections, Some(1));
     }
 
     #[test]
@@ -475,12 +504,14 @@ pub mod tests {
         .unwrap();
 
         let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
+        context.from_namespace(&schema, None).unwrap();
 
         assert_eq!(
             context.generators,
             vec!("bool::constant", "bool::frequency")
         );
+
+        assert_eq!(context.num_collections, Some(2));
     }
 
     #[test]
@@ -515,7 +546,7 @@ pub mod tests {
         .unwrap();
 
         let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
+        context.from_namespace(&schema, None).unwrap();
 
         assert_eq!(
             context.generators,
@@ -525,5 +556,40 @@ pub mod tests {
                 "series::incrementing"
             )
         );
+
+        assert_eq!(context.num_collections, Some(3));
+    }
+
+    #[test]
+    fn telemetry_context_from_namespace_mismatch_collection() {
+        let schema: Namespace = schema!({
+            "type": "object",
+            "collection-1": {
+                "type": "string",
+                "pattern": "collection 1"
+            },
+            "collection-2": {
+                "type": "string",
+                "pattern": "collection 2"
+            },
+            "collection-3": {
+                "type": "string",
+                "pattern": "collection 3"
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        let mut context = TelemetryContext::new();
+        context
+            .from_namespace(&schema, "collection-4".parse().ok())
+            .unwrap();
+
+        assert_eq!(
+            context.generators,
+            vec!("string::pattern", "string::pattern", "string::pattern")
+        );
+
+        assert_eq!(context.num_collections, Some(3));
     }
 }
