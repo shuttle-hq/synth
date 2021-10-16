@@ -16,11 +16,7 @@ synth init || exit 1
 
 # 1. generate test
 echo "Running generate test"
-synth generate --size 10 hospital_master >hospital_data_generated.json || exit 1
-
-# prettier both files
-npx prettier --write ./hospital_data_generated.json
-npx prettier --write ./hospital_data_generated_master.json
+synth generate --size 10 hospital_master | jq >hospital_data_generated.json || exit 1
 
 # check by diff against golden master
 diff hospital_data_generated.json hospital_data_generated_master.json || exit 1

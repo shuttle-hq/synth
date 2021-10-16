@@ -1,11 +1,41 @@
 {
   "doctors": [
-    { "date_joined": "2017-10-20", "hospital_id": null, "id": 1, "name": null },
-    { "date_joined": null, "hospital_id": 4, "id": 2, "name": null },
-    { "date_joined": "2013-07-12", "hospital_id": 10, "id": 3, "name": null },
-    { "date_joined": null, "hospital_id": 8, "id": 4, "name": null },
-    { "date_joined": null, "hospital_id": 11, "id": 5, "name": null },
-    { "date_joined": null, "hospital_id": null, "id": 6, "name": null }
+    {
+      "date_joined": "2017-10-20",
+      "hospital_id": null,
+      "id": 1,
+      "name": null
+    },
+    {
+      "date_joined": null,
+      "hospital_id": 4,
+      "id": 2,
+      "name": null
+    },
+    {
+      "date_joined": "2013-07-12",
+      "hospital_id": 10,
+      "id": 3,
+      "name": null
+    },
+    {
+      "date_joined": null,
+      "hospital_id": 8,
+      "id": 4,
+      "name": null
+    },
+    {
+      "date_joined": null,
+      "hospital_id": 11,
+      "id": 5,
+      "name": null
+    },
+    {
+      "date_joined": null,
+      "hospital_id": null,
+      "id": 6,
+      "name": null
+    }
   ],
   "hospitals": [
     {
@@ -13,8 +43,16 @@
       "hospital_name": "RDNYcFy43p7G1e11ODKsFh8edr0Mj2fIZWwe5hug8cqdUXV5QUZc82R6f58evLaZ3h306k9vs9PpAifXytsRABt4ngpHa6VTIy2THCQ1DDEVBfxLTyPPXFObexN9KBTYdCScDhQdIOp4HOOK1Qel",
       "id": 1
     },
-    { "address": null, "hospital_name": null, "id": 2 },
-    { "address": "5S5BtkUhxncCBIQ1", "hospital_name": null, "id": 3 },
+    {
+      "address": null,
+      "hospital_name": null,
+      "id": 2
+    },
+    {
+      "address": "5S5BtkUhxncCBIQ1",
+      "hospital_name": null,
+      "id": 3
+    },
     {
       "address": null,
       "hospital_name": "9WdeZiXnQQVqdRCNrlfPg4tg9JRTryU0BThh5BGZoIcRbmbySmrkAYSA8jIgZKoDvlacYKDmbnUErbwg3xRbC",
