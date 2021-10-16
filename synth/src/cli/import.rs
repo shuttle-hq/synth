@@ -12,8 +12,10 @@ use synth_core::schema::Namespace;
 use crate::cli::db_utils::DataSourceParams;
 use crate::cli::mongo::MongoImportStrategy;
 use crate::cli::mysql::MySqlImportStrategy;
+use crate::cli::sqlite::SqliteImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
 use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
+
 
 pub trait ImportStrategy {
     fn import(&self) -> Result<Namespace> {
@@ -43,6 +45,10 @@ impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
                     })
                 } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
                     Box::new(MySqlImportStrategy {
+                        uri,
+                    })
+                } else if uri.starts_with("sqlite://") {
+                    Box::new(SqliteImportStrategy {
                         uri,
                     })
                 } else if let Ok(path) = PathBuf::from_str(&uri) {
