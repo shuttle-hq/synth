@@ -45,26 +45,11 @@
       ]
     },
     "doctor_id": {
-      "type": "one_of",
-      "variants": [
-        {
-          "weight": 1.0,
-          "type": "number",
-          "range": {
-            "low": 1,
-            "high": 19
-          },
-          "subtype": "i32"
-        },
-        {
-          "weight": 1.0,
-          "type": "null"
-        }
-      ]
+      "type": "same_as",
+      "ref": "doctors.content.id"
     },
     "id": {
       "type": "number",
-      "id": {},
       "subtype": "i32"
     },
     "name": {

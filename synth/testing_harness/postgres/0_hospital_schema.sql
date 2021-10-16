@@ -12,7 +12,7 @@ drop table if exists doctors;
 create table doctors
 (
     id          int primary key,
-    hospital_id int,
+    hospital_id int references hospitals (id),
     name        varchar(255),
     date_joined date
 );
@@ -22,7 +22,7 @@ drop table if exists patients;
 create table patients
 (
     id          int primary key,
-    doctor_id   int,
+    doctor_id   int references doctors (id),
     name        varchar(255),
     date_joined date,
     address     varchar(255),
