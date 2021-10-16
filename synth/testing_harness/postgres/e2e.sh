@@ -7,7 +7,7 @@ PASSWORD="mysecretpassword"
 NAME=postgres-synth-harness
 
 # go to script directory
-cd "$( dirname "${BASH_SOURCE[0]}" )"
+cd "$(dirname "${BASH_SOURCE[0]}")"
 # delete leftover config
 rm -f .synth/config.toml
 
@@ -16,7 +16,11 @@ synth init || exit 1
 
 # 1. generate test
 echo "Running generate test"
-synth generate --size 10 hospital_master > hospital_data_generated.json || exit 1
+synth generate --size 10 hospital_master >hospital_data_generated.json || exit 1
+
+# prettier both files
+npx prettier --write ./hospital_data_generated.json
+npx prettier --write ./hospital_data_generated_master.json
 
 # check by diff against golden master
 diff hospital_data_generated.json hospital_data_generated_master.json || exit 1
@@ -35,7 +39,7 @@ echo "Importing hospital_import namespace from hospital"
 synth import --from postgres://postgres:${PASSWORD}@127.0.0.1:$PORT/postgres hospital_import || RESULT=1
 
 echo "stopping container"
-docker stop "${CONTAINER}" > /dev/null
+docker stop "${CONTAINER}" >/dev/null
 
 # check by diff against golden master
 diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || RESULT=1
@@ -48,7 +52,6 @@ rm -f .synth/config.toml
 rmdir .synth
 
 # fail if any of the commands failed
-if [ $RESULT -ne 0 ]
-then
+if [ $RESULT -ne 0 ]; then
     exit 1
 fi
