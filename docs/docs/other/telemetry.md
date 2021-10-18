@@ -61,8 +61,8 @@ Synth's telemetry collects 6 fields:
 - `command`: The command that was issued by the user. This is a text field whose
   value is one of the following:
   - `init`
-  - `import` 
-  - `generate` 
+  - `import`
+  - `generate`
   - `telemetry::enabled`
   - `telemetry::disabled`
 - `success`: If the command completed in success.
@@ -70,8 +70,8 @@ Synth's telemetry collects 6 fields:
 - `os`: The target platform for which the binary was built. This is the value
   of `cargo`'s `CARGO_CFG_TARGET_OS` environment variable under which `synth`
   was built in CI/CD. Currently, this is one of:
-  - `linux` 
-  - `windows` 
+  - `linux`
+  - `windows`
   - `macos`
 - `timestamp`: The time at which the command was issued. For
   example `2021-05-06T16:13:40.084Z`.
@@ -109,13 +109,11 @@ activity:
         }
     },
     "timestamp": {
-      "type": "string",
-      "date_time": {
-        "format": "%Y-%m-%dT%H:%M:%S",
-        "subtype": "naive_date_time",
-        "begin": "2015-01-01T00:00:00",
-        "end": "2020-01-01T12:00:00"
-      }
+      "type": "date_time",
+      "format": "%Y-%m-%dT%H:%M:%S",
+      "subtype": "naive_date_time",
+      "begin": "2015-01-01T00:00:00",
+      "end": "2020-01-01T12:00:00"
     }
 }
 ```

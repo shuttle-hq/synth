@@ -23,10 +23,10 @@ mod number;
 pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, RangeStep};
 
 mod string;
-pub use string::{
-    ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
-    FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid,
-};
+pub use string::{FakerContent, FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid};
+
+mod date_time;
+pub use date_time::{ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent};
 
 mod array;
 pub use array::ArrayContent;
@@ -238,6 +238,7 @@ content! {
         Bool(BoolContent),
         Number(NumberContent),
         String(StringContent),
+        DateTime(DateTimeContent),
         Array(ArrayContent),
         Object(ObjectContent),
         SameAs(SameAsContent),
@@ -398,6 +399,7 @@ impl Content {
             Content::Bool(_) => "bool",
             Content::Number(_) => "number",
             Content::String(_) => "string",
+            Content::DateTime(_) => "date_time",
             Content::Array(_) => "array",
             Content::Object(_) => "object",
             Content::SameAs(_) => "same_as",
@@ -513,6 +515,7 @@ impl Compile for Content {
             Self::Object(object_content) => object_content.compile(compiler),
             Self::Bool(bool_content) => bool_content.compile(compiler),
             Self::String(string_content) => string_content.compile(compiler),
+            Self::DateTime(date_time_content) => date_time_content.compile(compiler),
             Self::Number(number_content) => number_content.compile(compiler),
             Self::Array(array_content) => array_content.compile(compiler),
             Self::SameAs(same_as_content) => same_as_content.compile(compiler),

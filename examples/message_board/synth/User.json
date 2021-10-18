@@ -8,11 +8,9 @@
       "id": {}
     },
     "createdAt": {
-      "type": "string",
-      "date_time": {
-        "format": "%Y-%m-%d %H:%M:%S",
-        "begin": "2020-01-01 12:00:00"
-      }
+      "type": "date_time",
+      "format": "%Y-%m-%d %H:%M:%S",
+      "begin": "2020-01-01 12:00:00"
     },
     "email": {
       "type": "string",

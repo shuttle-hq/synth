@@ -177,12 +177,12 @@ impl RelationalDataSource for PostgresDataSource {
     }
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str = r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name, 
-            ccu.column_name AS foreign_column_name 
-            FROM information_schema.table_constraints AS tc 
-            JOIN information_schema.key_column_usage AS kcu 
+        let query: &str = r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name,
+            ccu.column_name AS foreign_column_name
+            FROM information_schema.table_constraints AS tc
+            JOIN information_schema.key_column_usage AS kcu
             ON tc.constraint_name = kcu.constraint_name
-            JOIN information_schema.constraint_column_usage AS ccu 
+            JOIN information_schema.constraint_column_usage AS ccu
             ON ccu.constraint_name = tc.constraint_name
             WHERE constraint_type = 'FOREIGN KEY'
             and tc.table_schema = $1
@@ -247,24 +247,24 @@ impl RelationalDataSource for PostgresDataSource {
             "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep::default()))),
             "float8" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
             "numeric" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
-            "timestamptz" => Content::String(StringContent::DateTime(DateTimeContent {
+            "timestamptz" => Content::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::DateTime,
                 begin: None,
                 end: None,
-            })),
-            "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "timestamp" => Content::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
-            })),
-            "date" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "date" => Content::DateTime(DateTimeContent {
                 format: "%Y-%m-%d".to_string(),
                 type_: ChronoValueType::NaiveDate,
                 begin: None,
                 end: None,
-            })),
+            }),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
             _ => bail!("We haven't implemented a converter for {}", data_type),
         };

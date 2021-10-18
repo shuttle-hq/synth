@@ -11,7 +11,7 @@ The Synth PostgreSQL integration is currently **in beta**.
 ## Usage
 
 `synth` can use [PostgreSQL](https://www.postgresql.org/) as a data source or
-sink. Connecting `synth` to a PostgreSQL is as simple as specifying a URI 
+sink. Connecting `synth` to a PostgreSQL is as simple as specifying a URI
 and schema during the `import` or `generate`
 phase.
 
@@ -30,7 +30,7 @@ will be created from your database schema, and
 a [collection](../getting_started/core-concepts#collections) is created for each
 table in a separate JSON file. `synth` will map database columns to fields in
 the collections it creates. It then provides default generators for every
-collection. Synth will default to the `public` schema but this can be 
+collection. Synth will default to the `public` schema but this can be
 overriden with the `--schema` flag.
 
 `synth` will automatically detect primary key and foreign key constraints at
@@ -70,9 +70,9 @@ table formatter: https://codebeautify.org/markdown-formatter
 | float4          | [f32](../content/number#range)                          |
 | float8          | [f64](../content/number#range)                          |
 | numeric         | [f64](../content/number#range)                          |
-| timestamptz     | [date_time](../content/string#date_time)                |
-| timestamp       | [naive_date_time](../content/string#date_time)          |
-| date            | [naive_date](../content/string#date_time)               |
+| timestamptz     | [date_time](../content/date-time)                |
+| timestamp       | [naive_date_time](../content/date-time)          |
+| date            | [naive_date](../content/date-time)               |
 | uuid            | [string](../content/string#uuid)                        |
 
 ### Example Import
@@ -84,7 +84,7 @@ Postgres table definition:
 create table doctors
 (
     id          int primary key,
-    hospital_id int not null, 
+    hospital_id int not null,
     name        varchar(255) not null,
     date_joined date,
     constraint hospital_fk
@@ -113,13 +113,11 @@ And the corresponding `synth` collection:
       "variants": [
         {
           "weight": 1.0,
-          "type": "string",
-          "date_time": {
-            "format": "%Y-%m-%d",
-            "subtype": "naive_date",
-            "begin": null,
-            "end": null
-          }
+          "type": "date_time",
+          "format": "%Y-%m-%d",
+          "subtype": "naive_date",
+          "begin": null,
+          "end": null
         },
         {
           "weight": 1.0,
@@ -146,8 +144,8 @@ And the corresponding `synth` collection:
 ### Example Import Command
 
 ```bash
-synth import --from postgres://user:pass@localhost:5432/postgres --schema 
-main my_namespace 
+synth import --from postgres://user:pass@localhost:5432/postgres --schema
+main my_namespace
 ```
 
 ### Example
@@ -165,6 +163,6 @@ data and inserting it in the right order such that no constraints are violated.
 ### Example Generation Command
 
 ```bash
-synth generate --to postgres://user:pass@localhost:5432/ --schema 
+synth generate --to postgres://user:pass@localhost:5432/ --schema
 main my_namespace
 ```
