@@ -3,12 +3,13 @@ use crate::datasource::relational_datasource::{
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
+use async_std::sync::Arc;
 use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow};
-use sqlx::{Column, Pool, Postgres, Row, TypeInfo, Executor};
+use sqlx::{Column, Executor, Pool, Postgres, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
@@ -17,11 +18,10 @@ use synth_core::schema::{
     StringContent, Uuid,
 };
 use synth_core::{Content, Value};
-use async_std::sync::Arc;
 
 pub struct PostgresConnectParams {
     pub(crate) uri: String,
-    pub(crate) schema: Option<String>
+    pub(crate) schema: Option<String>,
 }
 
 pub struct PostgresDataSource {
@@ -47,7 +47,8 @@ impl DataSource for PostgresDataSource {
                 .after_connect(move |conn| {
                     let schema = arc.clone();
                     Box::pin(async move {
-                        conn.execute(&*format!("SET search_path = '{}';", schema)).await?;
+                        conn.execute(&*format!("SET search_path = '{}';", schema))
+                            .await?;
                         Ok(())
                     })
                 })
@@ -58,10 +59,11 @@ impl DataSource for PostgresDataSource {
             arc = Arc::new(schema.clone());
             let single_thread_pool = PgPoolOptions::new()
                 .max_connections(1)
-                .after_connect(move |conn|{
+                .after_connect(move |conn| {
                     let schema = arc.clone();
                     Box::pin(async move {
-                        conn.execute(&*format!("SET search_path = '{}';", schema)).await?;
+                        conn.execute(&*format!("SET search_path = '{}';", schema))
+                            .await?;
                         Ok(())
                     })
                 })
@@ -74,13 +76,14 @@ impl DataSource for PostgresDataSource {
             Ok::<Self, anyhow::Error>(PostgresDataSource {
                 pool,
                 single_thread_pool,
-                schema
+                schema,
             })
         })
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection).await
+        self.insert_relational_data(collection_name, collection)
+            .await
     }
 }
 
@@ -99,7 +102,11 @@ impl PostgresDataSource {
 
         if !available_schemas.contains(&schema.to_string()) {
             let formatted_schemas = available_schemas.join(", ");
-            bail!("the schema '{}' could not be found on the database. Available schemas are: {}.", schema, formatted_schemas);
+            bail!(
+                "the schema '{}' could not be found on the database. Available schemas are: {}.",
+                schema,
+                formatted_schemas
+            );
         }
 
         Ok(())
@@ -110,7 +117,11 @@ impl PostgresDataSource {
 impl RelationalDataSource for PostgresDataSource {
     type QueryResult = PgQueryResult;
 
-    async fn execute_query(&self, query: String, query_params: Vec<&Value>) -> Result<PgQueryResult> {
+    async fn execute_query(
+        &self,
+        query: String,
+        query_params: Vec<&Value>,
+    ) -> Result<PgQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
         for param in query_params {

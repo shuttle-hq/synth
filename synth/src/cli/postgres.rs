@@ -1,7 +1,7 @@
 use crate::cli::export::{create_and_insert_values, ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::import_utils::build_namespace_import;
-use crate::datasource::postgres_datasource::{PostgresDataSource, PostgresConnectParams};
+use crate::datasource::postgres_datasource::{PostgresConnectParams, PostgresDataSource};
 use crate::datasource::DataSource;
 use anyhow::Result;
 use serde_json::Value;
@@ -11,14 +11,14 @@ use synth_core::{Content, Name};
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
     pub uri: String,
-    pub schema: Option<String>
+    pub schema: Option<String>,
 }
 
 impl ExportStrategy for PostgresExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()> {
         let connect_params = PostgresConnectParams {
             uri: self.uri.clone(),
-            schema: self.schema.clone()
+            schema: self.schema.clone(),
         };
 
         let datasource = PostgresDataSource::new(&connect_params)?;
@@ -30,14 +30,14 @@ impl ExportStrategy for PostgresExportStrategy {
 #[derive(Clone, Debug)]
 pub struct PostgresImportStrategy {
     pub uri: String,
-    pub schema: Option<String>
+    pub schema: Option<String>,
 }
 
 impl ImportStrategy for PostgresImportStrategy {
     fn import(&self) -> Result<Namespace> {
         let connect_params = PostgresConnectParams {
             uri: self.uri.clone(),
-            schema: self.schema.clone()
+            schema: self.schema.clone(),
         };
 
         let datasource = PostgresDataSource::new(&connect_params)?;

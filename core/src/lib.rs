@@ -66,7 +66,6 @@ macro_rules! schema {
     }
 }
 
-
 #[macro_export]
 macro_rules! generator {
     { $($inner:tt)* } => {
@@ -80,7 +79,6 @@ macro_rules! try_generator {
         crate::Graph::from_content(&schema!($($inner)*))
     }
 }
-
 
 #[macro_use]
 extern crate log;
@@ -113,7 +111,7 @@ pub use compile::{Compile, Compiler};
 
 #[cfg(test)]
 pub mod tests {
-    use rand::{SeedableRng, rngs::StdRng};
+    use rand::{rngs::StdRng, SeedableRng};
     use synth_gen::prelude::Generator;
 
     pub fn rng() -> StdRng {

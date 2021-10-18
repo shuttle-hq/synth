@@ -17,7 +17,8 @@ impl ChronoValueAndFormat {
             ChronoValue::NaiveTime(t) => t.format(&self.format),
             ChronoValue::NaiveDateTime(dt) => dt.format(&self.format),
             ChronoValue::DateTime(dt) => dt.format(&self.format),
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -169,12 +170,8 @@ impl<'a> ChronoValueFormatter<'a> {
                 ChronoValueType::NaiveDateTime => Ok(ChronoValue::NaiveDateTime(
                     parsed.to_naive_date()?.and_time(parsed.to_naive_time()?),
                 )),
-                ChronoValueType::NaiveDate => {
-                    Ok(ChronoValue::NaiveDate(parsed.to_naive_date()?))
-                }
-                ChronoValueType::NaiveTime => {
-                    Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?))
-                }
+                ChronoValueType::NaiveDate => Ok(ChronoValue::NaiveDate(parsed.to_naive_date()?)),
+                ChronoValueType::NaiveTime => Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?)),
             }
         } else {
             parsed
@@ -296,7 +293,6 @@ impl SerdeDateTimeContent {
     }
 }
 
-
 impl Serialize for DateTimeContent {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -386,7 +382,10 @@ pub mod tests {
         date_time_bounds_test_ok!(None, None);
         date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(MAX_DATE)));
         date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), None);
-        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), Some(ChronoValue::NaiveDate(MAX_DATE)));
+        date_time_bounds_test_ok!(
+            Some(ChronoValue::NaiveDate(MIN_DATE)),
+            Some(ChronoValue::NaiveDate(MAX_DATE))
+        );
 
         date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX_DATE)), None);
         date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN_DATE)));
