@@ -516,7 +516,8 @@ derive_generator!(
         OneOf(OneOfNode),
         Series(SeriesNode),
         Unique(UniqueNode),
-        Link(Box<LinkNode>)
+        Link(Box<LinkNode>),
+        Hidden(Box<Graph>),
     }
 );
 

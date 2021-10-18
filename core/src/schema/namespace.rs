@@ -171,7 +171,7 @@ impl Compile for Namespace {
             .map(|(name, content)| {
                 compiler
                     .build(name.as_ref(), content)
-                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph))
+                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph, false))
             })
             .collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
