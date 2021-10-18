@@ -29,7 +29,7 @@ impl Serialized {
             SerializerType::Json => {
                 format!(
                     "{}",
-                    serde_json::to_value(&s).expect("this should always serialize")
+                    serde_json::to_value(s).expect("this should always serialize")
                 )
             }
         }

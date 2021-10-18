@@ -149,8 +149,8 @@ where
     type Return = Never;
 
     fn next<R: Rng>(&mut self, _rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        let current = self.current.clone();
-        self.current = self.current.clone() + self.increment.clone();
+        let next = self.current.clone() + self.increment.clone();
+        let current = std::mem::replace(&mut self.current, next);
         GeneratorState::Yielded(current)
     }
 }

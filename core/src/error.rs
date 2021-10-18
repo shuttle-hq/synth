@@ -22,7 +22,7 @@ macro_rules! generate_error_variants {
 	    $(
 		#[inline]
 		pub fn $func_name<R: AsRef<str>>(msg: R) -> Self {
-	            Self::new_target_debug($id::$variant, msg)
+	            Self::new($id::$variant, msg, crate::error::Target::Debug)
 		}
 	    )*
 	}
@@ -34,7 +34,7 @@ macro_rules! failed_crate {
 	failed_crate!(target: $target, BadRequest => $lit$(, $arg)*)
     };
     (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
-	crate::error::Error::new_with_target(
+	crate::error::Error::new(
 	    crate::error::ErrorKind::$variant,
 	    format!($lit$(, $arg)*),
 	    crate::error::Target::$target
@@ -91,7 +91,7 @@ impl Error {
 }
 
 impl Error {
-    pub fn new_with_target<R: AsRef<str>>(kind: ErrorKind, msg: R, target: Target) -> Self {
+    pub fn new<R: AsRef<str>>(kind: ErrorKind, msg: R, target: Target) -> Self {
         Self {
             msg: Some(msg.as_ref().to_string()),
             kind,
@@ -99,30 +99,14 @@ impl Error {
         }
     }
 
-    pub fn new_target_debug<R: AsRef<str>>(kind: ErrorKind, msg: R) -> Self {
-        Self {
-            msg: Some(msg.as_ref().to_string()),
-            kind,
-            target: Target::Debug,
-        }
-    }
-
-    pub fn new_target_release<R: AsRef<str>>(kind: ErrorKind, msg: R) -> Self {
-        Self {
-            msg: Some(msg.as_ref().to_string()),
-            kind,
-            target: Target::Release,
-        }
-    }
-
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
     }
 
-    pub fn sensitive(&self) -> &bool {
+    pub fn sensitive(&self) -> bool {
         match self.target {
-            Target::Debug => &true,
-            Target::Release => &false,
+            Target::Debug => true,
+            Target::Release => false,
         }
     }
 }

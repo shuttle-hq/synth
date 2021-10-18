@@ -920,14 +920,8 @@ pub mod tests {
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
-                15 => {}
-                20 => {}
-                25 => {}
-                30 => {}
-                35 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                15 | 20 | 25 | 30 | 35 => {}
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }
@@ -939,13 +933,8 @@ pub mod tests {
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
-                -10 => {}
-                -5 => {}
-                0 => {}
-                5 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                -10 | -5 | 0 | 5 => {}
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }
@@ -958,13 +947,13 @@ pub mod tests {
         let error_margin = f64::EPSILON;
         for _ in 1..1000 {
             let sample: f64 = dist.sample(&mut rng);
-            // Not using pattern matching here because of  <https://github.com/rust-lang/rust/issues/41620>.
-            // As of 2020-12-01 it causes a linter warning which will be a compiler error in future releases.
-            if (sample - -2.5).abs() < error_margin
-                || (sample - -1.0).abs() < error_margin
-                || (sample - 0.5).abs() < error_margin
+            // This is equal to:
+            //     if sample != -2.5 && sample != -1.0 && sample != 0.5 { /* ... */ }
+            // but it protects against imprecisions in floating point comparisons.
+            if (sample - -2.5).abs() > error_margin
+                && (sample - -1.0).abs() > error_margin
+                && (sample - 0.5).abs() > error_margin
             {
-            } else {
                 panic!("Generated '{}' which should not happen", sample)
             }
         }
@@ -984,9 +973,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 10 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }
@@ -999,9 +986,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 10 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }

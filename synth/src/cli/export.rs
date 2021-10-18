@@ -32,7 +32,7 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
     /// For example, `postgres://...` is not going to be a file on the FS
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
         match params.uri {
-            None => Ok(Box::new(StdoutExportStrategy {})),
+            None => Ok(Box::new(StdoutExportStrategy)),
             Some(uri) => {
                 let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://")
                     || uri.starts_with("postgresql://")

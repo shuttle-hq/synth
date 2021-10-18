@@ -11,7 +11,7 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn type_<T1: ToString, T2: Debug>(expected: T1, got: T2) -> Self {
+    pub fn r#type<T1: ToString, T2: Debug>(expected: T1, got: T2) -> Self {
         Self::Type {
             expected: expected.to_string(),
             got: format!("{:?}", got),

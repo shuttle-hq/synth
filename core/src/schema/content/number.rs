@@ -20,8 +20,7 @@ impl NumberContentKind {
     pub fn upcast(self) -> Self {
         match self {
             Self::U64 => Self::I64,
-            Self::I64 => Self::F64,
-            Self::F64 => Self::F64,
+            Self::I64 | Self::F64 => Self::F64,
         }
     }
 }

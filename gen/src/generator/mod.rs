@@ -1251,7 +1251,7 @@ pub mod tests {
         }
 
         for item in buf {
-            assert!(item != gen.next(&mut rng))
+            assert_ne!(item, gen.next(&mut rng))
         }
     }
 

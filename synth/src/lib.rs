@@ -3,9 +3,9 @@
     async_closure,
     map_first_last,
     box_patterns,
-    concat_idents
+    concat_idents,
+    error_iter
 )]
-#![feature(error_iter)]
 #![allow(type_alias_bounds)]
 
 #[macro_use]
