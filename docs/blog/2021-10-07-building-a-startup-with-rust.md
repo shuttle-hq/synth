@@ -87,7 +87,7 @@ aggressively shipping code.
 
 ## Talent
 
-Getting great talent is unbelievably imortant for an early stage startup. The
+Getting great talent is unbelievably important for an early stage startup. The
 fact that the absolute number of competent and experienced Rust developers is so
 small initially seems detrimental to getting great people. This is exacerbated
 by Rust's steep learning curve as you need to hire someone with experience, or
@@ -145,7 +145,7 @@ The lack of canonical non-standard libraries is an issue when you're getting
 started - but over time this diminishes as you get a better understanding of the
 ecosystem. What *has* been constantly detrimental to our development velocity
 has been the lack of *client* libraries for Rust. We've had to write a
-bunch of different integrations ourselves but they're often clunky as we 
+bunch of different integrations ourselves, but they're often clunky as we 
 don't  have the time to invest in making them really high quality. For 
 example most of Google's products have at best an unofficial code-generated 
 crate maintained by the community, and at worst absolutely nothing. You 
@@ -155,12 +155,12 @@ need to write it from scratch.
 
 Well it depends. Assuming you're building a product in the right domain for
 Rust (say a CLI as opposed to a social media site), even then the answer is not
-clear cut. If you don't have close to 100% conviction that you know what you're
+clear-cut. If you don't have close to 100% conviction that you know what you're
 building, I would be inclined to say no. Development velocity and being able to
 make rapid iterations is so important for an early stage startup that it
 outweighs a lot of the benefits that Rust brings to the table.
 
-If your company is later stage, and you know understand exactly what you should
+If your company is later stage, and you now understand exactly what you should
 be building (assuming this is every the case) then I would say yes. The 
 'correctness' of Rust programs and the propensity of Rust to attract great
 engineers can help in building a great engineering culture and a great company. 

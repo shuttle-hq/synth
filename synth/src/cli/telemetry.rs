@@ -3,16 +3,16 @@ use backtrace::Backtrace;
 use colored::Colorize;
 use lazy_static::lazy_static;
 
+use std::collections::HashMap;
+use std::error::Error;
+use std::future::Future;
 use std::io::{self, BufRead, Read, Write};
 use std::panic;
-use std::collections::HashMap;
-use std::future::Future;
-use std::error::Error;
 use uuid::Uuid;
 
+use crate::cli::config;
 use crate::utils::META_OS;
 use crate::version::version;
-use crate::cli::config;
 
 use super::{Args, TelemetryCommand};
 
@@ -43,7 +43,9 @@ fn send_panic_report(synth_command: &str, telemetry_client: &TelemetryClient) {
 
             // Newline character is also stored
             let mut answer = [0; 2];
-            stdin.read_exact(&mut answer).context("Couldn't read answer.")?;
+            stdin
+                .read_exact(&mut answer)
+                .context("Couldn't read answer.")?;
 
             if answer[0] == b'y' {
                 eprint!("Name: ");
@@ -61,7 +63,7 @@ fn send_panic_report(synth_command: &str, telemetry_client: &TelemetryClient) {
                 email = Some(e.trim().to_owned());
             }
         }
-        
+
         let backtrace = Backtrace::new();
         let panic_report = PanicReport::new(username, email, synth_command.to_owned(), backtrace);
 
@@ -101,7 +103,7 @@ pub async fn with_telemetry<F, Fut, T, E>(args: Args, func: F) -> Result<T, E>
 where
     F: FnOnce(Args) -> Fut,
     Fut: Future<Output = Result<T, E>>,
-    E: AsRef<dyn Error + 'static>
+    E: AsRef<dyn Error + 'static>,
 {
     if !is_enabled() {
         return func(args).await;
@@ -123,7 +125,7 @@ where
         Args::Telemetry(TelemetryCommand::Enable) => "telemetry::enable",
         Args::Telemetry(TelemetryCommand::Disable) => "telemetry::disable",
         Args::Telemetry(TelemetryCommand::Status) => "telemetry::status",
-        Args::Version => "version"
+        Args::Version => "version",
     };
 
     func(args)
@@ -136,7 +138,7 @@ struct PanicReport {
     username: Option<String>,
     email: Option<String>,
     synth_command: String,
-    backtrace: Backtrace
+    backtrace: Backtrace,
 }
 
 impl PanicReport {
@@ -144,9 +146,14 @@ impl PanicReport {
         username: Option<String>,
         email: Option<String>,
         synth_command: String,
-        backtrace: Backtrace
+        backtrace: Backtrace,
     ) -> Self {
-        Self { username, email, synth_command, backtrace }
+        Self {
+            username,
+            email,
+            synth_command,
+            backtrace,
+        }
     }
 }
 
@@ -197,27 +204,25 @@ impl TelemetryClient {
         prop_map.insert("command".to_string(), command_name.to_string());
         prop_map.insert("success".to_string(), CommandResult::Success.to_string());
 
-        self.send(EVENT_NAME.to_string(), prop_map)
-            .or_else(|err| {
-                info!("failed to push ok of command: {}", err);
-                Ok(())
-            })?;
+        self.send(EVENT_NAME.to_string(), prop_map).or_else(|err| {
+            info!("failed to push ok of command: {}", err);
+            Ok(())
+        })?;
         Ok(output)
     }
 
     pub fn failed<T, E>(&self, command_name: &str, error: E) -> Result<T, E>
     where
-        E: AsRef<dyn Error + 'static>
+        E: AsRef<dyn Error + 'static>,
     {
         let mut prop_map = self.default_telemetry_properties();
         prop_map.insert("command".to_string(), command_name.to_string());
         prop_map.insert("success".to_string(), CommandResult::Failed.to_string());
 
-        self.send(EVENT_NAME.to_string(), prop_map)
-            .or_else(|err| {
-                info!("failed to push err of command: {}", err);
-                Ok(())
-            })?;
+        self.send(EVENT_NAME.to_string(), prop_map).or_else(|err| {
+            info!("failed to push err of command: {}", err);
+            Ok(())
+        })?;
         Err(error)
     }
 
@@ -225,10 +230,16 @@ impl TelemetryClient {
         panic_report.backtrace.resolve();
 
         let mut prop_map = self.default_telemetry_properties();
-        prop_map.insert("username".to_string(), panic_report.username.unwrap_or_default());
+        prop_map.insert(
+            "username".to_string(),
+            panic_report.username.unwrap_or_default(),
+        );
         prop_map.insert("email".to_string(), panic_report.email.unwrap_or_default());
         prop_map.insert("synth_command".to_string(), panic_report.synth_command);
-        prop_map.insert("backtrace".to_string(), format!("{:?}", panic_report.backtrace));
+        prop_map.insert(
+            "backtrace".to_string(),
+            format!("{:?}", panic_report.backtrace),
+        );
 
         self.send(String::from("synth-panic-report"), prop_map)
     }

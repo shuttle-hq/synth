@@ -5,9 +5,9 @@ use std::str::FromStr;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use synth_core::{Content, Name};
 use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
 use synth_core::schema::Namespace;
+use synth_core::{Content, Name};
 
 use crate::cli::db_utils::DataSourceParams;
 use crate::cli::mongo::MongoImportStrategy;
@@ -32,28 +32,23 @@ impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
         match params.uri {
             None => Ok(Box::new(StdinImportStrategy {})),
             Some(uri) => {
-                let import_strategy: Box<dyn ImportStrategy> = if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
-                    Box::new(PostgresImportStrategy {
-                        uri,
-                        schema: params.schema
-                    })
-                } else if uri.starts_with("mongodb://") {
-                    Box::new(MongoImportStrategy {
-                        uri,
-                    })
-                } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                    Box::new(MySqlImportStrategy {
-                        uri,
-                    })
-                } else if let Ok(path) = PathBuf::from_str(&uri) {
-                    Box::new(FileImportStrategy {
-                        from_file: path,
-                    })
-                } else {
-                    return Err(anyhow!(
+                let import_strategy: Box<dyn ImportStrategy> =
+                    if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
+                        Box::new(PostgresImportStrategy {
+                            uri,
+                            schema: params.schema,
+                        })
+                    } else if uri.starts_with("mongodb://") {
+                        Box::new(MongoImportStrategy { uri })
+                    } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
+                        Box::new(MySqlImportStrategy { uri })
+                    } else if let Ok(path) = PathBuf::from_str(&uri) {
+                        Box::new(FileImportStrategy { from_file: path })
+                    } else {
+                        return Err(anyhow!(
                          "Data source not recognized. Was expecting one of 'mongodb' or 'postgres'"
-                    ))
-                };
+                    ));
+                    };
                 Ok(import_strategy)
             }
         }

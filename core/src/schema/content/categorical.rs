@@ -141,6 +141,7 @@ pub mod tests {
             "foo",
             serde_json::from_value::<Categorical<String>>(categorical_json)
                 .unwrap()
-                .sample(&mut rand::thread_rng()))
+                .sample(&mut rand::thread_rng())
+        )
     }
 }
