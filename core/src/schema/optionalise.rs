@@ -60,7 +60,7 @@ pub mod tests {
     #[test]
     fn make_optional() {
         let mut ns = USER_NAMESPACE.clone();
-        let field = FieldRef::new("users.address.numbers".to_string()).unwrap();
+        let field = FieldRef::new("users.address.numbers").unwrap();
         let optionalise = Optionalise {
             at: field.clone(),
             optional: true,
@@ -79,7 +79,7 @@ pub mod tests {
     #[test]
     fn is_reversible() {
         let mut ns = USER_NAMESPACE.clone();
-        let field = FieldRef::new("users.address.numbers".to_string()).unwrap();
+        let field = FieldRef::new("users.address.numbers").unwrap();
         let optionalise = Optionalise {
             at: field.clone(),
             optional: true,
@@ -92,13 +92,13 @@ pub mod tests {
         };
         ns.optionalise(unoptionalise).unwrap();
 
-        assert_eq!(USER_NAMESPACE.clone(), ns)
+        assert_eq!(*USER_NAMESPACE, ns)
     }
 
     #[test]
     fn is_idempotent() {
         let mut ns = USER_NAMESPACE.clone();
-        let field = FieldRef::new("users.address.numbers".to_string()).unwrap();
+        let field = FieldRef::new("users.address.numbers").unwrap();
         let optionalise = Optionalise {
             at: field,
             optional: true,
@@ -112,7 +112,7 @@ pub mod tests {
     #[test]
     fn no_such_field() {
         let mut ns = USER_NAMESPACE.clone();
-        let field = FieldRef::new("users.address.i-do-not-exist".to_string()).unwrap();
+        let field = FieldRef::new("users.address.i-do-not-exist").unwrap();
         let optionalise = Optionalise {
             at: field.clone(),
             optional: true,
@@ -128,7 +128,7 @@ pub mod tests {
     #[test]
     fn cannot_make_top_level_optional() {
         let mut ns = USER_NAMESPACE.clone();
-        let field = FieldRef::new("users".to_string()).unwrap();
+        let field = FieldRef::new("users").unwrap();
         let optionalise = Optionalise {
             at: field.clone(),
             optional: true,

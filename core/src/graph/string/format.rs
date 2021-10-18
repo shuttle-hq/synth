@@ -103,12 +103,10 @@ pub mod tests {
         let mut rng = rand::thread_rng();
 
         let args = FormatArgs {
-            named: vec![
+            named: HashMap::from([
                 ("name".to_string(), faker_graph("username")),
                 ("email".to_string(), faker_graph("safe_email")),
-            ]
-            .into_iter()
-            .collect(),
+            ]),
             ..Default::default()
         };
         let formatted = Format::new(
@@ -145,12 +143,10 @@ pub mod tests {
         let mut rng = rand::thread_rng();
 
         let args = FormatArgs {
-            named: vec![(
+            named: HashMap::from([(
                 "id".to_string(),
                 Graph::Number(NumberNode::from(RandomI64::constant(42))),
-            )]
-            .into_iter()
-            .collect(),
+            )]),
             ..Default::default()
         };
         let formatted = Format::new("{id}_suffix".to_string(), args);
@@ -169,16 +165,14 @@ pub mod tests {
         let mut rng = rand::thread_rng();
 
         let args = FormatArgs {
-            named: vec![(
+            named: HashMap::from([(
                 "date".to_string(),
                 Graph::DateTime(DateTimeNode::from(RandomDateTime::new(
                     ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4))
                         ..ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4)),
                     "%Y-%m-%d",
                 ))),
-            )]
-            .into_iter()
-            .collect(),
+            )]),
             ..Default::default()
         };
         let formatted = Format::new("{date}.png".to_string(), args);

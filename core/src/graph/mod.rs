@@ -849,22 +849,22 @@ pub mod tests {
 
             let mut all_users = BTreeSet::new();
             let mut all_emails = BTreeSet::new();
-
             let mut currencies = BTreeMap::new();
-            for user in sample_data.users {
+
+            for user in &sample_data.users {
                 assert_eq!(user.num_logins, user.num_logins_again);
                 println!("bank_country={}", user.bank_country);
-                assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
+                assert!(user.bank_country == "GB" || user.bank_country == "ES");
                 assert!(user.id >= 100);
                 assert!(user.username.len() <= 5);
 
-                all_users.insert(user.username.clone());
+                all_users.insert(user.username.as_str());
 
-                if let Some(email) = user.maybe_an_email.clone() {
-                    assert!(all_emails.insert(email))
+                if let Some(email) = &user.maybe_an_email {
+                    assert!(all_emails.insert(email.as_str()))
                 }
 
-                currencies.insert(user.username, user.currency);
+                currencies.insert(user.username.as_str(), user.currency.as_str());
                 ChronoValueFormatter::new("%Y/%m/%d")
                     .parse(&user.created_at_date)
                     .unwrap();
@@ -883,20 +883,20 @@ pub mod tests {
             println!("currencies={:?}", currencies);
 
             let mut counts = BTreeMap::new();
-            for transaction in sample_data.transactions {
+            for transaction in &sample_data.transactions {
                 println!("transaction={:?}", transaction);
-                assert!(all_users.contains(&transaction.username));
+                assert!(all_users.contains(transaction.username.as_str()));
                 println!(
                     "username={}, amount={}",
                     transaction.username, transaction.amount
                 );
                 assert_eq!(
                     transaction.currency,
-                    *currencies.get(&transaction.username).unwrap()
+                    *currencies.get(transaction.username.as_str()).unwrap()
                 );
-                *counts.entry(transaction.username).or_insert(0) += 1;
+                *counts.entry(transaction.username.as_str()).or_insert(0) += 1;
 
-                assert!(serde_json::to_value(transaction.serialized_nonce).is_ok());
+                assert!(serde_json::to_value(&transaction.serialized_nonce).is_ok());
             }
 
             for value in counts.values() {

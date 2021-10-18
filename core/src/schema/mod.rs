@@ -68,9 +68,11 @@ impl FromStr for Name {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(NAME_RE).unwrap();
+        lazy_static! {
+            static ref RE: Regex = Regex::new(NAME_RE).unwrap();
+        }
         let s = s.to_string();
-        if re.is_match(&s) {
+        if RE.is_match(&s) {
             Ok(Self(s))
         } else {
             Err(Self::Err::bad_request(format!("illegal name: {}", s)))
@@ -416,13 +418,13 @@ pub mod tests {
         println!("{:?}", reference);
         assert_eq!("users".parse::<Name>().unwrap(), *reference.collection());
         let mut fields = reference.iter_fields();
-        assert_eq!(&"address".to_string(), fields.next().unwrap());
-        assert_eq!(&"postcode".to_string(), fields.next().unwrap());
+        assert_eq!("address", fields.next().unwrap());
+        assert_eq!("postcode", fields.next().unwrap());
 
         let reference: FieldRef = "users.\"address.postcode\"".parse().unwrap();
         assert_eq!("users".parse::<Name>().unwrap(), *reference.collection());
         let mut fields = reference.iter_fields();
-        assert_eq!("address.postcode".to_string(), fields.next().unwrap());
+        assert_eq!("address.postcode", fields.next().unwrap());
     }
 
     #[test]
@@ -455,9 +457,9 @@ pub mod tests {
 
     #[test]
     fn test_parent() {
-        let reference = FieldRef::new("users.address.postcode".to_string()).unwrap();
-        let parent = FieldRef::new("users.address".to_string()).unwrap();
-        let grandparent = FieldRef::new("users".to_string()).unwrap();
+        let reference = FieldRef::new("users.address.postcode").unwrap();
+        let parent = FieldRef::new("users.address").unwrap();
+        let grandparent = FieldRef::new("users").unwrap();
         assert_eq!(parent, reference.parent().unwrap());
         assert_eq!(grandparent, reference.parent().unwrap().parent().unwrap());
         // Reference has no grandgrandparent

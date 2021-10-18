@@ -96,7 +96,7 @@ pub trait RelationalDataSource: DataSource {
             .collect::<Vec<String>>()
             .join(",");
 
-        let mut futures = vec![];
+        let mut futures = Vec::with_capacity(collection.len());
 
         for rows in collection.chunks(batch_size) {
             let mut query = format!(
