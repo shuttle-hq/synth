@@ -1,18 +1,18 @@
-use crate::cli::postgres::PostgresExportStrategy;
-use crate::cli::stdf::StdoutExportStrategy;
+use crate::cli::jsonlines::JsonLinesExportStrategy;
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
-use crate::cli::jsonlines::JsonLinesExportStrategy;
+use crate::cli::postgres::PostgresExportStrategy;
+use crate::cli::stdf::StdoutExportStrategy;
 
 use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
 
+use crate::cli::db_utils::DataSourceParams;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
-use crate::cli::db_utils::DataSourceParams;
 
 pub trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()>;
@@ -22,7 +22,6 @@ pub struct ExportParams {
     pub namespace: Namespace,
     /// The name of the single collection to generate from if one is specified (via --collection).
     pub collection_name: Option<Name>,
-    /// The number of values to generate (specified via --size).
     pub target: usize,
     pub seed: u64,
 }
@@ -38,21 +37,21 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
         match params.uri {
             None => Ok(Box::new(StdoutExportStrategy {})),
             Some(uri) => {
-                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
+                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://")
+                    || uri.starts_with("postgresql://")
+                {
                     Box::new(PostgresExportStrategy {
                         uri,
                         schema: params.schema,
                     })
                 } else if uri.starts_with("mongodb://") {
-                    Box::new(MongoExportStrategy {
-                        uri
-                    })
+                    Box::new(MongoExportStrategy { uri })
                 } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                    Box::new(MySqlExportStrategy {
-                        uri
-                    })
+                    Box::new(MySqlExportStrategy { uri })
                 } else if uri == "jsonl" {
-                    Box::new(JsonLinesExportStrategy {})
+                    Box::new(JsonLinesExportStrategy {
+                        collection_field_name: params.collection_field_name,
+                    })
                 } else {
                     return Err(anyhow!(
                             "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb' or 'jsonl'"
@@ -73,13 +72,15 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
     match values {
-        SamplerOutput::Collection(collection) => {
-            insert_data(datasource, params.collection_name.unwrap().to_string(), &collection)
-        }
+        SamplerOutput::Collection(collection) => insert_data(
+            datasource,
+            params.collection_name.unwrap().to_string(),
+            &collection,
+        ),
         SamplerOutput::Namespace(namespace) => {
             for (name, collection) in namespace {
                 insert_data(datasource, name, &collection)?;
-            };
+            }
             Ok(())
         }
     }

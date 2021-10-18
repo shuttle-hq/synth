@@ -1,43 +1,41 @@
 mod export;
 mod import;
 mod import_utils;
+mod jsonlines;
 mod mongo;
 mod mysql;
 mod postgres;
 mod stdf;
 mod store;
-mod jsonlines;
 
+use crate::cli::db_utils::DataSourceParams;
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
-use crate::cli::db_utils::DataSourceParams;
 use crate::version::print_version_message;
 
-use serde::Serialize;
 use anyhow::{Context, Result};
-use std::path::PathBuf;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 use rand::RngCore;
-use synth_core::{Name, graph::json};
-use std::process::exit;
+use serde::Serialize;
 use std::convert::TryInto;
+use std::path::PathBuf;
+use std::process::exit;
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
+use synth_core::{graph::json, Name};
 
-#[cfg(feature = "telemetry")]
-pub mod telemetry;
 pub(crate) mod config;
 mod db_utils;
+#[cfg(feature = "telemetry")]
+pub mod telemetry;
 
 pub struct Cli {
-    store: Store
+    store: Store,
 }
 
 impl Cli {
     pub fn new() -> Result<Self> {
-        env_logger::Builder::from_env(
-            env_logger::Env::default().default_filter_or("warn")
-        ).init();
+        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
         #[cfg(debug_assertions)]
         {
@@ -46,7 +44,7 @@ impl Cli {
         }
 
         Ok(Self {
-            store: Store::init()?
+            store: Store::init()?,
         })
     }
 
@@ -64,9 +62,7 @@ impl Cli {
 
     pub async fn run(self, args: Args) -> Result<()> {
         match args {
-            Args::Init { .. } => {
-                Ok(())
-            },
+            Args::Init { .. } => Ok(()),
             Args::Generate {
                 ref namespace,
                 ref collection,
@@ -74,21 +70,29 @@ impl Cli {
                 ref to,
                 seed,
                 random,
-                schema
+                schema,
+                collection_field_name,
             } => self.generate(
                 namespace.clone(),
                 collection.clone(),
                 size,
                 to.clone(),
                 Self::derive_seed(random, seed)?,
-                schema
+                schema,
+                collection_field_name,
             ),
             Args::Import {
                 ref namespace,
                 ref collection,
                 ref from,
-                ref schema
-            } => self.import(namespace.clone(), collection.clone(), from.clone(), schema.clone()),
+                ref schema,
+            } => self.import(
+                namespace.clone(),
+                collection.clone(),
+                from.clone(),
+                schema.clone(),
+                Some(String::new()), // TODO: collection_field_name.clone(),
+            ),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
             Args::Version => {
@@ -120,23 +124,26 @@ impl Cli {
         path: PathBuf,
         collection: Option<Name>,
         from: Option<String>,
-        schema: Option<String>
+        schema: Option<String>,
+        collection_field_name: Option<String>,
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
 
         let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
             uri: from,
-            schema
-        }.try_into()?;
+            schema,
+            collection_field_name,
+        }
+        .try_into()?;
 
         if let Some(collection) = collection {
             if self.store.collection_exists(&path, &collection) {
                 return Err(anyhow!("The collection `{}` already exists. Will not import into an existing collection.",Store::relative_collection_path(&path, &collection).display()));
             } else {
-                let content = import_strategy
-                    .import_collection(&collection)?;
-                self.store.save_collection_path(&path, collection, content)?;
+                let content = import_strategy.import_collection(&collection)?;
+                self.store
+                    .save_collection_path(&path, collection, content)?;
                 Ok(())
             }
         } else if self.store.ns_exists(&path) {
@@ -158,9 +165,9 @@ impl Cli {
         target: usize,
         to: Option<String>,
         seed: u64,
-        schema: Option<String>
+        schema: Option<String>,
+        collection_field_name: Option<String>,
     ) -> Result<()> {
-
         let namespace = self
             .store
             .get_ns(ns_path.clone())
@@ -168,8 +175,10 @@ impl Cli {
 
         let export_strategy: Box<dyn ExportStrategy> = DataSourceParams {
             uri: to,
-            schema
-        }.try_into()?;
+            schema,
+            collection_field_name,
+        }
+        .try_into()?;
 
         let params = ExportParams {
             namespace,
@@ -197,7 +206,7 @@ pub enum Args {
     #[structopt(about = "(DEPRECATED). For backward compatibility and is a no-op.")]
     Init {
         #[serde(skip)]
-        init_path: Option<PathBuf>
+        init_path: Option<PathBuf>,
     },
     #[structopt(about = "Generate data from a namespace", alias = "gen")]
     Generate {
@@ -229,11 +238,17 @@ pub enum Args {
         )]
         random: bool,
         #[structopt(
-        long,
-        help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
+            long,
+            help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
         )]
         #[serde(skip)]
         schema: Option<String>,
+        #[structopt(
+            long,
+            help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when outputting JSON Lines from multiple collections. Defaults to 'collection'."
+        )]
+        #[serde(skip)]
+        collection_field_name: Option<String>,
     },
     #[structopt(about = "Import data from an external source")]
     Import {
@@ -256,8 +271,8 @@ pub enum Args {
         #[serde(skip)]
         from: Option<String>,
         #[structopt(
-        long,
-        help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
+            long,
+            help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
         )]
         #[serde(skip)]
         schema: Option<String>,
@@ -266,7 +281,7 @@ pub enum Args {
     #[structopt(about = "Toggle anonymous usage data collection")]
     Telemetry(TelemetryCommand),
     #[structopt(about = "Version information")]
-    Version
+    Version,
 }
 
 #[cfg(feature = "telemetry")]
