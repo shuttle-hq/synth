@@ -23,10 +23,14 @@ mod number;
 pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, RangeStep};
 
 mod string;
-pub use string::{FakerContent, FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid};
+pub use string::{
+    FakerContent, FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid,
+};
 
 mod date_time;
-pub use date_time::{ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent};
+pub use date_time::{
+    ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent,
+};
 
 mod array;
 pub use array::ArrayContent;
@@ -50,7 +54,7 @@ pub mod unique;
 pub use unique::{UniqueAlgorithm, UniqueContent};
 
 pub mod hidden;
-pub use hidden::{HiddenContent};
+pub use hidden::HiddenContent;
 
 use prelude::*;
 
@@ -279,7 +283,9 @@ impl Content {
 
     pub fn into_hidden(self) -> Self {
         if !self.is_hidden() {
-            Content::Hidden(HiddenContent{ content: Box::new(self) })
+            Content::Hidden(HiddenContent {
+                content: Box::new(self),
+            })
         } else {
             self
         }

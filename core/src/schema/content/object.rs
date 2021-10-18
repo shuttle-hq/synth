@@ -164,11 +164,9 @@ impl Compile for ObjectContent {
                         .build(name, nullable)
                         .map(|graph| KeyValueOrNothing::sometimes(name, graph, false))
                 } else {
-                    compiler
-                        .build(name, field)
-                        .map(|graph| {
-                            KeyValueOrNothing::always(name, graph, matches!(field, Content::Hidden(_)))
-                        })
+                    compiler.build(name, field).map(|graph| {
+                        KeyValueOrNothing::always(name, graph, matches!(field, Content::Hidden(_)))
+                    })
                 }
             })
             .collect::<Result<ObjectNode>>()?;

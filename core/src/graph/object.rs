@@ -68,14 +68,21 @@ impl Generator for ObjectNode {
     type Return = Result<Value, Error>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        let hidden_fields: std::collections::HashSet<String> = self.0.inner.inner.inners.iter().filter(|&p| p.hidden)
-            .map(|p| p.key.clone()).collect();
+        let hidden_fields: std::collections::HashSet<String> = self
+            .0
+            .inner
+            .inner
+            .inners
+            .iter()
+            .filter(|&p| p.hidden)
+            .map(|p| p.key.clone())
+            .collect();
 
         self.0.next(rng).map_complete(|kv| {
             kv.into_iter()
                 .filter(|p| match p {
                     Some((k, _)) => !hidden_fields.contains(k),
-                    _ => true
+                    _ => true,
                 })
                 .filter_map(|m_kv| m_kv.map(|(k, vr)| vr.map(|v| (k, v))))
                 .collect::<Result<BTreeMap<_, _>, Error>>()

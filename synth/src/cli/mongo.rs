@@ -144,8 +144,16 @@ fn bson_to_content(bson: &Bson) -> Content {
         Bson::JavaScriptCodeWithScope(_) => {
             Content::String(StringContent::Categorical(Categorical::default()))
         }
-        Bson::Int32(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(*i as i64, *i as i64 + 1, 1)))),
-        Bson::Int64(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(*i, *i + 1, 1)))),
+        Bson::Int32(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(
+            *i as i64,
+            *i as i64 + 1,
+            1,
+        )))),
+        Bson::Int64(i) => Content::Number(NumberContent::I64(I64::Range(RangeStep::new(
+            *i,
+            *i + 1,
+            1,
+        )))),
         Bson::DateTime(_) => Content::DateTime(DateTimeContent {
             format: "".to_string(),
             type_: ChronoValueType::DateTime,

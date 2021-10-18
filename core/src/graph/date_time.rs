@@ -10,7 +10,11 @@ derive_generator! {
 
 impl From<RandomDateTime> for DateTimeNode {
     fn from(value: RandomDateTime) -> Self {
-        Self(value.into_token().map_complete(value_from_ok::<ChronoValueAndFormat>))
+        Self(
+            value
+                .into_token()
+                .map_complete(value_from_ok::<ChronoValueAndFormat>),
+        )
     }
 }
 
