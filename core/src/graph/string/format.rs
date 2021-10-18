@@ -86,10 +86,7 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::graph::{
-        ChronoValue, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64, RandomString,
-        StringNode,
-    };
+    use crate::graph::{ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64, RandomString, StringNode};
     use chrono::naive::NaiveDate;
 
     fn faker_graph(name: &str) -> Graph {
@@ -171,7 +168,7 @@ pub mod tests {
         let args = FormatArgs {
             named: vec![(
                 "date".to_string(),
-                Graph::String(StringNode::from(RandomDateTime::new(
+                Graph::DateTime(DateTimeNode::from(RandomDateTime::new(
                     ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4))
                         ..ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4)),
                     "%Y-%m-%d",
