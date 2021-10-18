@@ -79,7 +79,7 @@ impl ObjectContent {
                     content.accepts(value)?;
                 }
             } else if matches!(v, Content::Hidden(_)) {
-                () // ok, hidden is not expected to appear
+                // ok, hidden is not expected to appear
             } else {
                 let json_value = obj
                     .get(k)
