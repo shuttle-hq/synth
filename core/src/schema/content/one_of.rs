@@ -2,7 +2,7 @@ use super::prelude::*;
 
 use super::Weight;
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct OneOfContent {
     pub variants: Vec<VariantContent>,
@@ -24,7 +24,7 @@ impl PartialEq for OneOfContent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct VariantContent {
     #[serde(default)]
     weight: Weight,

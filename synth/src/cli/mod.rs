@@ -239,6 +239,13 @@ impl Cli {
             .borrow_mut()
             .set_namespace_name_sha(hasher.finish());
 
+        hasher = DefaultHasher::new();
+
+        namespace.hash(&mut hasher);
+        self.telemetry_context
+            .borrow_mut()
+            .set_namespace_sha(hasher.finish());
+
         Ok(())
     }
 }

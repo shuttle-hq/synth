@@ -1,4 +1,5 @@
 use super::prelude::*;
+use std::hash::{Hash, Hasher};
 
 use super::Categorical;
 
@@ -42,5 +43,15 @@ impl Compile for BoolContent {
             }
         };
         Ok(Graph::Bool(random_bool.into()))
+    }
+}
+
+impl Hash for BoolContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Frequency(f) => f.to_bits().hash(state),
+            Self::Categorical(c) => c.hash(state),
+            Self::Constant(c) => c.hash(state),
+        }
     }
 }

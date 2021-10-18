@@ -1,8 +1,10 @@
+use std::hash::{Hash, Hasher};
+
 use super::prelude::*;
 use super::Categorical;
 use crate::graph::string::Serialized;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub enum StringContent {
@@ -15,7 +17,7 @@ pub enum StringContent {
     Format(FormatContent),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Uuid;
 
 impl StringContent {
@@ -110,6 +112,12 @@ impl Default for RegexContent {
     }
 }
 
+impl Hash for RegexContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
 impl Default for StringContent {
     fn default() -> Self {
         Self::Pattern(RegexContent::default())
@@ -151,7 +159,7 @@ impl Serialize for FakerContentArgument {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct FakerContent {
     pub generator: String,
     /// deprecated: Use FakerArgs::locale instead
@@ -168,14 +176,14 @@ impl FakerContent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "serializer")]
 pub enum SerializedContent {
     Json(JsonContent),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub struct TruncatedContent {
     content: Box<Content>,
@@ -189,7 +197,18 @@ pub struct FormatContent {
     pub arguments: HashMap<String, Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+impl Hash for FormatContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.format.hash(state);
+
+        for (key, value) in &self.arguments {
+            key.hash(state);
+            value.hash(state);
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct JsonContent {
     content: Box<Content>,
 }

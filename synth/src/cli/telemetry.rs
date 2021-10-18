@@ -108,6 +108,7 @@ pub struct TelemetryContext {
     num_collections: Option<usize>,
     num_fields: Option<usize>,
     namespace_name_sha: Option<u64>,
+    namespace_sha: Option<u64>,
 }
 
 impl TelemetryContext {
@@ -117,6 +118,7 @@ impl TelemetryContext {
             num_collections: None,
             num_fields: None,
             namespace_name_sha: None,
+            namespace_sha: None,
         }
     }
 
@@ -155,6 +157,10 @@ impl TelemetryContext {
 
     pub fn set_namespace_name_sha(&mut self, sha: u64) {
         self.namespace_name_sha = Some(sha);
+    }
+
+    pub fn set_namespace_sha(&mut self, sha: u64) {
+        self.namespace_sha = Some(sha);
     }
 
     pub fn inc_num_fields(&mut self) {
@@ -335,6 +341,10 @@ impl TelemetryClient {
                     event.insert_prop("avg_num_fields_per_collection", avg)?;
                 }
             }
+        }
+
+        if let Some(namespace_sha) = telemetry_context.namespace_sha {
+            event.insert_prop("namespace_sha", namespace_sha)?;
         }
 
         if let Some(namespace_name_sha) = telemetry_context.namespace_name_sha {
@@ -672,6 +682,11 @@ pub mod tests {
         );
         assert_eq!(event, expected, "include avg_fields_per_collection");
 
+        context.namespace_sha = Some(50238);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        expected.insert("namespace_sha".to_string(), "50238".to_string());
+        assert_eq!(event, expected, "include namespace_sha");
+
         context.namespace_name_sha = Some(54321);
         TelemetryClient::add_telemetry_context(&mut event, context.clone());
         expected.insert("namespace_name_sha".to_string(), "54321".to_string());
@@ -681,6 +696,7 @@ pub mod tests {
         event.clear();
         expected.clear();
         context.generators = Vec::new();
+        context.namespace_sha = None;
         context.namespace_name_sha = None;
 
         context.num_collections = Some(0);

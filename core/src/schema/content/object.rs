@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 const RESERVED_FIELDS: [&str; 2] = ["type", "skip_when_null"];
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Hash)]
 pub struct ObjectContent {
     #[serde(default)]
     #[serde(skip_serializing_if = "std::ops::Not::not")]

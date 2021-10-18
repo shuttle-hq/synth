@@ -5,7 +5,7 @@ use crate::{Compiler, Content, Graph};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct HiddenContent {
     pub content: Box<Content>,

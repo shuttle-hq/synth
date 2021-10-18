@@ -5,7 +5,7 @@ pub trait CategoricalType: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
 
 impl<T> CategoricalType for T where T: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default, Hash)]
 #[serde(from = "CategoricalShadow<T>")]
 pub struct Categorical<T: CategoricalType> {
     #[serde(flatten)]
