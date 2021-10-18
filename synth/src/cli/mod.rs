@@ -34,6 +34,10 @@ use synth_core::Namespace;
 pub mod telemetry;
 
 #[cfg(feature = "telemetry")]
+use std::collections::hash_map::DefaultHasher;
+#[cfg(feature = "telemetry")]
+use std::hash::{Hash, Hasher};
+#[cfg(feature = "telemetry")]
 use telemetry::TelemetryContext;
 
 pub struct Cli {
@@ -167,7 +171,7 @@ impl Cli {
             let ns = import_strategy.import()?;
 
             #[cfg(feature = "telemetry")]
-            self.fill_telemetry(&ns, collection.clone())?;
+            self.fill_telemetry(&ns, collection.clone(), path.clone())?;
 
             self.store.save_ns_path(path, ns)?;
 
@@ -195,7 +199,7 @@ impl Cli {
             DataSourceParams { uri: to, schema }.try_into()?;
 
         #[cfg(feature = "telemetry")]
-        self.fill_telemetry(&namespace, collection.clone())
+        self.fill_telemetry(&namespace, collection.clone(), ns_path.clone())
             .or_else::<anyhow::Error, _>(|err| {
                 format!(
                     "Failed to get telemetry data. Please report this bug: {}",
@@ -218,10 +222,22 @@ impl Cli {
     }
 
     #[cfg(feature = "telemetry")]
-    fn fill_telemetry(&self, namespace: &Namespace, collection: Option<Name>) -> Result<()> {
+    fn fill_telemetry(
+        &self,
+        namespace: &Namespace,
+        collection: Option<Name>,
+        ns_path: PathBuf,
+    ) -> Result<()> {
         self.telemetry_context
             .borrow_mut()
             .from_namespace(&namespace, collection)?;
+
+        let mut hasher = DefaultHasher::new();
+
+        ns_path.hash(&mut hasher);
+        self.telemetry_context
+            .borrow_mut()
+            .set_namespace_name_sha(hasher.finish());
 
         Ok(())
     }

@@ -107,6 +107,7 @@ pub struct TelemetryContext {
     generators: Vec<String>,
     num_collections: Option<usize>,
     num_fields: Option<usize>,
+    namespace_name_sha: Option<u64>,
 }
 
 impl TelemetryContext {
@@ -115,6 +116,7 @@ impl TelemetryContext {
             generators: Vec::new(),
             num_collections: None,
             num_fields: None,
+            namespace_name_sha: None,
         }
     }
 
@@ -149,6 +151,10 @@ impl TelemetryContext {
 
     pub fn set_num_collections(&mut self, num: usize) {
         self.num_collections = Some(num);
+    }
+
+    pub fn set_namespace_name_sha(&mut self, sha: u64) {
+        self.namespace_name_sha = Some(sha);
     }
 
     pub fn inc_num_fields(&mut self) {
@@ -331,6 +337,10 @@ impl TelemetryClient {
             }
         }
 
+        if let Some(namespace_name_sha) = telemetry_context.namespace_name_sha {
+            event.insert_prop("namespace_name_sha", namespace_name_sha)?;
+        }
+
         Ok(())
     }
 
@@ -393,7 +403,6 @@ impl TelemetryClient {
 #[cfg(test)]
 pub mod tests {
     use super::{Namespace, TelemetryClient, TelemetryContext};
-    use std::collections::HashMap;
 
     macro_rules! schema {
     {
@@ -663,10 +672,16 @@ pub mod tests {
         );
         assert_eq!(event, expected, "include avg_fields_per_collection");
 
+        context.namespace_name_sha = Some(54321);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        expected.insert("namespace_name_sha".to_string(), "54321".to_string());
+        assert_eq!(event, expected, "include namespace_name_sha");
+
         // Edge cases
         event.clear();
         expected.clear();
         context.generators = Vec::new();
+        context.namespace_name_sha = None;
 
         context.num_collections = Some(0);
         TelemetryClient::add_telemetry_context(&mut event, context.clone());
