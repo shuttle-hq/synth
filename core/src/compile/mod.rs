@@ -26,14 +26,14 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
-use state::{CompilerState, OutputState, Artifact, Source, Symbols};
+use state::{Artifact, CompilerState, OutputState, Source, Symbols};
 
 mod address;
 use address::Address;
 
 pub mod link;
 pub use link::{FromLink, Link};
-use link::{Recorder, Ordered, GeneratorSliceRef, GeneratorRecorder};
+use link::{GeneratorRecorder, GeneratorSliceRef, Ordered, Recorder};
 
 use crate::graph::Graph;
 use crate::schema::{Content, Namespace};
@@ -100,9 +100,9 @@ impl<'a> NamespaceCompiler<'a> {
                 let mut pushbacks = BTreeSet::new();
                 for target in state.refs().iter() {
                     // Direct references go first
-                    let is_built = self.vtable
-                        .is_built(&address, target)
-                        .ok_or_else(|| anyhow!("undefined reference to `{}` from `{}`", target, address))?;
+                    let is_built = self.vtable.is_built(&address, target).ok_or_else(|| {
+                        anyhow!("undefined reference to `{}` from `{}`", target, address)
+                    })?;
                     if !is_built {
                         debug!("direct reference to `{}`", target);
                         targets.insert(target.clone());
@@ -113,10 +113,7 @@ impl<'a> NamespaceCompiler<'a> {
                     if !relative_to.is_root() {
                         let child = relative_to.deeper().unwrap();
                         root.at(&child);
-                        let is_built = self.state
-                            .project(root.clone())?
-                            .output()
-                            .is_built();
+                        let is_built = self.state.project(root.clone())?.output().is_built();
                         if !is_built && !relative_to.is_root() {
                             debug!("pushback dependency to `{}`", root);
                             pushbacks.insert(root);
@@ -134,7 +131,8 @@ impl<'a> NamespaceCompiler<'a> {
                         let child_address = address.clone().into_at(&child);
                         if !is_built
                             && !targets.contains(&child_address)
-                            && !pushbacks.contains(&child_address) {
+                            && !pushbacks.contains(&child_address)
+                        {
                             Some(child_address)
                         } else {
                             None
@@ -151,9 +149,15 @@ impl<'a> NamespaceCompiler<'a> {
 
             if !next.is_empty() {
                 debug!("dependencies not satisfied: {:?}", next);
-                if matches!(self.state.project_mut(address.clone())?.output_mut().waiting(), OutputState::Waiting) {
-		    // This node was visited once and was waiting for dependencies to be built first,
-		    // then is now being visited a second time so is a dependency of itself.
+                if matches!(
+                    self.state
+                        .project_mut(address.clone())?
+                        .output_mut()
+                        .waiting(),
+                    OutputState::Waiting
+                ) {
+                    // This node was visited once and was waiting for dependencies to be built first,
+                    // then is now being visited a second time so is a dependency of itself.
                     return Err(anyhow!("cycle detected at {}", address));
                 }
                 visits.push(address);
@@ -166,7 +170,11 @@ impl<'a> NamespaceCompiler<'a> {
                 let this = parent.shallower().unwrap();
                 // It is not necessary to order nodes that are not bound to be wrapped in `Ordered`
                 if self.vtable.contains(&parent) {
-                    self.state.project_mut(parent)?.scope_mut().push(this).unwrap();
+                    self.state
+                        .project_mut(parent)?
+                        .scope_mut()
+                        .push(this)
+                        .unwrap();
                 }
             }
 
@@ -177,7 +185,7 @@ impl<'a> NamespaceCompiler<'a> {
                 scope: address.clone(),
                 state,
                 children: &mut children,
-                vtable
+                vtable,
             };
 
             let mut node = content_compiler
@@ -186,9 +194,10 @@ impl<'a> NamespaceCompiler<'a> {
 
             if let Some(local_table) = vtable.get(&address) {
                 // `node` must be wrapped in `Ordered`
-                let mut scope = local_table.values().map(|factory| {
-                    factory.get_source().unwrap()
-                }).collect::<Vec<_>>();
+                let mut scope = local_table
+                    .values()
+                    .map(|factory| factory.get_source().unwrap())
+                    .collect::<Vec<_>>();
                 let mut ordered_children = Vec::new();
                 for child in state.scope().iter_ordered() {
                     let (recorder, slice_ref) = children.remove(child).unwrap();
@@ -204,10 +213,13 @@ impl<'a> NamespaceCompiler<'a> {
 
             let artifact = if vtable.targetted(&address) {
                 let recorder = Recorder::wrap(node);
-                vtable.paths(&address).into_iter().try_for_each(|(root, tail)| {
-                    debug!("setting source root=`{}` tail=`{}`", root, tail);
-                    vtable.set_source(&root, &tail, recorder.new_slice())
-                })?;
+                vtable
+                    .paths(&address)
+                    .into_iter()
+                    .try_for_each(|(root, tail)| {
+                        debug!("setting source root=`{}` tail=`{}`", root, tail);
+                        vtable.set_source(&root, &tail, recorder.new_slice())
+                    })?;
                 Artifact::from_recorder(recorder)
             } else {
                 Artifact::just(node)
@@ -251,7 +263,8 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
             let slice_ref = recorder.new_slice();
             let view = slice_ref.new_view();
             child = Artifact::from_view(view);
-            self.children.insert(field.to_string(), (recorder, slice_ref));
+            self.children
+                .insert(field.to_string(), (recorder, slice_ref));
         }
 
         Ok(child.pack())
@@ -259,8 +272,13 @@ impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
 
     fn get<S: Into<Address>>(&mut self, field: S) -> Result<Graph> {
         let address = field.into();
-        let view = self.vtable.issue(&self.scope, &address)
-            .with_context(|| anyhow!("while trying to access a reference to `{}` at `{}`", address, self.scope))?;
+        let view = self.vtable.issue(&self.scope, &address).with_context(|| {
+            anyhow!(
+                "while trying to access a reference to `{}` at `{}`",
+                address,
+                self.scope
+            )
+        })?;
         Ok(Graph::from_link(Link::View(view)))
     }
 }
@@ -293,7 +311,10 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
 impl<'t, 'a: 't> Compiler<'a> for Crawler<'t, 'a> {
     fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
         if let Err(err) = self.as_at(field, content).compile() {
-            warn!("could not crawl into field `{}` at `{}`", field, self.position);
+            warn!(
+                "could not crawl into field `{}` at `{}`",
+                field, self.position
+            );
             return Err(err);
         }
         Ok(Graph::dummy())
@@ -301,7 +322,8 @@ impl<'t, 'a: 't> Compiler<'a> for Crawler<'t, 'a> {
 
     fn get<S: Into<Address>>(&mut self, target: S) -> Result<Graph> {
         let target: Address = target.into();
-        self.symbols.declare(self.position.clone(), target.clone())?;
+        self.symbols
+            .declare(self.position.clone(), target.clone())?;
         self.state.refs_mut().insert(target);
         Ok(Graph::dummy())
     }
@@ -309,8 +331,8 @@ impl<'t, 'a: 't> Compiler<'a> for Crawler<'t, 'a> {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::tests::complete;
     use crate::graph::Value;
+    use crate::tests::complete;
 
     use synth_gen::prelude::*;
 
@@ -373,7 +395,15 @@ pub mod tests {
         let value = complete(generator).unwrap();
         let as_object = value.as_object().unwrap();
         for i in 0..5 {
-            assert!(as_object.get(&i.to_string()).unwrap().as_object().unwrap().get("0").unwrap().as_bool().unwrap())
+            assert!(as_object
+                .get(&i.to_string())
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .get("0")
+                .unwrap()
+                .as_bool()
+                .unwrap())
         }
     }
 
@@ -459,7 +489,14 @@ pub mod tests {
             },
             "1": "@0.01"
         });
-        assert!(complete(generator).unwrap().as_object().unwrap().get("1").unwrap().as_bool().unwrap())
+        assert!(complete(generator)
+            .unwrap()
+            .as_object()
+            .unwrap()
+            .get("1")
+            .unwrap()
+            .as_bool()
+            .unwrap())
     }
 
     #[test]
@@ -486,9 +523,13 @@ pub mod tests {
             let number = as_object.get(&i.to_string()).unwrap().as_number().unwrap();
             assert!(matches!(number, Number::U64(1)));
         }
-        assert!(as_object.get("4").unwrap().as_array().unwrap().iter().all(|v| {
-            matches!(v.as_number().unwrap(), Number::U64(1))
-        }))
+        assert!(as_object
+            .get("4")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|v| { matches!(v.as_number().unwrap(), Number::U64(1)) }))
     }
 
     #[test]
@@ -534,15 +575,28 @@ pub mod tests {
         let as_object = value.as_object().unwrap();
 
         let two = as_object.get("2").unwrap().as_array().unwrap();
-        for (i, v) in as_object.get("0").unwrap().as_array().unwrap().iter().enumerate() {
+        for (i, v) in as_object
+            .get("0")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
             let ii = (i + 1) as u64;
             assert_eq!(*v, Value::Number(Number::U64(ii)));
             assert_eq!(*two.get(i).unwrap(), Value::Number(Number::U64(ii)));
         }
 
-        assert!(matches!(as_object.get("1").unwrap().as_number().unwrap(), Number::U64(1)));
+        assert!(matches!(
+            as_object.get("1").unwrap().as_number().unwrap(),
+            Number::U64(1)
+        ));
 
-        assert!(matches!(as_object.get("22").unwrap().as_number().unwrap(), Number::U64(1)));
+        assert!(matches!(
+            as_object.get("22").unwrap().as_number().unwrap(),
+            Number::U64(1)
+        ));
 
         let three = as_object.get("3").unwrap().as_array().unwrap();
         let mut idx = 0;

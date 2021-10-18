@@ -30,13 +30,11 @@
       "variants": [
         {
           "weight": 1.0,
-          "type": "string",
-          "date_time": {
-            "format": "%Y-%m-%d",
-            "subtype": "naive_date",
-            "begin": "2010-04-06",
-            "end": "2019-07-24"
-          }
+          "type": "date_time",
+          "format": "%Y-%m-%d",
+          "subtype": "naive_date",
+          "begin": "2010-04-06",
+          "end": "2019-07-24"
         },
         {
           "weight": 1.0,

@@ -5,9 +5,9 @@ use std::iter::FromIterator;
 
 use synth_gen::prelude::*;
 
+use super::link::{Recorder, SliceRef, TapeView};
 use super::Address;
-use super::{Link, FromLink};
-use super::link::{TapeView, Recorder, SliceRef};
+use super::{FromLink, Link};
 
 use crate::schema::{Content, Namespace};
 
@@ -55,7 +55,8 @@ impl<'a, G: Generator> StructuredState<'a, G> {
 
     #[inline]
     pub(super) fn iter_values(&self) -> impl Iterator<Item = &CompilerState<'a, G>> {
-        self.iter_keys().map(move |key| self.children.get(&key).unwrap())
+        self.iter_keys()
+            .map(move |key| self.children.get(&key).unwrap())
     }
 
     #[inline]
@@ -66,7 +67,11 @@ impl<'a, G: Generator> StructuredState<'a, G> {
         })
     }
 
-    pub(super) fn insert(&mut self, name: String, state: CompilerState<'a, G>) -> Option<CompilerState<'a, G>> {
+    pub(super) fn insert(
+        &mut self,
+        name: String,
+        state: CompilerState<'a, G>,
+    ) -> Option<CompilerState<'a, G>> {
         self.children.insert(name, state)
     }
 }
@@ -91,8 +96,9 @@ impl<'a, G: Generator> IntoIterator for StructuredState<'a, G> {
     }
 }
 
-
-impl<'a, G: Generator> std::iter::Extend<(String, CompilerState<'a, G>)> for StructuredState<'a, G> {
+impl<'a, G: Generator> std::iter::Extend<(String, CompilerState<'a, G>)>
+    for StructuredState<'a, G>
+{
     fn extend<T: IntoIterator<Item = (String, CompilerState<'a, G>)>>(&mut self, iter: T) {
         for (name, state) in iter {
             self.insert(name, state);
@@ -183,7 +189,7 @@ pub(super) enum Artifact<G, Y, R> {
 
 impl<G, Y, R> Artifact<G, Y, R>
 where
-    G: Generator<Yield = Y, Return = R> + FromLink<Yield = Y, Return = R>
+    G: Generator<Yield = Y, Return = R> + FromLink<Yield = Y, Return = R>,
 {
     pub(super) fn pack(self) -> G {
         match self {
@@ -395,9 +401,9 @@ impl<G: Generator> Default for ReferenceFactory<G> {
 }
 
 impl<G> ReferenceFactory<G>
-    where
-        G: Generator,
-        GeneratorOutput<G>: Clone,
+where
+    G: Generator,
+    GeneratorOutput<G>: Clone,
 {
     fn declare(&mut self, from: Address) -> bool {
         self.issued.insert(from)
@@ -405,11 +411,17 @@ impl<G> ReferenceFactory<G>
 
     fn issue(&mut self, from: &Address) -> Result<TapeView<G::Yield, G::Return>> {
         if !self.issued.contains(from) {
-            Err(anyhow!("cannot issue a reference to `{}` unless it was previously declared", from))
+            Err(anyhow!(
+                "cannot issue a reference to `{}` unless it was previously declared",
+                from
+            ))
         } else if let Some(slice_ref) = self.src.as_ref() {
             Ok(slice_ref.new_view())
         } else {
-            Err(anyhow!("tried to issue a reference to `{}` before it was built", from))
+            Err(anyhow!(
+                "tried to issue a reference to `{}` before it was built",
+                from
+            ))
         }
     }
 
@@ -417,7 +429,10 @@ impl<G> ReferenceFactory<G>
         self.src.is_some()
     }
 
-    fn set_source(&mut self, inner: SliceRef<G::Yield, G::Return>) -> Option<SliceRef<G::Yield, G::Return>> {
+    fn set_source(
+        &mut self,
+        inner: SliceRef<G::Yield, G::Return>,
+    ) -> Option<SliceRef<G::Yield, G::Return>> {
         std::mem::replace(&mut self.src, Some(inner))
     }
 
@@ -434,8 +449,8 @@ pub(super) struct LocalTable<G: Generator> {
 }
 
 impl<G> Default for LocalTable<G>
-    where
-        G: Generator,
+where
+    G: Generator,
 {
     fn default() -> Self {
         Self {
@@ -445,9 +460,9 @@ impl<G> Default for LocalTable<G>
 }
 
 impl<G> LocalTable<G>
-    where
-        G: Generator,
-        GeneratorOutput<G>: Clone,
+where
+    G: Generator,
+    GeneratorOutput<G>: Clone,
 {
     fn get(&self, to: &Address) -> Option<&ReferenceFactory<G>> {
         self.locals.get(to)
@@ -483,9 +498,9 @@ pub(super) struct Symbols<G: Generator = crate::graph::Graph> {
 }
 
 impl<G> Symbols<G>
-    where
-        G: Generator,
-        GeneratorOutput<G>: Clone,
+where
+    G: Generator,
+    GeneratorOutput<G>: Clone,
 {
     pub(super) fn new() -> Self {
         Self {
@@ -503,8 +518,7 @@ impl<G> Symbols<G>
     }
 
     pub(super) fn paths(&self, to: &Address) -> Vec<(Address, Address)> {
-        self
-            .storage
+        self.storage
             .iter()
             .filter_map(|(root, table)| {
                 let rem = to.as_in(root)?;
@@ -554,7 +568,11 @@ impl<G> Symbols<G>
         Ok(already_declared)
     }
 
-    pub(super) fn issue(&mut self, from: &Address, to: &Address) -> Result<TapeView<G::Yield, G::Return>> {
+    pub(super) fn issue(
+        &mut self,
+        from: &Address,
+        to: &Address,
+    ) -> Result<TapeView<G::Yield, G::Return>> {
         let (root, relative_what) = to.relativize(from);
         let relative_to = from.as_in(&root).unwrap();
         self.get_mut(&root)
@@ -568,13 +586,15 @@ impl<G> Symbols<G>
         relative: &Address,
         source: SliceRef<G::Yield, G::Return>,
     ) -> Result<()> {
-        if self.get_mut(root)
+        if self
+            .get_mut(root)
             .ok_or_else(|| anyhow!("no vtable entry for {}", root))?
             .get_mut(relative)
             .ok_or_else(|| anyhow!("no local table entry for {}", relative))?
             .set_source(source)
             .map(|_| ())
-            .is_some() {
+            .is_some()
+        {
             Err(anyhow!("source already set"))
         } else {
             Ok(())

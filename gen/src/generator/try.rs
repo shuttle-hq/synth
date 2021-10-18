@@ -64,7 +64,7 @@ pub trait TryGenerator {
         loop {
             match self.try_next(rng) {
                 GeneratorState::Yielded(_) => continue,
-                GeneratorState::Complete(r) => return r
+                GeneratorState::Complete(r) => return r,
             }
         }
     }
@@ -168,7 +168,7 @@ where
     fn try_yield(self) -> TryYield<Self> {
         TryYield {
             inner: self,
-            yielded: None
+            yielded: None,
         }
     }
 
@@ -267,30 +267,28 @@ where
 
 pub struct TryYield<G: TryGenerator> {
     inner: G,
-    yielded: Option<G::Ok>
+    yielded: Option<G::Ok>,
 }
 
 impl<G> Generator for TryYield<G>
 where
     G: TryGenerator,
-    G::Ok: Clone
+    G::Ok: Clone,
 {
     type Yield = G::Ok;
     type Return = G::Return;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
         if let Some(yielded) = std::mem::replace(&mut self.yielded, None) {
-            return GeneratorState::Complete(Self::Return::from_ok(yielded))
+            return GeneratorState::Complete(Self::Return::from_ok(yielded));
         }
 
         match self.inner.try_complete(rng).into_result() {
             Ok(ret) => {
                 self.yielded = Some(ret.clone());
                 GeneratorState::Yielded(ret)
-            },
-            Err(err) => {
-                GeneratorState::Complete(Self::Return::from_err(err))
             }
+            Err(err) => GeneratorState::Complete(Self::Return::from_err(err)),
         }
     }
 }

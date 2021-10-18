@@ -10,13 +10,13 @@ pub mod value;
 pub use value::ValueMergeStrategy;
 
 use super::{
-    number_content, ArrayContent, BoolContent, Categorical, ChronoValueFormatter, Content,
-    DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent, RangeStep,
-    StringContent, ValueKindExt, CategoricalType
+    number_content, ArrayContent, BoolContent, Categorical, CategoricalType, ChronoValueFormatter,
+    Content, DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
+    RangeStep, StringContent, ValueKindExt,
 };
-use crate::graph::prelude::content::number_content::{I64, I32};
-use num::Zero;
+use crate::graph::prelude::content::number_content::{I32, I64};
 use crate::schema::UniqueContent;
+use num::Zero;
 
 pub trait MergeStrategy<M, C>: std::fmt::Display {
     fn try_merge(self, master: &mut M, candidate: &C) -> Result<()>;
@@ -41,7 +41,7 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             }
             (Content::OneOf(one_of_content), candidate) => {
                 Self.try_merge(one_of_content, candidate)
-            },
+            }
             (Content::Unique(unique_content), candidate) => {
                 Self.try_merge(unique_content, candidate)
             }
@@ -57,6 +57,9 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
             }
             (Content::String(string_content), Value::String(string)) => {
                 Self.try_merge(string_content, string)
+            }
+            (Content::DateTime(date_time_content), Value::String(string)) => {
+                Self.try_merge(date_time_content, string)
             }
             (Content::Number(number_content), Value::Number(number)) => {
                 Self.try_merge(number_content, number)
@@ -120,7 +123,6 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
                 string_categorical.push(value.clone());
                 Ok(())
             }
-            StringContent::DateTime(date_time_content) => self.try_merge(date_time_content, value),
             StringContent::Faker(_) => Ok(()),
             StringContent::Serialized(_) => Ok(()), // we can probably do better here
             StringContent::Uuid(_) => Ok(()),
@@ -206,7 +208,7 @@ impl MergeStrategy<DateTimeContent, String> for OptionalMergeStrategy {
 
 impl<N> MergeStrategy<RangeStep<N>, N> for OptionalMergeStrategy
 where
-    N: PartialOrd + Copy
+    N: PartialOrd + Copy,
 {
     fn try_merge(self, master: &mut RangeStep<N>, value: &N) -> Result<()> {
         let low = master.low.get_or_insert(*value);
@@ -219,19 +221,18 @@ where
 
 impl<N> MergeStrategy<Categorical<N>, N> for OptionalMergeStrategy
 where
-    N: Copy + CategoricalType
+    N: Copy + CategoricalType,
 {
-    fn try_merge(
-        self,
-        master: &mut Categorical<N>,
-        value: &N
-    ) -> Result<()> {
+    fn try_merge(self, master: &mut Categorical<N>, value: &N) -> Result<()> {
         master.push(*value);
         Ok(())
     }
 }
 
-impl<N> MergeStrategy<Id<N>, N> for OptionalMergeStrategy where N: PartialOrd + Zero + Copy {
+impl<N> MergeStrategy<Id<N>, N> for OptionalMergeStrategy
+where
+    N: PartialOrd + Zero + Copy,
+{
     fn try_merge(self, master: &mut Id<N>, candidate: &N) -> Result<()> {
         let lower_bound = master.start_at.unwrap_or_else(N::zero);
         if candidate < &lower_bound {
@@ -275,7 +276,7 @@ impl MergeStrategy<number_content::I64, i64> for OptionalMergeStrategy {
             number_content::I64::Range(range) => self.try_merge(range, candidate),
             number_content::I64::Categorical(cat) => self.try_merge(cat, candidate),
             number_content::I64::Constant(cst) => self.try_merge(cst, candidate),
-            I64::Id(id) => self.try_merge(id, candidate)
+            I64::Id(id) => self.try_merge(id, candidate),
         }
     }
 }
@@ -306,7 +307,7 @@ impl MergeStrategy<number_content::I32, i32> for OptionalMergeStrategy {
             number_content::I32::Range(range) => self.try_merge(range, candidate),
             number_content::I32::Categorical(cat) => self.try_merge(cat, candidate),
             number_content::I32::Constant(cst) => self.try_merge(cst, candidate),
-            I32::Id(id) => self.try_merge(id, candidate)
+            I32::Id(id) => self.try_merge(id, candidate),
         }
     }
 }
@@ -529,7 +530,8 @@ pub mod tests {
             "high": 10,
             "step": 1
             }
-        })).unwrap();
+        }))
+        .unwrap();
         let error_margin = f64::EPSILON;
 
         OptionalMergeStrategy
@@ -537,7 +539,9 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::U64(number_content::U64::Range(RangeStep { low, high, step, .. })) => {
+            NumberContent::U64(number_content::U64::Range(RangeStep {
+                low, high, step, ..
+            })) => {
                 assert_eq!(low, Some(0));
                 assert_eq!(high, Some(15));
                 assert_eq!(step, Some(1));
@@ -553,7 +557,9 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::I64(number_content::I64::Range(RangeStep { low, high, step, .. })) => {
+            NumberContent::I64(number_content::I64::Range(RangeStep {
+                low, high, step, ..
+            })) => {
                 assert_eq!(low, Some(-10));
                 assert_eq!(high, Some(20));
                 assert_eq!(step, Some(1));
@@ -569,7 +575,9 @@ pub mod tests {
             .unwrap();
 
         match master {
-            NumberContent::F64(number_content::F64::Range(RangeStep { low, high, step , .. })) => {
+            NumberContent::F64(number_content::F64::Range(RangeStep {
+                low, high, step, ..
+            })) => {
                 assert!((low.unwrap() - -13.6).abs() < error_margin);
                 assert!((high.unwrap() - 20.6).abs() < error_margin);
                 assert!((step.unwrap() - 1.).abs() < error_margin);

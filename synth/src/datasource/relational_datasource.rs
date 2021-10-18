@@ -50,7 +50,6 @@ pub trait RelationalDataSource: DataSource {
         collection_name: String,
         collection: &[Value],
     ) -> Result<()> {
-
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
         if collection.is_empty() {
@@ -71,18 +70,26 @@ pub trait RelationalDataSource: DataSource {
         for column_info in column_infos {
             if let Some(value) = first_valueset.get(&column_info.column_name) {
                 match (value, &*column_info.data_type) {
-                    (Value::Number(Number::U64(_)), "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint") =>
-                        warn!("Trying to put an unsigned u64 into a {} typed column {}.{}", 
-                            column_info.data_type, collection_name, column_info.column_name),
-                    (Value::Number(Number::U32(_)), "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint") =>
-                        warn!("Trying to put an unsigned u32 into a {} typed column {}.{}", 
-                            column_info.data_type, collection_name, column_info.column_name),
+                    (
+                        Value::Number(Number::U64(_)),
+                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
+                    ) => warn!(
+                        "Trying to put an unsigned u64 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    ),
+                    (
+                        Value::Number(Number::U32(_)),
+                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
+                    ) => warn!(
+                        "Trying to put an unsigned u32 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    ),
                     //TODO: More variants
                     _ => {}
                 }
             }
         }
-        
+
         let column_names = first_valueset
             .keys()
             .cloned()
@@ -104,7 +111,7 @@ pub trait RelationalDataSource: DataSource {
                 let row_obj = row
                     .as_object()
                     .expect("This is always an object (sampler contract)");
-                
+
                 let extend = row_obj.values().len();
                 Self::extend_parameterised_query(&mut query, curr_index, extend);
                 curr_index += extend;
@@ -124,7 +131,6 @@ pub trait RelationalDataSource: DataSource {
 
         if let Err(e) = results.into_iter().bcollect::<Vec<Self::QueryResult>>() {
             bail!("One or more database inserts failed: {:?}", e)
-
         }
 
         info!("Inserted {} rows...", collection.len());
@@ -150,7 +156,7 @@ pub trait RelationalDataSource: DataSource {
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
     fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content>;
-    
+
     // Returns extended query string + current index
     fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize);
 }

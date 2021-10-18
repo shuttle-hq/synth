@@ -13,8 +13,8 @@ pub use crate::value::{
     TokenGeneratorExt, Tokenizer,
 };
 pub use crate::{
-    FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, GeneratorResult,
-    TryGenerator, TryGeneratorExt, GeneratorOutput
+    FallibleGenerator, FallibleGeneratorExt, Generator, GeneratorExt, GeneratorOutput,
+    GeneratorResult, TryGenerator, TryGeneratorExt,
 };
 
 pub use rand::Rng;

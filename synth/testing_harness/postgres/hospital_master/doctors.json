@@ -16,13 +16,11 @@
       "variants": [
         {
           "weight": 1.0,
-          "type": "string",
-          "date_time": {
-            "format": "%Y-%m-%d",
-            "subtype": "naive_date",
-            "begin": "2011-05-16",
-            "end": "2019-09-14"
-          }
+          "type": "date_time",
+          "format": "%Y-%m-%d",
+          "subtype": "naive_date",
+          "begin": "2011-05-16",
+          "end": "2019-09-14"
         },
         {
           "weight": 1.0,

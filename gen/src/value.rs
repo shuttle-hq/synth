@@ -535,11 +535,11 @@ macro_rules! data_model_variant {
 	$id:ident<G>($($arg:ident: $ty:ty$(,)?)*) -> $inner:ty = $cl:expr
     } => {
 	#[doc = $name]
-	pub struct $id<G>
+    pub struct $id<G>
 	where
 	    G: Generator<Yield = Token>
 	{
-	    inner: $inner
+	    pub inner: $inner
 	}
 
 	impl<G> $id<G>

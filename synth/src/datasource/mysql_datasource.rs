@@ -9,6 +9,7 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlQueryResult, MySqlRow};
 use sqlx::{Column, MySql, Pool, Row, TypeInfo};
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::prelude::rust_2015::Result::Ok;
 use synth_core::schema::number_content::{F64, I64, U64};
@@ -16,7 +17,6 @@ use synth_core::schema::{
     ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent,
 };
 use synth_core::{Content, Value};
-use std::collections::BTreeMap;
 use synth_gen::prelude::*;
 
 /// TODO
@@ -25,7 +25,7 @@ use synth_gen::prelude::*;
 ///   Ideally, the user can define a way to force certain fields as bool rather than i8.
 
 pub struct MySqlDataSource {
-    pool: Pool<MySql>
+    pool: Pool<MySql>,
 }
 
 #[async_trait]
@@ -39,14 +39,13 @@ impl DataSource for MySqlDataSource {
                 .connect(connect_params.as_str())
                 .await?;
 
-            Ok::<Self, anyhow::Error>(MySqlDataSource {
-                pool
-            })
+            Ok::<Self, anyhow::Error>(MySqlDataSource { pool })
         })
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection).await
+        self.insert_relational_data(collection_name, collection)
+            .await
     }
 }
 
@@ -169,30 +168,30 @@ impl RelationalDataSource for MySqlDataSource {
             "float" | "double" | "numeric" | "decimal" => {
                 Content::Number(NumberContent::F64(F64::Range(RangeStep::default())))
             }
-            "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
+            "timestamp" => Content::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
-            })),
-            "date" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "date" => Content::DateTime(DateTimeContent {
                 format: "%Y-%m-%d".to_string(),
                 type_: ChronoValueType::NaiveDate,
                 begin: None,
                 end: None,
-            })),
-            "datetime" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "datetime" => Content::DateTime(DateTimeContent {
                 format: "%Y-%m-%d %H:%M:%S".to_string(),
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
-            })),
-            "time" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "time" => Content::DateTime(DateTimeContent {
                 format: "%H:%M:%S".to_string(),
                 type_: ChronoValueType::NaiveTime,
                 begin: None,
                 end: None,
-            })),
+            }),
             _ => bail!("We haven't implemented a converter for {}", data_type),
         };
 
@@ -208,7 +207,7 @@ impl RelationalDataSource for MySqlDataSource {
             }
         }
         query.push(')');
-    }    
+    }
 }
 
 impl TryFrom<MySqlRow> for ColumnInfo {

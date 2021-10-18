@@ -1,15 +1,15 @@
 use synth_gen::prelude::{Generator, GeneratorState};
 
 use std::cell::RefCell;
+use std::iter::IntoIterator;
 use std::ops::Range;
 use std::rc::Rc;
-use std::iter::IntoIterator;
 
 use crate::graph::prelude::Rng;
 
 pub struct Slice {
     generation: usize,
-    start: usize
+    start: usize,
 }
 
 pub struct Tape<Y, R> {
@@ -21,7 +21,7 @@ impl<Y, R> Tape<Y, R> {
     fn new() -> Self {
         Self {
             slices: Vec::new(),
-            buffer: Vec::new()
+            buffer: Vec::new(),
         }
     }
 
@@ -52,7 +52,7 @@ pub type SharedTape<Y, R> = Rc<RefCell<Tape<Y, R>>>;
 
 pub(super) struct SliceRef<Y, R> {
     index: usize,
-    tape: SharedTape<Y, R>
+    tape: SharedTape<Y, R>,
 }
 
 pub(super) type GeneratorSliceRef<G: Generator> = SliceRef<G::Yield, G::Return>;
@@ -61,7 +61,7 @@ impl<Y, R> Clone for SliceRef<Y, R> {
     fn clone(&self) -> Self {
         Self {
             index: self.index,
-            tape: self.tape.clone()
+            tape: self.tape.clone(),
         }
     }
 }
@@ -75,7 +75,7 @@ impl<Y, R> SliceRef<Y, R> {
         TapeView(TapeViewImpl {
             slice: self.clone(),
             generation: 0,
-            range: Range::default()
+            range: Range::default(),
         })
     }
 
@@ -99,22 +99,22 @@ impl<G, Y, R> RecorderImpl<G, Y, R> {
             let mut tape = (*self.tape).borrow_mut();
             let slice = Slice {
                 generation: 0,
-                start: tape.buffer.len()
+                start: tape.buffer.len(),
             };
             tape.slices.push(slice);
             tape.slices.len() - 1
         };
         SliceRef {
             index,
-            tape: self.tape.clone()
+            tape: self.tape.clone(),
         }
     }
 }
 
 impl<G, Y, R> Generator for RecorderImpl<G, Y, R>
-    where
-        G: Generator<Yield = Y, Return = R>,
-        GeneratorState<Y, R>: Clone,
+where
+    G: Generator<Yield = Y, Return = R>,
+    GeneratorState<Y, R>: Clone,
 {
     type Yield = Y;
 
@@ -128,8 +128,8 @@ impl<G, Y, R> Generator for RecorderImpl<G, Y, R>
 }
 
 impl<G, Y, R> RecorderImpl<G, Y, R>
-    where
-        G: Generator<Yield = Y, Return = R>,
+where
+    G: Generator<Yield = Y, Return = R>,
 {
     fn complete<RR: Rng>(&mut self, rng: &mut RR) {
         #[allow(clippy::blocks_in_if_conditions)]
@@ -158,14 +158,14 @@ impl<G, Y, R> Recorder<G, Y, R> {
     pub(super) fn wrap(inner: G) -> Self {
         Self(RecorderImpl {
             inner,
-            tape: Rc::new(RefCell::new(Tape::new()))
+            tape: Rc::new(RefCell::new(Tape::new())),
         })
     }
 }
 
 impl<G, Y, R> Recorder<G, Y, R>
-    where
-        G: Generator<Yield = Y, Return = R>,
+where
+    G: Generator<Yield = Y, Return = R>,
 {
     fn complete<RR: Rng>(&mut self, rng: &mut RR) {
         self.0.complete(rng)
@@ -175,7 +175,7 @@ impl<G, Y, R> Recorder<G, Y, R>
 pub(super) struct TapeViewImpl<Y, R> {
     slice: SliceRef<Y, R>,
     generation: usize,
-    range: Range<usize>
+    range: Range<usize>,
 }
 
 impl<Y, R> TapeViewImpl<Y, R> {
@@ -229,17 +229,15 @@ pub(super) struct OrderedImpl<G, Y, R> {
 }
 
 impl<G, Y, R> Generator for OrderedImpl<G, Y, R>
-    where
-        G: Generator<Yield = Y, Return = R>,
+where
+    G: Generator<Yield = Y, Return = R>,
 {
     type Yield = Y;
     type Return = R;
 
     fn next<RR: Rng>(&mut self, rng: &mut RR) -> GeneratorState<Self::Yield, Self::Return> {
         if !self.is_complete {
-            self.scope.iter_mut().for_each(|slice| {
-                slice.reset()
-            });
+            self.scope.iter_mut().for_each(|slice| slice.reset());
             self.children.iter_mut().for_each(|(_, recorder)| {
                 recorder.complete(rng);
             });
@@ -265,13 +263,13 @@ impl<G, Y, R> Ordered<G, Y, R> {
     pub(super) fn new<S, C>(scope: S, children: C, src: G) -> Self
     where
         S: IntoIterator<Item = SliceRef<Y, R>>,
-        C: IntoIterator<Item = (String, Recorder<G, Y, R>)>
+        C: IntoIterator<Item = (String, Recorder<G, Y, R>)>,
     {
         Self(OrderedImpl {
             is_complete: false,
             scope: scope.into_iter().collect(),
             children: children.into_iter().collect(),
-            src
+            src,
         })
     }
 }
@@ -286,13 +284,13 @@ pub enum Link<G, Y, R> {
     Ordered(Ordered<G, Y, R>),
     /// A variant used in compilation as a placeholder prior to setting the node to its final
     /// value.
-    Dummy
+    Dummy,
 }
 
 impl<G, Y, R> Generator for Link<G, Y, R>
 where
     G: Generator<Yield = Y, Return = R>,
-    GeneratorState<Y, R>: Clone
+    GeneratorState<Y, R>: Clone,
 {
     type Yield = Y;
 
@@ -303,7 +301,7 @@ where
             Self::Recorder(Recorder(recorder)) => recorder.next(rng).map_complete(Some),
             Self::View(TapeView(view)) => view.next(rng),
             Self::Ordered(Ordered(ordered)) => ordered.next(rng).map_complete(Some),
-            Self::Dummy => panic!("tried to generate values from a dummy")
+            Self::Dummy => panic!("tried to generate values from a dummy"),
         }
     }
 }
@@ -317,8 +315,8 @@ impl<G, Y, R> Link<G, Y, R> {
         match self {
             Self::Ordered(Ordered(OrderedImpl { children, .. })) => {
                 Some(children.iter().map(|(name, _)| name.as_str()))
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 }

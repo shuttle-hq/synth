@@ -7,7 +7,10 @@ use serde_json::Value;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use synth_core::schema::content::number_content::U64;
-use synth_core::schema::{ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep, SameAsContent, UniqueContent};
+use synth_core::schema::{
+    ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
+    SameAsContent, UniqueContent,
+};
 use synth_core::{Content, Name, Namespace};
 
 use super::json::synth_val_to_json;
@@ -23,7 +26,6 @@ struct FieldContentWrapper(Content);
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
     datasource: &T,
 ) -> Result<Namespace> {
-
     let table_names = task::block_on(datasource.get_table_names())
         .with_context(|| "Failed to get table names".to_string())?;
 
@@ -89,13 +91,13 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
             // if the primary key is a number, use an id generator.
             let pk_node = match node {
                 Content::Number(n) => n.clone().try_transmute_to_id().ok().map(Content::Number),
-                _ => None
+                _ => None,
             };
 
             *node = pk_node.unwrap_or_else(|| {
                 Content::Unique(UniqueContent {
                     algorithm: Default::default(),
-                    content: Box::new(node.clone())
+                    content: Box::new(node.clone()),
                 })
             });
         }
@@ -158,7 +160,9 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Co
 
         Ok(Collection {
             collection: Content::Array(ArrayContent {
-                length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep::new(1, 2, 1))))),
+                length: Box::new(Content::Number(NumberContent::U64(U64::Range(
+                    RangeStep::new(1, 2, 1),
+                )))),
                 content: Box::new(Content::Object(collection)),
             }),
         })

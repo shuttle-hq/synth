@@ -483,7 +483,7 @@ where
     EG: Generator,
 {
     begin: BG,
-    inner: G,
+    pub inner: G,
     end: EG,
     state: BraceState,
     complete: Option<G::Return>,
@@ -700,7 +700,7 @@ pub struct Chain<G>
 where
     G: Generator,
 {
-    inners: Vec<G>,
+    pub inners: Vec<G>,
     idx: usize,
     completed: Vec<G::Return>,
 }

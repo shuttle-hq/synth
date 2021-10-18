@@ -1,9 +1,9 @@
 use anyhow::Result;
+use std::thread;
+use std::thread::JoinHandle;
 use structopt::StructOpt;
 use synth::cli::Args;
 use synth::cli::Cli;
-use std::thread;
-use std::thread::JoinHandle;
 
 #[async_std::main]
 async fn main() -> Result<()> {

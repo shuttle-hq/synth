@@ -29,12 +29,10 @@
             }
         },
         "timestamp": {
-            "type": "string",
-            "date_time": {
-                "format": "%Y-%m-%dT%H:%M:%S%z",
-                "begin": "2000-01-01T00:00:00+0000",
-                "end": "2020-01-01T00:00:00+0000"
-            }
+            "type": "date_time",
+            "format": "%Y-%m-%dT%H:%M:%S%z",
+            "begin": "2000-01-01T00:00:00+0000",
+            "end": "2020-01-01T00:00:00+0000"
         },
         "user_id": {
             "type": "same_as",
