@@ -78,6 +78,8 @@ impl ObjectContent {
                 if let Some(value) = obj.get(k) {
                     content.accepts(value)?;
                 }
+            } else if matches!(v, Content::Hidden(_)) {
+                // ok, hidden is not expected to appear
             } else {
                 let json_value = obj
                     .get(k)
@@ -160,11 +162,11 @@ impl Compile for ObjectContent {
                     let nullable = field.as_nullable().unwrap();
                     compiler
                         .build(name, nullable)
-                        .map(|graph| KeyValueOrNothing::sometimes(name, graph))
+                        .map(|graph| KeyValueOrNothing::sometimes(name, graph, false))
                 } else {
-                    compiler
-                        .build(name, field)
-                        .map(|graph| KeyValueOrNothing::always(name, graph))
+                    compiler.build(name, field).map(|graph| {
+                        KeyValueOrNothing::always(name, graph, matches!(field, Content::Hidden(_)))
+                    })
                 }
             })
             .collect::<Result<ObjectNode>>()?;

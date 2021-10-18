@@ -168,10 +168,12 @@ impl Cli {
         schema: Option<String>,
         collection_field_name: Option<String>,
     ) -> Result<()> {
-        let namespace = self
-            .store
-            .get_ns(ns_path.clone())
-            .context("Unable to open the namespace")?;
+        let namespace = self.store.get_ns(ns_path.clone()).context(format!(
+            "Unable to open the namespace \"{}\"",
+            ns_path
+                .to_str()
+                .expect("The provided namespace is not a valid UTF-8 string")
+        ))?;
 
         let export_strategy: Box<dyn ExportStrategy> = DataSourceParams {
             uri: to,

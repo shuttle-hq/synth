@@ -273,7 +273,7 @@ first.
     }
   }
 }
-``` 
+```
 
 There is quite a bit going on here, so let's break it down. This file represents a schema for
 a [`collection`](../getting_started/core-concepts). Collections are [array](../content/array.md)s under the hood and so they
@@ -297,7 +297,7 @@ at `0`.
 ```json synth
 {
   "type": "number",
-  "subtype": "u64", 
+  "subtype": "u64",
   "id": {
     "start_at": 0
   }
@@ -320,16 +320,14 @@ we are dealing with currencies. So let's replace the `amount` field:
 ```
 
 Next, we see Synth detected the `timestamp` field as a string following a random pattern. Consulting the documentation
-it should be a [string::date_time](../content/string).
+it should be a [date_time](/content/date-time).
 
 ```json synth
 {
-  "type": "string",
-  "date_time": {
-    "format": "%Y-%m-%dT%H:%M:%S%z",
-    "begin": "2000-01-01T00:00:00+0000",
-    "end": "2020-01-01T00:00:00+0000"
-  }
+  "type": "date_time",
+  "format": "%Y-%m-%dT%H:%M:%S%z",
+  "begin": "2000-01-01T00:00:00+0000",
+  "end": "2020-01-01T00:00:00+0000"
 }
 ```
 

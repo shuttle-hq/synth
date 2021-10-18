@@ -1,6 +1,4 @@
-use crate::graph::prelude::{
-    Error, Rng, Token, TryFilterMap, TryGeneratorExt, Value,
-};
+use crate::graph::prelude::{Error, Rng, Token, TryFilterMap, TryGeneratorExt, Value};
 use crate::Graph;
 
 use std::collections::HashMap;
