@@ -22,12 +22,10 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{
-    Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated, UuidGen,
-};
+pub use string::{Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated, UuidGen};
 
 pub mod date_time;
-pub use date_time::{RandomDateTime, DateTimeNode};
+pub use date_time::{DateTimeNode, RandomDateTime};
 
 pub mod number;
 pub use number::{
@@ -346,14 +344,6 @@ impl Encode<'_, MySql> for Value {
             },
             Value::String(_) => <String as Type<MySql>>::type_info(),
             Value::Object(_) => return None, //TODO: Use JSON here?
-<<<<<<< HEAD
-            Value::Array(elems) => if elems.is_empty() {
-                return None
-            } else if let Value::Number(Number::U8(_) | Number::I8(_)) = elems[0] {
-                <Vec<u8> as Type<MySql>>::type_info()
-            } else {
-                return None //TODO: other variants that would make sense?
-=======
             Value::Array(elems) => {
                 if elems.is_empty() {
                     return None;
@@ -362,7 +352,6 @@ impl Encode<'_, MySql> for Value {
                 } else {
                     return None; //TODO: other variants that would make sense?
                 }
->>>>>>> Format all rust files
             }
         })
     }
