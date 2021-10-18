@@ -106,6 +106,7 @@ fn get_or_initialise_uuid() -> String {
 pub struct TelemetryContext {
     generators: Vec<String>,
     num_collections: Option<usize>,
+    num_fields: Option<usize>,
 }
 
 impl TelemetryContext {
@@ -113,6 +114,7 @@ impl TelemetryContext {
         TelemetryContext {
             generators: Vec::new(),
             num_collections: None,
+            num_fields: None,
         }
     }
 
@@ -148,6 +150,14 @@ impl TelemetryContext {
     pub fn set_num_collections(&mut self, num: usize) {
         self.num_collections = Some(num);
     }
+
+    pub fn inc_num_fields(&mut self) {
+        self.num_fields = if let Some(num) = self.num_fields {
+            Some(num + 1)
+        } else {
+            Some(1)
+        }
+    }
 }
 
 pub(self) struct TelemetryCrawler<'t, 'a> {
@@ -178,6 +188,7 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
 impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
         self.context.add_generator(format!("{}", content));
+        self.context.inc_num_fields();
 
         if let Err(err) = self.as_at(field, content).compile() {
             warn!(
@@ -301,6 +312,28 @@ impl TelemetryClient {
         Ok(event)
     }
 
+    fn add_telemetry_context(
+        event: &mut posthog_rs::Event,
+        telemetry_context: TelemetryContext,
+    ) -> Result<()> {
+        if telemetry_context.generators.len() > 0 {
+            event.insert_prop("generators", telemetry_context.generators)?;
+        }
+
+        if let Some(num_collections) = telemetry_context.num_collections {
+            if num_collections > 0 {
+                event.insert_prop("num_collections", num_collections)?;
+
+                if let Some(num_fields) = telemetry_context.num_fields {
+                    let avg = num_fields as f64 / num_collections as f64;
+                    event.insert_prop("avg_num_fields_per_collection", avg)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn success<T>(
         &self,
         command_name: &str,
@@ -311,13 +344,7 @@ impl TelemetryClient {
         event.insert_prop("command", command_name)?;
         event.insert_prop("success", CommandResult::Success.to_string())?;
 
-        if telemetry_context.generators.len() > 0 {
-            event.insert_prop("generators", telemetry_context.generators)?;
-        }
-
-        if let Some(num_collections) = telemetry_context.num_collections {
-            event.insert_prop("num_collections", num_collections)?;
-        }
+        TelemetryClient::add_telemetry_context(&mut event, telemetry_context)?;
 
         self.send(event).or_else::<Error, _>(|err| {
             info!("failed to push ok of command: {}", err);
@@ -365,7 +392,8 @@ impl TelemetryClient {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{Namespace, TelemetryContext};
+    use super::{Namespace, TelemetryClient, TelemetryContext};
+    use std::collections::HashMap;
 
     macro_rules! schema {
     {
@@ -415,6 +443,7 @@ pub mod tests {
         );
 
         assert_eq!(context.num_collections, Some(3));
+        assert_eq!(context.num_fields, Some(3));
     }
 
     #[test]
@@ -485,6 +514,7 @@ pub mod tests {
         );
 
         assert_eq!(context.num_collections, Some(1));
+        assert_eq!(context.num_fields, Some(6));
     }
 
     #[test]
@@ -565,8 +595,11 @@ pub mod tests {
         let schema: Namespace = schema!({
             "type": "object",
             "collection-1": {
-                "type": "string",
-                "pattern": "collection 1"
+                "type": "object",
+                "str": {
+                    "type": "string",
+                    "pattern": "collection 1"
+                }
             },
             "collection-2": {
                 "type": "string",
@@ -587,9 +620,66 @@ pub mod tests {
 
         assert_eq!(
             context.generators,
-            vec!("string::pattern", "string::pattern", "string::pattern")
+            vec!(
+                "object",
+                "string::pattern",
+                "string::pattern",
+                "string::pattern"
+            )
         );
 
         assert_eq!(context.num_collections, Some(3));
+        assert_eq!(context.num_fields, Some(4));
+    }
+
+    #[test]
+    fn add_telemetry_context() {
+        let mut event = posthog_rs::Event::new();
+        let mut context = TelemetryContext::new();
+        let mut expected = posthog_rs::Event::new();
+
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        assert_eq!(event, expected, "empty fields should not be added");
+
+        context.generators.push("string::name".to_string());
+        context.generators.push("string::credit_card".to_string());
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        expected.insert(
+            "generators".to_string(),
+            "string::name, string::credit_card".to_string(),
+        );
+        assert_eq!(event, expected, "generators should be separated by commas");
+
+        context.num_collections = Some(6);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        expected.insert("num_collections".to_string(), "6".to_string());
+        assert_eq!(event, expected, "include num_collections");
+
+        context.num_fields = Some(9);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        expected.insert(
+            "avg_num_fields_per_collection".to_string(),
+            "1.5".to_string(),
+        );
+        assert_eq!(event, expected, "include avg_fields_per_collection");
+
+        // Edge cases
+        event.clear();
+        expected.clear();
+        context.generators = Vec::new();
+
+        context.num_collections = Some(0);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        assert_eq!(
+            event, expected,
+            "don't include avg_fields_per_collection when collection is 0"
+        );
+
+        context.num_collections = None;
+        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        assert_eq!(
+            event, expected,
+            "don't include avg_fields_per_collection when collection is None"
+        );
     }
 }

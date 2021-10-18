@@ -167,9 +167,7 @@ impl Cli {
             let ns = import_strategy.import()?;
 
             #[cfg(feature = "telemetry")]
-            self.telemetry_context
-                .borrow_mut()
-                .set_num_collections(ns.collections.len());
+            self.fill_telemetry(&ns, collection.clone())?;
 
             self.store.save_ns_path(path, ns)?;
 
