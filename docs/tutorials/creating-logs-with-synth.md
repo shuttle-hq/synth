@@ -5,9 +5,12 @@ author_title: Founder author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [rust, startup]
 description: In this 5 minute tutorial we're going to be creating fake HTTP logs
-with synth image: https://storage.googleapis.com/getsynth-public/media/rust.jpeg
+with synth image: https://storage.googleapis.com/getsynth-public/media/logs.jpg
 hide_table_of_contents: false
 ---
+
+// TODO move to tutorials section
+![Logs](..//logs.jpg)
 
 In this tutorial we're going to be creating fake HTTP logs
 with [synth](http://getsynth.com). Whether you're benchmarking some
