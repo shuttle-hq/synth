@@ -169,30 +169,30 @@ impl RelationalDataSource for MySqlDataSource {
             "float" | "double" | "numeric" | "decimal" => {
                 Content::Number(NumberContent::F64(F64::Range(RangeStep::default())))
             }
-            "timestamp" => Content::String(StringContent::DateTime(DateTimeContent {
+            "timestamp" => Content::DateTime(DateTimeContent {
                 format: "".to_string(), // todo
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
-            })),
-            "date" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "date" => Content::DateTime(DateTimeContent {
                 format: "%Y-%m-%d".to_string(),
                 type_: ChronoValueType::NaiveDate,
                 begin: None,
                 end: None,
-            })),
-            "datetime" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "datetime" => Content::DateTime(DateTimeContent {
                 format: "%Y-%m-%d %H:%M:%S".to_string(),
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
-            })),
-            "time" => Content::String(StringContent::DateTime(DateTimeContent {
+            }),
+            "time" => Content::DateTime(DateTimeContent {
                 format: "%H:%M:%S".to_string(),
                 type_: ChronoValueType::NaiveTime,
                 begin: None,
                 end: None,
-            })),
+            }),
             _ => bail!("We haven't implemented a converter for {}", data_type),
         };
 
@@ -208,7 +208,7 @@ impl RelationalDataSource for MySqlDataSource {
             }
         }
         query.push(')');
-    }    
+    }
 }
 
 impl TryFrom<MySqlRow> for ColumnInfo {

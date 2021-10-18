@@ -23,10 +23,10 @@ mod number;
 pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt, RangeStep};
 
 mod string;
-pub use string::{
-    ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent, FakerContent,
-    FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid,
-};
+pub use string::{FakerContent, FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid};
+
+mod date_time;
+pub use date_time::{ChronoValue, ChronoValueAndFormat, ChronoValueFormatter, ChronoValueType, DateTimeContent};
 
 mod array;
 pub use array::ArrayContent;
@@ -48,6 +48,9 @@ pub use series::SeriesContent;
 
 pub mod unique;
 pub use unique::{UniqueAlgorithm, UniqueContent};
+
+pub mod hidden;
+pub use hidden::{HiddenContent};
 
 use prelude::*;
 
@@ -97,6 +100,8 @@ pub struct ContentLabels {
     optional: bool,
     #[serde(default)]
     unique: bool,
+    #[serde(default)]
+    hidden: bool,
 }
 
 impl ContentLabels {
@@ -112,6 +117,10 @@ impl ContentLabels {
 
         if self.optional {
             output = output.into_nullable();
+        }
+
+        if self.hidden {
+            output = output.into_hidden();
         }
 
         Ok(output)
@@ -229,12 +238,14 @@ content! {
         Bool(BoolContent),
         Number(NumberContent),
         String(StringContent),
+        DateTime(DateTimeContent),
         Array(ArrayContent),
         Object(ObjectContent),
         SameAs(SameAsContent),
         OneOf(OneOfContent),
         Series(SeriesContent),
         Unique(UniqueContent),
+        Hidden(HiddenContent),
     }
 }
 
@@ -264,6 +275,18 @@ impl Content {
         } else {
             self
         }
+    }
+
+    pub fn into_hidden(self) -> Self {
+        if !self.is_hidden() {
+            Content::Hidden(HiddenContent{ content: Box::new(self) })
+        } else {
+            self
+        }
+    }
+
+    pub fn is_hidden(&self) -> bool {
+        matches!(self, Self::Hidden(_))
     }
 
     pub fn is_unique(&self) -> bool {
@@ -297,6 +320,7 @@ impl Content {
     pub fn accepts(&self, value: &Value) -> Result<()> {
         match self {
             Self::Unique(unique_content) => unique_content.content.accepts(value),
+            Self::Hidden(_) => Ok(()),
             Self::SameAs(_) => Ok(()),
             Self::OneOf(one_of_content) => {
                 let res: Vec<_> = one_of_content
@@ -375,12 +399,14 @@ impl Content {
             Content::Bool(_) => "bool",
             Content::Number(_) => "number",
             Content::String(_) => "string",
+            Content::DateTime(_) => "date_time",
             Content::Array(_) => "array",
             Content::Object(_) => "object",
             Content::SameAs(_) => "same_as",
             Content::OneOf(_) => "one_of",
             Content::Series(_) => "series",
             Content::Unique(_) => "unique",
+            Content::Hidden(_) => "hidden",
         }
     }
 }
@@ -489,12 +515,14 @@ impl Compile for Content {
             Self::Object(object_content) => object_content.compile(compiler),
             Self::Bool(bool_content) => bool_content.compile(compiler),
             Self::String(string_content) => string_content.compile(compiler),
+            Self::DateTime(date_time_content) => date_time_content.compile(compiler),
             Self::Number(number_content) => number_content.compile(compiler),
             Self::Array(array_content) => array_content.compile(compiler),
             Self::SameAs(same_as_content) => same_as_content.compile(compiler),
             Self::OneOf(one_of_content) => one_of_content.compile(compiler),
             Self::Series(series_content) => series_content.compile(compiler),
             Self::Unique(unique_content) => unique_content.compile(compiler),
+            Self::Hidden(hidden_content) => hidden_content.compile(compiler),
             Self::Null(_) => Ok(Graph::null()),
         }
     }
@@ -550,6 +578,11 @@ pub mod tests {
         pub static ref USER_SCHEMA: Content = schema!({
             "type": "object",
             "skip_when_null": true,
+            "_uuid": {
+                "type": "string",
+                "uuid": {},
+                "hidden": true
+            },
             "user_id": {
                 "type": "number",
                 "subtype": "u64",

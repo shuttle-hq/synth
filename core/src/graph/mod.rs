@@ -23,8 +23,11 @@ pub use null::NullNode;
 
 pub mod string;
 pub use string::{
-    Format, FormatArgs, RandFaker, RandomDateTime, RandomString, StringNode, Truncated, UuidGen,
+    Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated, UuidGen,
 };
+
+pub mod date_time;
+pub use date_time::{RandomDateTime, DateTimeNode};
 
 pub mod number;
 pub use number::{Incrementing, NumberNode, RandomF64, RandomI64, RandomU64, StandardIntRangeStep, StandardFloatRangeStep};
@@ -328,7 +331,7 @@ impl Encode<'_, MySql> for Value {
             Value::Object(_) => return None, //TODO: Use JSON here?
             Value::Array(elems) => if elems.is_empty() {
                 return None
-            } else if let Value::Number(Number::U8(_) | Number::I8(_)) = elems[0] { 
+            } else if let Value::Number(Number::U8(_) | Number::I8(_)) = elems[0] {
                 <Vec<u8> as Type<MySql>>::type_info()
             } else {
                 return None //TODO: other variants that would make sense?
@@ -511,12 +514,14 @@ derive_generator!(
         Bool(BoolNode),
         Number(NumberNode),
         String(StringNode),
+        DateTime(DateTimeNode),
         Object(ObjectNode),
         Array(ArrayNode),
         OneOf(OneOfNode),
         Series(SeriesNode),
         Unique(UniqueNode),
-        Link(Box<LinkNode>)
+        Link(Box<LinkNode>),
+        Hidden(Box<Graph>),
     }
 );
 
@@ -700,23 +705,17 @@ pub mod tests {
                         }
                     },
                     "created_at_date": {
-                        "type": "string",
-                        "date_time": {
-                            "format": "%Y/%m/%d"
-                        }
+                        "type": "date_time",
+                        "format": "%Y/%m/%d"
                     },
                     "created_at_time": {
-                        "type": "string",
-                        "date_time": {
-                            "format": "%H:%M:%S"
-                        }
+                        "type": "date_time",
+                        "format": "%H:%M:%S"
                     },
                     "last_login_at": {
-                        "type": "string",
-                        "date_time": {
-                            "format": "%Y-%m-%dT%H:%M:%S%z",
-                            "begin": "2020-01-01T00:00:00+0000"
-                        }
+                        "type": "date_time",
+                        "format": "%Y-%m-%dT%H:%M:%S%z",
+                        "begin": "2020-01-01T00:00:00+0000"
                     },
                     "maybe_an_email": {
                         "optional": true,
@@ -747,11 +746,9 @@ pub mod tests {
                         "ref": "users.content.currency"
                     },
                     "timestamp": {
-                        "type": "string",
-                        "date_time": {
-                            "format": "%Y-%m-%dT%H:%M:%S%z",
-                            "begin": "2020-01-01T00:00:00+0000"
-                        }
+                        "type": "date_time",
+                        "format": "%Y-%m-%dT%H:%M:%S%z",
+                        "begin": "2020-01-01T00:00:00+0000"
                     },
                     "amount": {
                         "type": "number",
