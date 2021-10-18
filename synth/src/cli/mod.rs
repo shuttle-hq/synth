@@ -158,6 +158,7 @@ impl Cli {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn generate(
         self,
         ns_path: PathBuf,
