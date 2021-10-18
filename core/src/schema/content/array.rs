@@ -13,7 +13,9 @@ pub struct ArrayContent {
 impl ArrayContent {
     pub fn from_content_default_length(content: Content) -> Self {
         Self {
-            length: Box::new(Content::Number(NumberContent::U64(U64::Range(RangeStep::new(1, 2, 1))))),
+            length: Box::new(Content::Number(NumberContent::U64(U64::Range(
+                RangeStep::new(1, 2, 1),
+            )))),
             content: Box::new(content),
         }
     }
@@ -21,8 +23,7 @@ impl ArrayContent {
 
 impl Compile for ArrayContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
-        let length = compiler.build("length", self.length.as_ref())?
-            .into_size();
+        let length = compiler.build("length", self.length.as_ref())?.into_size();
         let content = compiler.build("content", &self.content)?;
         Ok(Graph::Array(ArrayNode::new_with(length, content)))
     }

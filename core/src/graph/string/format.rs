@@ -86,7 +86,10 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::graph::{ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64, RandomString, StringNode};
+    use crate::graph::{
+        ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64,
+        RandomString, StringNode,
+    };
     use chrono::naive::NaiveDate;
 
     fn faker_graph(name: &str) -> Graph {

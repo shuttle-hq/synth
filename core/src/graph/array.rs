@@ -28,8 +28,7 @@ impl Generator for RandomArray {
     }
 }
 
-type ArrayNodeInner =
-    AndThenTry<SizeGenerator, Box<dyn Fn(u64) -> RandomArray>, RandomArray>;
+type ArrayNodeInner = AndThenTry<SizeGenerator, Box<dyn Fn(u64) -> RandomArray>, RandomArray>;
 
 derive_generator! {
     yield Token,

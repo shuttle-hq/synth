@@ -221,11 +221,12 @@ impl Compile for StringContent {
                     RandomString::from(Serialized::new_json(inner)).into()
                 }
             },
-            StringContent::Truncated(TruncatedContent { box length, box content }) => {
-                let content = compiler.build("content", content)?
-                    .into_string();
-                let length = compiler.build("length", length)?
-                    .into_size();
+            StringContent::Truncated(TruncatedContent {
+                box length,
+                box content,
+            }) => {
+                let content = compiler.build("content", content)?.into_string();
+                let length = compiler.build("length", length)?.into_size();
                 RandomString::from(Truncated::new(content, length)).into()
             }
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),

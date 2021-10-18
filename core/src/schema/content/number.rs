@@ -2,12 +2,12 @@ use super::prelude::*;
 
 use super::Categorical;
 
+use crate::graph::number::{RandomF32, RandomI32, RandomU32};
 use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,
     Serialize,
 };
-use crate::graph::number::{RandomU32, RandomF32, RandomI32};
 
 #[derive(Clone, Copy)]
 pub enum NumberContentKind {
@@ -245,7 +245,7 @@ pub struct RangeStep<N> {
     #[serde(skip_serializing_if = "std::clone::Clone::clone")]
     pub include_low: bool,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
-    pub include_high: bool
+    pub include_high: bool,
 }
 
 impl<N> Default for RangeStep<N> {
@@ -255,7 +255,7 @@ impl<N> Default for RangeStep<N> {
             high: None,
             step: None,
             include_low: true,
-            include_high: false
+            include_high: false,
         }
     }
 }
@@ -274,27 +274,28 @@ impl<N> RangeStep<N> {
         match value {
             Some(n) if inclusive => std::ops::Bound::Included(n),
             Some(n) => std::ops::Bound::Excluded(n),
-            None => std::ops::Bound::Unbounded
+            None => std::ops::Bound::Unbounded,
         }
     }
 
-    fn cast<F, M>(self,  f: F) -> RangeStep<M>
-        where
-            F: Fn(N) -> M
+    fn cast<F, M>(self, f: F) -> RangeStep<M>
+    where
+        F: Fn(N) -> M,
     {
-        self.try_cast::<_, _, std::convert::Infallible>(|value| Ok(f(value))).unwrap()
+        self.try_cast::<_, _, std::convert::Infallible>(|value| Ok(f(value)))
+            .unwrap()
     }
 
     fn try_cast<F, M, E>(self, f: F) -> Result<RangeStep<M>, E>
-        where
-            F: Fn(N) -> Result<M, E>
+    where
+        F: Fn(N) -> Result<M, E>,
     {
         Ok(RangeStep::<M> {
             low: self.low.map(&f).transpose()?,
             high: self.high.map(&f).transpose()?,
             step: self.step.map(&f).transpose()?,
             include_low: self.include_low,
-            include_high: self.include_high
+            include_high: self.include_high,
         })
     }
 }
@@ -321,28 +322,28 @@ number_content!(
         Range(RangeStep<u32>),
         Categorical(Categorical<u32>),
         Constant(u32),
-	Id(crate::schema::Id<u32>),
+    Id(crate::schema::Id<u32>),
     },
     u64[is_u64, default_u64_range] as U64 {
         #[default]
         Range(RangeStep<u64>),
         Categorical(Categorical<u64>),
         Constant(u64),
-	Id(crate::schema::Id<u64>),
+    Id(crate::schema::Id<u64>),
     },
     i32[is_i32, default_i32_range] as I32 {
         #[default]
         Range(RangeStep<i32>),
         Categorical(Categorical<i32>),
         Constant(i32),
-	Id(crate::schema::Id<i32>),
+    Id(crate::schema::Id<i32>),
     },
     i64[is_i64, default_i64_range] as I64 {
         #[default]
         Range(RangeStep<i64>),
         Categorical(Categorical<i64>),
         Constant(i64),
-	Id(crate::schema::Id<i64>),
+    Id(crate::schema::Id<i64>),
     },
     f64[is_f64, default_f64_range] as F64 {
         #[default]
@@ -380,7 +381,9 @@ impl Compile for NumberContent {
                         RandomI64::categorical(categorical_content.clone())
                     }
                     number_content::I64::Constant(val) => RandomI64::constant(*val),
-                    number_content::I64::Id(id) => RandomI64::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
+                    number_content::I64::Id(id) => {
+                        RandomI64::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
+                    }
                 };
                 random_i64.into()
             }
@@ -411,7 +414,9 @@ impl Compile for NumberContent {
                         RandomI32::categorical(categorical_content.clone())
                     }
                     number_content::I32::Constant(val) => RandomI32::constant(*val),
-                    number_content::I32::Id(id) => RandomI32::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
+                    number_content::I32::Id(id) => {
+                        RandomI32::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
+                    }
                 };
                 random_i32.into()
             }
@@ -475,20 +480,18 @@ impl Id<i64> {
                 let start_at = self.start_at.unwrap_or(1);
                 return if start_at < 0 {
                     Err(failed!(
-                    target: Release,
-                    "cannot cast id with negative start_at to u64"
+                        target: Release,
+                        "cannot cast id with negative start_at to u64"
                     ))
                 } else {
                     Ok(number_content::U64::Id(Id {
-                        start_at: Some(start_at as u64)
-                    }).into())
+                        start_at: Some(start_at as u64),
+                    })
+                    .into())
                 };
             }
             NumberContentKind::I64 => Ok(number_content::I64::Id(self).into()),
-            NumberContentKind::F64 => Err(failed!(
-                    target: Release,
-                    "cannot cast id f64"
-                    ))
+            NumberContentKind::F64 => Err(failed!(target: Release, "cannot cast id f64")),
         }
     }
 }
@@ -573,7 +576,7 @@ impl number_content::I64 {
                     Ok(number_content::F64::Constant(cast).into())
                 }
             },
-            Self::Id(id) => id.upcast(to)
+            Self::Id(id) => id.upcast(to),
         }
     }
 }

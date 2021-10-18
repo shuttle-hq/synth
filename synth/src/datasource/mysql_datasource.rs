@@ -9,6 +9,7 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlQueryResult, MySqlRow};
 use sqlx::{Column, MySql, Pool, Row, TypeInfo};
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::prelude::rust_2015::Result::Ok;
 use synth_core::schema::number_content::{F64, I64, U64};
@@ -16,7 +17,6 @@ use synth_core::schema::{
     ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent,
 };
 use synth_core::{Content, Value};
-use std::collections::BTreeMap;
 use synth_gen::prelude::*;
 
 /// TODO
@@ -25,7 +25,7 @@ use synth_gen::prelude::*;
 ///   Ideally, the user can define a way to force certain fields as bool rather than i8.
 
 pub struct MySqlDataSource {
-    pool: Pool<MySql>
+    pool: Pool<MySql>,
 }
 
 #[async_trait]
@@ -39,14 +39,13 @@ impl DataSource for MySqlDataSource {
                 .connect(connect_params.as_str())
                 .await?;
 
-            Ok::<Self, anyhow::Error>(MySqlDataSource {
-                pool
-            })
+            Ok::<Self, anyhow::Error>(MySqlDataSource { pool })
         })
     }
 
     async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection).await
+        self.insert_relational_data(collection_name, collection)
+            .await
     }
 }
 
