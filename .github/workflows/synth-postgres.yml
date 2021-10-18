@@ -2,11 +2,11 @@ name: synth-postgres
 
 on:
   push:
-    branches: [ master ]
-    paths: [ '**/*.rs' ]
+    branches: [master]
+    paths: ["**/*.rs", "synth/testing_harness/postgres/**"]
   pull_request:
-    branches: [ master ]
-    paths: [ '**/*.rs' ]
+    branches: [master]
+    paths: ["**/*.rs", "synth/testing_harness/postgres/**"]
 
   workflow_dispatch:
 
