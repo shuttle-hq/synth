@@ -49,7 +49,7 @@
     "id": {
       "type": "number",
       "id": {},
-      "subtype": "u64"
+      "subtype": "i32"
     },
     "name": {
       "type": "one_of",
