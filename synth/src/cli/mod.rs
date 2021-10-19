@@ -1,7 +1,6 @@
 mod export;
 mod import;
 mod import_utils;
-mod jsonlines;
 mod mongo;
 mod mysql;
 mod postgres;
@@ -11,6 +10,7 @@ mod store;
 use crate::cli::db_utils::DataSourceParams;
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
+use crate::cli::stdf::DataFormat;
 use crate::cli::store::Store;
 use crate::version::print_version_message;
 
@@ -71,6 +71,7 @@ impl Cli {
                 seed,
                 random,
                 schema,
+                data_format,
                 collection_field_name,
             } => self.generate(
                 namespace.clone(),
@@ -79,6 +80,7 @@ impl Cli {
                 to.clone(),
                 Self::derive_seed(random, seed)?,
                 schema,
+                data_format,
                 collection_field_name,
             ),
             Args::Import {
@@ -86,12 +88,15 @@ impl Cli {
                 ref collection,
                 ref from,
                 ref schema,
+                data_format,
+                collection_field_name,
             } => self.import(
                 namespace.clone(),
                 collection.clone(),
                 from.clone(),
                 schema.clone(),
-                Some(String::new()), // TODO: collection_field_name.clone(),
+                data_format,
+                collection_field_name,
             ),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
@@ -125,6 +130,7 @@ impl Cli {
         collection: Option<Name>,
         from: Option<String>,
         schema: Option<String>,
+        data_format: Option<String>,
         collection_field_name: Option<String>,
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
@@ -133,7 +139,7 @@ impl Cli {
         let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
             uri: from,
             schema,
-            collection_field_name,
+            data_format: DataFormat::new(data_format, collection_field_name),
         }
         .try_into()?;
 
@@ -167,6 +173,7 @@ impl Cli {
         to: Option<String>,
         seed: u64,
         schema: Option<String>,
+        data_format: Option<String>,
         collection_field_name: Option<String>,
     ) -> Result<()> {
         let namespace = self.store.get_ns(ns_path.clone()).context(format!(
@@ -179,7 +186,7 @@ impl Cli {
         let export_strategy: Box<dyn ExportStrategy> = DataSourceParams {
             uri: to,
             schema,
-            collection_field_name,
+            data_format: DataFormat::new(data_format, collection_field_name),
         }
         .try_into()?;
 
@@ -248,7 +255,12 @@ pub enum Args {
         schema: Option<String>,
         #[structopt(
             long,
-            help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when outputting JSON Lines from multiple collections. Defaults to 'collection'."
+            help = "Specifies the format of data to produce when outputting to stdout or a file. Can be one of 'json', jsonl' 'csv'. Defaults to 'json'."
+        )]
+        data_format: Option<String>,
+        #[structopt(
+            long,
+            help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when outputting JSON Lines data. Defaults to 'collection'."
         )]
         #[serde(skip)]
         collection_field_name: Option<String>,
@@ -279,6 +291,17 @@ pub enum Args {
         )]
         #[serde(skip)]
         schema: Option<String>,
+        #[structopt(
+            long,
+            help = "Specifies the format of data when importing from stdin or a file. Can be one of 'json', jsonl' 'csv'. Defaults to 'json'."
+        )]
+        data_format: Option<String>,
+        #[structopt(
+            long,
+            help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when importing JSON Lines with multiple collections. Defaults to 'collection'."
+        )]
+        #[serde(skip)]
+        collection_field_name: Option<String>,
     },
     #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]

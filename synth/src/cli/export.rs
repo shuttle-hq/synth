@@ -1,4 +1,3 @@
-use crate::cli::jsonlines::JsonLinesExportStrategy;
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
 use crate::cli::postgres::PostgresExportStrategy;
@@ -35,7 +34,9 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
     /// For example, `postgres://...` is not going to be a file on the FS
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
         match params.uri {
-            None => Ok(Box::new(StdoutExportStrategy {})),
+            None => Ok(Box::new(StdoutExportStrategy {
+                data_format: params.data_format,
+            })),
             Some(uri) => {
                 let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://")
                     || uri.starts_with("postgresql://")
@@ -48,13 +49,9 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
                     Box::new(MongoExportStrategy { uri })
                 } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
                     Box::new(MySqlExportStrategy { uri })
-                } else if uri == "jsonl" {
-                    Box::new(JsonLinesExportStrategy {
-                        collection_field_name: params.collection_field_name,
-                    })
                 } else {
                     return Err(anyhow!(
-                            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb' or 'jsonl'"
+                        "Data sink not recognized. Was expecting one of 'mongodb', 'postgres', 'mysql' or 'mariadb'."
                     ));
                 };
                 Ok(export_strategy)

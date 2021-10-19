@@ -30,25 +30,31 @@ impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
 
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
         match params.uri {
-            None => Ok(Box::new(StdinImportStrategy {})),
+            None => Ok(Box::new(StdinImportStrategy {
+                data_format: params.data_format,
+            })),
             Some(uri) => {
-                let import_strategy: Box<dyn ImportStrategy> =
-                    if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
-                        Box::new(PostgresImportStrategy {
-                            uri,
-                            schema: params.schema,
-                        })
-                    } else if uri.starts_with("mongodb://") {
-                        Box::new(MongoImportStrategy { uri })
-                    } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                        Box::new(MySqlImportStrategy { uri })
-                    } else if let Ok(path) = PathBuf::from_str(&uri) {
-                        Box::new(FileImportStrategy { from_file: path })
-                    } else {
-                        return Err(anyhow!(
-                         "Data source not recognized. Was expecting one of 'mongodb' or 'postgres'"
+                let import_strategy: Box<dyn ImportStrategy> = if uri.starts_with("postgres://")
+                    || uri.starts_with("postgresql://")
+                {
+                    Box::new(PostgresImportStrategy {
+                        uri,
+                        schema: params.schema,
+                    })
+                } else if uri.starts_with("mongodb://") {
+                    Box::new(MongoImportStrategy { uri })
+                } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
+                    Box::new(MySqlImportStrategy { uri })
+                } else if let Ok(path) = PathBuf::from_str(&uri) {
+                    Box::new(FileImportStrategy {
+                        from_file: path,
+                        data_format: params.data_format,
+                    })
+                } else {
+                    return Err(anyhow!(
+                         "Data source not recognized. Was expecting 'mongodb', 'postgres', 'mysql', or a file system path."
                     ));
-                    };
+                };
                 Ok(import_strategy)
             }
         }
