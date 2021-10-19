@@ -34,6 +34,8 @@ use synth_core::Namespace;
 pub mod telemetry;
 
 #[cfg(feature = "telemetry")]
+use crate::sampler::SamplerOutput;
+#[cfg(feature = "telemetry")]
 use std::collections::hash_map::DefaultHasher;
 #[cfg(feature = "telemetry")]
 use std::hash::{Hash, Hasher};
@@ -171,7 +173,7 @@ impl Cli {
             let ns = import_strategy.import()?;
 
             #[cfg(feature = "telemetry")]
-            self.fill_telemetry(&ns, collection.clone(), path.clone())?;
+            self.fill_telemetry_pre(&ns, collection.clone(), path.clone())?;
 
             self.store.save_ns_path(path, ns)?;
 
@@ -199,7 +201,7 @@ impl Cli {
             DataSourceParams { uri: to, schema }.try_into()?;
 
         #[cfg(feature = "telemetry")]
-        self.fill_telemetry(&namespace, collection.clone(), ns_path.clone())
+        self.fill_telemetry_pre(&namespace, collection.clone(), ns_path.clone())
             .or_else::<anyhow::Error, _>(|err| {
                 format!(
                     "Failed to get telemetry data. Please report this bug: {}",
@@ -216,13 +218,18 @@ impl Cli {
             seed,
         };
 
-        export_strategy
+        let output = export_strategy
             .export(params)
-            .with_context(|| format!("At namespace {:?}", ns_path))
+            .with_context(|| format!("At namespace {:?}", ns_path))?;
+
+        #[cfg(feature = "telemetry")]
+        self.fill_telemetry_post(output)?;
+
+        Ok(())
     }
 
     #[cfg(feature = "telemetry")]
-    fn fill_telemetry(
+    fn fill_telemetry_pre(
         &self,
         namespace: &Namespace,
         collection: Option<Name>,
@@ -245,6 +252,16 @@ impl Cli {
         self.telemetry_context
             .borrow_mut()
             .set_namespace_sha(hasher.finish());
+
+        Ok(())
+    }
+
+    #[cfg(feature = "telemetry")]
+    fn fill_telemetry_post(&self, output: SamplerOutput) -> Result<()> {
+        let j = output.into_json();
+        let s = serde_json::to_string(&j)?;
+
+        self.telemetry_context.borrow_mut().set_bytes(s.len());
 
         Ok(())
     }

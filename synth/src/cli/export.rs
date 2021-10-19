@@ -12,8 +12,8 @@ use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
 
-pub trait ExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<()>;
+pub(crate) trait ExportStrategy {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
 }
 
 pub struct ExportParams {
@@ -59,31 +59,33 @@ impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
 pub(crate) fn create_and_insert_values<T: DataSource>(
     params: ExportParams,
     datasource: &T,
-) -> Result<()> {
+) -> Result<SamplerOutput> {
     let sampler = Sampler::try_from(&params.namespace)?;
     let values =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
     match values {
-        SamplerOutput::Collection(collection) => insert_data(
+        SamplerOutput::Collection(ref collection) => insert_data(
             datasource,
-            params.collection_name.unwrap().to_string(),
+            &params.collection_name.unwrap().to_string(),
             &collection,
         ),
-        SamplerOutput::Namespace(namespace) => {
+        SamplerOutput::Namespace(ref namespace) => {
             for (name, collection) in namespace {
                 insert_data(datasource, name, &collection)?;
             }
             Ok(())
         }
-    }
+    }?;
+
+    Ok(values)
 }
 
 fn insert_data<T: DataSource>(
     datasource: &T,
-    collection_name: String,
+    collection_name: &str,
     collection: &[Value],
 ) -> Result<()> {
-    task::block_on(datasource.insert_data(collection_name.clone(), collection))
+    task::block_on(datasource.insert_data(collection_name, collection))
         .with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }

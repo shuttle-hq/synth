@@ -47,7 +47,7 @@ pub trait RelationalDataSource: DataSource {
 
     async fn insert_relational_data(
         &self,
-        collection_name: String,
+        collection_name: &str,
         collection: &[Value],
     ) -> Result<()> {
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
@@ -60,7 +60,7 @@ pub trait RelationalDataSource: DataSource {
             return Ok(());
         }
 
-        let column_infos = self.get_columns_infos(&collection_name).await?;
+        let column_infos = self.get_columns_infos(collection_name).await?;
         let first_valueset = collection[0]
             .as_object()
             .expect("This is always an object (sampler contract)");
