@@ -41,7 +41,8 @@
     },
     "id": {
       "type": "number",
-      "subtype": "i32"
+      "id": {},
+      "subtype": "u64"
     }
   }
 }

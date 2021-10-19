@@ -34,7 +34,8 @@
     },
     "id": {
       "type": "number",
-      "subtype": "i32"
+      "id": {},
+      "subtype": "u64"
     },
     "name": {
       "type": "one_of",
