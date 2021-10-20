@@ -3,6 +3,7 @@ use crate::cli::stdf::StdoutExportStrategy;
 use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
+use std::path::PathBuf;
 
 use crate::cli::db_utils::DataSourceParams;
 use crate::cli::mongo::MongoExportStrategy;
@@ -21,6 +22,7 @@ pub struct ExportParams {
     pub collection_name: Option<Name>,
     pub target: usize,
     pub seed: u64,
+    pub ns_path: PathBuf,
 }
 
 impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
