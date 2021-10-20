@@ -1,0 +1,27 @@
+[project]
+name = 'synth'
+
+[jobs.test]
+run = '''
+rustup show
+cargo +nightly test
+'''
+
+[jobs.clippy]
+run = '''
+cargo clippy --tests --all-targets -- -D warnings
+'''
+
+[jobs.fmt]
+run = '''
+cargo fmt --all -- --check
+'''
+
+[containers.linux]
+image = "rust:1"
+persist = [
+    "/usr/local/cargo/registry",
+    "/usr/local/cargo/git",
+    # persist the nightly rust toolchain so it is not re-installed every build
+    "/usr/local/rustup",
+]

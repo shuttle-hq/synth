@@ -18,28 +18,53 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Download brr
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          TAG: 0.0.21
+        run: |
+          curl -L https://github.com/buildrecall/brr/releases/download/$TAG/brr-$TAG-x86_64-unknown-linux-musl -o /tmp/brr
+          sudo mv /tmp/brr /usr/bin/brr
+          sudo chmod +x /usr/bin/brr
+          brr -V
+      - if: matrix.os == 'ubuntu-latest'
+        env:
+          BUILDRECALL_API_KEY: ${{ secrets.BUILDRECALL_API_KEY }}
+        run: brr run test linux
+      - if: matrix.os == 'windows-latest'
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           override: true
-      - run: cargo test
+      - if: matrix.os == 'windows-latest'
+        run: cargo test
   clippy_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-          components: clippy
-      - run: cargo clippy --tests --all-targets -- -D warnings
+      - name: Download brr
+        env:
+          TAG: 0.0.21
+        run: |
+          curl -L https://github.com/buildrecall/brr/releases/download/$TAG/brr-$TAG-x86_64-unknown-linux-musl -o /tmp/brr
+          sudo mv /tmp/brr /usr/bin/brr
+          sudo chmod +x /usr/bin/brr
+          brr -V
+      - run: brr run clippy linux
+        env:
+          BUILDRECALL_API_KEY: ${{ secrets.BUILDRECALL_API_KEY }}
   fmt_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt
-      - run: cargo fmt --all -- --check
+      - name: Download brr
+        env:
+          TAG: 0.0.21
+        run: |
+          curl -L https://github.com/buildrecall/brr/releases/download/$TAG/brr-$TAG-x86_64-unknown-linux-musl -o /tmp/brr
+          sudo mv /tmp/brr /usr/bin/brr
+          sudo chmod +x /usr/bin/brr
+          brr -V
+      - run: brr run fmt linux
+        env:
+          BUILDRECALL_API_KEY: ${{ secrets.BUILDRECALL_API_KEY }}
