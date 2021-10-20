@@ -43,22 +43,21 @@ macro_rules! fake_map_entry {
     };
     (with_locales; $name:ident, $rng:ident, $args:ident, $map:ident, $faker:ident; $($locale:ident),*) => {
         fn $name($rng: &mut dyn RngCore, $args: &FakerArgs) -> String {
-            match $args .locales.get($rng.gen_range(0..$args .locales.len().max(1))).unwrap_or(&Locale::EN) {
+            match $args.locales.get($rng.gen_range(0..$args.locales.len().max(1))).unwrap_or(&Locale::EN) {
                 $(Locale::$locale => $faker(locales::$locale).fake_with_rng($rng)),*
             }
         }
-        $map .insert(stringify!($name), $name as _);
+        $map.insert(stringify!($name), $name as _);
     };
     ($name:ident, $rng:ident, $args:ident, $map:ident, $e:expr) => {
         fn $name($rng: &mut dyn RngCore, $args: &FakerArgs) -> String {
             $e
         }
-        $map .insert(stringify!($name), $name as _);
+        $map.insert(stringify!($name), $name as _);
     };
 }
 
 lazy_static! {
-
     static ref FAKE_MAP: HashMap<&'static str, FakerFunction> = {
         let mut m = HashMap::new();
         // Lorem

@@ -343,39 +343,39 @@ pub mod tests {
     use crate::compile::NamespaceCompiler;
     use chrono::naive::{MAX_DATE, MIN_DATE};
 
-    macro_rules! date_time_bounds_test_ok (
+    macro_rules! date_time_bounds_test_ok {
         ($begin:expr, $end:expr) => {
             let unspecified_begin_end = DateTimeContent {
-            format: "yyyy-MM-dd".to_string(),
-            type_: ChronoValueType::NaiveDate,
-            begin: $begin,
-            end: $end
+                format: "yyyy-MM-dd".to_string(),
+                type_: ChronoValueType::NaiveDate,
+                begin: $begin,
+                end: $end,
+            };
+
+            let content = Content::DateTime(unspecified_begin_end);
+
+            let compiler = NamespaceCompiler::new_flat(&content);
+
+            assert!(compiler.compile().is_ok());
         };
+    }
 
-        let content = Content::DateTime(unspecified_begin_end);
-
-        let compiler = NamespaceCompiler::new_flat(&content);
-
-        assert!(compiler.compile().is_ok());
-        }
-    );
-
-    macro_rules! date_time_bounds_test_err (
+    macro_rules! date_time_bounds_test_err {
         ($begin:expr, $end:expr) => {
             let unspecified_begin_end = DateTimeContent {
-            format: "yyyy-MM-dd".to_string(),
-            type_: ChronoValueType::NaiveDate,
-            begin: $begin,
-            end: $end
+                format: "yyyy-MM-dd".to_string(),
+                type_: ChronoValueType::NaiveDate,
+                begin: $begin,
+                end: $end,
+            };
+
+            let content = Content::DateTime(unspecified_begin_end);
+
+            let compiler = NamespaceCompiler::new_flat(&content);
+
+            assert!(compiler.compile().is_err());
         };
-
-        let content = Content::DateTime(unspecified_begin_end);
-
-        let compiler = NamespaceCompiler::new_flat(&content);
-
-        assert!(compiler.compile().is_err());
-        }
-    );
+    }
 
     #[test]
     fn date_time_compile() {

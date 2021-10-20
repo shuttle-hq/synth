@@ -6,9 +6,9 @@ derive_generator! {
     yield bool,
     return Never,
     pub enum RandomBool {
-    Bernoulli(Random<bool, Bernoulli>),
-    Constant(Yield<bool>),
-    Categorical(Random<bool, Categorical<bool>>),
+        Bernoulli(Random<bool, Bernoulli>),
+        Constant(Yield<bool>),
+        Categorical(Random<bool, Categorical<bool>>),
     }
 }
 

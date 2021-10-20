@@ -149,7 +149,7 @@ macro_rules! content {
         impl<'de> Deserialize<'de> for Content {
             fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
             where
-            D: Deserializer<'de>,
+                D: Deserializer<'de>,
             {
                 #[derive(Deserialize)]
                 #[serde(rename_all = "snake_case")]
@@ -178,7 +178,7 @@ macro_rules! content {
 
                     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
                     where
-                    A: serde::de::MapAccess<'de>
+                        A: serde::de::MapAccess<'de>
                     {
                         use serde::de::IntoDeserializer;
                         let mut out = HashMap::<String, serde_json::Value>::new();
@@ -188,37 +188,39 @@ macro_rules! content {
                         }
                         let __ContentWithLabels { labels, content } = __ContentWithLabels::deserialize(out.into_deserializer()).map_err(A::Error::custom)?;
                         match content {
-                            $(__Content::$name(inner) => {
-                                let inner_as_content = Content::$name(inner);
-                                labels.try_wrap(inner_as_content)
-                            },)+
+                            $(
+                                __Content::$name(inner) => {
+                                    let inner_as_content = Content::$name(inner);
+                                    labels.try_wrap(inner_as_content)
+                                },
+                            )+
                         }
                     }
 
                     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         Ok(Content::Number(number_content::U64::from(v).into()))
                     }
 
                     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         Ok(Content::Number(number_content::I64::from(v).into()))
                     }
 
                     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         Ok(Content::Number(number_content::F64::from(v).into()))
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         if let Some(s) = v.strip_prefix("@") {
                             let ref_ = FieldRef::deserialize(s.into_deserializer())?;
@@ -754,11 +756,11 @@ pub mod tests {
     }
 
     macro_rules! assert_idempotent {
-	($($inner:tt)*) => {
-	    let in_: DateTimeContent = serde_json::from_value(json!($($inner)*)).unwrap();
-	    let out = serde_json::to_string(&in_).unwrap();
-	    assert_eq!(serde_json::from_str::<'_, DateTimeContent>(&out).unwrap(), in_);
-	}
+        ($($inner:tt)*) => {
+            let in_: DateTimeContent = serde_json::from_value(json!($($inner)*)).unwrap();
+            let out = serde_json::to_string(&in_).unwrap();
+            assert_eq!(serde_json::from_str::<'_, DateTimeContent>(&out).unwrap(), in_);
+        }
     }
 
     #[test]
