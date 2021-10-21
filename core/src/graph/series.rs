@@ -26,14 +26,14 @@ impl TryFrom<&SeriesContent> for SeriesNode {
     type Error = anyhow::Error;
 
     fn try_from(series_content: &SeriesContent) -> Result<Self> {
-        let default_pattern = "%Y-%m-%d %H:%M:%S".to_string();
-        let fmt = series_content.format.as_ref().unwrap_or(&default_pattern);
+        let default_pattern = "%Y-%m-%d %H:%M:%S";
+        let fmt = series_content.format.as_deref().unwrap_or(default_pattern);
         let sn = match &series_content.variant {
             SeriesVariant::Incrementing(incrementing) => {
                 let incrementing_series = SeriesVariant::inc(incrementing, fmt)?;
                 let sf = SeriesFormatter {
                     inner: incrementing_series,
-                    format: fmt.clone(),
+                    format: fmt.to_string(),
                 };
                 Self::Incrementing(
                     sf.infallible()
@@ -46,7 +46,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
                 let poisson_series = SeriesVariant::poisson(poisson, fmt)?;
                 let sf = SeriesFormatter {
                     inner: poisson_series,
-                    format: fmt.clone(),
+                    format: fmt.to_string(),
                 };
                 Self::Poisson(
                     sf.infallible()
@@ -59,7 +59,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
                 let cyclical_series = SeriesVariant::cyclical(cyclical, fmt)?;
                 let sf = SeriesFormatter {
                     inner: cyclical_series,
-                    format: fmt.clone(),
+                    format: fmt.to_string(),
                 };
                 Self::Cyclical(
                     sf.infallible()
@@ -72,7 +72,7 @@ impl TryFrom<&SeriesContent> for SeriesNode {
                 let zip_series = SeriesVariant::zip(zip, fmt)?;
                 let sf = SeriesFormatter {
                     inner: zip_series,
-                    format: fmt.clone(),
+                    format: fmt.to_string(),
                 };
                 Self::Zip(
                     sf.infallible()
