@@ -6,7 +6,7 @@ authors = [
   "Christos Hadjiaslanis <christos@getsynth.com>",
   "Andre Bogus <andre@getsynth.com>"
 ]
-edition = "2018"
+edition = "2021"
 homepage = "https://getsynth.com"
 license = "Apache-2.0"
 
