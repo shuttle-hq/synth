@@ -193,7 +193,7 @@ impl Lexer {
         Self { tokens }
     }
 
-    fn peak(&self) -> &Token {
+    fn peek(&self) -> &Token {
         self.tokens.front().unwrap_or(&Token::Eof)
     }
 
@@ -279,7 +279,7 @@ impl Parser {
                 self.curr_chunk.push_str(&c);
             }
             Token::Dot => {
-                if self.lex.peak() == &Token::Eof {
+                if self.lex.peek() == &Token::Eof {
                     return Err(
                         failed!(target: Release, BadRequest => "cannot have a field ref that ends in a '.'"),
                     );
@@ -406,6 +406,8 @@ impl std::fmt::Display for FieldRef {
 
 #[cfg(test)]
 pub mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
 
     use super::content::tests::USER_SCHEMA;
@@ -498,18 +500,9 @@ pub mod tests {
         )
     }
 
-    #[allow(unused_macros)]
-    macro_rules! hashmap {
-	($( $key: expr => $val: expr ),*) => {{
-            let mut map = ::std::collections::BTreeMap::new();
-            $( map.insert($key, $val); )*
-		map
-	}}
-    }
-
     lazy_static! {
         pub static ref USER_NAMESPACE: Namespace = Namespace {
-            collections: hashmap!("users".parse().unwrap() => USER_SCHEMA.clone())
+            collections: BTreeMap::from([("users".parse().unwrap(), USER_SCHEMA.clone())])
         };
     }
 }

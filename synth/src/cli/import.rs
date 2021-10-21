@@ -30,7 +30,7 @@ impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
 
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
         match params.uri {
-            None => Ok(Box::new(StdinImportStrategy {})),
+            None => Ok(Box::new(StdinImportStrategy)),
             Some(uri) => {
                 let import_strategy: Box<dyn ImportStrategy> =
                     if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {

@@ -14,10 +14,10 @@ pub struct FileImportStrategy {
 }
 
 #[derive(Clone, Debug)]
-pub struct StdinImportStrategy {}
+pub struct StdinImportStrategy;
 
 #[derive(Clone, Debug)]
-pub struct StdoutExportStrategy {}
+pub struct StdoutExportStrategy;
 
 impl ExportStrategy for StdoutExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()> {

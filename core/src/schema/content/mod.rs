@@ -698,7 +698,7 @@ pub mod tests {
     #[test]
     fn user_schema_accepts() {
         println!("{:#?}", *USER_SCHEMA);
-        USER_SCHEMA.accepts(&USER).unwrap()
+        assert!(USER_SCHEMA.accepts(&USER).is_ok());
     }
 
     #[test]

@@ -205,7 +205,7 @@ impl Compile for StringContent {
                         .collect::<Result<_>>()?,
                     ..Default::default()
                 };
-                RandomString::from(Format::new(format.to_string(), args)).into()
+                RandomString::from(Format::new(format, args)).into()
             }
             StringContent::Pattern(pattern) => RandomString::from(pattern.to_regex()).into(),
             StringContent::Faker(FakerContent {
