@@ -115,7 +115,6 @@ activity:
       "subtype": "naive_date_time",
       "begin": "2015-01-01T00:00:00",
       "end": "2020-01-01T12:00:00"
-      }
     },
     "generators": {
       "type": "string",

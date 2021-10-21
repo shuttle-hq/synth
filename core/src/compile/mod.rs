@@ -26,7 +26,8 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
-use state::{Artifact, CompilerState, OutputState, Source, Symbols};
+use state::{Artifact, OutputState, Symbols};
+pub use state::{CompilerState, Source};
 
 pub mod address;
 pub use address::Address;
