@@ -1,143 +1,95 @@
 {
   "doctors": [
     {
-      "date_joined": "2017-10-20",
-      "hospital_id": null,
+      "date_joined": null,
+      "hospital_id": 1,
       "id": 1,
-      "name": null
+      "name": "HsYUIjTQAfCUoicfTzNbfEOeEZJsv"
     },
     {
       "date_joined": null,
-      "hospital_id": 4,
+      "hospital_id": 1,
       "id": 2,
-      "name": null
+      "name": "AYdvXxD53ZAGMjFj6K46UIp8CF9xkuGd3DhU9RJyfK0myw5vJXdAqU9Ns9ycOsChvqaHH3Elg5zJaMuo2uftO97TSisawK2PCkqe45tki0A9IX6lWRkQXUjy"
     },
+    { "date_joined": null, "hospital_id": 1, "id": 3, "name": null },
+    { "date_joined": "2017-07-26", "hospital_id": 1, "id": 4, "name": null },
     {
-      "date_joined": "2013-07-12",
-      "hospital_id": 10,
-      "id": 3,
-      "name": null
-    },
-    {
-      "date_joined": null,
-      "hospital_id": 8,
-      "id": 4,
-      "name": null
-    },
-    {
-      "date_joined": null,
-      "hospital_id": 11,
+      "date_joined": "2013-09-22",
+      "hospital_id": 1,
       "id": 5,
-      "name": null
+      "name": "BdK5vp8UWEcCoDi7gDsY1UF8m6Wm8ntoJupczJWHsLAbgeeKzWI1FSANXVUnevpn5LL"
     },
-    {
-      "date_joined": null,
-      "hospital_id": null,
-      "id": 6,
-      "name": null
-    }
+    { "date_joined": "2015-10-22", "hospital_id": 1, "id": 6, "name": null }
   ],
   "hospitals": [
     {
-      "address": "eBzOgiS4skLnjvARIONorhfKroxrFAEtscPPTz6chnuu0kk3rjIcCRZBj2aF9QBXLox31x9wYrj2SKdOTJymvI4iBE7PXD9HJYaHdUATGmPf1m",
-      "hospital_name": "RDNYcFy43p7G1e11ODKsFh8edr0Mj2fIZWwe5hug8cqdUXV5QUZc82R6f58evLaZ3h306k9vs9PpAifXytsRABt4ngpHa6VTIy2THCQ1DDEVBfxLTyPPXFObexN9KBTYdCScDhQdIOp4HOOK1Qel",
+      "address": "cWqH2zCQeBzOgiS4skLnjvARIONorhfKroxrFAEtscPPTz6chnuu0kk3rjIcCRZBj2aF9QBXLox31x9wYrj2SKdOTJymvI4iBE7PXD9HJYaHdUATGmPf1m0OcvFTpQNLGWUs7AiX3HYqNgdoSoUgNBQmRAXxBg9oFdaBL1tWkbY8jRmG6xjnchpv08FQOovJDr0nnq4m8",
+      "hospital_name": "ABt4ngpHa6VTIy2THCQ1DDEVBfxLTyPPXFObexN9KBTYdCScDhQdIOp4HOOK1QelPiVYziVjjG22myDgH6UxLFCDsN6RFrGuiGlWZy1kCN2AFAj",
       "id": 1
-    },
-    {
-      "address": null,
-      "hospital_name": null,
-      "id": 2
-    },
-    {
-      "address": "5S5BtkUhxncCBIQ1",
-      "hospital_name": null,
-      "id": 3
-    },
-    {
-      "address": null,
-      "hospital_name": "9WdeZiXnQQVqdRCNrlfPg4tg9JRTryU0BThh5BGZoIcRbmbySmrkAYSA8jIgZKoDvlacYKDmbnUErbwg3xRbC",
-      "id": 4
     }
   ],
   "patients": [
     {
-      "address": "xpJM5Q6CBF1WKhZ7RYWt4a5NwKgihcWiKlU6NHDWhfoeE9b7HsYUIjTQAfCUoicfTzNbfEOeEZJsvyjy4Yp2Hdpja8VI1C5y2nUPs2Zfbbs1krhj2jhcnt9JRfBpNqMM3z9MjPrk2L7qhMdtGIZrJ857Uy4Kbm9rsF3f0q1zhjUzFBQ2GDjUIoDJ4h6SKI60PK9WbbKMxHCr4PluRxXRqZYJq",
-      "date_joined": null,
-      "doctor_id": 7,
+      "address": "nnyXvUk9SSNyc58DZ8LSPl",
+      "date_joined": "2019-05-24",
+      "doctor_id": 1,
       "id": 1,
-      "name": "jLDRRbw3vmLIlrw26rYtdNMeWlmayTleVzvHPCjZFTJm8SzGOe0iTASsVtZjQShDtfYkVEAZrDoCrO6VK5nnyXvUk9SSNyc58DZ8LSPlQAyXDzayYd5T14t1UdJbN6smOu8wwVrEUgvpp93sJiwQApdmbIrQlUftLVhowjMe0AK1YpCZ4",
-      "phone": "A9dIZCrd8NltfLA3xFy2",
-      "ssn": null
-    },
-    {
-      "address": "FvjfryFsTNiBpQZkiB6FADYFNtRzvY0diniut4z3JG270eww5CvhiQwG4Bj6phHTypY1KHOsvr8T79mfr25WdoPZNXmGULGgsC8CdKpjYDN2KFv2he8pT7Ud9qyEXSsQ",
-      "date_joined": null,
-      "doctor_id": null,
-      "id": 2,
-      "name": "BiD8VovPFXPSG4g3E9ruTlka7QShqhHU3ITYYSISxu2E5r9o8n9Rds89AQOnDikJjvUw5vMoAGfyICJ0Kb0S1aLS21UAHQD9q6SVIIJIg6d3imZDIbwKb7pyUpePW0tQwSf2ndeHkmvf",
+      "name": null,
       "phone": null,
-      "ssn": "9R"
+      "ssn": "GfrLO52ad"
     },
     {
       "address": null,
       "date_joined": null,
-      "doctor_id": null,
-      "id": 3,
+      "doctor_id": 2,
+      "id": 2,
       "name": null,
-      "phone": null,
+      "phone": "pp93sJiwQApdmbIrQlU",
       "ssn": null
     },
     {
-      "address": "wS3LU0x97grVBjHrYB8GAozNrLitLc76RVJphH8LxGWYVc434oNP3mdbgbNEZxzF7UU7epM89aw5cnmADkTqZB1WHmSHmXwzHmz1f3Q",
-      "date_joined": "2013-11-08",
-      "doctor_id": 11,
+      "address": null,
+      "date_joined": null,
+      "doctor_id": 3,
+      "id": 3,
+      "name": "vZ",
+      "phone": "BfgcME2jCs01ReQ",
+      "ssn": null
+    },
+    {
+      "address": null,
+      "date_joined": null,
+      "doctor_id": 4,
       "id": 4,
       "name": null,
-      "phone": "",
-      "ssn": "gtCrx"
+      "phone": "jZP5bvEBl5jAnNt",
+      "ssn": "zvY0d"
     },
     {
       "address": null,
-      "date_joined": "2013-05-06",
-      "doctor_id": 12,
+      "date_joined": "2019-07-02",
+      "doctor_id": 5,
       "id": 5,
-      "name": "HsTnaulklqVh8UzzQ1xTTflaFqsMm8uBPv4qhHea9Go5O2e8CCh1IqnfmPS1dpvHAXxAYZTDEwtVywKBchqOufVRAorrybueRRvD61grfJDFIMLmf",
-      "phone": "adVGK7",
+      "name": "P1WBZimZVnJLdz6flyRdthjTr5tdowR7GQbZoTdHui7EZTqVUW3snRjy6esftmtawTqGfov4rKIiI1UOaJV29rz0N77XBiD8VovPFXPSG4g3E9ruTlka7QShqhHU3ITYYSISxu2E5r9o8n9Rds89AQOnDikJjvUw5vMoAGfyICJ0Kb0S1aLS21UAHQD9q6SVIIJIg6d3imZDIbwKb7pyUpePW0tQwSf",
+      "phone": null,
       "ssn": null
     },
     {
-      "address": "mZrNUQRuRKXxm3UIXvRpYxLUr7sanMHeCjH3MllZQkNOjgQ2rpmb",
-      "date_joined": null,
-      "doctor_id": null,
-      "id": 6,
-      "name": null,
-      "phone": "01bMS9l3nx3dD4fd5exy",
-      "ssn": "lh0IUMnpY9"
-    },
-    {
-      "address": "YoPkX8XTPALAUD63qxYahTbw9V57HteORcdrvYIlu3WDW2Yl5uKSsmjS9rgElCUN16Un",
+      "address": null,
       "date_joined": null,
       "doctor_id": 6,
-      "id": 7,
+      "id": 6,
       "name": null,
-      "phone": "xm5",
-      "ssn": "bCh0u"
+      "phone": null,
+      "ssn": null
     },
     {
       "address": null,
       "date_joined": null,
-      "doctor_id": null,
-      "id": 8,
-      "name": "uvH5",
-      "phone": null,
-      "ssn": "9ede6cUWJ"
-    },
-    {
-      "address": "UijhFjRTZUdIyTC5wNhwO0ICtfIwdFgpGuigJs80myHxbj9",
-      "date_joined": "2014-11-08",
-      "doctor_id": null,
-      "id": 9,
-      "name": null,
+      "doctor_id": 1,
+      "id": 7,
+      "name": "CdT0YrhTGSZIfKDLedqdUs9BoFKnJvgMb1fYvhmi45S5Btk",
       "phone": null,
       "ssn": null
     }

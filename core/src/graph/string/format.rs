@@ -14,7 +14,8 @@ derive_generator! {
 }
 
 impl Format {
-    pub fn new(fmt: String, args: FormatArgs<Graph>) -> Self {
+    pub fn new(fmt: &str, args: FormatArgs<Graph>) -> Self {
+        let fmt = fmt.to_string();
         let format = move |args: FormatArgs<String>| {
             let formatted = dynfmt::SimpleCurlyFormat
                 .format(fmt.as_str(), args)
@@ -103,18 +104,13 @@ pub mod tests {
         let mut rng = rand::thread_rng();
 
         let args = FormatArgs {
-            named: vec![
+            named: HashMap::from([
                 ("name".to_string(), faker_graph("username")),
                 ("email".to_string(), faker_graph("safe_email")),
-            ]
-            .into_iter()
-            .collect(),
+            ]),
             ..Default::default()
         };
-        let formatted = Format::new(
-            "my email is {email} and my username is {name}".to_string(),
-            args,
-        );
+        let formatted = Format::new("my email is {email} and my username is {name}", args);
         formatted
             .repeat(1024)
             .complete(&mut rng)
@@ -131,7 +127,7 @@ pub mod tests {
             unnamed: vec![faker_graph("username"), faker_graph("safe_email")],
             ..Default::default()
         };
-        let formatted = Format::new("my email is {} and my username is {}".to_string(), args);
+        let formatted = Format::new("my email is {} and my username is {}", args);
         formatted
             .repeat(1024)
             .complete(&mut rng)
@@ -145,15 +141,13 @@ pub mod tests {
         let mut rng = rand::thread_rng();
 
         let args = FormatArgs {
-            named: vec![(
+            named: HashMap::from([(
                 "id".to_string(),
                 Graph::Number(NumberNode::from(RandomI64::constant(42))),
-            )]
-            .into_iter()
-            .collect(),
+            )]),
             ..Default::default()
         };
-        let formatted = Format::new("{id}_suffix".to_string(), args);
+        let formatted = Format::new("{id}_suffix", args);
         let gen = formatted
             .repeat(1024)
             .complete(&mut rng)
@@ -169,19 +163,17 @@ pub mod tests {
         let mut rng = rand::thread_rng();
 
         let args = FormatArgs {
-            named: vec![(
+            named: HashMap::from([(
                 "date".to_string(),
                 Graph::DateTime(DateTimeNode::from(RandomDateTime::new(
                     ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4))
                         ..ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4)),
                     "%Y-%m-%d",
                 ))),
-            )]
-            .into_iter()
-            .collect(),
+            )]),
             ..Default::default()
         };
-        let formatted = Format::new("{date}.png".to_string(), args);
+        let formatted = Format::new("{date}.png", args);
         let gen = formatted
             .repeat(1024)
             .complete(&mut rng)

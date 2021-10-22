@@ -849,22 +849,22 @@ pub mod tests {
 
             let mut all_users = BTreeSet::new();
             let mut all_emails = BTreeSet::new();
-
             let mut currencies = BTreeMap::new();
-            for user in sample_data.users {
+
+            for user in &sample_data.users {
                 assert_eq!(user.num_logins, user.num_logins_again);
                 println!("bank_country={}", user.bank_country);
-                assert!(&user.bank_country == "GB" || &user.bank_country == "ES");
+                assert!(user.bank_country == "GB" || user.bank_country == "ES");
                 assert!(user.id >= 100);
                 assert!(user.username.len() <= 5);
 
-                all_users.insert(user.username.clone());
+                all_users.insert(user.username.as_str());
 
-                if let Some(email) = user.maybe_an_email.clone() {
-                    assert!(all_emails.insert(email))
+                if let Some(email) = &user.maybe_an_email {
+                    assert!(all_emails.insert(email.as_str()))
                 }
 
-                currencies.insert(user.username, user.currency);
+                currencies.insert(user.username.as_str(), user.currency.as_str());
                 ChronoValueFormatter::new("%Y/%m/%d")
                     .parse(&user.created_at_date)
                     .unwrap();
@@ -883,20 +883,20 @@ pub mod tests {
             println!("currencies={:?}", currencies);
 
             let mut counts = BTreeMap::new();
-            for transaction in sample_data.transactions {
+            for transaction in &sample_data.transactions {
                 println!("transaction={:?}", transaction);
-                assert!(all_users.contains(&transaction.username));
+                assert!(all_users.contains(transaction.username.as_str()));
                 println!(
                     "username={}, amount={}",
                     transaction.username, transaction.amount
                 );
                 assert_eq!(
                     transaction.currency,
-                    *currencies.get(&transaction.username).unwrap()
+                    *currencies.get(transaction.username.as_str()).unwrap()
                 );
-                *counts.entry(transaction.username).or_insert(0) += 1;
+                *counts.entry(transaction.username.as_str()).or_insert(0) += 1;
 
-                assert!(serde_json::to_value(transaction.serialized_nonce).is_ok());
+                assert!(serde_json::to_value(&transaction.serialized_nonce).is_ok());
             }
 
             for value in counts.values() {
@@ -920,14 +920,8 @@ pub mod tests {
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
-                15 => {}
-                20 => {}
-                25 => {}
-                30 => {}
-                35 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                15 | 20 | 25 | 30 | 35 => {}
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }
@@ -939,13 +933,8 @@ pub mod tests {
         let mut rng = thread_rng();
         for _ in 1..100 {
             match dist.sample(&mut rng) {
-                -10 => {}
-                -5 => {}
-                0 => {}
-                5 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                -10 | -5 | 0 | 5 => {}
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }
@@ -958,13 +947,13 @@ pub mod tests {
         let error_margin = f64::EPSILON;
         for _ in 1..1000 {
             let sample: f64 = dist.sample(&mut rng);
-            // Not using pattern matching here because of  <https://github.com/rust-lang/rust/issues/41620>.
-            // As of 2020-12-01 it causes a linter warning which will be a compiler error in future releases.
-            if (sample - -2.5).abs() < error_margin
-                || (sample - -1.0).abs() < error_margin
-                || (sample - 0.5).abs() < error_margin
+            // This is equal to:
+            //     if sample != -2.5 && sample != -1.0 && sample != 0.5 { /* ... */ }
+            // but it protects against imprecisions in floating point comparisons.
+            if (sample - -2.5).abs() > error_margin
+                && (sample - -1.0).abs() > error_margin
+                && (sample - 0.5).abs() > error_margin
             {
-            } else {
                 panic!("Generated '{}' which should not happen", sample)
             }
         }
@@ -984,9 +973,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 10 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }
@@ -999,9 +986,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 10 => {}
-                n => {
-                    panic!("Generated '{}' which should not happen", n)
-                }
+                n => panic!("Generated '{}' which should not happen", n),
             }
         }
     }

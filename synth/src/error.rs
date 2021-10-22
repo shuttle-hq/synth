@@ -8,7 +8,7 @@ macro_rules! failed {
     };
     (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
 	anyhow::Error::from(
-	    crate::error::Error::new_with_target(
+	    crate::error::Error::new(
 		crate::error::ErrorKind::$variant,
 		format!($lit$(, $arg)*),
 		crate::error::Target::$target

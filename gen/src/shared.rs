@@ -231,12 +231,12 @@ pub mod tests {
             assert_eq!(shared_1.next(&mut rng), shared_2.next(&mut rng));
         }
 
-        let mut left_next_5 = Vec::new();
+        let mut left_next_5 = Vec::with_capacity(5);
         for _ in 0..5 {
             left_next_5.push(shared_1.next(&mut rng));
         }
 
-        let mut right_next_5 = Vec::new();
+        let mut right_next_5 = Vec::with_capacity(5);
         for _ in 0..5 {
             right_next_5.push(shared_2.next(&mut rng));
         }

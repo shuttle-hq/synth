@@ -73,7 +73,7 @@ impl DataSource for PostgresDataSource {
             // Better to do the check now and return a helpful error
             Self::check_schema_exists(&single_thread_pool, &schema).await?;
 
-            Ok::<Self, anyhow::Error>(PostgresDataSource {
+            Ok(PostgresDataSource {
                 pool,
                 single_thread_pool,
                 schema,
@@ -145,10 +145,7 @@ impl RelationalDataSource for PostgresDataSource {
             .fetch_all(&self.single_thread_pool)
             .await?
             .iter()
-            .map(|row| {
-                row.try_get::<String, usize>(0)
-                    .map_err(|e| anyhow!("{:?}", e))
-            })
+            .map(|row| row.try_get(0).map_err(|e| anyhow!("{:?}", e)))
             .collect();
 
         tables
@@ -169,7 +166,7 @@ impl RelationalDataSource for PostgresDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect::<Result<Vec<ColumnInfo>>>()
+            .collect()
     }
 
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
@@ -184,7 +181,7 @@ impl RelationalDataSource for PostgresDataSource {
             .await?
             .into_iter()
             .map(PrimaryKey::try_from)
-            .collect::<Result<Vec<PrimaryKey>>>()
+            .collect()
     }
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
@@ -205,7 +202,7 @@ impl RelationalDataSource for PostgresDataSource {
             .await?
             .into_iter()
             .map(ForeignKey::try_from)
-            .collect::<Result<Vec<ForeignKey>>>()
+            .collect()
     }
 
     /// Must use the singled threaded pool when setting this in conjunction with random, called by
@@ -222,7 +219,7 @@ impl RelationalDataSource for PostgresDataSource {
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
         let query: &str = &format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name);
 
-        let values = sqlx::query(query)
+        sqlx::query(query)
             .fetch_all(&self.single_thread_pool)
             .await?
             .into_iter()
@@ -234,9 +231,7 @@ impl RelationalDataSource for PostgresDataSource {
                     e
                 ),
             })
-            .collect::<Result<Vec<Value>>>()?;
-
-        Ok(values)
+            .collect()
     }
 
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
@@ -300,11 +295,11 @@ impl TryFrom<PgRow> for ColumnInfo {
 
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
         Ok(ColumnInfo {
-            column_name: row.try_get::<String, usize>(0)?,
-            ordinal_position: row.try_get::<i32, usize>(1)?,
+            column_name: row.try_get(0)?,
+            ordinal_position: row.try_get(1)?,
             is_nullable: row.try_get::<String, usize>(2)? == *"YES",
-            data_type: row.try_get::<String, usize>(3)?,
-            character_maximum_length: row.try_get::<Option<i32>, usize>(4)?,
+            data_type: row.try_get(3)?,
+            character_maximum_length: row.try_get(4)?,
         })
     }
 }
@@ -314,8 +309,8 @@ impl TryFrom<PgRow> for PrimaryKey {
 
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
         Ok(PrimaryKey {
-            column_name: row.try_get::<String, usize>(0)?,
-            type_name: row.try_get::<String, usize>(1)?,
+            column_name: row.try_get(0)?,
+            type_name: row.try_get(1)?,
         })
     }
 }
@@ -325,10 +320,10 @@ impl TryFrom<PgRow> for ForeignKey {
 
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
         Ok(ForeignKey {
-            from_table: row.try_get::<String, usize>(0)?,
-            from_column: row.try_get::<String, usize>(1)?,
-            to_table: row.try_get::<String, usize>(2)?,
-            to_column: row.try_get::<String, usize>(3)?,
+            from_table: row.try_get(0)?,
+            from_column: row.try_get(1)?,
+            to_table: row.try_get(2)?,
+            to_column: row.try_get(3)?,
         })
     }
 }

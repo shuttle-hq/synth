@@ -81,7 +81,7 @@ pub struct PutOverrideRequestBody {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct PutOverrideResponse {}
+pub struct PutOverrideResponse;
 
 #[derive(Serialize, Deserialize)]
 pub struct DeleteOverrideRequest {
@@ -95,7 +95,7 @@ pub struct DeleteOverrideRequestBody {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct DeleteOverrideResponse {}
+pub struct DeleteOverrideResponse;
 
 pub struct GetDocumentsSampleRequest {
     pub namespace: Name,
@@ -157,7 +157,7 @@ pub struct PutOptionaliseRequestBody {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct PutOptionaliseResponse {}
+pub struct PutOptionaliseResponse;
 
 #[derive(Serialize, Deserialize)]
 pub struct GetSchemaResponse(NamespaceOrContent);
@@ -226,7 +226,9 @@ impl Daemon {
         target: usize,
     ) -> Result<Value> {
         let value_generator = Sampler::try_from(namespace)?;
-        value_generator.sample(collection, target).map(crate::cli::synth_val_to_json)
+        value_generator
+            .sample(collection, target)
+            .map(crate::cli::synth_val_to_json)
     }
 
     /// Test runs the model generated from the `Namespace` E2E.
@@ -276,7 +278,7 @@ impl Daemon {
         namespace.optionalise(optionalise)?;
         namespace.commit()?;
 
-        Ok(PutOptionaliseResponse {})
+        Ok(PutOptionaliseResponse)
     }
 
     pub fn put_override(&self, req: PutOverrideRequest) -> Result<PutOverrideResponse> {
@@ -291,7 +293,7 @@ impl Daemon {
             .with_context(|| anyhow!("while validating the overridden model"))?;
 
         namespace.commit()?;
-        Ok(PutOverrideResponse {})
+        Ok(PutOverrideResponse)
     }
 
     pub fn delete_override(&self, req: DeleteOverrideRequest) -> Result<DeleteOverrideResponse> {
@@ -302,7 +304,7 @@ impl Daemon {
         };
         strategy.delete_from(&mut namespace)?;
         namespace.commit()?;
-        Ok(DeleteOverrideResponse {})
+        Ok(DeleteOverrideResponse)
     }
 
     pub fn put_documents(&self, req: PutDocumentsRequest) -> Result<PutDocumentsResponse> {
@@ -324,9 +326,9 @@ impl Daemon {
             if !namespace.collection_exists(&collection) {
                 namespace
                     .create_collection(&collection, document)
-                    .with_context(|| anyhow!(
-                        "while creating a collection from the first document"
-                    ))?;
+                    .with_context(|| {
+                        anyhow!("while creating a collection from the first document")
+                    })?;
             }
 
             if let Some(hint) = req.body.hint {
@@ -339,9 +341,9 @@ impl Daemon {
 
             let as_value = Value::from(documents);
             namespace.try_update(OptionalMergeStrategy, &collection, &as_value)?;
-            self.validate(namespace.as_ref()).with_context(|| anyhow!(
-                "while validating the inferred model prior to persisting it"
-            ))?;
+            self.validate(namespace.as_ref()).with_context(|| {
+                anyhow!("while validating the inferred model prior to persisting it")
+            })?;
 
             namespace.commit()?;
         }

@@ -1217,7 +1217,7 @@ pub mod tests {
     fn aggregate() {
         let (seed, mut rng) = prime(42);
         let mut subject = seed.once().repeat(5).aggregate();
-        assert_eq!(subject.complete(&mut rng), vec![42, 42, 42, 42, 42]);
+        assert_eq!(subject.complete(&mut rng), [42, 42, 42, 42, 42]);
     }
 
     #[test]
@@ -1235,7 +1235,7 @@ pub mod tests {
     #[test]
     fn one_of() {
         let (seed, mut rng) = prime(42i32);
-        let mut subject = vec![seed.once()].into_iter().collect::<OneOf<_>>();
+        let mut subject = std::iter::once_with(|| seed.once()).collect::<OneOf<_>>();
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(42));
         assert_eq!(subject.next(&mut rng), GeneratorState::Complete(Some(42)));
     }
@@ -1268,7 +1268,7 @@ pub mod tests {
         }
 
         for item in buf {
-            assert!(item != gen.next(&mut rng))
+            assert_ne!(item, gen.next(&mut rng))
         }
     }
 

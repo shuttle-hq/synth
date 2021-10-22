@@ -89,15 +89,13 @@ impl RelationalDataSource for MySqlDataSource {
             FROM information_schema.columns
             WHERE table_name = ? AND table_schema = DATABASE()";
 
-        let column_infos = sqlx::query(query)
+        sqlx::query(query)
             .bind(table_name)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect::<Result<Vec<ColumnInfo>>>()?;
-
-        Ok(column_infos)
+            .collect()
     }
 
     async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
@@ -111,7 +109,7 @@ impl RelationalDataSource for MySqlDataSource {
             .await?
             .into_iter()
             .map(PrimaryKey::try_from)
-            .collect::<Result<Vec<PrimaryKey>>>()
+            .collect()
     }
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
@@ -124,7 +122,7 @@ impl RelationalDataSource for MySqlDataSource {
             .await?
             .into_iter()
             .map(ForeignKey::try_from)
-            .collect::<Result<Vec<ForeignKey>>>()
+            .collect()
     }
 
     async fn set_seed(&self) -> Result<()> {
@@ -133,9 +131,9 @@ impl RelationalDataSource for MySqlDataSource {
     }
 
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
-        let query: &str = &format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
+        let query = format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
 
-        let values = sqlx::query(query)
+        sqlx::query(&query)
             .fetch_all(&self.pool)
             .await?
             .into_iter()
@@ -147,9 +145,7 @@ impl RelationalDataSource for MySqlDataSource {
                     e
                 ),
             })
-            .collect::<Result<Vec<Value>>>()?;
-
-        Ok(values)
+            .collect()
     }
 
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
@@ -229,7 +225,7 @@ impl TryFrom<MySqlRow> for ColumnInfo {
 /// truncate i64 to i32 in order to fit our internal models and practically, we probably won't be
 /// generating synthetic data for sizes beyond i32.
 fn extract_column_char_max_len(index: usize, row: MySqlRow) -> Result<Option<i32>> {
-    let character_maximum_length = match row.try_get::<Option<i32>, usize>(index) {
+    let character_maximum_length = match row.try_get(index) {
         Ok(c) => c,
         Err(_) => row.try_get::<Option<u64>, usize>(index)?.map(|c| c as i32),
     };
@@ -242,8 +238,8 @@ impl TryFrom<MySqlRow> for PrimaryKey {
 
     fn try_from(row: MySqlRow) -> Result<Self, Self::Error> {
         Ok(PrimaryKey {
-            column_name: row.try_get::<String, usize>(0)?,
-            type_name: row.try_get::<String, usize>(1)?,
+            column_name: row.try_get(0)?,
+            type_name: row.try_get(1)?,
         })
     }
 }
@@ -253,10 +249,10 @@ impl TryFrom<MySqlRow> for ForeignKey {
 
     fn try_from(row: MySqlRow) -> Result<Self, Self::Error> {
         Ok(ForeignKey {
-            from_table: row.try_get::<String, usize>(0)?,
-            from_column: row.try_get::<String, usize>(1)?,
-            to_table: row.try_get::<String, usize>(2)?,
-            to_column: row.try_get::<String, usize>(3)?,
+            from_table: row.try_get(0)?,
+            from_column: row.try_get(1)?,
+            to_table: row.try_get(2)?,
+            to_column: row.try_get(3)?,
         })
     }
 }

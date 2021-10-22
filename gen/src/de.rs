@@ -280,7 +280,7 @@ where
         match next {
             Token::Primitive(Primitive::String(s)) => visitor.visit_string(s),
             Token::Special(Special::BeginField(s)) => visitor.visit_str(s),
-            otherwise => Err(Error::type_("string", otherwise)),
+            otherwise => Err(Error::r#type("string", otherwise)),
         }
     }
 

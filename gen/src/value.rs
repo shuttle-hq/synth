@@ -69,7 +69,7 @@ macro_rules! generate_enum {
 		fn try_from(value: $id) -> Result<$type_, <Self as TryFrom<$id>>::Error> {
 		    match value {
 			$id::$variant(value) => Ok(value),
-			otherwise => Err(Error::type_(stringify!($variant), otherwise))
+			otherwise => Err(Error::r#type(stringify!($variant), otherwise))
 		    }
 		}
 	    }
@@ -175,7 +175,7 @@ macro_rules! generate_special_enum {
 		fn $to<R: Rng>(&mut self, rng: &mut R) -> Result<(), Error> {
 		    match self.next(rng).into_yielded()?.try_into()? {
 			$id::$variant$(($(drop!($arg),)*))? => Ok(()),
-			otherwise => Err(Error::type_(stringify!($variant), otherwise))
+			otherwise => Err(Error::r#type(stringify!($variant), otherwise))
 		    }
 		}
 	    )*
@@ -260,7 +260,7 @@ impl TryFrom<Number> for f32 {
     fn try_from(value: Number) -> Result<f32, <Self as TryFrom<Number>>::Error> {
         match value {
             Number::F32(of32) => Ok(of32.into_inner()),
-            otherwise => Err(Error::type_(stringify!(F32), otherwise)),
+            otherwise => Err(Error::r#type(stringify!(F32), otherwise)),
         }
     }
 }
@@ -270,7 +270,7 @@ impl TryFrom<Number> for f64 {
     fn try_from(value: Number) -> Result<f64, <Self as TryFrom<Number>>::Error> {
         match value {
             Number::F64(of64) => Ok(of64.into_inner()),
-            otherwise => Err(Error::type_(stringify!(F64), otherwise)),
+            otherwise => Err(Error::r#type(stringify!(F64), otherwise)),
         }
     }
 }

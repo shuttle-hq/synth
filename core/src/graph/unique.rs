@@ -53,7 +53,6 @@ pub mod tests {
         prelude::{Generator, GeneratorExt},
         Graph, NumberNode, RandFaker, RandomString, RandomU64, RangeStep, StringNode,
     };
-    use std::collections::HashSet;
 
     const NUM_GENERATED: usize = 1024;
 
@@ -65,10 +64,9 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         let output = UniqueNode::hash(usernames, None)
             .repeat(NUM_GENERATED)
-            .complete(&mut rng)
-            .into_iter()
-            .collect::<Result<HashSet<_>, _>>()
-            .unwrap();
+            .complete(&mut rng);
+
+        assert!(output.iter().all(Result::is_ok));
         assert_eq!(output.len(), NUM_GENERATED);
 
         let numbers = Graph::Number(NumberNode::from(
@@ -76,18 +74,16 @@ pub mod tests {
         ));
         let output = UniqueNode::hash(numbers, None)
             .repeat(NUM_GENERATED)
-            .complete(&mut rng)
-            .into_iter()
-            .collect::<Result<HashSet<_>, _>>()
-            .unwrap();
+            .complete(&mut rng);
+
+        assert!(output.iter().all(Result::is_ok));
         assert_eq!(output.len(), NUM_GENERATED);
 
         let constant = Graph::Number(NumberNode::from(RandomU64::constant(44)));
         let output = UniqueNode::hash(constant, None)
             .repeat(10)
-            .complete(&mut rng)
-            .into_iter()
-            .collect::<Result<HashSet<_>, _>>();
-        assert!(output.is_err());
+            .complete(&mut rng);
+
+        assert!(output.iter().any(Result::is_err));
     }
 }

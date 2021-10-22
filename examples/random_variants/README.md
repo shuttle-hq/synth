@@ -4,7 +4,7 @@ A small example demonstrating weighted variants.
 
 ## Demonstration
 
-The number 1 have a weight of 99 while the number 2 have a weight of 1.
+The number 1 has a weight of 99 while the number 2 has a weight of 1.
 Therefore, we should expect a ratio of 99:1,
 
 ```bash
