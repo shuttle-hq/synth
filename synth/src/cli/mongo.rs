@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 use mongodb::bson::Bson;
 use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
-use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
@@ -94,10 +93,6 @@ impl ImportStrategy for MongoImportStrategy {
             .collections
             .remove(name)
             .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
-    }
-
-    fn as_value(&self) -> Result<JsonValue> {
-        unreachable!()
     }
 }
 

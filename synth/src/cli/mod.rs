@@ -10,9 +10,9 @@ mod store;
 use crate::cli::db_utils::DataSourceParams;
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
-use crate::cli::stdf::DataFormat;
 use crate::cli::store::Store;
 use crate::version::print_version_message;
+use import::DataFormat;
 
 use anyhow::{Context, Result};
 use rand::RngCore;

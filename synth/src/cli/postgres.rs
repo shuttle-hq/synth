@@ -4,7 +4,6 @@ use crate::cli::import_utils::build_namespace_import;
 use crate::datasource::postgres_datasource::{PostgresConnectParams, PostgresDataSource};
 use crate::datasource::DataSource;
 use anyhow::Result;
-use serde_json::Value;
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
 
@@ -50,9 +49,5 @@ impl ImportStrategy for PostgresImportStrategy {
             .collections
             .remove(name)
             .ok_or_else(|| anyhow!("Could not find table '{}' in Postgres database.", name))
-    }
-
-    fn as_value(&self) -> Result<Value> {
-        bail!("Postgres import doesn't support conversion into value")
     }
 }

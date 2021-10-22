@@ -3,39 +3,11 @@ use crate::cli::import::ImportStrategy;
 use crate::sampler::Sampler;
 use anyhow::Result;
 use serde_json::Value;
-use synth_core::{Content, Name};
 
+use super::import::DataFormat;
 use std::convert::TryFrom;
+use std::io::BufRead;
 use std::path::PathBuf;
-
-#[derive(Clone, Debug)]
-pub enum DataFormat {
-    Json,
-    JsonLines {
-        collection_field_name: Option<String>,
-    },
-    Csv,
-}
-
-impl DataFormat {
-    pub fn new(format_string: Option<String>, collection_field_name: Option<String>) -> Self {
-        format_string
-            .map(|format_string| match format_string.as_str() {
-                "jsonl" => DataFormat::JsonLines {
-                    collection_field_name,
-                },
-                "csv" => DataFormat::Csv,
-                _ => DataFormat::Json,
-            })
-            .unwrap_or_default()
-    }
-}
-
-impl Default for DataFormat {
-    fn default() -> Self {
-        DataFormat::Json
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct FileImportStrategy {
@@ -43,9 +15,48 @@ pub struct FileImportStrategy {
     pub data_format: DataFormat,
 }
 
+impl ImportStrategy for FileImportStrategy {
+    fn get_data_format(&self) -> &DataFormat {
+        &self.data_format
+    }
+
+    fn as_json_value(&self) -> Result<Value> {
+        Ok(serde_json::from_reader(std::fs::File::open(
+            &self.from_file,
+        )?)?)
+    }
+
+    fn as_json_line_values(&self) -> Result<Vec<Value>> {
+        Ok(
+            std::io::BufReader::new(std::fs::File::open(&self.from_file)?)
+                .lines()
+                .map(|line| serde_json::from_str(&line.unwrap()))
+                .collect::<serde_json::Result<Vec<Value>>>()?,
+        )
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct StdinImportStrategy {
     pub data_format: DataFormat,
+}
+
+impl ImportStrategy for StdinImportStrategy {
+    fn get_data_format(&self) -> &DataFormat {
+        &self.data_format
+    }
+
+    fn as_json_value(&self) -> Result<Value> {
+        Ok(serde_json::from_reader(std::io::stdin())?)
+    }
+
+    fn as_json_line_values(&self) -> Result<Vec<Value>> {
+        Ok(std::io::stdin()
+            .lock()
+            .lines()
+            .map(|line| serde_json::from_str(&line.unwrap()))
+            .collect::<serde_json::Result<Vec<Value>>>()?)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -60,41 +71,18 @@ impl ExportStrategy for StdoutExportStrategy {
 
         match &self.data_format {
             DataFormat::Json => println!("{}", output.into_json()),
-            DataFormat::JsonLines {
-                collection_field_name,
-            } => {
-                let field_name = collection_field_name.as_deref().unwrap_or("collection"); // Default collection field name is 'collection'.
-
+            DataFormat::JsonLines { .. } => {
                 // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
 
-                for line_val in output.into_json_lines(field_name) {
-                    println!("{}", line_val);
+                for line in
+                    output.into_json_lines(self.data_format.get_collection_field_name_or_default())
+                {
+                    println!("{}", line);
                 }
             }
             DataFormat::Csv => unimplemented!(),
         }
 
         Ok(())
-    }
-}
-
-impl ImportStrategy for FileImportStrategy {
-    fn import_collection(&self, name: &Name) -> Result<Content> {
-        self.import()?
-            .collections
-            .remove(name)
-            .ok_or_else(|| anyhow!("Could not find collection '{}' in file.", name))
-    }
-
-    fn as_value(&self) -> Result<Value> {
-        Ok(serde_json::from_reader(std::fs::File::open(
-            self.from_file.clone(),
-        )?)?)
-    }
-}
-
-impl ImportStrategy for StdinImportStrategy {
-    fn as_value(&self) -> Result<Value> {
-        Ok(serde_json::from_reader(std::io::stdin())?)
     }
 }
