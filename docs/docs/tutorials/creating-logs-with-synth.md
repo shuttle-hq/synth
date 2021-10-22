@@ -42,7 +42,7 @@ or as json:
 
 ## Installing Synth
 
-To install `synth` head over to the [download page](/download).
+To install `synth` head over to the [download page](https://getsynth.com/download).
 
 ## Implementation
 
