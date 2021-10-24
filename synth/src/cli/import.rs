@@ -83,12 +83,12 @@ pub trait ImportStrategy {
                 let mut collection_names_to_values: HashMap<Option<String>, Vec<Value>> =
                     HashMap::new();
 
-                for value in self.as_json_line_values()? {
-                    match &value {
-                        Value::Object(obj_content) => {
+                for mut value in self.as_json_line_values()? {
+                    match value {
+                        Value::Object(ref mut obj_content) => {
                             let entry = {
-                                if let Some(Value::String(collection_name)) =
-                                    obj_content.get(format.get_collection_field_name_or_default())
+                                if let Some(Value::String(collection_name)) = obj_content
+                                    .remove(format.get_collection_field_name_or_default())
                                 {
                                     collection_names_to_values
                                         .entry(Some(collection_name.to_string()))
