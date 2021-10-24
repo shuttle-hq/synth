@@ -1,5 +1,7 @@
 ---
 title: Interactive Tutorial - Creating fake HTTP logs with Synth
+image: https://storage.googleapis.com/getsynth-public/media/logs.jpg
+description: In this tutorial we're going to be creating fake HTTP logs with synth!
 ---
 
 ![Logs](img/logs.jpg)
