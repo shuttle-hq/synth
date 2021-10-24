@@ -90,8 +90,7 @@ pub trait ImportStrategy {
                                 if let Some(Value::String(collection_name)) = obj_content
                                     .remove(format.get_collection_field_name_or_default())
                                 {
-                                    collection_names_to_values
-                                        .entry(Some(collection_name.to_string()))
+                                    collection_names_to_values.entry(Some(collection_name))
                                 } else {
                                     collection_names_to_values.entry(None)
                                 }
