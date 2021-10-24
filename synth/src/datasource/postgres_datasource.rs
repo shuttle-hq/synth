@@ -234,6 +234,8 @@ impl RelationalDataSource for PostgresDataSource {
             .collect()
     }
 
+    // until https://github.com/rust-lang/rust-clippy/pull/7865 gets into nightly
+    #[allow(clippy::match_str_case_mismatch)]
     fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
         let content = match data_type.to_lowercase().as_str() {
             "bool" => Content::Bool(BoolContent::default()),
@@ -343,6 +345,8 @@ impl TryFrom<PgRow> for ValueWrapper {
     }
 }
 
+// until https://github.com/rust-lang/rust-clippy/pull/7865 gets into nightly
+#[allow(clippy::match_str_case_mismatch)]
 fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
     let value = match column.type_info().name().to_lowercase().as_str() {
         "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
