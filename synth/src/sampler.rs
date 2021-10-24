@@ -46,6 +46,7 @@ impl SamplerOutput {
                             Value::Object(mut obj_values) => {
                                 // If the collection generates an object, then the collection name is saved directly as
                                 // a field of the object.
+
                                 obj_values.insert(
                                     collection_field_name.to_string(),
                                     Value::String(collection.clone()),
@@ -54,7 +55,8 @@ impl SamplerOutput {
                                 synth_val_to_json(Value::Object(obj_values))
                             }
                             non_obj_synth_val => {
-                                // If the collection does not generate a object, then the output value is an object.
+                                // If the collection does not generate a object, then the output value is an object with
+                                // the collection specified as a field, and the generated non-object data as another.
 
                                 serde_json::json!({
                                     collection_field_name: collection.clone(),
