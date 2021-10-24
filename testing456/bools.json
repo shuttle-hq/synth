@@ -1,0 +1,23 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "low": 1,
+      "high": 3,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "boolean": {
+      "type": "bool",
+      "frequency": 0.5
+    },
+    "collection": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]*"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+	"type": "array",
+	"length": {
+		"type": "number",
+		"subtype": "u64",
+		"constant": 3
+	},
+	"content": {
+		"type": "object",
+		"boolean": {
+			"type": "bool",
+			"frequency": 0.5
+		}
+	}
+}
