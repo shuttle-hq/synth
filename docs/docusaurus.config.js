@@ -32,6 +32,7 @@ module.exports = {
         ]
     ],
     themeConfig: {
+        image: '/img/getsynth_favicon.png',
         fathomAnalytics: {
             siteId: isTargetVercel() ? 'QRVYRJEG' : 'HSFEOKWQ',
         },
