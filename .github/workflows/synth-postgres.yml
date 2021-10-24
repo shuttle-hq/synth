@@ -42,7 +42,7 @@ jobs:
       - run: |
           echo "Running generate test"
           cd synth/testing_harness/postgres
-          synth generate hospital_master > hospital_data_generated.json
+          synth generate hospital_master | jq > hospital_data_generated.json
           diff hospital_data_generated.json hospital_data_generated_master.json || exit 1
       - run: |
           echo "Testing import"

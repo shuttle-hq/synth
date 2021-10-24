@@ -2,9 +2,17 @@ use super::prelude::*;
 
 pub struct OneOfNode(OneOf<Graph>);
 
+impl FromIterator<(f64, Graph)> for OneOfNode {
+    fn from_iter<T: IntoIterator<Item = (f64, Graph)>>(iter: T) -> Self {
+        Self(OneOf::from_iter(iter))
+    }
+}
+
 impl FromIterator<Graph> for OneOfNode {
     fn from_iter<T: IntoIterator<Item = Graph>>(iter: T) -> Self {
-        Self(OneOf::from_iter(iter))
+        Self(OneOf::from_iter(
+            iter.into_iter().map(|s| (1.0, s)).collect::<Vec<_>>(),
+        ))
     }
 }
 
