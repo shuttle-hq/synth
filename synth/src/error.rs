@@ -4,16 +4,16 @@ pub use synth_core::error::*;
 
 macro_rules! failed {
     (target: $target:ident, $lit: literal$(, $arg:expr)*) => {
-	failed!(target: $target, BadRequest => $lit$(, $arg)*)
+        failed!(target: $target, BadRequest => $lit$(, $arg)*)
     };
     (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
-	anyhow::Error::from(
-	    crate::error::Error::new(
-		crate::error::ErrorKind::$variant,
-		format!($lit$(, $arg)*),
-		crate::error::Target::$target
-	    )
-	)
+        anyhow::Error::from(
+            crate::error::Error::new(
+                crate::error::ErrorKind::$variant,
+                format!($lit$(, $arg)*),
+                crate::error::Target::$target
+            )
+        )
     };
 }
 

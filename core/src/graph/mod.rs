@@ -73,33 +73,33 @@ pub type OnceInfallible<G> = TryOnce<Infallible<G, Error>>;
 
 macro_rules! derive_from {
     {
-	#[$attr:meta]
-	$vis:vis enum $id:ident {
-	    $($variant:ident$(($ty:ty))?,)*
-	}
+        #[$attr:meta]
+        $vis:vis enum $id:ident {
+            $( $variant:ident$(($ty:ty))?, )*
+        }
     } => {
-	#[$attr]
-	$vis enum $id {
-	    $($variant$(($ty))?,)*
-	}
+        #[$attr]
+        $vis enum $id {
+            $( $variant$(($ty))?, )*
+        }
 
-	impl $id {
-	    pub fn type_(&self) -> &'static str {
-		match self {
-		    $(Self::$variant(_) => stringify!($variant),)*
-		}
-	    }
-	}
+        impl $id {
+            pub fn type_(&self) -> &'static str {
+                match self {
+                    $( Self::$variant(_) => stringify!($variant), )*
+                }
+            }
+        }
 
-	$(
-	    $(
-		impl From<$ty> for $id {
-		    fn from(value: $ty) -> Self {
-			Self::$variant(value)
-		    }
-		}
-	    )?
-	)*
+        $(
+            $(
+                impl From<$ty> for $id {
+                    fn from(value: $ty) -> Self {
+                        Self::$variant(value)
+                    }
+                }
+            )?
+        )*
     };
 }
 

@@ -18,22 +18,22 @@ macro_rules! config {
         #[derive(Serialize, Deserialize, Default)]
         struct Config {
             $(
-            #[serde(skip_serializing_if = "Option::is_none")]
-            $val_name: Option<$ty>,
+                #[serde(skip_serializing_if = "Option::is_none")]
+                $val_name: Option<$ty>,
             )*
         }
 
         $(
-        #[allow(dead_code)]
-        pub fn $setter($val_name: $ty) {
-            let mut config = CONFIG.lock().unwrap();
-            config.$val_name = Some($val_name);
-            config.save();
-        }
-        #[allow(dead_code)]
-        pub fn $getter() -> Option<$ty> {
-            CONFIG.lock().unwrap().$val_name.clone()
-        }
+            #[allow(dead_code)]
+            pub fn $setter($val_name: $ty) {
+                let mut config = CONFIG.lock().unwrap();
+                config.$val_name = Some($val_name);
+                config.save();
+            }
+            #[allow(dead_code)]
+            pub fn $getter() -> Option<$ty> {
+                CONFIG.lock().unwrap().$val_name.clone()
+            }
         )*
 
     }

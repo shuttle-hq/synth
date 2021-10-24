@@ -20,7 +20,7 @@ macro_rules! any_range_int_impl {
             fn is_empty(&self) -> bool {
                 match (&self.low, &self.high) {
                     (Bound::Excluded(low), Bound::Included(high))
-                    | (Bound::Included(low), Bound::Excluded(high)) => low >= high,
+                        | (Bound::Included(low), Bound::Excluded(high)) => low >= high,
                     (Bound::Included(low), Bound::Included(high)) => low > high,
                     (Bound::Excluded(low), Bound::Excluded(high)) => *low + 1 >= *high,
                     _ => false
@@ -59,7 +59,7 @@ macro_rules! any_range_float_impl {
             fn is_not_empty(&self) -> bool {
                 match (&self.low, &self.high) {
                     (Bound::Excluded(low), Bound::Included(high))
-                    | (Bound::Included(low), Bound::Excluded(high)) => low < high,
+                        | (Bound::Included(low), Bound::Excluded(high)) => low < high,
                     (Bound::Included(low), Bound::Included(high)) => low <= high,
                     _ => true
                 }
@@ -372,18 +372,20 @@ where
 }
 
 macro_rules! number_node {
-    { $(
-	    $rand:ident (
-		$range:ident<$dist:ty> as $new_range:ident,
-		$constant:ident as $new_constant:ident,
-		$(
-		    $categorical:ident as $new_categorical:ident
-		)?,
-		$(
-		    $incrementing:ident as $new_incrementing:ident
-		)?,
-	    ) for $ty:ty,
-	)* } => {
+    {
+        $(
+            $rand:ident (
+                $range:ident<$dist:ty> as $new_range:ident,
+                $constant:ident as $new_constant:ident,
+                $(
+                    $categorical:ident as $new_categorical:ident
+                )?,
+                $(
+                    $incrementing:ident as $new_incrementing:ident
+                )?,
+            ) for $ty:ty,
+	    )*
+    } => {
         derive_generator! {
             yield Token,
             return Result<Value, Error>,
@@ -393,45 +395,45 @@ macro_rules! number_node {
         }
 
         $(
-        derive_generator! {
-            yield $ty,
-            return Result<$ty, Error>,
-            pub enum $rand {
-                $range(OnceInfallible<Random<$ty, $dist>>),
-                $constant(OnceInfallible<Yield<$ty>>),
-                $($categorical(OnceInfallible<Random<$ty, Categorical<$ty>>>),)?
-                $($incrementing(TryOnce<Incrementing<$ty>>),)?
-            }
-        }
-
-        impl $rand {
-            pub fn $new_range(range: RangeStep<$ty>) -> Result<Self, anyhow::Error> {
-                let dist = <$dist>::try_from_range(range)?;
-                Ok(Self::$range(Random::new_with(dist).infallible().try_once()))
+            derive_generator! {
+                yield $ty,
+                return Result<$ty, Error>,
+                pub enum $rand {
+                    $range(OnceInfallible<Random<$ty, $dist>>),
+                    $constant(OnceInfallible<Yield<$ty>>),
+                    $($categorical(OnceInfallible<Random<$ty, Categorical<$ty>>>),)?
+                    $($incrementing(TryOnce<Incrementing<$ty>>),)?
+                }
             }
 
-            pub fn $new_constant(value: $ty) -> Self {
-                Self::$constant(Yield::wrap(value).infallible().try_once())
+            impl $rand {
+                pub fn $new_range(range: RangeStep<$ty>) -> Result<Self, anyhow::Error> {
+                    let dist = <$dist>::try_from_range(range)?;
+                    Ok(Self::$range(Random::new_with(dist).infallible().try_once()))
+                }
+
+                pub fn $new_constant(value: $ty) -> Self {
+                    Self::$constant(Yield::wrap(value).infallible().try_once())
+                }
+
+                $(
+                    pub fn $new_categorical(cat: Categorical<$ty>) -> Self {
+                        Self::$categorical(Random::new_with(cat).infallible().try_once())
+                    }
+                )?
+
+                $(
+                    pub fn $new_incrementing(incr: Incrementing<$ty>) -> Self {
+                        Self::$incrementing(incr.try_once())
+                    }
+                )?
             }
 
-            $(
-            pub fn $new_categorical(cat: Categorical<$ty>) -> Self {
-                Self::$categorical(Random::new_with(cat).infallible().try_once())
+            impl From<$rand> for NumberNode {
+                fn from(value: $rand) -> Self {
+                    Self::$rand(value.into_token().map_complete(value_from_ok_number::<$ty>))
+                }
             }
-            )?
-
-            $(
-            pub fn $new_incrementing(incr: Incrementing<$ty>) -> Self {
-                Self::$incrementing(incr.try_once())
-            }
-            )?
-        }
-
-        impl From<$rand> for NumberNode {
-            fn from(value: $rand) -> Self {
-                Self::$rand(value.into_token().map_complete(value_from_ok_number::<$ty>))
-            }
-        }
         )*
     }
 }
