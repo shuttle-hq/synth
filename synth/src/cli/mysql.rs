@@ -9,12 +9,12 @@ use synth_core::{Content, Name};
 
 #[derive(Clone, Debug)]
 pub struct MySqlExportStrategy {
-    pub uri: String,
+    pub uri_string: String,
 }
 
 impl ExportStrategy for MySqlExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()> {
-        let datasource = MySqlDataSource::new(&self.uri)?;
+        let datasource = MySqlDataSource::new(&self.uri_string)?;
 
         create_and_insert_values(params, &datasource)
     }
@@ -22,12 +22,12 @@ impl ExportStrategy for MySqlExportStrategy {
 
 #[derive(Clone, Debug)]
 pub struct MySqlImportStrategy {
-    pub uri: String,
+    pub uri_string: String,
 }
 
 impl ImportStrategy for MySqlImportStrategy {
     fn import(&self) -> Result<Namespace> {
-        let datasource = MySqlDataSource::new(&self.uri)?;
+        let datasource = MySqlDataSource::new(&self.uri_string)?;
 
         build_namespace_import(&datasource)
     }

@@ -13,6 +13,8 @@ use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
 
+use super::import::DataFormat;
+
 pub trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()>;
 }
@@ -25,38 +27,46 @@ pub struct ExportParams {
     pub seed: u64,
 }
 
-impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
+impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
     type Error = anyhow::Error;
 
-    /// Here we exhaustively try to pattern match strings until we get something
-    /// that successfully parses. Starting from a file, could be a url to a database etc.
-    /// We assume that these can be unambiguously identified for now.
-    /// For example, `postgres://...` is not going to be a file on the FS
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
-        match params.uri {
-            None => Ok(Box::new(StdoutExportStrategy {
-                data_format: params.data_format,
-            })),
-            Some(uri) => {
-                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://")
-                    || uri.starts_with("postgresql://")
-                {
-                    Box::new(PostgresExportStrategy {
-                        uri,
-                        schema: params.schema,
-                    })
-                } else if uri.starts_with("mongodb://") {
-                    Box::new(MongoExportStrategy { uri })
-                } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                    Box::new(MySqlExportStrategy { uri })
+        // Due to all the schemas used, with the exception of 'mongodb', being non-standard (including
+        // 'postgres' and 'mysql' suprisingly) it seems simpler to just match based on the scheme string
+        // instead of on enum variants.
+        let scheme = params.uri.scheme().as_str().to_lowercase();
+        let export_strategy: Box<dyn ExportStrategy> = match scheme.as_str() {
+            "postgres" | "postgresql" => Box::new(PostgresExportStrategy {
+                uri_string: params.uri.to_string(),
+                schema: params.schema,
+            }),
+            "mongodb" => Box::new(MongoExportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "mysql" | "mariadb" => Box::new(MySqlExportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "json" | "jsonl" | "csv" => {
+                let data_format = DataFormat::new(&scheme, params.collection_field_name);
+
+                if params.uri.path() == "" {
+                    Box::new(StdoutExportStrategy { data_format })
                 } else {
-                    return Err(anyhow!(
-                        "Data sink not recognized. Was expecting one of 'mongodb', 'postgres', 'mysql' or 'mariadb'."
-                    ));
-                };
-                Ok(export_strategy)
+                    unimplemented!();
+                    // TODO: File exporting!
+                    /*Box::new(FileExportStrategy {
+                        data_format,
+                        to_file: PathBuf::from(params.uri.path().to_string()),
+                    })*/
+                }
             }
-        }
+            _ => {
+                return Err(anyhow!(
+                    "Data sink not recognized. Was expecting one of 'mongodb', 'postgres', 'mysql' or 'mariadb'."
+                ));
+            }
+        };
+        Ok(export_strategy)
     }
 }
 

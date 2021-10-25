@@ -9,14 +9,14 @@ use synth_core::{Content, Name};
 
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
-    pub uri: String,
+    pub uri_string: String,
     pub schema: Option<String>,
 }
 
 impl ExportStrategy for PostgresExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()> {
         let connect_params = PostgresConnectParams {
-            uri: self.uri.clone(),
+            uri: self.uri_string.clone(),
             schema: self.schema.clone(),
         };
 
@@ -28,14 +28,14 @@ impl ExportStrategy for PostgresExportStrategy {
 
 #[derive(Clone, Debug)]
 pub struct PostgresImportStrategy {
-    pub uri: String,
+    pub uri_string: String,
     pub schema: Option<String>,
 }
 
 impl ImportStrategy for PostgresImportStrategy {
     fn import(&self) -> Result<Namespace> {
         let connect_params = PostgresConnectParams {
-            uri: self.uri.clone(),
+            uri: self.uri_string.clone(),
             schema: self.schema.clone(),
         };
 

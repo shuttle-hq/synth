@@ -1,7 +1,7 @@
-use crate::cli::import::DataFormat;
+use uriparse::URI;
 
-pub struct DataSourceParams {
-    pub uri: Option<String>, //perhaps uri is not a good name here as this could be a file path
-    pub schema: Option<String>,
-    pub data_format: DataFormat,
+pub struct DataSourceParams<'a> {
+    pub uri: URI<'a>,
+    pub schema: Option<String>,                // PostgreSQL
+    pub collection_field_name: Option<String>, // JSON Lines
 }

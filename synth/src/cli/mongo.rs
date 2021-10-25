@@ -21,23 +21,23 @@ use synth_core::{Content, Name, Namespace, Value};
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {
-    pub uri: String,
+    pub uri_string: String,
 }
 
 #[derive(Clone, Debug)]
 pub struct MongoImportStrategy {
-    pub uri: String,
+    pub uri_string: String,
 }
 
 impl ImportStrategy for MongoImportStrategy {
     fn import(&self) -> Result<Namespace> {
-        let client_options = ClientOptions::parse(&self.uri)?;
+        let client_options = ClientOptions::parse(&self.uri_string)?;
 
-        info!("Connecting to database at {} ...", &self.uri);
+        info!("Connecting to database at {} ...", &self.uri_string);
 
         let client = Client::with_options(client_options)?;
 
-        let db_name = parse_db_name(&self.uri)?;
+        let db_name = parse_db_name(&self.uri_string)?;
 
         // 0: Initialise empty Namespace
         let mut namespace = Namespace::default();
@@ -163,7 +163,7 @@ fn bson_to_content(bson: &Bson) -> Content {
 
 impl ExportStrategy for MongoExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()> {
-        let mut client = Client::with_uri_str(&self.uri)?;
+        let mut client = Client::with_uri_str(&self.uri_string)?;
         let sampler = Sampler::try_from(&params.namespace)?;
         let output =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
@@ -191,7 +191,7 @@ impl MongoExportStrategy {
         collection: &[Value],
         client: &mut Client,
     ) -> Result<()> {
-        let db_name = parse_db_name(&self.uri)?;
+        let db_name = parse_db_name(&self.uri_string)?;
 
         let mut docs = Vec::new();
 

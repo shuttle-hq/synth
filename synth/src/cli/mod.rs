@@ -12,17 +12,17 @@ use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
 use crate::version::print_version_message;
-use import::DataFormat;
 
 use anyhow::{Context, Result};
 use rand::RngCore;
 use serde::Serialize;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::path::PathBuf;
 use std::process::exit;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 use synth_core::{graph::json, Name};
+use uriparse::URI;
 
 pub(crate) mod config;
 mod db_utils;
@@ -64,40 +64,30 @@ impl Cli {
         match args {
             Args::Init { .. } => Ok(()),
             Args::Generate {
-                ref namespace,
-                ref collection,
+                namespace,
+                collection,
                 size,
                 ref to,
                 seed,
                 random,
                 schema,
-                data_format,
                 collection_field_name,
             } => self.generate(
-                namespace.clone(),
-                collection.clone(),
+                namespace,
+                collection,
                 size,
-                to.clone(),
+                to,
                 Self::derive_seed(random, seed)?,
                 schema,
-                data_format,
                 collection_field_name,
             ),
             Args::Import {
-                ref namespace,
-                ref collection,
+                namespace,
+                collection,
                 ref from,
-                ref schema,
-                data_format,
+                schema,
                 collection_field_name,
-            } => self.import(
-                namespace.clone(),
-                collection.clone(),
-                from.clone(),
-                schema.clone(),
-                data_format,
-                collection_field_name,
-            ),
+            } => self.import(namespace, collection, from, schema, collection_field_name),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
             Args::Version => {
@@ -128,18 +118,17 @@ impl Cli {
         self,
         path: PathBuf,
         collection: Option<Name>,
-        from: Option<String>,
+        from: &str,
         schema: Option<String>,
-        data_format: Option<String>,
         collection_field_name: Option<String>,
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
 
         let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
-            uri: from,
+            uri: URI::try_from(from).with_context(|| format!("Parsing import URI '{}'", from))?,
             schema,
-            data_format: DataFormat::new(data_format, collection_field_name),
+            collection_field_name,
         }
         .try_into()?;
 
@@ -170,10 +159,9 @@ impl Cli {
         ns_path: PathBuf,
         collection: Option<Name>,
         target: usize,
-        to: Option<String>,
+        to: &str,
         seed: u64,
         schema: Option<String>,
-        data_format: Option<String>,
         collection_field_name: Option<String>,
     ) -> Result<()> {
         let namespace = self.store.get_ns(ns_path.clone()).context(format!(
@@ -184,9 +172,9 @@ impl Cli {
         ))?;
 
         let export_strategy: Box<dyn ExportStrategy> = DataSourceParams {
-            uri: to,
+            uri: URI::try_from(to).with_context(|| format!("Parsing generation URI '{}'", to))?,
             schema,
-            data_format: DataFormat::new(data_format, collection_field_name),
+            collection_field_name,
         }
         .try_into()?;
 
@@ -233,10 +221,11 @@ pub enum Args {
         size: usize,
         #[structopt(
             long,
-            help = "The sink into which to generate data. Can be a Postgres URI, a MongoDB URI to write data directly to a database. If 'jsonl' then JSON Lines data will be generated and written to stdout, or regular JSON otherwise."
+            help = "The sink into which to generate data. Can be a Postgres URI, a MongoDB URI to write data directly to a database. If 'jsonl' then JSON Lines data will be generated and written to stdout, or regular JSON otherwise.",
+            default_value = "json:"
         )]
         #[serde(skip)]
-        to: Option<String>,
+        to: String,
         #[structopt(
             long,
             help = "an unsigned 64 bit integer seed to be used as a seed for generation"
@@ -253,11 +242,6 @@ pub enum Args {
         )]
         #[serde(skip)]
         schema: Option<String>,
-        #[structopt(
-            long,
-            help = "Specifies the format of data to produce when outputting to stdout or a file. Can be one of 'json', jsonl' 'csv'. Defaults to 'json'."
-        )]
-        data_format: Option<String>,
         #[structopt(
             long,
             help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when outputting JSON Lines data. Defaults to 'collection'."
@@ -281,21 +265,17 @@ pub enum Args {
         collection: Option<Name>,
         #[structopt(
             long,
-            help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
+            help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin",
+            default_value = "json:"
         )]
         #[serde(skip)]
-        from: Option<String>,
+        from: String,
         #[structopt(
             long,
             help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
         )]
         #[serde(skip)]
         schema: Option<String>,
-        #[structopt(
-            long,
-            help = "Specifies the format of data when importing from stdin or a file. Can be one of 'json', jsonl' 'csv'. Defaults to 'json'."
-        )]
-        data_format: Option<String>,
         #[structopt(
             long,
             help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when importing JSON Lines with multiple collections. Defaults to 'collection'."

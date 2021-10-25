@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use serde_json::Value;
@@ -26,18 +25,14 @@ pub enum DataFormat {
 }
 
 impl DataFormat {
-    pub fn new(format_string: Option<String>, collection_field_name: Option<String>) -> Self {
-        format_string
-            .map(
-                |format_string| match format_string.to_lowercase().as_str() {
-                    "jsonl" => DataFormat::JsonLines {
-                        collection_field_name,
-                    },
-                    "csv" => DataFormat::Csv,
-                    _ => DataFormat::Json,
-                },
-            )
-            .unwrap_or_default()
+    pub fn new(uri_scheme: &str, collection_field_name: Option<String>) -> Self {
+        match uri_scheme {
+            "jsonl" => DataFormat::JsonLines {
+                collection_field_name,
+            },
+            "csv" => DataFormat::Csv,
+            _ => DataFormat::Json,
+        }
     }
 
     pub fn get_collection_field_name_or_default(&self) -> &str {
@@ -153,39 +148,41 @@ pub trait ImportStrategy {
     }
 }
 
-impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
+impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
     type Error = anyhow::Error;
 
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
-        match params.uri {
-            None => Ok(Box::new(StdinImportStrategy {
-                data_format: params.data_format,
-            })),
-            Some(uri) => {
-                let import_strategy: Box<dyn ImportStrategy> = if uri.starts_with("postgres://")
-                    || uri.starts_with("postgresql://")
-                {
-                    Box::new(PostgresImportStrategy {
-                        uri,
-                        schema: params.schema,
-                    })
-                } else if uri.starts_with("mongodb://") {
-                    Box::new(MongoImportStrategy { uri })
-                } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                    Box::new(MySqlImportStrategy { uri })
-                } else if let Ok(path) = PathBuf::from_str(&uri) {
-                    Box::new(FileImportStrategy {
-                        from_file: path,
-                        data_format: params.data_format,
-                    })
+        let scheme = params.uri.scheme().as_str().to_lowercase();
+        let import_strategy: Box<dyn ImportStrategy> = match scheme.as_str() {
+            "postgres" | "postgresql" => Box::new(PostgresImportStrategy {
+                uri_string: params.uri.to_string(),
+                schema: params.schema,
+            }),
+            "mongodb" => Box::new(MongoImportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "mysql" | "mariadb" => Box::new(MySqlImportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "json" | "jsonl" | "csv" => {
+                let data_format = DataFormat::new(&scheme, params.collection_field_name);
+
+                if params.uri.path() == "" {
+                    Box::new(StdinImportStrategy { data_format })
                 } else {
-                    return Err(anyhow!(
-                         "Data source not recognized. Was expecting 'mongodb', 'postgres', 'mysql', or a file system path."
-                    ));
-                };
-                Ok(import_strategy)
+                    Box::new(FileImportStrategy {
+                        data_format,
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                    })
+                }
             }
-        }
+            _ => {
+                return Err(anyhow!(
+                    "Data source not recognized. Was expecting 'mongodb', 'postgres', 'mysql', or a file system path."
+                ));
+            }
+        };
+        Ok(import_strategy)
     }
 }
 
