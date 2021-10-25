@@ -77,10 +77,10 @@ macro_rules! number_content {
         }
 
         impl NumberContent {
-            pub fn kind(&self) -> &'static str {
+            pub fn kind(&self) -> String {
                 match self {
                     $($(Self::$as(number_content::$as::$variant(_)) => {
-                        concat!(stringify!($as), "::", stringify!($variant))
+                        concat!(stringify!($as), "::", stringify!($variant)).to_string()
                     },)*)*
                 }
             }

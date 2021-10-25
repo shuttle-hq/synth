@@ -12,11 +12,11 @@ pub enum BoolContent {
 }
 
 impl BoolContent {
-    pub fn kind(&self) -> &str {
+    pub fn kind(&self) -> String {
         match self {
-            Self::Frequency(_) => "frequency",
-            Self::Constant(_) => "constant",
-            Self::Categorical(_) => "categorical",
+            Self::Frequency(_) => "frequency".to_string(),
+            Self::Constant(_) => "constant".to_string(),
+            Self::Categorical(_) => "categorical".to_string(),
         }
     }
 }

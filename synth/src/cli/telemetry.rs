@@ -16,7 +16,6 @@ use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
-    schema::{number_content, NumberContent, StringContent},
     Compile, Compiler, Content, Graph, Namespace,
 };
 
@@ -161,30 +160,7 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
 
 impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
-        match content {
-            Content::String(StringContent::Faker(faker)) => self
-                .context
-                .add_generator(format!("string::faker::{}", faker.generator)),
-            Content::Number(NumberContent::I64(number_content::I64::Range(_))) => {
-                self.context.add_generator("number::i64::range".to_string())
-            }
-            Content::Number(NumberContent::U64(number_content::U64::Range(_))) => {
-                self.context.add_generator("number::u64::range".to_string())
-            }
-            Content::Number(NumberContent::F64(number_content::F64::Range(_))) => {
-                self.context.add_generator("number::f64::range".to_string())
-            }
-            Content::Number(NumberContent::I32(number_content::I32::Range(_))) => {
-                self.context.add_generator("number::i32::range".to_string())
-            }
-            Content::Number(NumberContent::U32(number_content::U32::Range(_))) => {
-                self.context.add_generator("number::u32::range".to_string())
-            }
-            Content::Number(NumberContent::F32(number_content::F32::Range(_))) => {
-                self.context.add_generator("number::f32::range".to_string())
-            }
-            _ => {}
-        }
+        self.context.add_generator(format!("{}", content));
 
         if let Err(err) = self.as_at(field, content).compile() {
             warn!(
@@ -431,9 +407,9 @@ pub mod tests {
         assert_eq!(
             context.generators,
             vec!(
-                "string::faker::credit_card",
-                "string::faker::safe_email",
-                "string::faker::username"
+                "string::credit_card",
+                "string::safe_email",
+                "string::username"
             )
         );
     }
@@ -494,12 +470,81 @@ pub mod tests {
         assert_eq!(
             context.generators,
             vec!(
-                "number::f32::range",
-                "number::f64::range",
-                "number::i32::range",
-                "number::i64::range",
-                "number::u32::range",
-                "number::u64::range"
+                "number::F32::Range",
+                "number::F64::Range",
+                "number::I32::Range",
+                "number::I64::Range",
+                "number::U32::Range",
+                "number::U64::Range"
+            )
+        );
+    }
+
+    #[test]
+    fn telemetry_context_from_namespace_booleans() {
+        let schema: Namespace = schema!({
+            "type": "object",
+            "constant": {
+                "type": "bool",
+                "constant": true
+            },
+            "frequency": {
+                "type": "bool",
+                "frequency": 0.65
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        let mut context = TelemetryContext::new();
+        context.from_namespace(&schema).unwrap();
+
+        assert_eq!(
+            context.generators,
+            vec!("bool::constant", "bool::frequency")
+        );
+    }
+
+    #[test]
+    fn telemetry_context_from_namespace_series() {
+        let schema: Namespace = schema!({
+            "type": "object",
+            "series": {
+                "type": "series",
+                "incrementing": {
+                    "start": "2021-02-01 09:00:00",
+                    "increment": "1m"
+                }
+            },
+            "poisson": {
+                "type": "series",
+                "poisson": {
+                    "start": "2021-02-01 09:00:00",
+                    "rate": "1m"
+                }
+            },
+            "cyclic": {
+                "type": "series",
+                "cyclical": {
+                    "start": "2021-02-01 00:00:00",
+                    "period": "1d",
+                    "min_rate": "10m",
+                    "max_rate": "30s"
+                }
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        let mut context = TelemetryContext::new();
+        context.from_namespace(&schema).unwrap();
+
+        assert_eq!(
+            context.generators,
+            vec!(
+                "series::cyclical",
+                "series::poisson",
+                "series::incrementing"
             )
         );
     }

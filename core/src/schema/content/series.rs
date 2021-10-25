@@ -14,6 +14,17 @@ pub struct SeriesContent {
     pub variant: SeriesVariant,
 }
 
+impl SeriesContent {
+    pub fn kind(&self) -> String {
+        match self.variant {
+            SeriesVariant::Incrementing(_) => "incrementing".to_string(),
+            SeriesVariant::Poisson(_) => "poisson".to_string(),
+            SeriesVariant::Cyclical(_) => "cyclical".to_string(),
+            SeriesVariant::Zip(_) => "zip".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]

@@ -401,20 +401,20 @@ impl Content {
         }
     }
 
-    pub fn kind(&self) -> &'static str {
+    pub fn kind(&self) -> String {
         match self {
-            Content::Null(_) => "null",
-            Content::Bool(_) => "bool",
-            Content::Number(_) => "number",
-            Content::String(_) => "string",
-            Content::DateTime(_) => "date_time",
-            Content::Array(_) => "array",
-            Content::Object(_) => "object",
-            Content::SameAs(_) => "same_as",
-            Content::OneOf(_) => "one_of",
-            Content::Series(_) => "series",
-            Content::Unique(_) => "unique",
-            Content::Hidden(_) => "hidden",
+            Content::Null(_) => "null".to_string(),
+            Content::Bool(content) => format!("bool::{}", content.kind()),
+            Content::Number(content) => format!("number::{}", content.kind()),
+            Content::String(content) => format!("string::{}", content.kind()),
+            Content::DateTime(_) => "date_time".to_string(),
+            Content::Array(_) => "array".to_string(),
+            Content::Object(_) => "object".to_string(),
+            Content::SameAs(_) => "same_as".to_string(),
+            Content::OneOf(_) => "one_of".to_string(),
+            Content::Series(content) => format!("series::{}", content.kind()),
+            Content::Unique(_) => "unique".to_string(),
+            Content::Hidden(_) => "hidden".to_string(),
         }
     }
 }
