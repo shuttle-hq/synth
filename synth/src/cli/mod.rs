@@ -186,7 +186,14 @@ impl Cli {
             DataSourceParams { uri: to, schema }.try_into()?;
 
         #[cfg(feature = "telemetry")]
-        self.fill_telemetry(&namespace)?;
+        self.fill_telemetry(&namespace).or_else(|err| {
+            format!(
+                "Failed to get telemetry data. Please report this bug: ",
+                err
+            );
+
+            Ok(())
+        })?;
 
         let params = ExportParams {
             namespace,
