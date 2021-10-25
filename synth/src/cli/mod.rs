@@ -188,7 +188,7 @@ impl Cli {
         #[cfg(feature = "telemetry")]
         self.fill_telemetry(&namespace).or_else(|err| {
             format!(
-                "Failed to get telemetry data. Please report this bug: ",
+                "Failed to get telemetry data. Please report this bug: {}",
                 err
             );
 
