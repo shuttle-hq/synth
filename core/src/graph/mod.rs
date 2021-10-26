@@ -368,6 +368,70 @@ impl Type<MySql> for Value {
 }
 
 impl Encode<'_, Postgres> for Value {
+    fn produces(&self) -> Option<PgTypeInfo> {
+        match self {
+            Value::Null(_) => None,
+            Value::Bool(_) => Some(PgTypeInfo::with_name("bool")),
+            Value::Number(num) => match *num {
+                Number::I8(_) => Some(PgTypeInfo::with_name("char")),
+                Number::I16(_) => Some(PgTypeInfo::with_name("int2")),
+                Number::I32(_) => Some(PgTypeInfo::with_name("int4")),
+                Number::I64(_) => Some(PgTypeInfo::with_name("int8")),
+                Number::I128(_) => Some(PgTypeInfo::with_name("numeric")),
+                Number::U8(_) => Some(PgTypeInfo::with_name("char")),
+                Number::U16(_) => Some(PgTypeInfo::with_name("int2")),
+                Number::U32(_) => Some(PgTypeInfo::with_name("int4")),
+                Number::U64(_) => Some(PgTypeInfo::with_name("int8")),
+                Number::U128(_) => Some(PgTypeInfo::with_name("numeric")),
+                Number::F32(_) => Some(PgTypeInfo::with_name("float4")),
+                Number::F64(_) => Some(PgTypeInfo::with_name("float8")),
+            },
+            Value::String(_) => Some(PgTypeInfo::with_name("text")),
+            Value::DateTime(ChronoValueAndFormat { value, .. }) => match value {
+                ChronoValue::NaiveDate(_) => Some(PgTypeInfo::with_name("date")),
+                ChronoValue::NaiveTime(_) => Some(PgTypeInfo::with_name("time")),
+                ChronoValue::NaiveDateTime(_) => Some(PgTypeInfo::with_name("timestamp")),
+                ChronoValue::DateTime(_) => Some(PgTypeInfo::with_name("timestamptz")),
+            },
+            Value::Object(_) => Some(PgTypeInfo::with_name("jsonb")),
+            Value::Array(arr) => {
+                if arr.len() < 1 {
+                    None
+                } else {
+                    match &arr[0] {
+                        Value::Null(_) => None,
+                        Value::Bool(_) => Some(PgTypeInfo::with_name("_bool")),
+                        Value::Number(num) => match num {
+                            Number::I8(_) => Some(PgTypeInfo::with_name("_char")),
+                            Number::I16(_) => Some(PgTypeInfo::with_name("_int2")),
+                            Number::I32(_) => Some(PgTypeInfo::with_name("_int4")),
+                            Number::I64(_) => Some(PgTypeInfo::with_name("_int8")),
+                            Number::I128(_) => Some(PgTypeInfo::with_name("_numeric")),
+                            Number::U8(_) => Some(PgTypeInfo::with_name("_char")),
+                            Number::U16(_) => Some(PgTypeInfo::with_name("_int2")),
+                            Number::U32(_) => Some(PgTypeInfo::with_name("_int4")),
+                            Number::U64(_) => Some(PgTypeInfo::with_name("_int8")),
+                            Number::U128(_) => Some(PgTypeInfo::with_name("_numeric")),
+                            Number::F32(_) => Some(PgTypeInfo::with_name("_float4")),
+                            Number::F64(_) => Some(PgTypeInfo::with_name("_float8")),
+                        },
+                        Value::String(_) => Some(PgTypeInfo::with_name("_text")),
+                        Value::DateTime(ChronoValueAndFormat { value, .. }) => match value {
+                            ChronoValue::NaiveDate(_) => Some(PgTypeInfo::with_name("_date")),
+                            ChronoValue::NaiveTime(_) => Some(PgTypeInfo::with_name("_time")),
+                            ChronoValue::NaiveDateTime(_) => {
+                                Some(PgTypeInfo::with_name("_timestamp"))
+                            }
+                            ChronoValue::DateTime(_) => Some(PgTypeInfo::with_name("_timestamptz")),
+                        },
+                        Value::Object(_) => Some(PgTypeInfo::with_name("_jsonb")),
+                        Value::Array(_) => None, // Only one dimensional arrays are supported by sqlx
+                    }
+                }
+            }
+        }
+    }
+
     fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> IsNull {
         match self {
             Value::Null(_) => IsNull::Yes,
