@@ -22,11 +22,10 @@ fn bench_generate_n_to_stdout(size: usize) {
             namespace,
             collection: None,
             size,
-            to: None,
+            to: "json:".to_string(),
             seed: Some(0),
             random: false,
             schema: None,
-            data_format: None,
             collection_field_name: None,
         };
         Cli::new().unwrap().run(args).await.unwrap()
