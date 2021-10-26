@@ -1,10 +1,8 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use backtrace::Backtrace;
 use colored::Colorize;
 use lazy_static::lazy_static;
 
-use std::collections::HashMap;
-use std::error::Error;
 use std::future::Future;
 use std::io::{self, BufRead, Read, Write};
 use std::panic;
@@ -177,15 +175,14 @@ impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     }
 }
 
-pub async fn with_telemetry<F, Fut, T, E, G>(
+pub async fn with_telemetry<F, Fut, T, G>(
     args: Args,
     func: F,
     func_telemetry_context: G,
-) -> Result<T, E>
+) -> Result<T>
 where
     F: FnOnce(Args) -> Fut,
-    Fut: Future<Output = Result<T, E>>,
-    E: AsRef<dyn Error + 'static>,
+    Fut: Future<Output = Result<T>>,
     G: FnOnce() -> TelemetryContext,
 {
     if !is_enabled() {
@@ -276,83 +273,64 @@ impl TelemetryClient {
         }
     }
 
-    fn default_telemetry_properties(&self) -> HashMap<String, String> {
-        let mut prop_map = HashMap::new();
-        prop_map.insert("version".to_string(), self.synth_version.clone());
-        prop_map.insert("os".to_string(), self.os.clone());
+    fn default_telemetry_event<S: Into<String>>(&self, event: S) -> Result<posthog_rs::Event> {
+        let mut event = posthog_rs::Event::new(event.into(), self.uuid.clone());
 
-        prop_map
+        event.insert_prop("version", self.synth_version.clone())?;
+        event.insert_prop("os", self.os.clone())?;
+
+        Ok(event)
     }
 
-    pub fn success<T, E>(
+    pub fn success<T>(
         &self,
         command_name: &str,
         output: T,
         telemetry_context: TelemetryContext,
-    ) -> Result<T, E> {
-        let mut prop_map = self.default_telemetry_properties();
-        prop_map.insert("command".to_string(), command_name.to_string());
-        prop_map.insert("success".to_string(), CommandResult::Success.to_string());
+    ) -> Result<T> {
+        let mut event = self.default_telemetry_event(EVENT_NAME)?;
+        event.insert_prop("command", command_name)?;
+        event.insert_prop("success", CommandResult::Success.to_string())?;
 
         if telemetry_context.generators.len() > 0 {
-            prop_map.insert(
-                "generators".to_string(),
-                telemetry_context.generators.join(", "),
-            );
+            event.insert_prop("generators", telemetry_context.generators)?;
         }
 
-        self.send(EVENT_NAME.to_string(), prop_map).or_else(|err| {
+        self.send(event).or_else::<Error, _>(|err| {
             info!("failed to push ok of command: {}", err);
             Ok(())
         })?;
         Ok(output)
     }
 
-    pub fn failed<T, E>(&self, command_name: &str, error: E) -> Result<T, E>
-    where
-        E: AsRef<dyn Error + 'static>,
-    {
-        let mut prop_map = self.default_telemetry_properties();
-        prop_map.insert("command".to_string(), command_name.to_string());
-        prop_map.insert("success".to_string(), CommandResult::Failed.to_string());
+    pub fn failed<T>(&self, command_name: &str, error: Error) -> Result<T> {
+        let mut event = self.default_telemetry_event(EVENT_NAME)?;
 
-        self.send(EVENT_NAME.to_string(), prop_map).or_else(|err| {
+        event.insert_prop("command", command_name)?;
+        event.insert_prop("success", CommandResult::Failed.to_string())?;
+
+        self.send(event).or_else::<Error, _>(|err| {
             info!("failed to push err of command: {}", err);
             Ok(())
         })?;
+
         Err(error)
     }
 
     fn send_panic_report(&self, mut panic_report: PanicReport) -> Result<()> {
         panic_report.backtrace.resolve();
 
-        let mut prop_map = self.default_telemetry_properties();
-        prop_map.insert(
-            "username".to_string(),
-            panic_report.username.unwrap_or_default(),
-        );
-        prop_map.insert("email".to_string(), panic_report.email.unwrap_or_default());
-        prop_map.insert("synth_command".to_string(), panic_report.synth_command);
-        prop_map.insert(
-            "backtrace".to_string(),
-            format!("{:?}", panic_report.backtrace),
-        );
+        let mut event = self.default_telemetry_event("synth-panic-report")?;
 
-        self.send(String::from("synth-panic-report"), prop_map)
+        event.insert_prop("username", panic_report.username.unwrap_or_default())?;
+        event.insert_prop("email", panic_report.email.unwrap_or_default())?;
+        event.insert_prop("synth_command", panic_report.synth_command)?;
+        event.insert_prop("backtrace", format!("{:?}", panic_report.backtrace))?;
+
+        self.send(event)
     }
 
-    fn send(&self, event: String, prop_map: HashMap<String, String>) -> Result<()> {
-        let props = posthog_rs::Properties {
-            distinct_id: self.uuid.clone(),
-            props: prop_map,
-        };
-
-        let event = posthog_rs::Event {
-            event,
-            properties: props,
-            timestamp: None,
-        };
-
+    fn send(&self, event: posthog_rs::Event) -> Result<()> {
         if let Err(err) = self.ph_client.capture(event) {
             debug!("Failed to send message to PostHog. Error: {:?}", err);
             return Err(anyhow!("Failed to send message to PostHog."));
