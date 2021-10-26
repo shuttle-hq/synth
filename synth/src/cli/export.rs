@@ -13,7 +13,7 @@ use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
 
-use super::import::DataFormat;
+use super::DataFormat;
 
 pub trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<()>;

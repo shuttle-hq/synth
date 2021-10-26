@@ -4,7 +4,7 @@ use crate::sampler::Sampler;
 use anyhow::Result;
 use serde_json::Value;
 
-use super::import::DataFormat;
+use super::DataFormat;
 use std::convert::TryFrom;
 use std::io::BufRead;
 use std::path::PathBuf;

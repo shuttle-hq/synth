@@ -15,41 +15,7 @@ use crate::cli::mysql::MySqlImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
 use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
 
-#[derive(Clone, Debug)]
-pub enum DataFormat {
-    Json,
-    JsonLines {
-        collection_field_name: Option<String>,
-    },
-    Csv,
-}
-
-impl DataFormat {
-    pub fn new(uri_scheme: &str, collection_field_name: Option<String>) -> Self {
-        match uri_scheme {
-            "jsonl" => DataFormat::JsonLines {
-                collection_field_name,
-            },
-            "csv" => DataFormat::Csv,
-            _ => DataFormat::Json,
-        }
-    }
-
-    pub fn get_collection_field_name_or_default(&self) -> &str {
-        match self {
-            DataFormat::JsonLines {
-                collection_field_name: Some(ref x),
-            } => x,
-            _ => "collection", // Default collection field name is 'collection'.
-        }
-    }
-}
-
-impl Default for DataFormat {
-    fn default() -> Self {
-        DataFormat::Json
-    }
-}
+use super::DataFormat;
 
 pub trait ImportStrategy {
     /// Import an entire namespace. Default implementation handles the importing of text-based formats (e.g. JSON, JSON
