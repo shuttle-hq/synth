@@ -141,7 +141,7 @@ impl<'a, G: Generator> Iterator for IntoIter<'a, G> {
     }
 }
 
-pub(super) enum Source<'a> {
+pub enum Source<'a> {
     Namespace(&'a Namespace),
     Content(&'a Content),
 }
@@ -255,7 +255,7 @@ impl<G: Generator> OutputState<G> {
     }
 }
 
-pub(super) struct CompilerState<'a, G: Generator> {
+pub struct CompilerState<'a, G: Generator> {
     src: Source<'a>,
     output: OutputState<G>,
     scope: StructuredState<'a, G>,
@@ -286,7 +286,7 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 
     #[inline]
-    pub(super) fn namespace(namespace: &'a Namespace) -> Self {
+    pub fn namespace(namespace: &'a Namespace) -> Self {
         Self::new(Source::Namespace(namespace))
     }
 
@@ -331,7 +331,7 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 
     #[inline]
-    pub(super) fn entry<'t>(&'t mut self, field: &str) -> Entry<'t, 'a, G> {
+    pub fn entry<'t>(&'t mut self, field: &str) -> Entry<'t, 'a, G> {
         Entry {
             node: self,
             field: field.to_string(),
@@ -339,7 +339,7 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 
     #[inline]
-    pub(super) fn source(&self) -> &Source<'a> {
+    pub fn source(&self) -> &Source<'a> {
         &self.src
     }
 
@@ -369,13 +369,13 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 }
 
-pub(super) struct Entry<'t, 'a, G: Generator> {
+pub struct Entry<'t, 'a, G: Generator> {
     pub(super) node: &'t mut CompilerState<'a, G>,
     pub(super) field: String,
 }
 
 impl<'t, 'a, G: Generator> Entry<'t, 'a, G> {
-    pub(super) fn or_init(self, content: &'a Content) -> &'t mut CompilerState<'a, G> {
+    pub fn or_init(self, content: &'a Content) -> &'t mut CompilerState<'a, G> {
         if !self.node.scope.children.contains_key(&self.field) {
             self.node
                 .scope

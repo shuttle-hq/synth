@@ -2257,9 +2257,9 @@ dependencies = [
 
 [[package]]
 name = "posthog-rs"
-version = "0.1.3"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "534ebc730d07a72026518df1569c3158bc17f136d4a028b6e7f8f46d33b8d8b0"
+checksum = "2191ad4feb9367ca61ee351423bddfdb7c4ef5fed953eacd4b39c8cea1bd1d7f"
 dependencies = [
  "chrono",
  "reqwest",

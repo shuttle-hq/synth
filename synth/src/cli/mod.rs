@@ -25,11 +25,21 @@ use synth_core::{graph::json, Name};
 
 pub(crate) mod config;
 mod db_utils;
+
+#[cfg(feature = "telemetry")]
+use std::cell::RefCell;
+#[cfg(feature = "telemetry")]
+use synth_core::Namespace;
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
 
+#[cfg(feature = "telemetry")]
+use telemetry::TelemetryContext;
+
 pub struct Cli {
     store: Store,
+    #[cfg(feature = "telemetry")]
+    telemetry_context: RefCell<TelemetryContext>,
 }
 
 impl Cli {
@@ -44,7 +54,14 @@ impl Cli {
 
         Ok(Self {
             store: Store::init()?,
+            #[cfg(feature = "telemetry")]
+            telemetry_context: RefCell::new(TelemetryContext::new()),
         })
+    }
+
+    #[cfg(feature = "telemetry")]
+    pub fn get_telemetry_context(&self) -> TelemetryContext {
+        self.telemetry_context.borrow().clone()
     }
 
     fn derive_seed(random: bool, seed: Option<u64>) -> Result<u64> {
@@ -59,7 +76,7 @@ impl Cli {
         }
     }
 
-    pub async fn run(self, args: Args) -> Result<()> {
+    pub async fn run(&self, args: Args) -> Result<()> {
         match args {
             Args::Init { .. } => Ok(()),
             Args::Generate {
@@ -100,7 +117,7 @@ impl Cli {
     }
 
     #[cfg(feature = "telemetry")]
-    fn telemetry(self, cmd: TelemetryCommand) -> Result<()> {
+    fn telemetry(&self, cmd: TelemetryCommand) -> Result<()> {
         match cmd {
             TelemetryCommand::Enable => telemetry::enable(),
             TelemetryCommand::Disable => telemetry::disable(),
@@ -116,7 +133,7 @@ impl Cli {
     }
 
     fn import(
-        self,
+        &self,
         path: PathBuf,
         collection: Option<Name>,
         from: Option<String>,
@@ -150,7 +167,7 @@ impl Cli {
     }
 
     fn generate(
-        self,
+        &self,
         ns_path: PathBuf,
         collection: Option<Name>,
         target: usize,
@@ -168,6 +185,17 @@ impl Cli {
         let export_strategy: Box<dyn ExportStrategy> =
             DataSourceParams { uri: to, schema }.try_into()?;
 
+        #[cfg(feature = "telemetry")]
+        self.fill_telemetry(&namespace)
+            .or_else::<anyhow::Error, _>(|err| {
+                format!(
+                    "Failed to get telemetry data. Please report this bug: {}",
+                    err
+                );
+
+                Ok(())
+            })?;
+
         let params = ExportParams {
             namespace,
             collection_name: collection,
@@ -178,6 +206,15 @@ impl Cli {
         export_strategy
             .export(params)
             .with_context(|| format!("At namespace {:?}", ns_path))
+    }
+
+    #[cfg(feature = "telemetry")]
+    fn fill_telemetry(&self, namespace: &Namespace) -> Result<()> {
+        self.telemetry_context
+            .borrow_mut()
+            .from_namespace(&namespace)?;
+
+        Ok(())
     }
 }
 

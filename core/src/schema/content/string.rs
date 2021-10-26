@@ -19,15 +19,15 @@ pub enum StringContent {
 pub struct Uuid;
 
 impl StringContent {
-    pub fn kind(&self) -> &str {
+    pub fn kind(&self) -> String {
         match self {
-            Self::Pattern(_) => "pattern",
+            Self::Pattern(_) => "pattern".to_string(),
             Self::Faker(faker) => faker.kind(),
-            Self::Categorical(_) => "categorical",
-            Self::Serialized(_) => "serialized",
-            Self::Uuid(_) => "uuid",
-            Self::Truncated(_) => "truncated",
-            Self::Format(_) => "format",
+            Self::Categorical(_) => "categorical".to_string(),
+            Self::Serialized(_) => "serialized".to_string(),
+            Self::Uuid(_) => "uuid".to_string(),
+            Self::Truncated(_) => "truncated".to_string(),
+            Self::Format(_) => "format".to_string(),
         }
     }
 }
@@ -163,8 +163,8 @@ pub struct FakerContent {
 }
 
 impl FakerContent {
-    fn kind(&self) -> &str {
-        self.generator.as_ref()
+    fn kind(&self) -> String {
+        self.generator.to_string()
     }
 }
 
