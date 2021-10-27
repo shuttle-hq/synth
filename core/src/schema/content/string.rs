@@ -190,7 +190,7 @@ pub struct TruncatedContent {
     length: Box<Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct FormatContent {
     format: String,
@@ -205,6 +205,12 @@ impl Hash for FormatContent {
             key.hash(state);
             value.hash(state);
         }
+    }
+}
+
+impl PartialEq for FormatContent {
+    fn eq(&self, other: &FormatContent) -> bool {
+        self.format == other.format && self.arguments == other.arguments
     }
 }
 

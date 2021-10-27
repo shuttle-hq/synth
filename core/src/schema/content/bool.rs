@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 
 use super::Categorical;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub enum BoolContent {
@@ -52,6 +52,25 @@ impl Hash for BoolContent {
             Self::Frequency(f) => f.to_bits().hash(state),
             Self::Categorical(c) => c.hash(state),
             Self::Constant(c) => c.hash(state),
+        }
+    }
+}
+
+impl PartialEq for BoolContent {
+    fn eq(&self, other: &BoolContent) -> bool {
+        match self {
+            Self::Frequency(f) => match other {
+                Self::Frequency(of) => f == of,
+                _ => false,
+            },
+            Self::Categorical(c) => match other {
+                Self::Categorical(oc) => c == oc,
+                _ => false,
+            },
+            Self::Constant(c) => match other {
+                Self::Constant(oc) => c == oc,
+                _ => false,
+            },
         }
     }
 }

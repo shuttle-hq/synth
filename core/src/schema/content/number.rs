@@ -156,7 +156,7 @@ macro_rules! number_content {
             use serde::{Serialize, Deserialize};
 
             $(
-                #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+                #[derive(Debug, Serialize, Deserialize, Clone)]
                 #[serde(rename_all = "snake_case")]
                 #[serde(deny_unknown_fields)]
                 $(#[$default])?
@@ -372,28 +372,28 @@ macro_rules! derive_hash {
 derive_hash!(i32, u32, i64, u64, f32, f64);
 
 number_content!(
-    #[derive(Hash)]
+    #[derive(PartialEq, Hash)]
     u32[is_u32, default_u32_range] as U32 {
         Range(RangeStep<u32>),
         Categorical(Categorical<u32>),
         Constant(u32),
         Id(crate::schema::Id<u32>),
     },
-    #[derive(Hash)]
+    #[derive(PartialEq, Hash)]
     u64[is_u64, default_u64_range] as U64 {
         Range(RangeStep<u64>),
         Categorical(Categorical<u64>),
         Constant(u64),
         Id(crate::schema::Id<u64>),
     },
-    #[derive(Hash)]
+    #[derive(PartialEq, Hash)]
     i32[is_i32, default_i32_range] as I32 {
         Range(RangeStep<i32>),
         Categorical(Categorical<i32>),
         Constant(i32),
         Id(crate::schema::Id<i32>),
     },
-    #[derive(Hash)]
+    #[derive(PartialEq, Hash)]
     i64[is_i64, default_i64_range] as I64 {
         Range(RangeStep<i64>),
         Categorical(Categorical<i64>),
@@ -662,11 +662,41 @@ impl Hash for number_content::F32 {
     }
 }
 
+impl PartialEq for number_content::F32 {
+    fn eq(&self, other: &number_content::F32) -> bool {
+        match self {
+            Self::Range(range) => match other {
+                Self::Range(o_range) => range == o_range,
+                _ => false,
+            },
+            Self::Constant(constant) => match other {
+                Self::Constant(o_constant) => constant == o_constant,
+                _ => false,
+            },
+        }
+    }
+}
+
 impl Hash for number_content::F64 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Self::Range(range) => range.hash(state),
             Self::Constant(constant) => constant.to_bits().hash(state),
+        }
+    }
+}
+
+impl PartialEq for number_content::F64 {
+    fn eq(&self, other: &number_content::F64) -> bool {
+        match self {
+            Self::Range(range) => match other {
+                Self::Range(o_range) => range == o_range,
+                _ => false,
+            },
+            Self::Constant(constant) => match other {
+                Self::Constant(o_constant) => constant == o_constant,
+                _ => false,
+            },
         }
     }
 }

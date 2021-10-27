@@ -1,8 +1,10 @@
+use std::hash::{Hash, Hasher};
+
 use super::prelude::*;
 
 use super::Weight;
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, Hash)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct OneOfContent {
     pub variants: Vec<VariantContent>,
@@ -24,7 +26,13 @@ impl PartialEq for OneOfContent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Hash)]
+impl Hash for OneOfContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.variants.hash(state)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VariantContent {
     #[serde(default)]
     weight: Weight,
@@ -35,6 +43,12 @@ pub struct VariantContent {
 impl PartialEq for VariantContent {
     fn eq(&self, other: &Self) -> bool {
         self.content.eq(&other.content)
+    }
+}
+
+impl Hash for VariantContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.content.hash(state)
     }
 }
 

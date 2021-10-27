@@ -70,11 +70,11 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         SamplerOutput::Collection(ref collection) => insert_data(
             datasource,
             &params.collection_name.unwrap().to_string(),
-            &collection,
+            collection,
         ),
         SamplerOutput::Namespace(ref namespace) => {
             for (name, collection) in namespace {
-                insert_data(datasource, name, &collection)?;
+                insert_data(datasource, name, collection)?;
             }
             Ok(())
         }
