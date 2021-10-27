@@ -367,68 +367,85 @@ impl Type<MySql> for Value {
     }
 }
 
-impl Encode<'_, Postgres> for Value {
-    fn produces(&self) -> Option<PgTypeInfo> {
+impl Value {
+    fn to_postgres_string(&self) -> String {
         match self {
-            Value::Null(_) => None,
-            Value::Bool(_) => Some(PgTypeInfo::with_name("bool")),
-            Value::Number(num) => match *num {
-                Number::I8(_) => Some(PgTypeInfo::with_name("char")),
-                Number::I16(_) => Some(PgTypeInfo::with_name("int2")),
-                Number::I32(_) => Some(PgTypeInfo::with_name("int4")),
-                Number::I64(_) => Some(PgTypeInfo::with_name("int8")),
-                Number::I128(_) => Some(PgTypeInfo::with_name("numeric")),
-                Number::U8(_) => Some(PgTypeInfo::with_name("char")),
-                Number::U16(_) => Some(PgTypeInfo::with_name("int2")),
-                Number::U32(_) => Some(PgTypeInfo::with_name("int4")),
-                Number::U64(_) => Some(PgTypeInfo::with_name("int8")),
-                Number::U128(_) => Some(PgTypeInfo::with_name("numeric")),
-                Number::F32(_) => Some(PgTypeInfo::with_name("float4")),
-                Number::F64(_) => Some(PgTypeInfo::with_name("float8")),
-            },
-            Value::String(_) => Some(PgTypeInfo::with_name("text")),
-            Value::DateTime(ChronoValueAndFormat { value, .. }) => match value {
-                ChronoValue::NaiveDate(_) => Some(PgTypeInfo::with_name("date")),
-                ChronoValue::NaiveTime(_) => Some(PgTypeInfo::with_name("time")),
-                ChronoValue::NaiveDateTime(_) => Some(PgTypeInfo::with_name("timestamp")),
-                ChronoValue::DateTime(_) => Some(PgTypeInfo::with_name("timestamptz")),
-            },
-            Value::Object(_) => Some(PgTypeInfo::with_name("jsonb")),
-            Value::Array(arr) => {
-                if arr.len() < 1 {
-                    None
-                } else {
-                    match &arr[0] {
-                        Value::Null(_) => None,
-                        Value::Bool(_) => Some(PgTypeInfo::with_name("_bool")),
-                        Value::Number(num) => match num {
-                            Number::I8(_) => Some(PgTypeInfo::with_name("_char")),
-                            Number::I16(_) => Some(PgTypeInfo::with_name("_int2")),
-                            Number::I32(_) => Some(PgTypeInfo::with_name("_int4")),
-                            Number::I64(_) => Some(PgTypeInfo::with_name("_int8")),
-                            Number::I128(_) => Some(PgTypeInfo::with_name("_numeric")),
-                            Number::U8(_) => Some(PgTypeInfo::with_name("_char")),
-                            Number::U16(_) => Some(PgTypeInfo::with_name("_int2")),
-                            Number::U32(_) => Some(PgTypeInfo::with_name("_int4")),
-                            Number::U64(_) => Some(PgTypeInfo::with_name("_int8")),
-                            Number::U128(_) => Some(PgTypeInfo::with_name("_numeric")),
-                            Number::F32(_) => Some(PgTypeInfo::with_name("_float4")),
-                            Number::F64(_) => Some(PgTypeInfo::with_name("_float8")),
-                        },
-                        Value::String(_) => Some(PgTypeInfo::with_name("_text")),
-                        Value::DateTime(ChronoValueAndFormat { value, .. }) => match value {
-                            ChronoValue::NaiveDate(_) => Some(PgTypeInfo::with_name("_date")),
-                            ChronoValue::NaiveTime(_) => Some(PgTypeInfo::with_name("_time")),
-                            ChronoValue::NaiveDateTime(_) => {
-                                Some(PgTypeInfo::with_name("_timestamp"))
-                            }
-                            ChronoValue::DateTime(_) => Some(PgTypeInfo::with_name("_timestamptz")),
-                        },
-                        Value::Object(_) => Some(PgTypeInfo::with_name("_jsonb")),
-                        Value::Array(_) => None, // Only one dimensional arrays are supported by sqlx
+            Self::Array(arr) => {
+                format!(
+                    "{{{}}}",
+                    arr.iter()
+                        .map(|v| v.to_postgres_string())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                )
+            }
+            Self::Null(_) => "NULL".to_string(),
+            Self::Bool(b) => b.to_string(),
+            Self::Number(num) => num.to_string(),
+            Self::String(str) => format!("\"{}\"", str),
+            Self::DateTime(date) => date.format_to_string(),
+            Self::Object(_) => serde_json::to_string(&self).unwrap(),
+        }
+    }
+
+    pub fn get_postgres_type(&self) -> (&'static str, usize) {
+        let mut depth = 0;
+        let mut typ = "";
+
+        let mut current = Some(self);
+
+        while let Some(c) = current {
+            let pair = match c {
+                Value::Null(_) => (None, "unknown"),
+                Value::Bool(_) => (None, "bool"),
+                Value::Number(num) => match *num {
+                    Number::I8(_) => (None, "char"),
+                    Number::I16(_) => (None, "int2"),
+                    Number::I32(_) => (None, "int4"),
+                    Number::I64(_) => (None, "int8"),
+                    Number::I128(_) => (None, "numeric"),
+                    Number::U8(_) => (None, "char"),
+                    Number::U16(_) => (None, "int2"),
+                    Number::U32(_) => (None, "int4"),
+                    Number::U64(_) => (None, "int8"),
+                    Number::U128(_) => (None, "numeric"),
+                    Number::F32(_) => (None, "float4"),
+                    Number::F64(_) => (None, "float8"),
+                },
+                Value::String(_) => (None, "text"),
+                Value::DateTime(ChronoValueAndFormat { value, .. }) => match value {
+                    ChronoValue::NaiveDate(_) => (None, "date"),
+                    ChronoValue::NaiveTime(_) => (None, "time"),
+                    ChronoValue::NaiveDateTime(_) => (None, "timestamp"),
+                    ChronoValue::DateTime(_) => (None, "timestamptz"),
+                },
+                Value::Object(_) => (None, "jsonb"),
+                Value::Array(arr) => {
+                    depth += 1;
+                    if arr.is_empty() {
+                        (None, "unknown")
+                    } else {
+                        (Some(&arr[0]), "")
                     }
                 }
-            }
+            };
+
+            current = pair.0;
+            typ = pair.1;
+        }
+
+        (typ, depth)
+    }
+}
+
+impl Encode<'_, Postgres> for Value {
+    fn produces(&self) -> Option<PgTypeInfo> {
+        let (typ, depth) = self.get_postgres_type();
+
+        if depth > 0 {
+            Some(PgTypeInfo::with_name("text"))
+        } else {
+            Some(PgTypeInfo::with_name(typ))
         }
     }
 
@@ -473,7 +490,10 @@ impl Encode<'_, Postgres> for Value {
                 json::synth_val_to_json(self.clone()),
                 buf,
             ),
-            Value::Array(arr) => arr.encode_by_ref(buf), //TODO special-case for BYTEA
+            Value::Array(_) => {
+                let s = self.to_postgres_string();
+                <String as Encode<'_, Postgres>>::encode_by_ref(&s, buf)
+            } //TODO special-case for BYTEA
         }
     }
 }
