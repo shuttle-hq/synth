@@ -80,7 +80,7 @@ impl ExportStrategy for StdoutExportStrategy {
                     println!("{}", line);
                 }
             }
-            DataFormat::Csv => match output.into_csv(&params.namespace)? {
+            DataFormat::Csv => match output.into_csv(&params.namespace) {
                 CsvOutput::Namespace(ns) => {
                     for (name, csv) in ns {
                         println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)

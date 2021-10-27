@@ -38,6 +38,41 @@ impl CsvHeaders {
             _ => panic!("Outer-most `Content` of collection should be an array"),
         }
     }
+
+    pub fn parse_to_csv(&self, vals: Vec<Value>) -> String {
+        let mut lines = vec![self.to_string()];
+
+        for val in vals {
+            lines.push(val_to_csv(val).join(","));
+        }
+
+        lines.join("\n")
+    }
+}
+
+fn val_to_csv(val: Value) -> Vec<String> {
+    // TODO: Use CSV library
+    match val {
+        Value::Null(()) => vec!["".to_string()],
+        Value::Bool(b) => vec![b.to_string()],
+        Value::Number(n) => vec![synth_num_to_csv(n)],
+        Value::String(s) => vec![s],
+        Value::DateTime(dt) => vec![dt.format_to_string()],
+        Value::Object(obj_map) => {
+            let mut flatterned = Vec::new();
+            for (_, obj_val) in obj_map.into_iter() {
+                flatterned.extend(val_to_csv(obj_val));
+            }
+            flatterned
+        }
+        Value::Array(array_vals) => {
+            let mut flatterned = Vec::new();
+            for array_val in array_vals.into_iter() {
+                flatterned.extend(val_to_csv(array_val));
+            }
+            flatterned
+        }
+    }
 }
 
 impl fmt::Display for CsvHeaders {
@@ -58,7 +93,10 @@ fn parse_to_headers(parent: CsvHeader, content: &Content, namespace: &Namespace)
     match content {
         Content::Object(obj) => parse_object_to_headers(&parent, obj, namespace),
         Content::Array(array) => parse_array_to_headers(&parent, array),
-        Content::OneOf(_one_of) => unimplemented!(), // limit to just atomic types?
+        Content::OneOf(one_of) => {
+            // TODO: Assert all variants are atomic.
+            vec![parent]
+        }
         Content::SameAs(same_as) => {
             // Should be safe to unwrap as references have already been checked.
             let same_as_node = namespace.get_s_node(&same_as.ref_).unwrap();
@@ -139,22 +177,6 @@ impl fmt::Display for CsvHeader {
             Self::Simple(x) => write!(f, "{}", x),
             Self::ArrayElement { parent, index } => write!(f, "{}[{}]", parent, index),
             Self::ObjectProperty { parent, key } => write!(f, "{}.{}", parent, key),
-        }
-    }
-}
-
-pub fn synth_val_to_csv(val: Value) -> String {
-    match val {
-        Value::Null(()) => String::new(),
-        Value::Bool(b) => b.to_string(),
-        Value::Number(n) => synth_num_to_csv(n),
-        Value::String(s) => s,
-        Value::DateTime(dt) => dt.format_to_string(),
-        Value::Object(_obj_map) => {
-            panic!()
-        }
-        Value::Array(_array_vals) => {
-            panic!()
         }
     }
 }

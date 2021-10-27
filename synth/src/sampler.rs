@@ -76,19 +76,30 @@ impl SamplerOutput {
         }
     }
 
-    pub(crate) fn into_csv(self, namespace: &Namespace) -> Result<CsvOutput> {
+    pub(crate) fn into_csv(self, namespace: &Namespace) -> CsvOutput {
         match self {
-            Self::Namespace(key_values) => unimplemented!(),
+            Self::Namespace(key_values) => CsvOutput::Namespace(
+                key_values
+                    .into_iter()
+                    .map(|(collection_name, values)| {
+                        (
+                            collection_name.clone(),
+                            to_csv_string(collection_name.parse().unwrap(), values, namespace),
+                        )
+                    })
+                    .collect(),
+            ),
             Self::Collection(collection_name, values) => {
-                let content = namespace.collections.get(&collection_name).unwrap();
-
-                println!("{}", CsvHeaders::new(content, namespace));
-
-                unimplemented!()
-                //CsvOutput::SingleCollection(synth_vals_to_csv(values))
+                CsvOutput::SingleCollection(to_csv_string(collection_name, values, namespace))
             }
         }
     }
+}
+
+fn to_csv_string(collection_name: Name, values: Vec<Value>, namespace: &Namespace) -> String {
+    let content = namespace.collections.get(&collection_name).unwrap();
+    let headers = CsvHeaders::new(content, namespace);
+    headers.parse_to_csv(values)
 }
 
 pub enum CsvOutput {
