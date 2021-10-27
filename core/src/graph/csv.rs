@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::schema::content::{number_content, ArrayContent, NumberContent, ObjectContent};
-use crate::{Content, Value};
+use crate::{Content, Namespace, Value};
 use synth_gen::value::Number;
 
 pub struct CsvHeaders {
@@ -9,16 +9,18 @@ pub struct CsvHeaders {
 }
 
 impl CsvHeaders {
-    pub fn new(content: &Content) -> Self {
-        println!("{:?}", content);
-
+    pub fn new(content: &Content, namespace: &Namespace) -> Self {
         match content {
             Content::Array(array_content) => {
                 let headers = match &*array_content.content {
                     Content::Object(obj) => {
                         let mut v = Vec::new();
                         for (name, value) in &obj.fields {
-                            v.extend(parse_to_header(CsvHeader::Simple(name.clone()), value));
+                            v.extend(parse_to_headers(
+                                CsvHeader::Simple(name.clone()),
+                                value,
+                                namespace,
+                            ));
                         }
                         v
                     }
@@ -52,27 +54,36 @@ impl fmt::Display for CsvHeaders {
 }
 
 /// Recursively parses nested `Content` into a set of CSV headers.
-fn parse_to_header(parent: CsvHeader, content: &Content) -> Vec<CsvHeader> {
+fn parse_to_headers(parent: CsvHeader, content: &Content, namespace: &Namespace) -> Vec<CsvHeader> {
     match content {
-        Content::Object(obj) => parse_object_to_headers(&parent, obj),
+        Content::Object(obj) => parse_object_to_headers(&parent, obj, namespace),
         Content::Array(array) => parse_array_to_headers(&parent, array),
         Content::OneOf(_one_of) => unimplemented!(), // limit to just atomic types?
-        Content::SameAs(_same_as) => unimplemented!(),
+        Content::SameAs(same_as) => {
+            // Should be safe to unwrap as references have already been checked.
+            let same_as_node = namespace.get_s_node(&same_as.ref_).unwrap();
+            parse_to_headers(parent, same_as_node, namespace)
+        }
         Content::Unique(_unique) => unimplemented!(),
         _ => vec![parent],
     }
 }
 
-fn parse_object_to_headers(parent: &CsvHeader, obj: &ObjectContent) -> Vec<CsvHeader> {
+fn parse_object_to_headers(
+    parent: &CsvHeader,
+    obj: &ObjectContent,
+    ns: &Namespace,
+) -> Vec<CsvHeader> {
     let mut flatterned = Vec::new();
 
     for (field_name, field_content) in &obj.fields {
-        flatterned.extend(parse_to_header(
+        flatterned.extend(parse_to_headers(
             CsvHeader::ObjectProperty {
                 parent: Box::new(parent.clone()),
                 key: field_name.clone(),
             },
             field_content,
+            ns,
         ));
     }
 
@@ -215,7 +226,11 @@ mod tests {
             parent: parent.clone(),
         });
 
-        let parsed = parse_to_header(CsvHeader::Simple("root".to_string()), &content);
+        let parsed = parse_to_headers(
+            CsvHeader::Simple("root".to_string()),
+            &content,
+            &Namespace::new(),
+        );
 
         assert_eq!(
             parsed,

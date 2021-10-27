@@ -76,13 +76,13 @@ impl SamplerOutput {
         }
     }
 
-    pub(crate) fn into_csv(self, namespace_content: &Namespace) -> Result<CsvOutput> {
+    pub(crate) fn into_csv(self, namespace: &Namespace) -> Result<CsvOutput> {
         match self {
             Self::Namespace(key_values) => unimplemented!(),
             Self::Collection(collection_name, values) => {
-                let content = namespace_content.collections.get(&collection_name).unwrap();
+                let content = namespace.collections.get(&collection_name).unwrap();
 
-                CsvHeaders::new(content);
+                println!("{}", CsvHeaders::new(content, namespace));
 
                 unimplemented!()
                 //CsvOutput::SingleCollection(synth_vals_to_csv(values))
