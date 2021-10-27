@@ -67,7 +67,7 @@ macro_rules! number_content {
             $ty:ty[$is:ident, $def:ident] as $as:ident {
                 $(
                     $variant:ident($variant_ty:path),
-                    )*
+                )*
             },
         )*
     } => {
