@@ -833,69 +833,174 @@ pub mod tests {
 
     #[test]
     fn add_telemetry_context() {
-        let mut event = posthog_rs::Event::new();
+        let mut event = posthog_rs::Event::new("dummy", "id");
         let mut context = TelemetryContext::new();
-        let mut expected = posthog_rs::Event::new();
 
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        assert_eq!(event, expected, "empty fields should not be added");
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {}
+  },
+  "timestamp": null
+}"#,
+            "empty fields should not be added"
+        );
 
         context.generators.push("string::name".to_string());
         context.generators.push("string::credit_card".to_string());
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        expected.insert(
-            "generators".to_string(),
-            "string::name, string::credit_card".to_string(),
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {
+      "generators": [
+        "string::name",
+        "string::credit_card"
+      ]
+    }
+  },
+  "timestamp": null
+}"#,
+            "generators should be separated by commas"
         );
-        assert_eq!(event, expected, "generators should be separated by commas");
-
-        context.num_collections = Some(6);
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        expected.insert("num_collections".to_string(), "6".to_string());
-        assert_eq!(event, expected, "include num_collections");
-
-        context.num_fields = Some(9);
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        expected.insert(
-            "avg_num_fields_per_collection".to_string(),
-            "1.5".to_string(),
-        );
-        assert_eq!(event, expected, "include avg_fields_per_collection");
-
-        context.namespace_sha = Some(50238);
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        expected.insert("namespace_sha".to_string(), "50238".to_string());
-        assert_eq!(event, expected, "include namespace_sha");
-
-        context.namespace_name_sha = Some(54321);
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        expected.insert("namespace_name_sha".to_string(), "54321".to_string());
-        assert_eq!(event, expected, "include namespace_name_sha");
-
-        context.bytes = Some(1024);
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
-        expected.insert("bytes".to_string(), "1024".to_string());
-        assert_eq!(event, expected, "include bytes");
-
-        // Edge cases
-        event.clear();
-        expected.clear();
         context.generators = Vec::new();
+
+        event = posthog_rs::Event::new("dummy", "id");
+        context.num_collections = Some(6);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {
+      "num_collections": 6
+    }
+  },
+  "timestamp": null
+}"#,
+            "include num_collections"
+        );
+
+        event = posthog_rs::Event::new("dummy", "id");
+        context.num_fields = Some(9);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {
+      "num_collections": 6,
+      "avg_num_fields_per_collection": 1.5
+    }
+  },
+  "timestamp": null
+}"#,
+            "include avg_fields_per_collection"
+        );
+        context.num_collections = None;
+        context.num_fields = None;
+
+        event = posthog_rs::Event::new("dummy", "id");
+        context.num_fields = Some(9);
+        context.namespace_sha = Some(50238);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {
+      "namespace_sha": 50238
+    }
+  },
+  "timestamp": null
+}"#,
+            "include namespace_sha"
+        );
         context.namespace_sha = None;
+
+        event = posthog_rs::Event::new("dummy", "id");
+        context.namespace_name_sha = Some(54321);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {
+      "namespace_name_sha": 54321
+    }
+  },
+  "timestamp": null
+}"#,
+            "include namespace_name_sha"
+        );
         context.namespace_name_sha = None;
+
+        event = posthog_rs::Event::new("dummy", "id");
+        context.bytes = Some(1024);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {
+      "bytes": 1024
+    }
+  },
+  "timestamp": null
+}"#,
+            "include bytes"
+        );
         context.bytes = None;
 
+        // Edge cases
+        event = posthog_rs::Event::new("dummy", "id");
         context.num_collections = Some(0);
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        context.num_fields = Some(15);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         assert_eq!(
-            event, expected,
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {}
+  },
+  "timestamp": null
+}"#,
             "don't include avg_fields_per_collection when collection is 0"
         );
 
+        event = posthog_rs::Event::new("dummy", "id");
         context.num_collections = None;
-        TelemetryClient::add_telemetry_context(&mut event, context.clone());
+        context.num_fields = Some(4);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         assert_eq!(
-            event, expected,
+            serde_json::to_string_pretty(&event).unwrap(),
+            r#"{
+  "event": "dummy",
+  "properties": {
+    "distinct_id": "id",
+    "props": {}
+  },
+  "timestamp": null
+}"#,
             "don't include avg_fields_per_collection when collection is None"
         );
     }
