@@ -169,7 +169,7 @@ impl ExportStrategy for MongoExportStrategy {
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
         match output {
-            SamplerOutput::Collection(values) => self.insert_data(
+            SamplerOutput::Collection(_, values) => self.insert_data(
                 params.collection_name.unwrap().to_string(),
                 &values,
                 &mut client,

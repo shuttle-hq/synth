@@ -48,6 +48,7 @@ pub use unique::UniqueNode;
 pub mod one_of;
 pub(crate) mod series;
 
+pub mod csv;
 pub mod json;
 
 use crate::graph::series::SeriesNode;

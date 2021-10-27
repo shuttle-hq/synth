@@ -79,11 +79,9 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
     match values {
-        SamplerOutput::Collection(collection) => insert_data(
-            datasource,
-            params.collection_name.unwrap().to_string(),
-            &collection,
-        ),
+        SamplerOutput::Collection(name, collection) => {
+            insert_data(datasource, name.to_string(), &collection)
+        }
         SamplerOutput::Namespace(namespace) => {
             for (name, collection) in namespace {
                 insert_data(datasource, name, &collection)?;

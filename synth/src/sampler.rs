@@ -3,6 +3,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
+use synth_core::graph::csv::CsvHeaders;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::{Graph, Name, Namespace, Value};
 use synth_gen::prelude::*;
@@ -13,7 +14,7 @@ pub(crate) struct Sampler {
 
 pub(crate) enum SamplerOutput {
     Namespace(Vec<(String, Vec<Value>)>),
-    Collection(Vec<Value>),
+    Collection(Name, Vec<Value>),
 }
 
 impl SamplerOutput {
@@ -26,7 +27,7 @@ impl SamplerOutput {
                     .collect();
                 Value::Object(object)
             }
-            Self::Collection(values) => Value::Array(values),
+            Self::Collection(_, values) => Value::Array(values),
         };
         synth_val_to_json(as_synth)
     }
@@ -71,9 +72,28 @@ impl SamplerOutput {
 
                 jsonl
             }
-            Self::Collection(values) => values.into_iter().map(synth_val_to_json).collect(),
+            Self::Collection(_, values) => values.into_iter().map(synth_val_to_json).collect(),
         }
     }
+
+    pub(crate) fn into_csv(self, namespace_content: &Namespace) -> Result<CsvOutput> {
+        match self {
+            Self::Namespace(key_values) => unimplemented!(),
+            Self::Collection(collection_name, values) => {
+                let content = namespace_content.collections.get(&collection_name).unwrap();
+
+                CsvHeaders::new(content);
+
+                unimplemented!()
+                //CsvOutput::SingleCollection(synth_vals_to_csv(values))
+            }
+        }
+    }
+}
+
+pub enum CsvOutput {
+    Namespace(Vec<(String, String)>),
+    SingleCollection(String),
 }
 
 fn sampler_progress_bar(target: u64) -> ProgressBar {
@@ -122,9 +142,10 @@ impl SampleStrategy {
     fn sample<R: Rng>(self, model: Graph, rng: R) -> Result<SamplerOutput> {
         match self {
             SampleStrategy::Namespace(nss) => Ok(SamplerOutput::Namespace(nss.sample(model, rng)?)),
-            SampleStrategy::Collection(css) => {
-                Ok(SamplerOutput::Collection(css.sample(model, rng)?))
-            }
+            SampleStrategy::Collection(css) => Ok(SamplerOutput::Collection(
+                css.name.clone(),
+                css.sample(model, rng)?,
+            )),
         }
     }
 }
