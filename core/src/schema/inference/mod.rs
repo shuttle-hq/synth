@@ -5,6 +5,7 @@ use serde_json::{Map, Number, Value};
 
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::iter::FromIterator;
 
 pub mod value;
 pub use value::ValueMergeStrategy;
@@ -12,7 +13,7 @@ pub use value::ValueMergeStrategy;
 use super::{
     number_content, ArrayContent, BoolContent, Categorical, CategoricalType, ChronoValueFormatter,
     Content, DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
-    RangeStep, StringContent, ValueKindExt,
+    RangeStep, StringContent,
 };
 use crate::graph::prelude::content::number_content::{I32, I64};
 use crate::schema::UniqueContent;
@@ -68,12 +69,20 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
                 Self.try_merge(bool_content, boolean)
             }
             (Content::Null(_), Value::Null) => Ok(()),
-            (master, candidate) => Err(failed!(
-                target: Release,
-                "cannot merge a node of type '{}' with a value of type '{}'",
-                master.kind(),
-                candidate.kind()
-            )),
+            (master, candidate) => match master {
+                Content::OneOf(oneof) => {
+                    oneof.insert_with(self, candidate);
+                    Ok(())
+                }
+                content => {
+                    let old_content = std::mem::take(content);
+                    *content = Content::OneOf(OneOfContent::from_iter([
+                        old_content,
+                        Content::from(candidate),
+                    ]));
+                    Ok(())
+                }
+            },
         }
     }
 }
