@@ -21,6 +21,8 @@ CREATE TABLE arrays
     timestamp_array timestamp[],
     timestamptz_array timestamptz[],
     date_array date[],
-    time_array time[]
+    time_array time[],
+    json_array json,
+    jsonb_array json
 );
 

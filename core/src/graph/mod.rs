@@ -371,13 +371,18 @@ impl Value {
     fn to_postgres_string(&self) -> String {
         match self {
             Self::Array(arr) => {
-                format!(
-                    "{{{}}}",
-                    arr.iter()
-                        .map(|v| v.to_postgres_string())
-                        .collect::<Vec<String>>()
-                        .join(", ")
-                )
+                let (typ, _) = self.get_postgres_type();
+                let inner = arr
+                    .iter()
+                    .map(|v| v.to_postgres_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                if typ == "jsonb" {
+                    format!("[{}]", inner)
+                } else {
+                    format!("{{{}}}", inner)
+                }
             }
             Self::Null(_) => "NULL".to_string(),
             Self::Bool(b) => b.to_string(),

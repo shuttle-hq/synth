@@ -298,6 +298,8 @@ impl RelationalDataSource for PostgresDataSource {
                 let (typ, depth) = param.get_postgres_type();
                 if typ == "unknown" {
                     "".to_string() // This is currently not supported
+                } else if typ == "jsonb" {
+                    "::jsonb".to_string() // Cannot have an array of jsonb - ie jsonb[]
                 } else {
                     format!("::{}{}", typ, "[]".repeat(depth))
                 }

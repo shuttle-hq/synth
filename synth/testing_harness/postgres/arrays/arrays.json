@@ -382,6 +382,72 @@
                 "begin": "00:00:00",
                 "end": "23:00:00"
             }
+        },
+        "json_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "object",
+                "username": {
+                    "type": "string",
+                    "faker": {
+                        "generator": "username"
+                    }
+                },
+                "scores": {
+                    "type": "array",
+                    "length": 5,
+                    "content": {
+                        "type": "number",
+                        "subtype": "u32",
+                        "range": {
+                            "low": 0,
+                            "high": 100,
+                            "step": 1
+                        }
+                    }
+                }
+            }
+        },
+        "jsonb_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "object",
+                "username": {
+                    "type": "string",
+                    "faker": {
+                        "generator": "username"
+                    }
+                },
+                "scores": {
+                    "type": "array",
+                    "length": 5,
+                    "content": {
+                        "type": "number",
+                        "subtype": "u32",
+                        "range": {
+                            "low": 0,
+                            "high": 100,
+                            "step": 1
+                        }
+                    }
+                }
+            }
         }
     },
     "length": 10
