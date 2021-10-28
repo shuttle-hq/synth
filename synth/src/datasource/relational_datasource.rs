@@ -111,7 +111,7 @@ pub trait RelationalDataSource: DataSource {
                     .as_object()
                     .expect("This is always an object (sampler contract)");
 
-                let mut curr_query_params : Vec<Value> = row_obj.values().cloned().collect();
+                let mut curr_query_params: Vec<Value> = row_obj.values().cloned().collect();
                 Self::extend_parameterised_query(&mut query, curr_index, curr_query_params.clone());
                 curr_index += curr_query_params.len();
                 query_params.append(&mut curr_query_params);

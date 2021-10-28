@@ -199,7 +199,11 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(query: &mut String, _curr_index: usize, query_params: Vec<Value>) {
+    fn extend_parameterised_query(
+        query: &mut String,
+        _curr_index: usize,
+        query_params: Vec<Value>,
+    ) {
         let extend = query_params.len();
 
         query.push('(');
