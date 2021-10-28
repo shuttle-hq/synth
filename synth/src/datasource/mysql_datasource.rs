@@ -43,7 +43,7 @@ impl DataSource for MySqlDataSource {
         })
     }
 
-    async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()> {
+    async fn insert_data(&self, collection_name: &str, collection: &[Value]) -> Result<()> {
         self.insert_relational_data(collection_name, collection)
             .await
     }

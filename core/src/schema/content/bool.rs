@@ -1,8 +1,9 @@
 use super::prelude::*;
+use std::hash::{Hash, Hasher};
 
 use super::Categorical;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub enum BoolContent {
@@ -42,5 +43,26 @@ impl Compile for BoolContent {
             }
         };
         Ok(Graph::Bool(random_bool.into()))
+    }
+}
+
+impl Hash for BoolContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Frequency(f) => f.to_bits().hash(state),
+            Self::Categorical(c) => c.hash(state),
+            Self::Constant(c) => c.hash(state),
+        }
+    }
+}
+
+impl PartialEq for BoolContent {
+    fn eq(&self, other: &BoolContent) -> bool {
+        match (self, other) {
+            (Self::Frequency(f), Self::Frequency(of)) => f == of,
+            (Self::Categorical(c), Self::Categorical(oc)) => c == oc,
+            (Self::Constant(c), Self::Constant(oc)) => c == oc,
+            _ => false,
+        }
     }
 }

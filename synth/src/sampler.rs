@@ -11,6 +11,7 @@ pub(crate) struct Sampler {
     graph: Graph,
 }
 
+#[derive(Clone)]
 pub(crate) enum SamplerOutput {
     Namespace(Vec<(String, Vec<Value>)>),
     Collection(Vec<Value>),

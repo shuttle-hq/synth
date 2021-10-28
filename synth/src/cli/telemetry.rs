@@ -3,18 +3,25 @@ use backtrace::Backtrace;
 use colored::Colorize;
 use lazy_static::lazy_static;
 
+use std::cell::RefCell;
+use std::collections::hash_map::DefaultHasher;
 use std::future::Future;
+use std::hash::{Hash, Hasher};
 use std::io::{self, BufRead, Read, Write};
 use std::panic;
+use std::path::PathBuf;
+use std::rc::Rc;
 use uuid::Uuid;
 
 use crate::cli::config;
+use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::sampler::SamplerOutput;
 use crate::utils::META_OS;
 use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
-    Compile, Compiler, Content, Graph, Namespace,
+    Compile, Compiler, Content, Graph, Name, Namespace,
 };
 
 use super::{Args, TelemetryCommand};
@@ -103,38 +110,49 @@ fn get_or_initialise_uuid() -> String {
 }
 
 #[derive(Clone)]
+#[cfg_attr(test, derive(Debug, Default, PartialEq, Eq))]
 pub struct TelemetryContext {
     generators: Vec<String>,
+    num_collections: Option<usize>,
+    num_fields: Option<usize>,
+    namespace_name_sha: Option<u64>,
+    namespace_sha: Option<u64>,
+    bytes: Option<usize>,
 }
 
 impl TelemetryContext {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         TelemetryContext {
             generators: Vec::new(),
+            num_collections: None,
+            num_fields: None,
+            namespace_name_sha: None,
+            namespace_sha: None,
+            bytes: None,
         }
     }
 
-    pub fn from_namespace(&mut self, namespace: &Namespace) -> Result<()> {
-        let crawler = TelemetryCrawler {
-            state: &mut CompilerState::namespace(namespace),
-            position: Address::new_root(),
-            context: self,
-        };
-
-        namespace.compile(crawler)?;
-
-        Ok(())
+    fn add_generator(&mut self, name: String) {
+        self.generators.push(name);
     }
 
-    pub fn add_generator(&mut self, name: String) {
-        self.generators.push(name);
+    pub(super) fn set_num_collections(&mut self, num: usize) {
+        self.num_collections = Some(num);
+    }
+
+    fn inc_num_fields(&mut self) {
+        self.num_fields = if let Some(num) = self.num_fields {
+            Some(num + 1)
+        } else {
+            Some(1)
+        }
     }
 }
 
-pub(self) struct TelemetryCrawler<'t, 'a> {
+struct TelemetryCrawler<'t, 'a> {
     state: &'t mut CompilerState<'a, Graph>,
     position: Address,
-    context: &'t mut TelemetryContext,
+    context: Rc<RefCell<TelemetryContext>>,
 }
 
 impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
@@ -143,7 +161,7 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
         TelemetryCrawler {
             state: self.state.entry(field).or_init(content),
             position,
-            context: self.context,
+            context: Rc::clone(&self.context),
         }
     }
 
@@ -158,7 +176,10 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
 
 impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     fn build(&mut self, field: &str, content: &'a Content) -> Result<Graph> {
-        self.context.add_generator(format!("{}", content));
+        self.context
+            .borrow_mut()
+            .add_generator(format!("{}", content));
+        self.context.borrow_mut().inc_num_fields();
 
         if let Err(err) = self.as_at(field, content).compile() {
             warn!(
@@ -172,6 +193,91 @@ impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
 
     fn get<S: Into<Address>>(&mut self, _target: S) -> Result<Graph> {
         Ok(Graph::dummy())
+    }
+}
+
+pub(super) struct TelemetryExportStrategy {
+    exporter: Box<dyn ExportStrategy>,
+    telemetry_context: Rc<RefCell<TelemetryContext>>,
+}
+
+impl TelemetryExportStrategy {
+    pub fn new(strategy: Box<dyn ExportStrategy>, context: Rc<RefCell<TelemetryContext>>) -> Self {
+        TelemetryExportStrategy {
+            exporter: strategy,
+            telemetry_context: context,
+        }
+    }
+
+    pub(super) fn fill_telemetry_pre(
+        context: Rc<RefCell<TelemetryContext>>,
+        namespace: &Namespace,
+        collection: Option<Name>,
+        ns_path: PathBuf,
+    ) -> Result<()> {
+        let crawler = TelemetryCrawler {
+            state: &mut CompilerState::namespace(namespace),
+            position: Address::new_root(),
+            context: Rc::clone(&context),
+        };
+
+        if let Some(name) = collection {
+            if let Some(content) = namespace.collections.get(&name) {
+                content.compile(crawler)?;
+                context.borrow_mut().num_collections = Some(1);
+
+                // For length and content
+                if let Some(ref mut n) = context.borrow_mut().num_fields {
+                    *n -= 2;
+                }
+            }
+        } else {
+            namespace.compile(crawler)?;
+            let num_col = namespace.collections.len();
+            context.borrow_mut().num_collections = Some(num_col);
+
+            // Namespace, length and content for each collection
+            if let Some(ref mut n) = context.borrow_mut().num_fields {
+                *n -= 3 * num_col;
+            }
+        }
+
+        let mut context_mut = context.borrow_mut();
+
+        let mut hasher = DefaultHasher::new();
+        ns_path.hash(&mut hasher);
+        context_mut.namespace_name_sha = Some(hasher.finish());
+
+        hasher = DefaultHasher::new();
+        namespace.hash(&mut hasher);
+        context_mut.namespace_sha = Some(hasher.finish());
+
+        Ok(())
+    }
+
+    fn fill_telemetry_post(&self, output: SamplerOutput) -> Result<()> {
+        let j = output.into_json();
+        let s = serde_json::to_string(&j)?;
+
+        self.telemetry_context.borrow_mut().bytes = Some(s.len());
+
+        Ok(())
+    }
+}
+
+impl ExportStrategy for TelemetryExportStrategy {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+        Self::fill_telemetry_pre(
+            Rc::clone(&self.telemetry_context),
+            &params.namespace,
+            params.collection_name.clone(),
+            params.ns_path.clone(),
+        )?;
+        let output = self.exporter.export(params)?;
+
+        self.fill_telemetry_post(output.clone())?;
+
+        Ok(output)
     }
 }
 
@@ -282,6 +388,40 @@ impl TelemetryClient {
         Ok(event)
     }
 
+    fn add_telemetry_context(
+        event: &mut posthog_rs::Event,
+        telemetry_context: TelemetryContext,
+    ) -> Result<()> {
+        if telemetry_context.generators.len() > 0 {
+            event.insert_prop("generators", telemetry_context.generators)?;
+        }
+
+        if let Some(num_collections) = telemetry_context.num_collections {
+            if num_collections > 0 {
+                event.insert_prop("num_collections", num_collections)?;
+
+                if let Some(num_fields) = telemetry_context.num_fields {
+                    let avg = num_fields as f64 / num_collections as f64;
+                    event.insert_prop("avg_num_fields_per_collection", avg)?;
+                }
+            }
+        }
+
+        if let Some(namespace_sha) = telemetry_context.namespace_sha {
+            event.insert_prop("namespace_sha", namespace_sha)?;
+        }
+
+        if let Some(namespace_name_sha) = telemetry_context.namespace_name_sha {
+            event.insert_prop("namespace_name_sha", namespace_name_sha)?;
+        }
+
+        if let Some(bytes) = telemetry_context.bytes {
+            event.insert_prop("bytes", bytes)?;
+        }
+
+        Ok(())
+    }
+
     pub fn success<T>(
         &self,
         command_name: &str,
@@ -292,9 +432,7 @@ impl TelemetryClient {
         event.insert_prop("command", command_name)?;
         event.insert_prop("success", CommandResult::Success.to_string())?;
 
-        if telemetry_context.generators.len() > 0 {
-            event.insert_prop("generators", telemetry_context.generators)?;
-        }
+        TelemetryClient::add_telemetry_context(&mut event, telemetry_context)?;
 
         self.send(event).or_else::<Error, _>(|err| {
             info!("failed to push ok of command: {}", err);
@@ -342,188 +480,437 @@ impl TelemetryClient {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{Namespace, TelemetryContext};
+    use super::{
+        ExportParams, ExportStrategy, Namespace, SamplerOutput, TelemetryClient, TelemetryContext,
+        TelemetryExportStrategy,
+    };
+    use crate::sampler::Sampler;
+    use anyhow::Result;
+    use std::cell::RefCell;
+    use std::convert::TryFrom;
+    use std::path::PathBuf;
+    use std::rc::Rc;
 
     macro_rules! schema {
-    {
-        $($inner:tt)*
-    } => {
-        serde_json::from_value::<synth_core::schema::Content>(serde_json::json!($($inner)*))
-            .expect("could not deserialize value into a schema")
+        {
+            $($inner:tt)*
+        } => {
+            serde_json::from_value::<synth_core::schema::Content>(serde_json::json!($($inner)*))
+                .expect("could not deserialize value into a schema")
+        }
     }
-}
+
+    pub struct DummyExportStrategy {}
+
+    impl ExportStrategy for DummyExportStrategy {
+        fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+            let generator = Sampler::try_from(&params.namespace)?;
+            let output =
+                generator.sample_seeded(params.collection_name, params.target, params.seed)?;
+
+            Ok(output)
+        }
+    }
 
     #[test]
-    fn telemetry_context_from_namespace_string_generators() {
-        let schema: Namespace = schema!({
+    fn telemetry_export_strategy() {
+        let mut schema: Namespace = schema!({
             "type": "object",
-            "username": {
-                "type": "string",
-                "faker": {
-                    "generator": "username"
+            "strings": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "username": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "username"
+                        }
+                    },
+                    "credit_card": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "credit_card"
+                        }
+                    },
+                    "email": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "safe_email"
+                        }
+                    }
                 }
             },
-            "credit_card": {
-                "type": "string",
-                "faker": {
-                    "generator": "credit_card"
-                }
-            },
-            "email": {
-                "type": "string",
-                "faker": {
-                    "generator": "safe_email"
+            "extra": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "str": {
+                        "type": "string",
+                        "pattern": "extra collection test"
+                    }
                 }
             }
         })
         .into_namespace()
         .unwrap();
 
-        let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
+        let context = Rc::new(RefCell::new(TelemetryContext::new()));
+        let export_strategy =
+            TelemetryExportStrategy::new(Box::new(DummyExportStrategy {}), Rc::clone(&context));
+
+        export_strategy
+            .export(ExportParams {
+                namespace: schema,
+                collection_name: None,
+                target: 1,
+                seed: 500,
+                ns_path: PathBuf::from("/dummy/path"),
+            })
+            .unwrap();
 
         assert_eq!(
-            context.generators,
-            vec!(
-                "string::credit_card",
-                "string::safe_email",
-                "string::username"
-            )
+            context.take(),
+            TelemetryContext {
+                generators: vec!(
+                    "array".to_string(),
+                    "number::U64::Constant".to_string(),
+                    "object".to_string(),
+                    "string::pattern".to_string(),
+                    "array".to_string(),
+                    "number::U64::Constant".to_string(),
+                    "object".to_string(),
+                    "string::credit_card".to_string(),
+                    "string::safe_email".to_string(),
+                    "string::username".to_string()
+                ),
+                num_collections: Some(2),
+                num_fields: Some(4),
+                namespace_name_sha: Some(15302706232490290083),
+                namespace_sha: Some(10334654735128021143),
+                bytes: Some(138),
+            },
+            "string fakers should be correct"
+        );
+
+        schema = schema!({
+            "type": "object",
+            "integers": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "int_64": {
+                        "type": "number",
+                        "subtype": "i64",
+                        "range": {
+                            "low": -5
+                        }
+                    },
+                    "uint_64": {
+                        "type": "number",
+                        "subtype": "u64",
+                        "range": {
+                            "high": 5
+                        }
+                    },
+                    "f_64": {
+                        "type": "number",
+                        "subtype": "f64",
+                        "range": {
+                            "high": 3.2
+                        }
+                    },
+                    "int_32": {
+                        "type": "number",
+                        "subtype": "i32",
+                        "range": {
+                            "low": -13
+                        }
+                    },
+                    "uint_32": {
+                        "type": "number",
+                        "subtype": "u32",
+                        "range": {
+                            "high": 23
+                        }
+                    },
+                    "f_32": {
+                        "type": "number",
+                        "subtype": "f32",
+                        "range": {
+                            "high": 21.2
+                        }
+                    }
+                }
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        export_strategy
+            .export(ExportParams {
+                namespace: schema,
+                collection_name: None,
+                target: 1,
+                seed: 500,
+                ns_path: PathBuf::from("/dummy/path"),
+            })
+            .unwrap();
+
+        assert_eq!(
+            context.take(),
+            TelemetryContext {
+                generators: vec!(
+                    "array".to_string(),
+                    "number::U64::Constant".to_string(),
+                    "object".to_string(),
+                    "number::F32::Range".to_string(),
+                    "number::F64::Range".to_string(),
+                    "number::I32::Range".to_string(),
+                    "number::I64::Range".to_string(),
+                    "number::U32::Range".to_string(),
+                    "number::U64::Range".to_string(),
+                ),
+                num_collections: Some(1),
+                num_fields: Some(6),
+                namespace_name_sha: Some(15302706232490290083),
+                namespace_sha: Some(7413555395156765757),
+                bytes: Some(140),
+            },
+            "int ranges should be correct"
+        );
+
+        schema = schema!({
+            "type": "object",
+            "generators": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "constant": {
+                        "type": "bool",
+                        "constant": true
+                    },
+                    "frequency": {
+                        "type": "bool",
+                        "frequency": 0.65
+                    },
+                    "incrementing": {
+                        "type": "series",
+                        "incrementing": {
+                            "start": "2021-02-01 09:00:00",
+                            "increment": "1m"
+                        }
+                    },
+                    "poisson": {
+                        "type": "series",
+                        "poisson": {
+                            "start": "2021-02-01 09:00:00",
+                            "rate": "1m"
+                        }
+                    },
+                    "cyclic": {
+                        "type": "series",
+                        "cyclical": {
+                            "start": "2021-02-01 00:00:00",
+                            "period": "1d",
+                            "min_rate": "10m",
+                            "max_rate": "30s"
+                        }
+                    }
+                }
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        export_strategy
+            .export(ExportParams {
+                namespace: schema,
+                collection_name: None,
+                target: 1,
+                seed: 500,
+                ns_path: PathBuf::from("/dummy/path"),
+            })
+            .unwrap();
+
+        assert_eq!(
+            context.take(),
+            TelemetryContext {
+                generators: vec!(
+                    "array".to_string(),
+                    "number::U64::Constant".to_string(),
+                    "object".to_string(),
+                    "bool::constant".to_string(),
+                    "series::cyclical".to_string(),
+                    "bool::frequency".to_string(),
+                    "series::incrementing".to_string(),
+                    "series::poisson".to_string(),
+                ),
+                num_collections: Some(1),
+                num_fields: Some(5),
+                namespace_name_sha: Some(15302706232490290083),
+                namespace_sha: Some(1231538834371280080),
+                bytes: Some(151),
+            },
+            "other generators should be correct"
+        );
+
+        schema = schema!({
+            "type": "object",
+            "collection-1": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "str": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "username"
+                        }
+                    }
+                }
+            },
+            "collection-2": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "str": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "credit_card"
+                        }
+                    }
+                }
+            },
+            "collection-3": {
+                "type": "array",
+                "length": 1,
+                "content": {
+                    "type": "object",
+                    "str": {
+                        "type": "string",
+                        "faker": {
+                            "generator": "safe_email"
+                        }
+                    }
+                }
+            }
+        })
+        .into_namespace()
+        .unwrap();
+
+        export_strategy
+            .export(ExportParams {
+                namespace: schema,
+                collection_name: "collection-2".parse().ok(),
+                target: 1,
+                seed: 500,
+                ns_path: PathBuf::from("/dummy/namespace"),
+            })
+            .unwrap();
+
+        assert_eq!(
+            context.take(),
+            TelemetryContext {
+                generators: vec!(
+                    "number::U64::Constant".to_string(),
+                    "object".to_string(),
+                    "string::credit_card".to_string()
+                ),
+                num_collections: Some(1),
+                num_fields: Some(1),
+                namespace_name_sha: Some(6868949361385231259),
+                namespace_sha: Some(5224534078999940403),
+                bytes: Some(27),
+            },
+            "should only have stats for collection 2"
         );
     }
 
     #[test]
-    fn telemetry_context_from_namespace_number_ranges() {
-        let schema: Namespace = schema!({
-            "type": "object",
-            "int_64": {
-                "type": "number",
-                "subtype": "i64",
-                "range": {
-                    "low": -5
-                }
-            },
-            "uint_64": {
-                "type": "number",
-                "subtype": "u64",
-                "range": {
-                    "high": 5
-                }
-            },
-            "f_64": {
-                "type": "number",
-                "subtype": "f64",
-                "range": {
-                    "high": 3.2
-                }
-            },
-            "int_32": {
-                "type": "number",
-                "subtype": "i32",
-                "range": {
-                    "low": -13
-                }
-            },
-            "uint_32": {
-                "type": "number",
-                "subtype": "u32",
-                "range": {
-                    "high": 23
-                }
-            },
-            "f_32": {
-                "type": "number",
-                "subtype": "f32",
-                "range": {
-                    "high": 21.2
-                }
-            }
-        })
-        .into_namespace()
-        .unwrap();
-
+    fn add_telemetry_context() {
+        let mut event = posthog_rs::Event::new("dummy", "id");
         let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
+        let mut expected = posthog_rs::Event::new("dummy", "id");
 
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        assert_eq!(event, expected, "empty fields should not be added");
+
+        context.generators.push("string::name".to_string());
+        context.generators.push("string::credit_card".to_string());
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        expected
+            .insert_prop("generators", vec!["string::name", "string::credit_card"])
+            .unwrap();
+        assert_eq!(event, expected, "generators should be separated by commas");
+        context.generators = Vec::new();
+
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.num_collections = Some(6);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        expected.insert_prop("num_collections", 6).unwrap();
+        assert_eq!(event, expected, "include num_collections");
+
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.num_fields = Some(9);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        expected.insert_prop("num_collections", 6).unwrap();
+        expected
+            .insert_prop("avg_num_fields_per_collection", 1.5)
+            .unwrap();
+        assert_eq!(event, expected, "include avg_fields_per_collection");
+        context.num_collections = None;
+        context.num_fields = None;
+
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.namespace_sha = Some(50238);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        expected.insert_prop("namespace_sha", 50238).unwrap();
+        assert_eq!(event, expected, "include namespace_sha");
+        context.namespace_sha = None;
+
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.namespace_name_sha = Some(54321);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        expected.insert_prop("namespace_name_sha", 54321).unwrap();
+        assert_eq!(event, expected, "include namespace_name_sha");
+        context.namespace_name_sha = None;
+
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.bytes = Some(1024);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
+        expected.insert_prop("bytes", 1024).unwrap();
+        assert_eq!(event, expected, "include bytes");
+        context.bytes = None;
+
+        // Edge cases
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.num_collections = Some(0);
+        context.num_fields = Some(15);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         assert_eq!(
-            context.generators,
-            vec!(
-                "number::F32::Range",
-                "number::F64::Range",
-                "number::I32::Range",
-                "number::I64::Range",
-                "number::U32::Range",
-                "number::U64::Range"
-            )
+            event, expected,
+            "don't include avg_fields_per_collection when collection is 0"
         );
-    }
 
-    #[test]
-    fn telemetry_context_from_namespace_booleans() {
-        let schema: Namespace = schema!({
-            "type": "object",
-            "constant": {
-                "type": "bool",
-                "constant": true
-            },
-            "frequency": {
-                "type": "bool",
-                "frequency": 0.65
-            }
-        })
-        .into_namespace()
-        .unwrap();
-
-        let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
-
+        event = posthog_rs::Event::new("dummy", "id");
+        expected = posthog_rs::Event::new("dummy", "id");
+        context.num_collections = None;
+        context.num_fields = Some(4);
+        TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         assert_eq!(
-            context.generators,
-            vec!("bool::constant", "bool::frequency")
-        );
-    }
-
-    #[test]
-    fn telemetry_context_from_namespace_series() {
-        let schema: Namespace = schema!({
-            "type": "object",
-            "series": {
-                "type": "series",
-                "incrementing": {
-                    "start": "2021-02-01 09:00:00",
-                    "increment": "1m"
-                }
-            },
-            "poisson": {
-                "type": "series",
-                "poisson": {
-                    "start": "2021-02-01 09:00:00",
-                    "rate": "1m"
-                }
-            },
-            "cyclic": {
-                "type": "series",
-                "cyclical": {
-                    "start": "2021-02-01 00:00:00",
-                    "period": "1d",
-                    "min_rate": "10m",
-                    "max_rate": "30s"
-                }
-            }
-        })
-        .into_namespace()
-        .unwrap();
-
-        let mut context = TelemetryContext::new();
-        context.from_namespace(&schema).unwrap();
-
-        assert_eq!(
-            context.generators,
-            vec!(
-                "series::cyclical",
-                "series::poisson",
-                "series::incrementing"
-            )
+            event, expected,
+            "don't include avg_fields_per_collection when collection is None"
         );
     }
 }

@@ -16,6 +16,7 @@ use crate::version::print_version_message;
 use anyhow::{Context, Result};
 use rand::RngCore;
 use serde::Serialize;
+use std::cell::Cell;
 use std::convert::TryInto;
 use std::path::PathBuf;
 use std::process::exit;
@@ -29,17 +30,18 @@ mod db_utils;
 #[cfg(feature = "telemetry")]
 use std::cell::RefCell;
 #[cfg(feature = "telemetry")]
-use synth_core::Namespace;
+use std::rc::Rc;
 #[cfg(feature = "telemetry")]
 pub mod telemetry;
 
 #[cfg(feature = "telemetry")]
-use telemetry::TelemetryContext;
+use telemetry::{TelemetryContext, TelemetryExportStrategy};
 
 pub struct Cli {
     store: Store,
+    export_strategy: Cell<Option<Box<dyn ExportStrategy>>>,
     #[cfg(feature = "telemetry")]
-    telemetry_context: RefCell<TelemetryContext>,
+    telemetry_context: Rc<RefCell<TelemetryContext>>,
 }
 
 impl Cli {
@@ -54,8 +56,9 @@ impl Cli {
 
         Ok(Self {
             store: Store::init()?,
+            export_strategy: Default::default(),
             #[cfg(feature = "telemetry")]
-            telemetry_context: RefCell::new(TelemetryContext::new()),
+            telemetry_context: Rc::new(RefCell::new(TelemetryContext::new())),
         })
     }
 
@@ -152,6 +155,10 @@ impl Cli {
                 let content = import_strategy.import_collection(&collection)?;
                 self.store
                     .save_collection_path(&path, collection, content)?;
+
+                #[cfg(feature = "telemetry")]
+                self.telemetry_context.borrow_mut().set_num_collections(1);
+
                 Ok(())
             }
         } else if self.store.ns_exists(&path) {
@@ -161,7 +168,17 @@ impl Cli {
             ))
         } else {
             let ns = import_strategy.import()?;
+
+            #[cfg(feature = "telemetry")]
+            TelemetryExportStrategy::fill_telemetry_pre(
+                Rc::clone(&self.telemetry_context),
+                &ns,
+                collection.clone(),
+                path.clone(),
+            )?;
+
             self.store.save_ns_path(path, ns)?;
+
             Ok(())
         }
     }
@@ -182,39 +199,37 @@ impl Cli {
                 .expect("The provided namespace is not a valid UTF-8 string")
         ))?;
 
-        let export_strategy: Box<dyn ExportStrategy> =
-            DataSourceParams { uri: to, schema }.try_into()?;
+        self.export_strategy
+            .set(Some(DataSourceParams { uri: to, schema }.try_into()?));
 
         #[cfg(feature = "telemetry")]
-        self.fill_telemetry(&namespace)
-            .or_else::<anyhow::Error, _>(|err| {
-                format!(
-                    "Failed to get telemetry data. Please report this bug: {}",
-                    err
-                );
-
-                Ok(())
-            })?;
+        self.set_telemetry_export_strategy();
 
         let params = ExportParams {
             namespace,
             collection_name: collection,
             target,
             seed,
+            ns_path: ns_path.clone(),
         };
 
-        export_strategy
+        self.export_strategy
+            .take()
+            .unwrap()
             .export(params)
-            .with_context(|| format!("At namespace {:?}", ns_path))
+            .with_context(|| format!("At namespace {:?}", ns_path))?;
+
+        Ok(())
     }
 
     #[cfg(feature = "telemetry")]
-    fn fill_telemetry(&self, namespace: &Namespace) -> Result<()> {
-        self.telemetry_context
-            .borrow_mut()
-            .from_namespace(&namespace)?;
-
-        Ok(())
+    fn set_telemetry_export_strategy(&self) {
+        let delegate = self.export_strategy.take();
+        self.export_strategy
+            .set(Some(Box::new(TelemetryExportStrategy::new(
+                delegate.unwrap(),
+                Rc::clone(&self.telemetry_context),
+            ))));
     }
 }
 

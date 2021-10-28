@@ -13,6 +13,8 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
+use std::hash::{Hash, Hasher};
+
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
 use serde_json::Value;
 
@@ -88,14 +90,14 @@ pub trait Find<C> {
         R: AsRef<str>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct SameAsContent {
     #[serde(rename = "ref")]
     pub ref_: FieldRef,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct NullContent;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -138,7 +140,7 @@ macro_rules! content {
             $($name:ident($variant:ty)$(,)?)+
         }
     } => {
-        #[derive(Debug, Serialize, Clone, PartialEq)]
+        #[derive(Debug, Serialize, Clone, PartialEq, Hash)]
         #[serde(rename_all = "snake_case")]
         #[serde(tag = "type")]
         #[serde(deny_unknown_fields)]
@@ -569,6 +571,12 @@ where
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "f64")]
 pub struct Weight(f64);
+
+impl Hash for Weight {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.to_bits().hash(state);
+    }
+}
 
 impl std::convert::TryFrom<f64> for Weight {
     type Error = anyhow::Error;

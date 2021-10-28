@@ -111,7 +111,7 @@ impl ChronoValue {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum ChronoValueType {
     NaiveDate,
@@ -126,7 +126,7 @@ impl Default for ChronoValueType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct DateTimeContent {
     pub format: String,
     pub type_: ChronoValueType,
