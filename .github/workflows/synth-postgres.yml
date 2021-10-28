@@ -30,9 +30,6 @@ jobs:
     env:
       PORT: 5432
       PASSWORD: postgres
-    defaults:
-      run:
-        working-directory: synth/testing_harness/postgres
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -43,6 +40,10 @@ jobs:
           toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
       - run: ./e2e.sh load-schema
+        working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-generate
+        working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-import
+        working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-warning
+        working-directory: synth/testing_harness/postgres
