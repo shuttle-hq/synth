@@ -381,10 +381,16 @@ impl Value {
             }
             Self::Null(_) => "NULL".to_string(),
             Self::Bool(b) => b.to_string(),
-            Self::Number(num) => num.to_string(),
+            Self::Number(num) => match num {
+                Number::F32(f32) => (*f32).to_string(),
+                Number::F64(f64) => (*f64).to_string(),
+                _ => num.to_string(),
+            },
             Self::String(str) => format!("\"{}\"", str),
             Self::DateTime(date) => date.format_to_string(),
-            Self::Object(_) => serde_json::to_string(&self).unwrap(),
+            Self::Object(_) => {
+                serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()
+            }
         }
     }
 
@@ -394,6 +400,7 @@ impl Value {
 
         let mut current = Some(self);
 
+        // Based on https://docs.rs/sqlx-core/0.5.9/sqlx_core/postgres/types/index.html
         while let Some(c) = current {
             let pair = match c {
                 Value::Null(_) => (None, "unknown"),
