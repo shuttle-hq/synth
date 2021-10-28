@@ -58,19 +58,11 @@ impl Hash for BoolContent {
 
 impl PartialEq for BoolContent {
     fn eq(&self, other: &BoolContent) -> bool {
-        match self {
-            Self::Frequency(f) => match other {
-                Self::Frequency(of) => f == of,
-                _ => false,
-            },
-            Self::Categorical(c) => match other {
-                Self::Categorical(oc) => c == oc,
-                _ => false,
-            },
-            Self::Constant(c) => match other {
-                Self::Constant(oc) => c == oc,
-                _ => false,
-            },
+        match (self, other) {
+            (Self::Frequency(f), Self::Frequency(of)) => f == of,
+            (Self::Categorical(c), Self::Categorical(oc)) => c == oc,
+            (Self::Constant(c), Self::Constant(oc)) => c == oc,
+            _ => false,
         }
     }
 }
