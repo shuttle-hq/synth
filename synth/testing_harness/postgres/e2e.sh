@@ -5,7 +5,9 @@ set -uo pipefail
 # load env vars
 if [ -f .env ]
 then
-  export $(cat .env | sed 's/#.*//g' | xargs)
+  set -a
+  . .env
+  set +a
 fi
 
 SYNTH="synth"

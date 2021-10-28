@@ -41,8 +41,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-      - run: ./e2e.sh load-schema
       - run: cargo +nightly install --debug --path=synth
+      - run: ./e2e.sh load-schema
       - run: ./e2e.sh test-generate
       - run: ./e2e.sh test-import
       - run: ./e2e.sh test-warning
