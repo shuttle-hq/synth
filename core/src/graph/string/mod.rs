@@ -30,7 +30,7 @@ derive_generator! {
         Format(Format),
         Truncated(Truncated),
         Sliced(Sliced),
-        Constant(Constant)
+        Constant(OnceInfallible<Constant>),
     }
 }
 
@@ -71,14 +71,14 @@ impl From<Truncated> for RandomString {
 }
 
 impl From<Sliced> for RandomString {
-    fn from(trunc: Sliced) -> Self {
-        Self::Sliced(trunc)
+    fn from(sliced: Sliced) -> Self {
+        Self::Sliced(sliced)
     }
 }
 
 impl From<Constant> for RandomString {
-    fn from(trunc: Constant) -> Self {
-        Self::Constant(trunc)
+    fn from(const_: Constant) -> Self {
+        Self::Constant(const_.infallible().try_once())
     }
 }
 

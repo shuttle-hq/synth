@@ -818,6 +818,28 @@ The slice format is `[start]:[finish]` and if it fails to parse the original str
 }
 ```
 
+## constant
+
+The `constant` generator allows you to generate a constant string. Strings that begin with `@` can
+also be declared constant instead of being treated as a reference, although you need to use the long-form version:
+
+```json synth
+{
+  "type": "string",
+  "constant": "@foobar"
+}
+```
+
+Or shorthand notation if you are declaring an object field:
+
+```json synth
+{
+  "type": "object",
+  "name": "bob"
+}
+```
+
+
 
 ## categorical
 

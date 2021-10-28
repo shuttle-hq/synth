@@ -229,8 +229,7 @@ macro_rules! content {
                             let ref_ = FieldRef::deserialize(s.into_deserializer())?;
                             Ok(Content::SameAs(SameAsContent { ref_ }))
                         } else {
-                            let a = ConstantContent { content: v.to_string() };
-                            Ok(Content::String(StringContent::Constant(a)))
+                            Ok(Content::String(StringContent::Constant(ConstantContent::from_str(v).unwrap())))
                         }
                     }
                 }

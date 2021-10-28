@@ -202,9 +202,14 @@ pub struct SlicedContent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub struct ConstantContent {
-    pub content: String,
+pub struct ConstantContent(String);
+
+impl FromStr for ConstantContent {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(ConstantContent(s.to_string()))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -279,8 +284,8 @@ impl Compile for StringContent {
                 let slice = compiler.build("slice", slice)?.into_string();
                 RandomString::from(Sliced::new(content, slice)).into()
             }
-            StringContent::Constant(ConstantContent { content }) => {
-                RandomString::from(Constant(content.clone())).into()
+            StringContent::Constant(ConstantContent(s)) => {
+                RandomString::from(Constant(s.clone())).into()
             }
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
