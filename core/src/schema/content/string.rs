@@ -283,7 +283,7 @@ impl Compile for StringContent {
                 RandomString::from(Sliced::new(content, slice)).into()
             }
             StringContent::Constant(ConstantContent(s)) => {
-                RandomString::from(Constant(s.to_string())).into()
+                RandomString::from(Constant(s.into())).into()
             }
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
