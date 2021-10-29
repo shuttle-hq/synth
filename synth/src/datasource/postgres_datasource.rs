@@ -14,8 +14,8 @@ use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
 use synth_core::schema::{
-    BoolContent, Categorical, ChronoValueType, DateTimeContent, NumberContent, RangeStep,
-    RegexContent, StringContent, Uuid,
+    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, NumberContent,
+    RangeStep, RegexContent, StringContent, Uuid,
 };
 use synth_core::{Content, Value};
 
@@ -280,10 +280,21 @@ impl RelationalDataSource for PostgresDataSource {
                 end: None,
             }),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
-            _ => bail!(
-                "We haven't implemented a converter for {}",
-                column_info.data_type
-            ),
+            _ => {
+                if column_info.data_type.starts_with("_") {
+                    let mut column_info = column_info.clone();
+                    column_info.data_type = column_info.data_type[1..].to_string();
+
+                    Content::Array(ArrayContent::from_content_default_length(
+                        self.decode_to_content(&column_info)?,
+                    ))
+                } else {
+                    bail!(
+                        "We haven't implemented a converter for {}",
+                        column_info.data_type
+                    )
+                }
+            }
         };
 
         Ok(content)

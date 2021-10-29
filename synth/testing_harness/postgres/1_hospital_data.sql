@@ -1,20 +1,20 @@
 -- Hospitals
 
-INSERT INTO public.hospitals (id,hospital_name,address) VALUES
-(1,'Garcia-Washington','194 Davis Ferry Suite 232\nJenningsmouth, NV 83701'),
-(2,'Cruz, Bowman and Martinez','1938 Key Wall\nMartinshire, OR 24041'),
-(3,'Bishop, Hartman and Zuniga','574 Snyder Crossing\nPort Christineland, VT 37567'),
-(4,'Maxwell-Garcia','328 Williams Coves\nSmithside, HI 71878'),
-(5,'Potter-Lindsey','5737 Carmen Trace Suite 312\nSouth Evelyn, WY 40089'),
-(6,'Nielsen-Sanchez','70964 Carrillo Burg\nSouth Karichester, ID 67549'),
-(7,'Burch-Daniels','Unit 4839 Box 1083\nDPO AA 25986'),
-(8,'Marshall, Anderson and Jarvis','51322 Joseph Park\nMelissaton, AZ 67575'),
-(9,'Nelson-Jones','8068 David Turnpike\nDelgadoside, FL 82542'),
-(10,'Hall, Wells and Salas','5280 Kelley Crossroad Apt. 574\nLake Davidfort, CT 94005'),
-(11,'Hardy-Obrien','19920 Brian Curve Suite 711\nThompsonville, KY 89805'),
-(12,'Ayala LLC','0079 Michelle Skyway Suite 179\nPort Tony, CA 48596'),
-(13,'Hale-Padilla','19876 Carroll Flats\nClaytonbury, IA 94229'),
-(14,'Jones Inc','82451 Anita Rue Suite 317\nJustintown, WI 30269');
+INSERT INTO public.hospitals (id,hospital_name,address,specialities) VALUES
+(1,'Garcia-Washington','194 Davis Ferry Suite 232\nJenningsmouth, NV 83701', '{"Neurology"}'),
+(2,'Cruz, Bowman and Martinez','1938 Key Wall\nMartinshire, OR 24041', '{"Cardiology"}'),
+(3,'Bishop, Hartman and Zuniga','574 Snyder Crossing\nPort Christineland, VT 37567', '{"Neurology"}'),
+(4,'Maxwell-Garcia','328 Williams Coves\nSmithside, HI 71878', NULL),
+(5,'Potter-Lindsey','5737 Carmen Trace Suite 312\nSouth Evelyn, WY 40089', NULL),
+(6,'Nielsen-Sanchez','70964 Carrillo Burg\nSouth Karichester, ID 67549', '{"Neurology"}'),
+(7,'Burch-Daniels','Unit 4839 Box 1083\nDPO AA 25986', '{"Cardiology"}'),
+(8,'Marshall, Anderson and Jarvis','51322 Joseph Park\nMelissaton, AZ 67575', '{"Cardiology"}'),
+(9,'Nelson-Jones','8068 David Turnpike\nDelgadoside, FL 82542', NULL),
+(10,'Hall, Wells and Salas','5280 Kelley Crossroad Apt. 574\nLake Davidfort, CT 94005', NULL),
+(11,'Hardy-Obrien','19920 Brian Curve Suite 711\nThompsonville, KY 89805', '{"Neurology", "Cardiology"}'),
+(12,'Ayala LLC','0079 Michelle Skyway Suite 179\nPort Tony, CA 48596', '{"Neurology"}'),
+(13,'Hale-Padilla','19876 Carroll Flats\nClaytonbury, IA 94229', '{"Neurology", "Cardiology"}'),
+(14,'Jones Inc','82451 Anita Rue Suite 317\nJustintown, WI 30269', '{"Cardiology", "Neurology"}');
 
 -- Doctors
 
