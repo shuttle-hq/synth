@@ -46,7 +46,7 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
             "mysql" | "mariadb" => Box::new(MySqlExportStrategy {
                 uri_string: params.uri.to_string(),
             }),
-            "json" | "jsonl" | "csv" => {
+            "json" | "jsonl" => {
                 let data_format = DataFormat::new(&scheme, params.collection_field_name);
 
                 if params.uri.path() == "" {
@@ -54,10 +54,6 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
                 } else {
                     unimplemented!();
                     // TODO: File exporting!
-                    /*Box::new(FileExportStrategy {
-                        data_format,
-                        to_file: PathBuf::from(params.uri.path().to_string()),
-                    })*/
                 }
             }
             _ => {

@@ -19,7 +19,7 @@ use super::DataFormat;
 
 pub trait ImportStrategy {
     /// Import an entire namespace. Default implementation handles the importing of text-based formats (e.g. JSON, JSON
-    /// Lines, CSV, provided `get_data_format`, `as_json_value`, `as_json_line_values` are implemented) - for database
+    /// Lines, provided `get_data_format`, `as_json_value`, `as_json_line_values` are implemented) - for database
     /// integrations this function should be overridden.
     fn import(&self) -> Result<Namespace> {
         let format = self.get_data_format();
@@ -82,13 +82,11 @@ pub trait ImportStrategy {
                     })
                     .collect()
             }
-
-            DataFormat::Csv => unimplemented!(),
         }
     }
 
-    /// Get the format of text data being imported (JSON, JSON Lines, CSV) - used by the default implementation of
-    /// `import` and not used by database integrations.
+    /// Get the format of text data being imported (JSON, JSON Lines) - used by the default implementation of `import`
+    /// and not used by database integrations.
     fn get_data_format(&self) -> &DataFormat {
         unreachable!()
     }
@@ -130,7 +128,7 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
             "mysql" | "mariadb" => Box::new(MySqlImportStrategy {
                 uri_string: params.uri.to_string(),
             }),
-            "json" | "jsonl" | "csv" => {
+            "json" | "jsonl" => {
                 let data_format = DataFormat::new(&scheme, params.collection_field_name);
 
                 if params.uri.path() == "" {

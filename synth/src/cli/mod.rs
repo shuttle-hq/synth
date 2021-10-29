@@ -307,7 +307,6 @@ pub enum DataFormat {
     JsonLines {
         collection_field_name: Option<String>,
     },
-    Csv,
 }
 
 impl DataFormat {
@@ -316,7 +315,6 @@ impl DataFormat {
             "jsonl" => DataFormat::JsonLines {
                 collection_field_name,
             },
-            "csv" => DataFormat::Csv,
             _ => DataFormat::Json,
         }
     }

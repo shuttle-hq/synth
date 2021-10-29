@@ -1,6 +1,6 @@
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
-use crate::sampler::{CsvOutput, Sampler};
+use crate::sampler::Sampler;
 use anyhow::Result;
 use serde_json::Value;
 
@@ -80,14 +80,6 @@ impl ExportStrategy for StdoutExportStrategy {
                     println!("{}", line);
                 }
             }
-            DataFormat::Csv => match output.into_csv(&params.namespace) {
-                CsvOutput::Namespace(ns) => {
-                    for (name, csv) in ns {
-                        println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)
-                    }
-                }
-                CsvOutput::SingleCollection(csv) => println!("{}", csv),
-            },
         }
 
         Ok(())

@@ -3,7 +3,6 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use synth_core::graph::csv::CsvHeaders;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::{Graph, Name, Namespace, Value};
 use synth_gen::prelude::*;
@@ -75,36 +74,6 @@ impl SamplerOutput {
             Self::Collection(_, values) => values.into_iter().map(synth_val_to_json).collect(),
         }
     }
-
-    pub(crate) fn into_csv(self, namespace: &Namespace) -> CsvOutput {
-        match self {
-            Self::Namespace(key_values) => CsvOutput::Namespace(
-                key_values
-                    .into_iter()
-                    .map(|(collection_name, values)| {
-                        (
-                            collection_name.clone(),
-                            to_csv_string(collection_name.parse().unwrap(), values, namespace),
-                        )
-                    })
-                    .collect(),
-            ),
-            Self::Collection(collection_name, values) => {
-                CsvOutput::SingleCollection(to_csv_string(collection_name, values, namespace))
-            }
-        }
-    }
-}
-
-fn to_csv_string(collection_name: Name, values: Vec<Value>, namespace: &Namespace) -> String {
-    let content = namespace.collections.get(&collection_name).unwrap();
-    let headers = CsvHeaders::new(content, namespace);
-    headers.parse_to_csv(values)
-}
-
-pub enum CsvOutput {
-    Namespace(Vec<(String, String)>),
-    SingleCollection(String),
 }
 
 fn sampler_progress_bar(target: u64) -> ProgressBar {
