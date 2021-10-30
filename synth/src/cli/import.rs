@@ -74,7 +74,7 @@ pub trait ImportStrategy {
                 collection_names_to_values
                     .into_iter()
                     .map(|(name, values)| {
-                        let name_or_default = name.unwrap_or_else(|| "collection".to_string()); // TODO: Use --collection to give name
+                        let name_or_default = name.unwrap_or_else(|| "collection".to_string());
 
                         collection_from_values_jsonl(values)
                             .and_then(|content| Ok((name_or_default.parse()?, content)))
@@ -151,7 +151,7 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
             }
             _ => {
                 return Err(anyhow!(
-                    "Data source not recognized. Was expecting 'mongodb', 'postgres', 'mysql', or a file system path."
+                    "Import URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json' or 'jsonl'."
                 ));
             }
         };

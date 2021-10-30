@@ -31,9 +31,8 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
     type Error = anyhow::Error;
 
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
-        // Due to all the schemas used, with the exception of 'mongodb', being non-standard (including
-        // 'postgres' and 'mysql' suprisingly) it seems simpler to just match based on the scheme string
-        // instead of on enum variants.
+        // Due to all the schemes used, with the exception of 'mongodb', being non-standard (including 'postgres' and
+        // 'mysql' suprisingly) it seems simpler to just match based on the scheme string instead of on enum variants.
         let scheme = params.uri.scheme().as_str().to_lowercase();
         let export_strategy: Box<dyn ExportStrategy> = match scheme.as_str() {
             "postgres" | "postgresql" => Box::new(PostgresExportStrategy {
@@ -65,7 +64,7 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
             }
             _ => {
                 return Err(anyhow!(
-                    "Data sink not recognized. Was expecting one of 'mongodb', 'postgres', 'mysql' or 'mariadb'."
+                    "Export URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json' or 'jsonl'."
                 ));
             }
         };
