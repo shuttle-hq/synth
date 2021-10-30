@@ -71,7 +71,6 @@ impl Cli {
                 seed,
                 random,
                 schema,
-                collection_field_name,
             } => self.generate(
                 namespace,
                 collection,
@@ -79,15 +78,13 @@ impl Cli {
                 to,
                 Self::derive_seed(random, seed)?,
                 schema,
-                collection_field_name,
             ),
             Args::Import {
                 namespace,
                 collection,
                 ref from,
                 schema,
-                collection_field_name,
-            } => self.import(namespace, collection, from, schema, collection_field_name),
+            } => self.import(namespace, collection, from, schema),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
             Args::Version => {
@@ -120,7 +117,6 @@ impl Cli {
         collection: Option<Name>,
         from: &str,
         schema: Option<String>,
-        collection_field_name: Option<String>,
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
@@ -128,7 +124,6 @@ impl Cli {
         let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
             uri: URI::try_from(from).with_context(|| format!("Parsing import URI '{}'", from))?,
             schema,
-            collection_field_name,
         }
         .try_into()?;
 
@@ -153,7 +148,6 @@ impl Cli {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn generate(
         self,
         ns_path: PathBuf,
@@ -162,7 +156,6 @@ impl Cli {
         to: &str,
         seed: u64,
         schema: Option<String>,
-        collection_field_name: Option<String>,
     ) -> Result<()> {
         let namespace = self.store.get_ns(ns_path.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
@@ -174,7 +167,6 @@ impl Cli {
         let export_strategy: Box<dyn ExportStrategy> = DataSourceParams {
             uri: URI::try_from(to).with_context(|| format!("Parsing generation URI '{}'", to))?,
             schema,
-            collection_field_name,
         }
         .try_into()?;
 
@@ -242,12 +234,6 @@ pub enum Args {
         )]
         #[serde(skip)]
         schema: Option<String>,
-        #[structopt(
-            long,
-            help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when outputting JSON Lines data. Defaults to 'collection'."
-        )]
-        #[serde(skip)]
-        collection_field_name: Option<String>,
     },
     #[structopt(about = "Import data from an external source")]
     Import {
@@ -276,12 +262,6 @@ pub enum Args {
         )]
         #[serde(skip)]
         schema: Option<String>,
-        #[structopt(
-            long,
-            help = "(JSON Lines only) The name of the field that indicates the collection that data was generated with when importing JSON Lines with multiple collections. Defaults to 'collection'."
-        )]
-        #[serde(skip)]
-        collection_field_name: Option<String>,
     },
     #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]
@@ -304,27 +284,20 @@ pub enum TelemetryCommand {
 #[derive(Debug, Clone)]
 pub enum DataFormat {
     Json,
-    JsonLines {
-        collection_field_name: Option<String>,
-    },
+    JsonLines { collection_field_name: String },
 }
 
 impl DataFormat {
-    pub fn new(uri_scheme: &str, collection_field_name: Option<String>) -> Self {
+    pub fn new(uri_scheme: &str, uri_query: &str) -> Self {
         match uri_scheme {
             "jsonl" => DataFormat::JsonLines {
-                collection_field_name,
+                collection_field_name: querystring::querify(uri_query)
+                    .into_iter()
+                    .find_map(|(key, value)| (key == "collection_field_name").then(|| value))
+                    .unwrap_or("type")
+                    .to_string(),
             },
             _ => DataFormat::Json,
-        }
-    }
-
-    pub fn get_collection_field_name_or_default(&self) -> &str {
-        match self {
-            DataFormat::JsonLines {
-                collection_field_name: Some(ref x),
-            } => x,
-            _ => "collection", // Default collection field name is 'collection'.
         }
     }
 }

@@ -2,6 +2,5 @@ use uriparse::URI;
 
 pub struct DataSourceParams<'a> {
     pub uri: URI<'a>,
-    pub schema: Option<String>,                // PostgreSQL
-    pub collection_field_name: Option<String>, // JSON Lines
+    pub schema: Option<String>, // PostgreSQL
 }

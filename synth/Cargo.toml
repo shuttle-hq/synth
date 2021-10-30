@@ -84,3 +84,4 @@ reqwest = { version = "0.11", features = ["json", "blocking"] }
 semver = "1.0.4"
 
 uriparse = "0.6.3"
+querystring = "1.1.0"

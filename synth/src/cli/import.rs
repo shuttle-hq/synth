@@ -40,7 +40,9 @@ pub trait ImportStrategy {
                 )),
             },
 
-            DataFormat::JsonLines { .. } => {
+            DataFormat::JsonLines {
+                collection_field_name,
+            } => {
                 let mut collection_names_to_values: HashMap<Option<String>, Vec<Value>> =
                     HashMap::new();
 
@@ -48,8 +50,8 @@ pub trait ImportStrategy {
                     match value {
                         Value::Object(ref mut obj_content) => {
                             let entry = {
-                                if let Some(Value::String(collection_name)) = obj_content
-                                    .remove(format.get_collection_field_name_or_default())
+                                if let Some(Value::String(collection_name)) =
+                                    obj_content.remove(collection_field_name)
                                 {
                                     collection_names_to_values.entry(Some(collection_name))
                                 } else {
@@ -129,7 +131,14 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
                 uri_string: params.uri.to_string(),
             }),
             "json" | "jsonl" => {
-                let data_format = DataFormat::new(&scheme, params.collection_field_name);
+                let data_format = DataFormat::new(
+                    &scheme,
+                    params
+                        .uri
+                        .query()
+                        .map(uriparse::Query::as_str)
+                        .unwrap_or_default(),
+                );
 
                 if params.uri.path() == "" {
                     Box::new(StdinImportStrategy { data_format })

@@ -71,12 +71,12 @@ impl ExportStrategy for StdoutExportStrategy {
 
         match &self.data_format {
             DataFormat::Json => println!("{}", output.into_json()),
-            DataFormat::JsonLines { .. } => {
+            DataFormat::JsonLines {
+                collection_field_name,
+            } => {
                 // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
 
-                for line in
-                    output.into_json_lines(self.data_format.get_collection_field_name_or_default())
-                {
+                for line in output.into_json_lines(collection_field_name) {
                     println!("{}", line);
                 }
             }

@@ -47,7 +47,14 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
                 uri_string: params.uri.to_string(),
             }),
             "json" | "jsonl" => {
-                let data_format = DataFormat::new(&scheme, params.collection_field_name);
+                let data_format = DataFormat::new(
+                    &scheme,
+                    params
+                        .uri
+                        .query()
+                        .map(uriparse::Query::as_str)
+                        .unwrap_or_default(),
+                );
 
                 if params.uri.path() == "" {
                     Box::new(StdoutExportStrategy { data_format })
