@@ -52,7 +52,7 @@ mkdir synth_workspace && cd synth_workspace && synth init
 Synth supports importing from JSON files. To create a namespace, copy the JSON blob below to a file outside your workspace and use the `import` command:
 
 ```bash
-synth import bank_db/ --from /path/to/the/file.json
+synth import bank_db/ --from json:/path/to/the/file.json
 ```
 
 ```json

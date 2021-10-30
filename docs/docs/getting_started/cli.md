@@ -3,7 +3,7 @@ id: command-line
 title: Command-line
 ---
 
-`synth` is a Unix-y command line tool wrapped around the core synthetic data engine. 
+`synth` is a Unix-y command line tool wrapped around the core synthetic data engine.
 
 ## Usage
 
@@ -21,18 +21,18 @@ If a subdirectory for a given namespace does not exist, Synth will create it.
 #### Argument
 
 - `<namespace>` - The path to the namespace directory into which to save schema files. The directory will be created by `synth`.
-  
-#### Options
- 
-- `--from <from>` - The location from which to import. Synth supports multiple import strategies. 
-  
-  Importing from a file: Currently we support importing from JSON files by specifying the path to
-                           the file: `/some/path/to/file.json`.
-  
-  Importing from standard input: Not specifying `from` will accept JSON files from stdin.
 
-  Importing from a database (e.g.
-  postgres): `synth import tpch --from postgres://user:pass@localhost:5432/tpch`
+#### Options
+
+- `--from <uri>` - The location from which to import. Synth uses Uniform Resource Identifiers (URIs) to define interactions with databases and the filesystem. `<uri>` must therefore be a valid RFC 3986 URI.
+
+  It is possible to import from a file using the URI schemes `json:` and `jsonl:` depending of course on whether the data specified is encoded as JSON or JSON Lines respectively. For example, one could import data from a file `data.jsonl` in the current working directory by specifying `jsonl:data.json`. Note the lack of `//` that you may be used to seeing - this can be omitted as this URI will never have an authority component (unlike, for example, a database URI).
+
+  Data can be imported from standard input by simply not specifying a path in the URI (e.g. `json:` will read JSON data from standard input while `jsonl:` will read JSON Lines data). If no `--from` argument is specified, JSON data will read from standard input by default.
+
+  Importing from a database is possible using the standard URI format of the respective database. For example: `postgres://user:pass@localhost:5432/tpch`
+
+  When dealing with JSON Lines and not specifying a single collection with the `--collection` argument, each generated object is tagged with the name of the collection it was generated from. By default, this is done by adding a property `type` to the object (e.g. `"type": "collection_name"`). The name of this property can be changed using an additional parameter `collection_field_name` added at the end of the URI like so: `jsonl:file.jsonl?collection_field_name=foobar` - with this URI used with `--from`, generate objects will instead have a property like `"foobar": "collection_name"`.
 
 ---
 
@@ -47,11 +47,11 @@ If there is a misconfiguration in your schema (for example referring to a field 
 #### Argument
 
 - `<namespace>` - The path to the namespace directory from which to load schema files.
-  
+
 #### Options
 
 - `--collection <collection>` - Specify a specific collection in a namespace if you don't want to generate data from all collections.
 - `--size <size>` - The number of elements which should be generated per collection. This number is not guaranteed, it serves as a lower bound.
-- `--to <uri>` - The generation destination. If unspecified, generation defaults to stdout.
+- `--to <uri>` - The generation destination specified using a URI (see `import --from` explanation above). If unspecified, generation defaults to stdout using JSON.
 - `--seed <seed>` - An unsigned 64 bit integer seed to be used as a seed for generation. Defaults to 0 if unspecified.
 - `--random` - A flag which toggles generation with a random seed. This cannot be used with --seed.
