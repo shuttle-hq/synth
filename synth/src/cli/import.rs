@@ -58,10 +58,9 @@ impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
 fn collection_from_value(value: &Value) -> Result<Content> {
     match value {
         Value::Array(values) => {
-            let mut as_content = Namespace::collection(&Value::Null);
-            for v in values {
-                OptionalMergeStrategy.try_merge(&mut as_content, v)?;
-            }
+            let fst = values.get(0).unwrap_or(&Value::Null);
+            let mut as_content = Namespace::collection(fst);
+            OptionalMergeStrategy.try_merge(&mut as_content, value)?;
             Ok(as_content)
         }
         unacceptable => Err(anyhow!(
