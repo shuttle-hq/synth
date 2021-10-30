@@ -213,7 +213,7 @@ pub enum Args {
         size: usize,
         #[structopt(
             long,
-            help = "The sink into which to generate data. Can be a Postgres URI, a MongoDB URI to write data directly to a database. If 'jsonl' then JSON Lines data will be generated and written to stdout, or regular JSON otherwise.",
+            help = "The URI into which data will be generated. Can be a file-based URI scheme to output data to the filesystem or stdout ('json:' and 'jsonl:' allow outputting JSON and JSON Lines data respectively) or can be a database URI to write data directly to some database (supports Postgres, MongoDB, and MySQL). Defaults to writing JSON data to stdout.",
             default_value = "json:"
         )]
         #[serde(skip)]
@@ -251,7 +251,7 @@ pub enum Args {
         collection: Option<Name>,
         #[structopt(
             long,
-            help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin",
+            help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:' and 'jsonl:' allow reading JSON and JSON Lines data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin.",
             default_value = "json:"
         )]
         #[serde(skip)]
