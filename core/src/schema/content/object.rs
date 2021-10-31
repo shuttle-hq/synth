@@ -3,8 +3,8 @@ use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,
 };
-use std::borrow::Cow;
 use std::collections::BTreeMap;
+use std::{borrow::Cow, collections::btree_map::Entry};
 
 const RESERVED_FIELDS: [&str; 2] = ["type", "skip_when_null"];
 
@@ -120,6 +120,10 @@ impl ObjectContent {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    pub fn entry(&mut self, key: &str) -> Entry<'_, String, Content> {
+        self.fields.entry(key.to_string())
     }
 }
 

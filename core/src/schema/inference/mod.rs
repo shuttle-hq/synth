@@ -13,7 +13,7 @@ pub use value::ValueMergeStrategy;
 use super::{
     number_content, ArrayContent, BoolContent, Categorical, CategoricalType, ChronoValueFormatter,
     Content, DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
-    RangeStep, StringContent,
+    RangeStep, StringContent, ValueKindExt,
 };
 use crate::graph::prelude::content::number_content::{I32, I64};
 use crate::schema::UniqueContent;
@@ -69,20 +69,73 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
                 Self.try_merge(bool_content, boolean)
             }
             (Content::Null(_), Value::Null) => Ok(()),
-            (master, candidate) => match master {
-                Content::OneOf(oneof) => {
-                    oneof.insert_with(self, candidate);
-                    Ok(())
+            (master, candidate) => Err(failed!(
+                target: Release,
+                "cannot merge a node of type '{}' with a value of type '{}'",
+                master.kind(),
+                candidate.kind()
+            )),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct VariationMergeStrategy;
+
+impl std::fmt::Display for VariationMergeStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "VariationMergeStrategy")
+    }
+}
+
+impl MergeStrategy<Content, Value> for VariationMergeStrategy {
+    fn try_merge(self, master: &mut Content, candidate: &Value) -> Result<()> {
+        match (master, candidate) {
+            (Content::Object(master), Value::Object(candidate)) => {
+                let keys = master
+                    .iter()
+                    .map(|s| s.0)
+                    .chain(candidate.iter().map(|s| s.0))
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                for key in keys {
+                    let master_content = master.entry(&key);
+                    match (master_content, candidate.get(&key)) {
+                        (std::collections::btree_map::Entry::Vacant(v), Some(s)) => {
+                            v.insert(Content::from(s));
+                        }
+                        (std::collections::btree_map::Entry::Occupied(mut o), Some(s)) => {
+                            let mut removed = o.get_mut();
+                            Self.try_merge(&mut removed, s)?;
+                        }
+                        _ => (),
+                    };
                 }
-                content => {
-                    let old_content = std::mem::take(content);
-                    *content = Content::OneOf(OneOfContent::from_iter([
-                        old_content,
-                        Content::from(candidate),
-                    ]));
-                    Ok(())
-                }
-            },
+                Ok(())
+            }
+            (Content::Array(ArrayContent { content, length }), Value::Array(candidate)) => {
+                Self.try_merge(length.as_mut(), &Value::from(candidate.len()))?;
+                candidate
+                    .iter()
+                    .try_for_each(|value| Self.try_merge(content.as_mut(), value))
+            }
+            (Content::OneOf(master), candidate) => {
+                master.insert_with(OptionalMergeStrategy, candidate);
+                Ok(())
+            }
+            (Content::String(_), Value::String(_)) => Ok(()),
+            (Content::DateTime(_), Value::String(_)) => Ok(()),
+            (Content::Number(_), Value::Number(_)) => Ok(()),
+            (Content::Bool(_), Value::Bool(_)) => Ok(()),
+            (Content::Null(_), Value::Null) => Ok(()),
+            (master, candidate) => {
+                let old_content = std::mem::take(master);
+                *master = Content::OneOf(OneOfContent::from_iter([
+                    old_content,
+                    Content::from(candidate),
+                ]));
+                Ok(())
+            }
         }
     }
 }
@@ -441,8 +494,6 @@ pub mod tests {
     #[test]
     fn test_merge_twice() {
         let user_no_last_name = json!({
-            "user_id" : 123,
-            "first_name" : "John",
             "address" : {
                 "postcode": "abc123",
                 "numbers": 5.0
@@ -450,13 +501,11 @@ pub mod tests {
         });
 
         let user_no_address = json!({
-                "user_id" : 123,
-                "first_name" : "John",
                 "last_name": "Smith"
         });
 
-        let user_no_address_as_array = as_array![user_no_address];
         let user_no_last_name_as_array = as_array![user_no_last_name];
+        let user_no_address_as_array = as_array![user_no_address];
 
         let collection_name = Name::from_str("users").unwrap();
         let mut ns = Namespace::default();
@@ -470,6 +519,45 @@ pub mod tests {
         .unwrap();
         ns.try_update(
             OptionalMergeStrategy,
+            &collection_name,
+            &user_no_address_as_array,
+        )
+        .unwrap();
+        assert!(ns
+            .accepts(&collection_name, &user_no_last_name_as_array)
+            .is_ok());
+        assert!(ns
+            .accepts(&collection_name, &user_no_address_as_array)
+            .is_ok());
+    }
+
+    #[test]
+    fn test_merge_into_variations() {
+        let user_no_last_name = json!({
+            "address" : {
+                "location": true,
+            }
+        });
+
+        let user_no_address = json!({
+            "address": false
+        });
+
+        let user_no_last_name_as_array = as_array![user_no_last_name];
+        let user_no_address_as_array = as_array![user_no_address];
+
+        let collection_name = Name::from_str("users").unwrap();
+        let mut ns = Namespace::default();
+        ns.create_collection(&collection_name, &user_no_last_name)
+            .unwrap();
+        ns.try_update(
+            VariationMergeStrategy,
+            &collection_name,
+            &user_no_last_name_as_array,
+        )
+        .unwrap();
+        ns.try_update(
+            VariationMergeStrategy,
             &collection_name,
             &user_no_address_as_array,
         )

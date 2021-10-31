@@ -6,6 +6,7 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
+use synth_core::schema::inference::VariationMergeStrategy;
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
 
@@ -60,7 +61,12 @@ fn collection_from_value(value: &Value) -> Result<Content> {
         Value::Array(values) => {
             let fst = values.get(0).unwrap_or(&Value::Null);
             let mut as_content = Namespace::collection(fst);
-            OptionalMergeStrategy.try_merge(&mut as_content, value)?;
+            OptionalMergeStrategy
+                .try_merge(&mut as_content, value)
+                .unwrap_or_else(|s| log::info!("{}", s));
+            VariationMergeStrategy
+                .try_merge(&mut as_content, value)
+                .unwrap_or_else(|s| log::info!("{}", s));
             Ok(as_content)
         }
         unacceptable => Err(anyhow!(
