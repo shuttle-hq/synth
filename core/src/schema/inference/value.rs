@@ -23,7 +23,7 @@ enum Squashables {
 }
 
 impl Squashables {
-    fn kind(&self) -> &str {
+    fn kind(&self) -> String {
         match self {
             Self::Content(Content::Number(number_content))
             | Self::NumberContent(number_content) => number_content.kind(),

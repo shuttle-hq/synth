@@ -6,7 +6,7 @@ use crate::{Compile, Compiler, Graph};
 use anyhow::Result;
 use std::convert::TryInto;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct SeriesContent {
     pub format: Option<String>,
@@ -14,7 +14,18 @@ pub struct SeriesContent {
     pub variant: SeriesVariant,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+impl SeriesContent {
+    pub fn kind(&self) -> String {
+        match self.variant {
+            SeriesVariant::Incrementing(_) => "incrementing".to_string(),
+            SeriesVariant::Poisson(_) => "poisson".to_string(),
+            SeriesVariant::Cyclical(_) => "cyclical".to_string(),
+            SeriesVariant::Zip(_) => "zip".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub enum SeriesVariant {
@@ -24,21 +35,21 @@ pub enum SeriesVariant {
     Zip(Zip),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Incrementing {
     pub(crate) start: String,
     #[serde(with = "humantime_serde")]
     pub(crate) increment: std::time::Duration,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Poisson {
     pub(crate) start: String,
     #[serde(with = "humantime_serde")]
     pub(crate) rate: std::time::Duration,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Cyclical {
     pub(crate) start: String,
     #[serde(with = "humantime_serde")]
@@ -49,7 +60,7 @@ pub struct Cyclical {
     pub(crate) max_rate: std::time::Duration,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Zip {
     series: Vec<SeriesVariant>,
 }

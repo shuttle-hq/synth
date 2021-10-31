@@ -35,14 +35,9 @@ where
         F: FnOnce(&I::Item) -> bool,
     {
         let mut inner = self.0.borrow_mut();
-        if let Some(item) = inner.peek() {
-            if cond(item) {
-                inner.next()
-            } else {
-                None
-            }
-        } else {
-            None
+        match inner.peek() {
+            Some(item) if cond(item) => inner.next(),
+            _ => None,
         }
     }
 

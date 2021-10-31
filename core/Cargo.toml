@@ -1,6 +1,6 @@
 [package]
 name = "synth-core"
-version = "0.6.0"
+version = "0.6.1"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>",

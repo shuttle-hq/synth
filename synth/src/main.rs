@@ -13,7 +13,12 @@ async fn main() -> Result<()> {
     let notify_handle = thread::spawn(synth::version::notify_new_version_message);
 
     #[cfg(feature = "telemetry")]
-    synth::cli::telemetry::with_telemetry(args, |args| cli.run(args)).await?;
+    synth::cli::telemetry::with_telemetry(
+        args,
+        |args| cli.run(args),
+        || cli.get_telemetry_context(),
+    )
+    .await?;
 
     #[cfg(not(feature = "telemetry"))]
     cli.run(args).await?;

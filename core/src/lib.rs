@@ -15,7 +15,7 @@ macro_rules! derive_generator {
         return $return:ty,
         $vis:vis enum $id:ident {
             $(
-            $variant:ident($inner:ty$(,)?)$(,)?
+                $variant:ident($inner:ty$(,)?)$(,)?
             )*
         }
     } => {
@@ -31,7 +31,7 @@ macro_rules! derive_generator {
             fn next<R: Rng>(&mut self, rng: &mut R) -> ::synth_gen::prelude::GeneratorState<Self::Yield, Self::Return> {
                 match self {
                     $(
-                    Self::$variant(inner) => inner.next(rng),
+                        Self::$variant(inner) => inner.next(rng),
                     )*
                 }
             }

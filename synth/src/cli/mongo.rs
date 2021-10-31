@@ -162,32 +162,32 @@ fn bson_to_content(bson: &Bson) -> Content {
 }
 
 impl ExportStrategy for MongoExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let mut client = Client::with_uri_str(&self.uri_string)?;
         let sampler = Sampler::try_from(&params.namespace)?;
         let output =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-        match output {
-            SamplerOutput::Collection(_, values) => self.insert_data(
-                params.collection_name.unwrap().to_string(),
-                &values,
-                &mut client,
-            ),
-            SamplerOutput::Namespace(namespace) => {
+        match &output {
+            SamplerOutput::Collection(name, values) => {
+                self.insert_data(&name.to_string(), values, &mut client)
+            }
+            SamplerOutput::Namespace(ref namespace) => {
                 for (name, values) in namespace {
-                    self.insert_data(name, &values, &mut client)?;
+                    self.insert_data(name, values, &mut client)?;
                 }
                 Ok(())
             }
-        }
+        }?;
+
+        Ok(output)
     }
 }
 
 impl MongoExportStrategy {
     fn insert_data(
         &self,
-        collection_name: String,
+        collection_name: &str,
         collection: &[Value],
         client: &mut Client,
     ) -> Result<()> {
@@ -206,7 +206,7 @@ impl MongoExportStrategy {
 
         client
             .database(db_name)
-            .collection(&collection_name)
+            .collection(collection_name)
             .insert_many(docs, None)?;
 
         info!(

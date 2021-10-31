@@ -1,8 +1,10 @@
+use std::hash::{Hash, Hasher};
+
 use super::prelude::*;
 use super::Categorical;
 use crate::graph::string::Serialized;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub enum StringContent {
@@ -15,19 +17,19 @@ pub enum StringContent {
     Format(FormatContent),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Uuid;
 
 impl StringContent {
-    pub fn kind(&self) -> &str {
+    pub fn kind(&self) -> String {
         match self {
-            Self::Pattern(_) => "pattern",
+            Self::Pattern(_) => "pattern".to_string(),
             Self::Faker(faker) => faker.kind(),
-            Self::Categorical(_) => "categorical",
-            Self::Serialized(_) => "serialized",
-            Self::Uuid(_) => "uuid",
-            Self::Truncated(_) => "truncated",
-            Self::Format(_) => "format",
+            Self::Categorical(_) => "categorical".to_string(),
+            Self::Serialized(_) => "serialized".to_string(),
+            Self::Uuid(_) => "uuid".to_string(),
+            Self::Truncated(_) => "truncated".to_string(),
+            Self::Format(_) => "format".to_string(),
         }
     }
 }
@@ -110,6 +112,12 @@ impl Default for RegexContent {
     }
 }
 
+impl Hash for RegexContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
 impl Default for StringContent {
     fn default() -> Self {
         Self::Pattern(RegexContent::default())
@@ -151,7 +159,7 @@ impl Serialize for FakerContentArgument {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct FakerContent {
     pub generator: String,
     /// deprecated: Use FakerArgs::locale instead
@@ -163,33 +171,50 @@ pub struct FakerContent {
 }
 
 impl FakerContent {
-    fn kind(&self) -> &str {
-        self.generator.as_ref()
+    fn kind(&self) -> String {
+        self.generator.to_string()
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "serializer")]
 pub enum SerializedContent {
     Json(JsonContent),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub struct TruncatedContent {
     content: Box<Content>,
     length: Box<Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct FormatContent {
     format: String,
     pub arguments: HashMap<String, Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+impl Hash for FormatContent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.format.hash(state);
+
+        for (key, value) in &self.arguments {
+            key.hash(state);
+            value.hash(state);
+        }
+    }
+}
+
+impl PartialEq for FormatContent {
+    fn eq(&self, other: &FormatContent) -> bool {
+        self.format == other.format && self.arguments == other.arguments
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct JsonContent {
     content: Box<Content>,
 }
@@ -205,7 +230,7 @@ impl Compile for StringContent {
                         .collect::<Result<_>>()?,
                     ..Default::default()
                 };
-                RandomString::from(Format::new(format.to_string(), args)).into()
+                RandomString::from(Format::new(format, args)).into()
             }
             StringContent::Pattern(pattern) => RandomString::from(pattern.to_regex()).into(),
             StringContent::Faker(FakerContent {

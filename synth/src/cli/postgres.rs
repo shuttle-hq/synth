@@ -3,6 +3,7 @@ use crate::cli::import::ImportStrategy;
 use crate::cli::import_utils::build_namespace_import;
 use crate::datasource::postgres_datasource::{PostgresConnectParams, PostgresDataSource};
 use crate::datasource::DataSource;
+use crate::sampler::SamplerOutput;
 use anyhow::Result;
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
@@ -14,7 +15,7 @@ pub struct PostgresExportStrategy {
 }
 
 impl ExportStrategy for PostgresExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let connect_params = PostgresConnectParams {
             uri: self.uri_string.clone(),
             schema: self.schema.clone(),

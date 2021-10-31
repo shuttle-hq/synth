@@ -26,10 +26,11 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
-use state::{Artifact, CompilerState, OutputState, Source, Symbols};
+use state::{Artifact, OutputState, Symbols};
+pub use state::{CompilerState, Source};
 
-mod address;
-use address::Address;
+pub mod address;
+pub use address::Address;
 
 pub mod link;
 pub use link::{FromLink, Link};

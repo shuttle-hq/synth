@@ -16,14 +16,14 @@ use std::{fmt::Debug, marker::PhantomData};
 #[allow(unused_macros)]
 macro_rules! curry_rng {
     ($($id:ident -> $ret:ty,)*) => {
-	$(curry_rng!($id -> $ret);)*
+        $(curry_rng!($id -> $ret);)*
     };
     ($id:ident -> $ret:ty) => {
-	/// Run the inner generator's `$id` function on the driver's
-	/// [`Rng`](crate::Rng).
-	pub fn $id(&mut self) -> $ret {
-	    self.generator.$id(self.rng)
-	}
+        /// Run the inner generator's `$id` function on the driver's
+        /// [`Rng`](crate::Rng).
+        pub fn $id(&mut self) -> $ret {
+            self.generator.$id(self.rng)
+        }
     };
 }
 

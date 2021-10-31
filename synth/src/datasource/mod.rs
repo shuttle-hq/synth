@@ -17,5 +17,5 @@ pub trait DataSource {
     where
         Self: Sized;
 
-    async fn insert_data(&self, collection_name: String, collection: &[Value]) -> Result<()>;
+    async fn insert_data(&self, collection_name: &str, collection: &[Value]) -> Result<()>;
 }

@@ -13,7 +13,7 @@ use rand::RngCore;
 
 // this needs non-camel-case types because the fake crate has the same
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Deserialize, Debug, Serialize, PartialEq, Eq)]
+#[derive(Copy, Clone, Deserialize, Debug, Serialize, PartialEq, Eq, Hash)]
 /// a locale to look up names, addresses, etc.
 pub enum Locale {
     EN,
@@ -29,7 +29,7 @@ impl Default for Locale {
 }
 
 /// The arguments for a faker
-#[derive(Clone, Default, Deserialize, Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, Deserialize, Debug, Serialize, PartialEq, Eq, Hash)]
 pub struct FakerArgs {
     #[serde(default)]
     locales: Vec<Locale>,
@@ -43,22 +43,21 @@ macro_rules! fake_map_entry {
     };
     (with_locales; $name:ident, $rng:ident, $args:ident, $map:ident, $faker:ident; $($locale:ident),*) => {
         fn $name($rng: &mut dyn RngCore, $args: &FakerArgs) -> String {
-            match $args .locales.get($rng.gen_range(0..$args .locales.len().max(1))).unwrap_or(&Locale::EN) {
+            match $args.locales.get($rng.gen_range(0..$args.locales.len().max(1))).unwrap_or(&Locale::EN) {
                 $(Locale::$locale => $faker(locales::$locale).fake_with_rng($rng)),*
             }
         }
-        $map .insert(stringify!($name), $name as _);
+        $map.insert(stringify!($name), $name as _);
     };
     ($name:ident, $rng:ident, $args:ident, $map:ident, $e:expr) => {
         fn $name($rng: &mut dyn RngCore, $args: &FakerArgs) -> String {
             $e
         }
-        $map .insert(stringify!($name), $name as _);
+        $map.insert(stringify!($name), $name as _);
     };
 }
 
 lazy_static! {
-
     static ref FAKE_MAP: HashMap<&'static str, FakerFunction> = {
         let mut m = HashMap::new();
         // Lorem

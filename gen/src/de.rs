@@ -34,7 +34,7 @@ where
 impl<'de, I> TokenIterator<'de> for I where I: Iterator<Item = &'de Token> {}
 
 macro_rules! deserialize_number {
-    ($($type_:ident,)*) => {$(deserialize_number_helper!($type_);)*};
+    ($($type_:ident,)*) => { $(deserialize_number_helper!($type_);)* };
 }
 
 macro_rules! deserialize_number_helper {
@@ -69,32 +69,32 @@ macro_rules! deserialize_number_impl {
 
 macro_rules! deserialize_value {
     ($($type_:ty => $de:ident $visit:ident,)*) => {
-	$(deserialize_value!($type_ => $de $visit);)*
+        $(deserialize_value!($type_ => $de $visit);)*
     };
     ($type_:ty => $de:ident $visit:ident) => {
         fn $de<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where
             V: serde::de::Visitor<'de>,
         {
-	    self.0
-		.clone_next_or_bail()?
-		.try_into()
-		.and_then(|p: Primitive| visitor.$visit(p.try_into()?))
+            self.0
+                .clone_next_or_bail()?
+                .try_into()
+                .and_then(|p: Primitive| visitor.$visit(p.try_into()?))
         }
     };
 }
 
 macro_rules! deserialize_redirect {
     ($($de:ident -> $rde:ident,)*) => {
-	$(deserialize_redirect!($de -> $rde);)*
+        $(deserialize_redirect!($de -> $rde);)*
     };
     ($de:ident -> $rde:ident) => {
-	fn $de<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-	where
+        fn $de<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where
             V: serde::de::Visitor<'de>,
-	{
-	    self.$rde(visitor)
-	}
+        {
+            self.$rde(visitor)
+        }
     };
 }
 
@@ -247,9 +247,9 @@ where
     }
 
     deserialize_value!(
-    bool => deserialize_bool visit_bool,
-    char => deserialize_char visit_char,
-    Vec<u8> => deserialize_byte_buf visit_byte_buf,
+        bool => deserialize_bool visit_bool,
+        char => deserialize_char visit_char,
+        Vec<u8> => deserialize_byte_buf visit_byte_buf,
     );
 
     deserialize_number!(
@@ -268,8 +268,8 @@ where
     );
 
     deserialize_redirect!(
-    deserialize_str -> deserialize_string,
-    deserialize_bytes -> deserialize_byte_buf,
+        deserialize_str -> deserialize_string,
+        deserialize_bytes -> deserialize_byte_buf,
     );
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -280,7 +280,7 @@ where
         match next {
             Token::Primitive(Primitive::String(s)) => visitor.visit_string(s),
             Token::Special(Special::BeginField(s)) => visitor.visit_str(s),
-            otherwise => Err(Error::type_("string", otherwise)),
+            otherwise => Err(Error::r#type("string", otherwise)),
         }
     }
 

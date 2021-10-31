@@ -13,6 +13,8 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
+use std::hash::{Hash, Hasher};
+
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
 use serde_json::Value;
 
@@ -88,14 +90,14 @@ pub trait Find<C> {
         R: AsRef<str>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct SameAsContent {
     #[serde(rename = "ref")]
     pub ref_: FieldRef,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct NullContent;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -138,7 +140,7 @@ macro_rules! content {
             $($name:ident($variant:ty)$(,)?)+
         }
     } => {
-        #[derive(Debug, Serialize, Clone, PartialEq)]
+        #[derive(Debug, Serialize, Clone, PartialEq, Hash)]
         #[serde(rename_all = "snake_case")]
         #[serde(tag = "type")]
         #[serde(deny_unknown_fields)]
@@ -149,7 +151,7 @@ macro_rules! content {
         impl<'de> Deserialize<'de> for Content {
             fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
             where
-            D: Deserializer<'de>,
+                D: Deserializer<'de>,
             {
                 #[derive(Deserialize)]
                 #[serde(rename_all = "snake_case")]
@@ -178,7 +180,7 @@ macro_rules! content {
 
                     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
                     where
-                    A: serde::de::MapAccess<'de>
+                        A: serde::de::MapAccess<'de>
                     {
                         use serde::de::IntoDeserializer;
                         let mut out = HashMap::<String, serde_json::Value>::new();
@@ -188,37 +190,39 @@ macro_rules! content {
                         }
                         let __ContentWithLabels { labels, content } = __ContentWithLabels::deserialize(out.into_deserializer()).map_err(A::Error::custom)?;
                         match content {
-                            $(__Content::$name(inner) => {
-                                let inner_as_content = Content::$name(inner);
-                                labels.try_wrap(inner_as_content)
-                            },)+
+                            $(
+                                __Content::$name(inner) => {
+                                    let inner_as_content = Content::$name(inner);
+                                    labels.try_wrap(inner_as_content)
+                                },
+                            )+
                         }
                     }
 
                     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         Ok(Content::Number(number_content::U64::from(v).into()))
                     }
 
                     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         Ok(Content::Number(number_content::I64::from(v).into()))
                     }
 
                     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         Ok(Content::Number(number_content::F64::from(v).into()))
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
                     where
-                    E: serde::de::Error
+                        E: serde::de::Error
                     {
                         if let Some(s) = v.strip_prefix("@") {
                             let ref_ = FieldRef::deserialize(s.into_deserializer())?;
@@ -401,20 +405,20 @@ impl Content {
         }
     }
 
-    pub fn kind(&self) -> &'static str {
+    pub fn kind(&self) -> String {
         match self {
-            Content::Null(_) => "null",
-            Content::Bool(_) => "bool",
-            Content::Number(_) => "number",
-            Content::String(_) => "string",
-            Content::DateTime(_) => "date_time",
-            Content::Array(_) => "array",
-            Content::Object(_) => "object",
-            Content::SameAs(_) => "same_as",
-            Content::OneOf(_) => "one_of",
-            Content::Series(_) => "series",
-            Content::Unique(_) => "unique",
-            Content::Hidden(_) => "hidden",
+            Content::Null(_) => "null".to_string(),
+            Content::Bool(content) => format!("bool::{}", content.kind()),
+            Content::Number(content) => format!("number::{}", content.kind()),
+            Content::String(content) => format!("string::{}", content.kind()),
+            Content::DateTime(_) => "date_time".to_string(),
+            Content::Array(_) => "array".to_string(),
+            Content::Object(_) => "object".to_string(),
+            Content::SameAs(_) => "same_as".to_string(),
+            Content::OneOf(_) => "one_of".to_string(),
+            Content::Series(content) => format!("series::{}", content.kind()),
+            Content::Unique(_) => "unique".to_string(),
+            Content::Hidden(_) => "hidden".to_string(),
         }
     }
 }
@@ -568,6 +572,12 @@ where
 #[serde(try_from = "f64")]
 pub struct Weight(f64);
 
+impl Hash for Weight {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.to_bits().hash(state);
+    }
+}
+
 impl std::convert::TryFrom<f64> for Weight {
     type Error = anyhow::Error;
 
@@ -698,7 +708,7 @@ pub mod tests {
     #[test]
     fn user_schema_accepts() {
         println!("{:#?}", *USER_SCHEMA);
-        USER_SCHEMA.accepts(&USER).unwrap()
+        assert!(USER_SCHEMA.accepts(&USER).is_ok());
     }
 
     #[test]
@@ -754,11 +764,11 @@ pub mod tests {
     }
 
     macro_rules! assert_idempotent {
-	($($inner:tt)*) => {
-	    let in_: DateTimeContent = serde_json::from_value(json!($($inner)*)).unwrap();
-	    let out = serde_json::to_string(&in_).unwrap();
-	    assert_eq!(serde_json::from_str::<'_, DateTimeContent>(&out).unwrap(), in_);
-	}
+        ($($inner:tt)*) => {
+            let in_: DateTimeContent = serde_json::from_value(json!($($inner)*)).unwrap();
+            let out = serde_json::to_string(&in_).unwrap();
+            assert_eq!(serde_json::from_str::<'_, DateTimeContent>(&out).unwrap(), in_);
+        }
     }
 
     #[test]

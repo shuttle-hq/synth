@@ -6,6 +6,7 @@ use crate::cli::stdf::StdoutExportStrategy;
 use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
+use std::path::PathBuf;
 
 use crate::cli::db_utils::DataSourceParams;
 use crate::datasource::DataSource;
@@ -15,8 +16,8 @@ use synth_core::{Name, Namespace, Value};
 
 use super::DataFormat;
 
-pub trait ExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<()>;
+pub(crate) trait ExportStrategy {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
 }
 
 pub struct ExportParams {
@@ -25,6 +26,7 @@ pub struct ExportParams {
     pub collection_name: Option<Name>,
     pub target: usize,
     pub seed: u64,
+    pub ns_path: PathBuf,
 }
 
 impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
@@ -75,29 +77,31 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
 pub(crate) fn create_and_insert_values<T: DataSource>(
     params: ExportParams,
     datasource: &T,
-) -> Result<()> {
+) -> Result<SamplerOutput> {
     let sampler = Sampler::try_from(&params.namespace)?;
     let values =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-    match values {
+    match &values {
         SamplerOutput::Collection(name, collection) => {
-            insert_data(datasource, name.to_string(), &collection)
+            insert_data(datasource, &name.to_string(), collection)
         }
-        SamplerOutput::Namespace(namespace) => {
+        SamplerOutput::Namespace(ref namespace) => {
             for (name, collection) in namespace {
-                insert_data(datasource, name, &collection)?;
+                insert_data(datasource, name, collection)?;
             }
             Ok(())
         }
-    }
+    }?;
+
+    Ok(values)
 }
 
 fn insert_data<T: DataSource>(
     datasource: &T,
-    collection_name: String,
+    collection_name: &str,
     collection: &[Value],
 ) -> Result<()> {
-    task::block_on(datasource.insert_data(collection_name.clone(), collection))
+    task::block_on(datasource.insert_data(collection_name, collection))
         .with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }

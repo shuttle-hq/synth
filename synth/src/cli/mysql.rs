@@ -3,6 +3,7 @@ use crate::cli::import::ImportStrategy;
 use crate::cli::import_utils::build_namespace_import;
 use crate::datasource::mysql_datasource::MySqlDataSource;
 use crate::datasource::DataSource;
+use crate::sampler::SamplerOutput;
 use anyhow::Result;
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
@@ -13,7 +14,7 @@ pub struct MySqlExportStrategy {
 }
 
 impl ExportStrategy for MySqlExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<()> {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let datasource = MySqlDataSource::new(&self.uri_string)?;
 
         create_and_insert_values(params, &datasource)

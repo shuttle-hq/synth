@@ -19,169 +19,169 @@ pub type OrderedFloat64 = OrderedFloat<f64>;
 
 macro_rules! generate_enum {
     {
-	$(#[$attr:meta])*
-	$vis:vis enum $id:ident {
-	    $(
-		$(#[$variant_attr:meta])*
-		$variant:ident($type_:ty),
-	    )*
-	}
+        $(#[$attr:meta])*
+        $vis:vis enum $id:ident {
+            $(
+                $(#[$variant_attr:meta])*
+                $variant:ident($type_:ty),
+            )*
+        }
     } => {
-	$(#[$attr])*
-	$vis enum $id {
-	    $(
-		$(#[$variant_attr])*
-		$variant($type_),
-	    )*
-	}
+        $(#[$attr])*
+        $vis enum $id {
+            $(
+                $(#[$variant_attr])*
+                $variant($type_),
+            )*
+        }
 
-	impl std::fmt::Display for $id {
-	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-		    $(
-			Self::$variant(inner) => write!(f, "{:?}", inner),
-		    )*
-		}
-	    }
-	}
+        impl std::fmt::Display for $id {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(
+                        Self::$variant(inner) => write!(f, "{:?}", inner),
+                    )*
+                }
+            }
+        }
 
-	impl std::fmt::Debug for $id {
-	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-		    $(
-			Self::$variant(inner) => write!(f, "{}({:?})", stringify!($type_), inner),
-		    )*
-		}
-	    }
-	}
+        impl std::fmt::Debug for $id {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(
+                        Self::$variant(inner) => write!(f, "{}({:?})", stringify!($type_), inner),
+                    )*
+                }
+            }
+        }
 
-	$(
-	    impl From<$type_> for $id {
-		fn from(value: $type_) -> Self {
-		    Self::$variant(value)
-		}
-	    }
-	)*
+        $(
+            impl From<$type_> for $id {
+                fn from(value: $type_) -> Self {
+                    Self::$variant(value)
+                }
+            }
+        )*
 
-	$(
-	    impl TryFrom<$id> for $type_ {
-		type Error = Error;
-		fn try_from(value: $id) -> Result<$type_, <Self as TryFrom<$id>>::Error> {
-		    match value {
-			$id::$variant(value) => Ok(value),
-			otherwise => Err(Error::type_(stringify!($variant), otherwise))
-		    }
-		}
-	    }
-	)*
+        $(
+            impl TryFrom<$id> for $type_ {
+                type Error = Error;
+                fn try_from(value: $id) -> Result<$type_, <Self as TryFrom<$id>>::Error> {
+                    match value {
+                        $id::$variant(value) => Ok(value),
+                        otherwise => Err(Error::r#type(stringify!($variant), otherwise))
+                    }
+                }
+            }
+        )*
     };
 }
 
 macro_rules! is_variant {
     {
-	#[$name:expr]
-	$item:item
+        #[$name:expr]
+        $item:item
     } => {
-	#[doc = "Check if the token is an instance of `"]
-	#[doc = $name]
-	#[doc = "`."]
-	$item
+        #[doc = "Check if the token is an instance of `"]
+        #[doc = $name]
+        #[doc = "`."]
+        $item
     }
 }
 
 macro_rules! to_variant {
     {
-	#[$name:expr]
-	$item:item
+        #[$name:expr]
+        $item:item
     } => {
-	#[doc = "Consume the token and extract out the arguments for `"]
-	#[doc = $name]
-	#[doc = "`."]
-	/// # Errors
-	/// If `self` is not an instance of a `
-	#[doc = $name]
-	#[doc = "` "]
-	/// token, a custom error of type `S::Error` is returned.
-	$item
+        #[doc = "Consume the token and extract out the arguments for `"]
+        #[doc = $name]
+        #[doc = "`."]
+        /// # Errors
+        /// If `self` is not an instance of a `
+        #[doc = $name]
+        #[doc = "` "]
+        /// token, a custom error of type `S::Error` is returned.
+        $item
     }
 }
 
 macro_rules! generate_special_enum {
     {
-	$(#[$attr:meta])*
-	$vis:vis enum $id:ident {
-	    $(
-		$(#[$variant_attr:meta])*
-		$variant:ident$(($($arg:ty as $var:ident,)*))? -> $is:ident $to:ident,
-	    )*
-	}
+        $(#[$attr:meta])*
+        $vis:vis enum $id:ident {
+            $(
+                $(#[$variant_attr:meta])*
+                $variant:ident$(($($arg:ty as $var:ident,)*))? -> $is:ident $to:ident,
+            )*
+        }
     } => {
-	$(#[$attr])*
-	$vis enum $id {
-	    $(
-		$(#[$variant_attr])*
-		$variant$(($($arg,)*))*,
-	    )*
-	}
+        $(#[$attr])*
+        $vis enum $id {
+            $(
+                $(#[$variant_attr])*
+                $variant$(($($arg,)*))*,
+            )*
+        }
 
-	impl std::fmt::Display for $id {
-	    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-		    $(
-			Self::$variant$(($(drop!($arg),)*))? =>
-			    write!(f, "{}", stringify!($variant)),
-		    )*
-		}
-	    }
-	}
+        impl std::fmt::Display for $id {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(
+                        Self::$variant$(($(drop!($arg),)*))? =>
+                            write!(f, "{}", stringify!($variant)),
+                    )*
+                }
+            }
+        }
 
-	impl Token {
-	    $(
-		is_variant! {
-		    #[stringify!($variant)]
-		    pub fn $is(&self) -> bool {
-			match self {
-			    Self::$id($id::$variant$(($(drop!($arg),)*))?) => true,
-			    _ => false
-			}
-		    }
-		}
+        impl Token {
+            $(
+                is_variant! {
+                    #[stringify!($variant)]
+                    pub fn $is(&self) -> bool {
+                        match self {
+                            Self::$id($id::$variant$(($(drop!($arg),)*))?) => true,
+                            _ => false
+                        }
+                    }
+                }
 
-		to_variant! {
-		    #[stringify!($variant)]
-		    pub fn $to<E: serde::ser::Error>(self) -> Result<($($($arg,)*)?), E> {
-			match self {
-			    Token::$id($id::$variant$(($($var,)*))?) => Ok(($($($var,)*)*)),
-			    otherwise => {
-				let err = format!(
-				    "unexpected: wanted {}, got {:?}",
-				    stringify!($variant),
-				    otherwise
-				);
-				Err(E::custom(err))
-			    }
-			}
-		    }
-		}
-	    )*
-	}
+                to_variant! {
+                    #[stringify!($variant)]
+                    pub fn $to<E: serde::ser::Error>(self) -> Result<($($($arg,)*)?), E> {
+                        match self {
+                            Token::$id($id::$variant$(($($var,)*))?) => Ok(($($($var,)*)*)),
+                            otherwise => {
+                                let err = format!(
+                                    "unexpected: wanted {}, got {:?}",
+                                    stringify!($variant),
+                                    otherwise
+                                );
+                                Err(E::custom(err))
+                            }
+                        }
+                    }
+                }
+            )*
+        }
 
-	/// **DEPRECATED** Used by the
-	/// [`bynar::de::Deserializer`](crate::de::Deserializer).
-	#[allow(missing_docs)]
-	pub trait SpecialTokenExt: Generator<Yield = Token> {
-	    $(
-		#[inline]
-		fn $to<R: Rng>(&mut self, rng: &mut R) -> Result<(), Error> {
-		    match self.next(rng).into_yielded()?.try_into()? {
-			$id::$variant$(($(drop!($arg),)*))? => Ok(()),
-			otherwise => Err(Error::type_(stringify!($variant), otherwise))
-		    }
-		}
-	    )*
-	}
+        /// **DEPRECATED** Used by the
+        /// [`bynar::de::Deserializer`](crate::de::Deserializer).
+        #[allow(missing_docs)]
+        pub trait SpecialTokenExt: Generator<Yield = Token> {
+            $(
+                #[inline]
+                fn $to<R: Rng>(&mut self, rng: &mut R) -> Result<(), Error> {
+                    match self.next(rng).into_yielded()?.try_into()? {
+                        $id::$variant$(($(drop!($arg),)*))? => Ok(()),
+                        otherwise => Err(Error::r#type(stringify!($variant), otherwise))
+                    }
+                }
+            )*
+        }
 
-	impl<G> SpecialTokenExt for G where G: Generator<Yield = Token> {}
+        impl<G> SpecialTokenExt for G where G: Generator<Yield = Token> {}
     };
 }
 
@@ -191,35 +191,35 @@ macro_rules! drop {
 
 macro_rules! into_composite {
     {
-	$name:expr,
+        $name:expr,
         $(#[$attr:meta])*,
         $item:item
     } => {
-	/// Make `self` a composite generator of type `
-	#[doc = $name]
-	#[doc = "`. See"]
-	$(#[$attr])*
-	#[doc = " for documentation on the arguments."]
-	$item
+        /// Make `self` a composite generator of type `
+        #[doc = $name]
+        #[doc = "`. See"]
+        $(#[$attr])*
+        #[doc = " for documentation on the arguments."]
+        $item
     }
 }
 
 macro_rules! data_model_variant_impl_ext {
     {
-	$(
-	    $(#[$attr:meta])*
-	    $as:ident($($arg:ident: $ty:ty$(,)?)*) -> $id:ident$(,)?
-	)*
+        $(
+            $(#[$attr:meta])*
+            $as:ident($($arg:ident: $ty:ty$(,)?)*) -> $id:ident$(,)?
+        )*
     } => {
-	$(
-	    into_composite! {
-		stringify!($id),
-		$(#[$attr])*,
-		fn $as(self, $($arg: $ty,)*) -> $id<Self> {
-		    $id::new(self, $($arg,)*)
-		}
-	    }
-	)*
+        $(
+            into_composite! {
+                stringify!($id),
+                $(#[$attr])*,
+                fn $as(self, $($arg: $ty,)*) -> $id<Self> {
+                    $id::new(self, $($arg,)*)
+                }
+            }
+        )*
     }
 }
 
@@ -260,7 +260,7 @@ impl TryFrom<Number> for f32 {
     fn try_from(value: Number) -> Result<f32, <Self as TryFrom<Number>>::Error> {
         match value {
             Number::F32(of32) => Ok(of32.into_inner()),
-            otherwise => Err(Error::type_(stringify!(F32), otherwise)),
+            otherwise => Err(Error::r#type(stringify!(F32), otherwise)),
         }
     }
 }
@@ -270,7 +270,7 @@ impl TryFrom<Number> for f64 {
     fn try_from(value: Number) -> Result<f64, <Self as TryFrom<Number>>::Error> {
         match value {
             Number::F64(of64) => Ok(of64.into_inner()),
-            otherwise => Err(Error::type_(stringify!(F64), otherwise)),
+            otherwise => Err(Error::r#type(stringify!(F64), otherwise)),
         }
     }
 }
@@ -333,20 +333,20 @@ generate_special_enum!(
     #[allow(missing_docs)]
     #[derive(Clone, Debug, PartialEq, Eq, Hash)]
     pub enum Special {
-    BeginMap(Option<usize> as len,) -> is_begin_map begin_map,
-    EndMap -> is_end_map end_map,
-    BeginStruct(&'static str as s, usize as n,) -> is_begin_struct begin_struct,
-    EndStruct -> is_end_struct end_struct,
-    BeginField(&'static str as s,) -> is_begin_field begin_field,
-    BeginTuple(usize as n,) -> is_begin_tuple begin_tuple,
-    EndTuple -> is_end_tuple end_tuple,
-    BeginSeq(Option<usize> as n,) -> is_begin_seq begin_seq,
-    EndSeq -> is_end_seq end_seq,
-    BeginSome -> is_begin_some begin_some,
-    None -> is_none none,
-    UnitStruct(&'static str as s,) -> is_unit_struct unit_struct,
-    UnitVariant(&'static str as n, u32 as i, &'static str as s,) -> is_unit_variant unit_variant,
-    Error(Error as error,) -> is_error error,
+        BeginMap(Option<usize> as len,) -> is_begin_map begin_map,
+        EndMap -> is_end_map end_map,
+        BeginStruct(&'static str as s, usize as n,) -> is_begin_struct begin_struct,
+        EndStruct -> is_end_struct end_struct,
+        BeginField(&'static str as s,) -> is_begin_field begin_field,
+        BeginTuple(usize as n,) -> is_begin_tuple begin_tuple,
+        EndTuple -> is_end_tuple end_tuple,
+        BeginSeq(Option<usize> as n,) -> is_begin_seq begin_seq,
+        EndSeq -> is_end_seq end_seq,
+        BeginSome -> is_begin_some begin_some,
+        None -> is_none none,
+        UnitStruct(&'static str as s,) -> is_unit_struct unit_struct,
+        UnitVariant(&'static str as n, u32 as i, &'static str as s,) -> is_unit_variant unit_variant,
+        Error(Error as error,) -> is_error error,
     }
 );
 
@@ -382,16 +382,16 @@ impl<G> TokenGenerator for G where G: Generator<Yield = Token> {}
 /// data types from [`TokenGenerator`](crate::value::TokenGenerator).
 pub trait TokenGeneratorExt: TokenGenerator + Sized {
     data_model_variant_impl_ext! {
-    /// [`serialize_field`](serde::ser::SerializeStruct::serialize_field)
-    into_struct_field(name: &'static str) -> StructField,
-    /// [`serialize_struct`](serde::ser::Serializer::serialize_struct)
-    into_struct(name: &'static str, len: usize) -> Struct,
-    /// [`serialize_seq`](serde::ser::Serializer::serialize_seq)
-    into_seq(len: Option<usize>) -> Seq,
-    /// [`serialize_tuple`](serde::ser::Serializer::serialize_tuple)
-    into_tuple(len: usize) -> Tuple,
-    /// [`serialize_map`](serde::ser::Serializer::serialize_map)
-    into_map(len: Option<usize>) -> Map,
+        /// [`serialize_field`](serde::ser::SerializeStruct::serialize_field)
+        into_struct_field(name: &'static str) -> StructField,
+        /// [`serialize_struct`](serde::ser::Serializer::serialize_struct)
+        into_struct(name: &'static str, len: usize) -> Struct,
+        /// [`serialize_seq`](serde::ser::Serializer::serialize_seq)
+        into_seq(len: Option<usize>) -> Seq,
+        /// [`serialize_tuple`](serde::ser::Serializer::serialize_tuple)
+        into_tuple(len: usize) -> Tuple,
+        /// [`serialize_map`](serde::ser::Serializer::serialize_map)
+        into_map(len: Option<usize>) -> Map,
     }
 
     fn with_key<K: TokenGenerator>(self, key: K) -> Concatenate<K, Self> {
@@ -435,30 +435,30 @@ impl IntoToken for Token {
 
 macro_rules! impl_into_token {
     {
-	$(
-	    $track:ident: $($ty:ty$(,)?)+ => $fst:ty $(=> $inter:ty)* $(,)?
-	)*
+        $(
+            $track:ident: $($ty:ty$(,)?)+ => $fst:ty $(=> $inter:ty)* $(,)?
+        )*
     } => {
-	$(
-	    #[inline]
-	    fn $track<I>(x: I) -> Token
-	    where
-		$fst: From<I>
-	    {
-		let out: $fst = x.into();
-		$(let out: $inter = out.into();)*
-		out
-	    }
+        $(
+            #[inline]
+            fn $track<I>(x: I) -> Token
+            where
+                $fst: From<I>
+            {
+                let out: $fst = x.into();
+                $(let out: $inter = out.into();)*
+                out
+            }
 
-	    $(
-		impl IntoToken for $ty {
-		    #[inline]
-		    fn into_token(self) -> Token {
-			$track(self)
-		    }
-		}
-	    )+
-	)*
+            $(
+                impl IntoToken for $ty {
+                    #[inline]
+                    fn into_token(self) -> Token {
+                        $track(self)
+                    }
+                }
+            )+
+        )*
     }
 }
 
@@ -530,44 +530,44 @@ where
 
 macro_rules! data_model_variant {
     {
-	$name:expr,
-	$serde:expr,
-	$id:ident<G>($($arg:ident: $ty:ty$(,)?)*) -> $inner:ty = $cl:expr
+        $name:expr,
+        $serde:expr,
+        $id:ident<G>($($arg:ident: $ty:ty$(,)?)*) -> $inner:ty = $cl:expr
     } => {
-	#[doc = $name]
-    pub struct $id<G>
-	where
-	    G: Generator<Yield = Token>
-	{
-	    pub inner: $inner
-	}
+        #[doc = $name]
+        pub struct $id<G>
+        where
+            G: Generator<Yield = Token>
+        {
+            pub inner: $inner
+        }
 
-	impl<G> $id<G>
-	where
-	    G: Generator<Yield = Token>,
-	{
-	    /// Create a new instance from a generator `G`. See
-	    #[doc = $serde]
-	    /// for documentation on the additional arguments.
-	    pub fn new(generator: G, $($arg: $ty,)*) -> Self {
-		Self {
-		    inner: ($cl)(generator)
-		}
-	    }
-	}
+        impl<G> $id<G>
+        where
+            G: Generator<Yield = Token>,
+        {
+            /// Create a new instance from a generator `G`. See
+            #[doc = $serde]
+            /// for documentation on the additional arguments.
+            pub fn new(generator: G, $($arg: $ty,)*) -> Self {
+                Self {
+                    inner: ($cl)(generator)
+                }
+            }
+        }
 
-	impl<G> Generator for $id<G>
-	where
-	    G: Generator<Yield = Token>,
-	{
-	    type Yield = G::Yield;
+        impl<G> Generator for $id<G>
+        where
+            G: Generator<Yield = Token>,
+        {
+            type Yield = G::Yield;
 
-	    type Return = G::Return;
+            type Return = G::Return;
 
-	    fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-		self.inner.next(rng)
-	    }
-	}
+            fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
+                self.inner.next(rng)
+            }
+        }
     }
 }
 
@@ -646,26 +646,26 @@ pub mod tests {
     }
 
     macro_rules! test_primitive_values {
-	{
-	    $(
-		$id:ident<$ty:ty>$(,)?
-	    )*
-	} => {
-	    $(
-		#[test]
-		fn $id() {
-		    let mut rng = rand::thread_rng();
-		    let mut seed = Random::new::<$ty>()
-			.once()
-			.into_token()
-			.aggregate();
-		    let next = seed.next(&mut rng).into_yielded().unwrap();
-		    let as_ser = OwnedSerializable::new(next);
-		    let as_str = serde_json::to_string(&as_ser).unwrap();
-		    let _as_num: $ty = serde_json::from_str(&as_str).unwrap();
-		}
-	    )*
-	}
+        {
+            $(
+                $id:ident<$ty:ty>$(,)?
+            )*
+        } => {
+            $(
+                #[test]
+                fn $id() {
+                    let mut rng = rand::thread_rng();
+                    let mut seed = Random::new::<$ty>()
+                        .once()
+                        .into_token()
+                        .aggregate();
+                    let next = seed.next(&mut rng).into_yielded().unwrap();
+                    let as_ser = OwnedSerializable::new(next);
+                    let as_str = serde_json::to_string(&as_ser).unwrap();
+                    let _as_num: $ty = serde_json::from_str(&as_str).unwrap();
+                }
+            )*
+        }
     }
 
     test_primitive_values!(

@@ -1,4 +1,5 @@
 use super::prelude::*;
+use std::hash::{Hash, Hasher};
 
 use super::Categorical;
 
@@ -20,8 +21,7 @@ impl NumberContentKind {
     pub fn upcast(self) -> Self {
         match self {
             Self::U64 => Self::I64,
-            Self::I64 => Self::F64,
-            Self::F64 => Self::F64,
+            Self::I64 | Self::F64 => Self::F64,
         }
     }
 }
@@ -62,45 +62,44 @@ macro_rules! serde_convert_case {
 
 macro_rules! number_content {
     {
-	$(
-	    $ty:ty[$is:ident, $def:ident] as $as:ident {
-		$(
-		    $(#[$default:meta])?
-		    $variant:ident($variant_ty:path),
-		)*
-	    },
-	)*
+        $(
+            $(#[$default:meta])?
+            $ty:ty[$is:ident, $def:ident] as $as:ident {
+                $(
+                    $variant:ident($variant_ty:path),
+                )*
+            },
+        )*
     } => {
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Hash)]
         pub enum NumberContent {
             $($as(number_content::$as),)*
         }
 
         impl NumberContent {
-            pub fn kind(&self) -> &'static str {
+            pub fn kind(&self) -> String {
                 match self {
                     $($(Self::$as(number_content::$as::$variant(_)) => {
-                        concat!(stringify!($as), "::", stringify!($variant))
+                        concat!(stringify!($as), "::", stringify!($variant)).to_string()
                     },)*)*
                 }
             }
 
             $(
-            pub fn $def() -> Self {
-                Self::$as(number_content::$as::Range(RangeStep::default()))
-            }
-
-            pub fn $is(&self) -> bool {
-                match self {
-                Self::$as(_) => true,
-                _ => false
+                pub fn $def() -> Self {
+                    Self::$as(number_content::$as::Range(RangeStep::default()))
                 }
-            }
+
+                pub fn $is(&self) -> bool {
+                    match self {
+                        Self::$as(_) => true,
+                        _ => false
+                    }
+                }
             )*
         }
 
-        impl Serialize for NumberContent
-        {
+        impl Serialize for NumberContent {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
                 S: Serializer,
@@ -127,20 +126,19 @@ macro_rules! number_content {
                 let as_object = v.as_object_mut().ok_or(D::Error::custom("Object value expected"))?;
                 match as_object.remove("subtype") {
                     Some(subtype) => {
-                    $(
-                        if subtype == stringify!($ty) {
-                            if as_object.is_empty() {
-                                Ok(Self::$def())
-                            } else {
-                                let inner = number_content::$as::deserialize(v).map_err(D::Error::custom)?;
-                                Ok(NumberContent::$as(inner))
+                        $(
+                            if subtype == stringify!($ty) {
+                                if as_object.is_empty() {
+                                    Ok(Self::$def())
+                                } else {
+                                    let inner = number_content::$as::deserialize(v).map_err(D::Error::custom)?;
+                                    Ok(NumberContent::$as(inner))
+                                }
+                            } else
+                        )*
+                            {
+                                Err(D::Error::unknown_variant(format!("{:?}", subtype).as_str(), &[""]))
                             }
-                        }
-                        else
-                    )*
-                        {
-                            Err(D::Error::unknown_variant(format!("{:?}", subtype).as_str(), &[""]))
-                        }
                     }
                     None => {
                         $( if let Ok(inner) = number_content::$as::deserialize(&v) {
@@ -158,32 +156,33 @@ macro_rules! number_content {
             use serde::{Serialize, Deserialize};
 
             $(
-            #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-            #[serde(rename_all = "snake_case")]
-            #[serde(deny_unknown_fields)]
-            pub enum $as {
-                $($variant($variant_ty),)*
-            }
-
-            $(
-            impl From<$variant_ty> for $as {
-                fn from(value: $variant_ty) -> Self {
-                    Self::$variant(value)
+                #[derive(Debug, Serialize, Deserialize, Clone)]
+                #[serde(rename_all = "snake_case")]
+                #[serde(deny_unknown_fields)]
+                $(#[$default])?
+                pub enum $as {
+                    $($variant($variant_ty),)*
                 }
-            }
-            )*
 
-            impl From<$as> for NumberContent {
-                fn from(value: $as) -> Self {
-                    Self::$as(value)
+                $(
+                    impl From<$variant_ty> for $as {
+                        fn from(value: $variant_ty) -> Self {
+                            Self::$variant(value)
+                        }
+                    }
+                )*
+
+                impl From<$as> for NumberContent {
+                    fn from(value: $as) -> Self {
+                        Self::$as(value)
+                    }
                 }
-            }
             )*
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct Id<N> {
     #[serde(default)]
@@ -316,42 +315,96 @@ impl<N> std::ops::RangeBounds<N> for RangeStep<N> {
     }
 }
 
+macro_rules! derive_hash {
+    (f32) => {
+        impl Hash for RangeStep<f32> {
+            derive_hash!(float);
+        }
+    };
+    (f64) => {
+        impl Hash for RangeStep<f64> {
+            derive_hash!(float);
+        }
+    };
+    (float) => {
+            fn hash<H: Hasher>(&self, state: &mut H) {
+                if let Some(low) = self.low {
+                    low.to_bits().hash(state);
+                }
+
+                if let Some(high) = self.high {
+                    high.to_bits().hash(state);
+                }
+
+                if let Some(step) = self.step {
+                    step.to_bits().hash(state);
+                }
+
+                self.include_low.hash(state);
+                self.include_high.hash(state);
+            }
+    };
+    {$t:ty} => {
+        impl Hash for RangeStep<$t> {
+            fn hash<H: Hasher>(&self, state: &mut H) {
+                if let Some(low) = self.low {
+                    low.hash(state);
+                }
+
+                if let Some(high) = self.high {
+                    high.hash(state);
+                }
+
+                if let Some(step) = self.step {
+                    step.hash(state);
+                }
+
+                self.include_low.hash(state);
+                self.include_high.hash(state);
+            }
+        }
+    };
+    {$($t:ident),*} => {
+        $(derive_hash!{$t})*
+    };
+}
+
+derive_hash!(i32, u32, i64, u64, f32, f64);
+
 number_content!(
+    #[derive(PartialEq, Hash)]
     u32[is_u32, default_u32_range] as U32 {
-        #[default]
         Range(RangeStep<u32>),
         Categorical(Categorical<u32>),
         Constant(u32),
-    Id(crate::schema::Id<u32>),
+        Id(crate::schema::Id<u32>),
     },
+    #[derive(PartialEq, Hash)]
     u64[is_u64, default_u64_range] as U64 {
-        #[default]
         Range(RangeStep<u64>),
         Categorical(Categorical<u64>),
         Constant(u64),
-    Id(crate::schema::Id<u64>),
+        Id(crate::schema::Id<u64>),
     },
+    #[derive(PartialEq, Hash)]
     i32[is_i32, default_i32_range] as I32 {
-        #[default]
         Range(RangeStep<i32>),
         Categorical(Categorical<i32>),
         Constant(i32),
-    Id(crate::schema::Id<i32>),
+        Id(crate::schema::Id<i32>),
     },
+    #[derive(PartialEq, Hash)]
     i64[is_i64, default_i64_range] as I64 {
-        #[default]
         Range(RangeStep<i64>),
         Categorical(Categorical<i64>),
         Constant(i64),
-    Id(crate::schema::Id<i64>),
+        Id(crate::schema::Id<i64>),
     },
     f64[is_f64, default_f64_range] as F64 {
-        #[default]
         Range(RangeStep<f64>),
         Constant(f64),
     },
     f32[is_f32, default_f32_range] as F32 {
-        #[default]
         Range(RangeStep<f32>),
         Constant(f32),
     },
@@ -600,6 +653,54 @@ impl number_content::F64 {
     }
 }
 
+impl Hash for number_content::F32 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Range(range) => range.hash(state),
+            Self::Constant(constant) => constant.to_bits().hash(state),
+        }
+    }
+}
+
+impl PartialEq for number_content::F32 {
+    fn eq(&self, other: &number_content::F32) -> bool {
+        match self {
+            Self::Range(range) => match other {
+                Self::Range(o_range) => range == o_range,
+                _ => false,
+            },
+            Self::Constant(constant) => match other {
+                Self::Constant(o_constant) => constant == o_constant,
+                _ => false,
+            },
+        }
+    }
+}
+
+impl Hash for number_content::F64 {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Range(range) => range.hash(state),
+            Self::Constant(constant) => constant.to_bits().hash(state),
+        }
+    }
+}
+
+impl PartialEq for number_content::F64 {
+    fn eq(&self, other: &number_content::F64) -> bool {
+        match self {
+            Self::Range(range) => match other {
+                Self::Range(o_range) => range == o_range,
+                _ => false,
+            },
+            Self::Constant(constant) => match other {
+                Self::Constant(o_constant) => constant == o_constant,
+                _ => false,
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -608,39 +709,41 @@ pub mod tests {
 
     // TODO: f32 deserializes successfully to `inf` when OOR
     macro_rules! test_number_variants {
-        ($($test:ident -> $name:literal $as:ident: $ty:ty $(,)?)+) => { $(
-            #[test]
-            fn $test() {
-                // Inferred
-                let number_content_as_json = json!({
-                    "range": {
-                        "low": <$ty>::MIN,
-                        "high": <$ty>::MAX
-                    }
-                });
-                let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
-                assert_eq!(
-                    number_content,
-                    NumberContent::$as(number_content::$as::Range(RangeStep {
-                        low: Some(<$ty>::MIN),
-                        high: Some(<$ty>::MAX),
-                        step: None,
-                        ..Default::default()
-                    }))
-                );
+        ($($test:ident -> $name:literal $as:ident: $ty:ty $(,)?)+) => {
+            $(
+                #[test]
+                fn $test() {
+                    // Inferred
+                    let number_content_as_json = json!({
+                        "range": {
+                            "low": <$ty>::MIN,
+                            "high": <$ty>::MAX
+                        }
+                    });
+                    let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
+                    assert_eq!(
+                        number_content,
+                        NumberContent::$as(number_content::$as::Range(RangeStep {
+                            low: Some(<$ty>::MIN),
+                            high: Some(<$ty>::MAX),
+                            step: None,
+                            ..Default::default()
+                        }))
+                    );
 
-                // Specified
-                let number_content_as_json = json!({
-                    "subtype": $name,
-                    "constant": <$ty>::one()
-                });
-                let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
-                assert_eq!(
-                    number_content,
-                    NumberContent::$as(number_content::$as::Constant(<$ty>::one()))
-                );
-            }
-        )+ }
+                    // Specified
+                    let number_content_as_json = json!({
+                        "subtype": $name,
+                        "constant": <$ty>::one()
+                    });
+                    let number_content: NumberContent = serde_json::from_value(number_content_as_json).unwrap();
+                    assert_eq!(
+                        number_content,
+                        NumberContent::$as(number_content::$as::Constant(<$ty>::one()))
+                    );
+                }
+            )+
+        }
     }
 
     test_number_variants!(

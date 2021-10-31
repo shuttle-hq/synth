@@ -9,7 +9,7 @@ use crate::{GeneratorState, Never};
 use crate::Shared;
 
 use rand::{
-    distributions::{Distribution, Standard},
+    distributions::{Distribution, Standard, WeightedIndex},
     Rng,
 };
 
@@ -763,8 +763,8 @@ where
 /// [`OneOf`](OneOf) can be built using
 /// [`FromIterator`](std::iter::FromIterator).
 pub struct OneOf<G> {
-    inners: Vec<G>,
-    cursor: Option<(usize, Box<G>)>,
+    inners: Vec<(f64, G)>,
+    cursor: Option<(usize, f64, Box<G>)>,
 }
 
 impl<G> Generator for OneOf<G>
@@ -776,19 +776,24 @@ where
     type Return = Option<G::Return>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        if let Some((_, picked)) = self.cursor.as_mut() {
+        if let Some((_, _, picked)) = self.cursor.as_mut() {
             let next = picked.next(rng);
             if next.is_complete() {
-                let (idx, picked) = std::mem::replace(&mut self.cursor, None).unwrap();
-                self.inners.insert(idx, *picked);
+                let (idx, weight, picked) = std::mem::replace(&mut self.cursor, None).unwrap();
+                self.inners.insert(idx, (weight, *picked));
             }
             next.map_complete(|c| Some(c))
         } else {
             if self.inners.is_empty() {
                 GeneratorState::Complete(None)
             } else {
-                let idx = rng.gen_range(0..self.inners.len());
-                self.cursor = Some((idx, Box::new(self.inners.remove(idx))));
+                // Unwrap note: https://docs.rs/rand/0.8.4/rand/distributions/weighted/struct.WeightedIndex.html#method.new
+                let dist = WeightedIndex::new(self.inners.iter().map(|s| s.0)).expect(
+                    "Already checked that all weights are positive and the iterator is not empty.",
+                );
+                let idx = dist.sample(rng);
+                let (weight, v) = self.inners.swap_remove(idx);
+                self.cursor = Some((idx, weight, Box::new(v)));
                 self.next(rng)
             }
         }
@@ -800,6 +805,18 @@ where
     G: Generator,
 {
     fn from_iter<T: IntoIterator<Item = G>>(iter: T) -> Self {
+        Self {
+            inners: iter.into_iter().map(|s| (1.0, s)).collect(),
+            cursor: None,
+        }
+    }
+}
+
+impl<G> FromIterator<(f64, G)> for OneOf<G>
+where
+    G: Generator,
+{
+    fn from_iter<T: IntoIterator<Item = (f64, G)>>(iter: T) -> Self {
         Self {
             inners: iter.into_iter().collect(),
             cursor: None,
@@ -1200,7 +1217,7 @@ pub mod tests {
     fn aggregate() {
         let (seed, mut rng) = prime(42);
         let mut subject = seed.once().repeat(5).aggregate();
-        assert_eq!(subject.complete(&mut rng), vec![42, 42, 42, 42, 42]);
+        assert_eq!(subject.complete(&mut rng), [42, 42, 42, 42, 42]);
     }
 
     #[test]
@@ -1218,7 +1235,7 @@ pub mod tests {
     #[test]
     fn one_of() {
         let (seed, mut rng) = prime(42i32);
-        let mut subject = vec![seed.once()].into_iter().collect::<OneOf<_>>();
+        let mut subject = std::iter::once_with(|| seed.once()).collect::<OneOf<_>>();
         assert_eq!(subject.next(&mut rng), GeneratorState::Yielded(42));
         assert_eq!(subject.next(&mut rng), GeneratorState::Complete(Some(42)));
     }
@@ -1251,7 +1268,7 @@ pub mod tests {
         }
 
         for item in buf {
-            assert!(item != gen.next(&mut rng))
+            assert_ne!(item, gen.next(&mut rng))
         }
     }
 

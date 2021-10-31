@@ -54,7 +54,7 @@ contact `opensource@getsynth.com`.
 
 ## What does Synth collect?
 
-Synth's telemetry collects 6 fields:
+Synth's telemetry collects 7 fields:
 
 - `distinct_id`: A randomly generated UUID stored
   at `~/.config/synth/config.json`
@@ -75,6 +75,7 @@ Synth's telemetry collects 6 fields:
   - `macos`
 - `timestamp`: The time at which the command was issued. For
   example `2021-05-06T16:13:40.084Z`.
+- `generators`: A list of generators that were used by the `generate` command. For example `string::title, number::I32::Range`.
 
 Below is the [Synth schema][synth-schema] of PostHog events posted by `synth`'s
 activity:
@@ -114,6 +115,110 @@ activity:
       "subtype": "naive_date_time",
       "begin": "2015-01-01T00:00:00",
       "end": "2020-01-01T12:00:00"
+    },
+    "generators": {
+      "type": "string",
+      "serialized": {
+        "serializer": "json",
+        "content": {
+          "type": "array",
+          "length": {
+            "type": "number",
+            "subtype": "u64",
+            "range": {
+              "low": 2,
+              "high": 20
+            }
+          },
+          "content": {
+            "type": "string",
+            "categorical": {
+              "string::first_name": 2,
+              "string::last_name": 2,
+              "string::title": 2,
+              "string::suffix": 2,
+              "string::name": 2,
+              "string::name_with_title": 2,
+              "string::credit_card": 2,
+              "string::free_email_provider": 2,
+              "string::domain_suffix": 2,
+              "string::free_email": 2,
+              "string::safe_email": 2,
+              "string::username": 2,
+              "string::ipv4": 2,
+              "string::ipv6": 2,
+              "string::ip": 2,
+              "string::mac_address": 2,
+              "string::color": 2,
+              "string::user_agent": 2,
+              "string::rfc_status_code": 2,
+              "string::valid_status_code": 2,
+              "string::company_suffix": 2,
+              "string::company_name": 2,
+              "string::buzzword": 2,
+              "string::buzzword_muddle": 2,
+              "string::buzzword_tail": 2,
+              "string::catch_phrase": 2,
+              "string::bs_verb": 2,
+              "string::bs_adj": 2,
+              "string::bs_noun": 2,
+              "string::bs": 2,
+              "string::profession": 2,
+              "string::industry": 2,
+              "string::city_prefix": 2,
+              "string::city_suffix": 2,
+              "string::city_name": 2,
+              "string::country_name": 2,
+              "string::country_code": 2,
+              "string::street_suffix": 2,
+              "string::street_name": 2,
+              "string::time_zone": 2,
+              "string::state_name": 2,
+              "string::state_abbr": 2,
+              "string::secondary_address_type": 2,
+              "string::secondary_address": 2,
+              "string::zip_code": 2,
+              "string::post_code": 2,
+              "string::building_number": 2,
+              "string::latitude": 2,
+              "string::longitude": 2,
+              "string::phone_number": 2,
+              "string::cell_number": 2,
+              "string::file_path": 2,
+              "string::file_name": 2,
+              "string::file_extension": 2,
+              "string::dir_path": 2,
+              "string::pattern": 2,
+              "string::categorical": 2,
+              "string::serialized": 2,
+              "string::uuid": 2,
+              "string::trancated": 2,
+              "string::format": 2,
+              "number::I32::Range": 10,
+              "number::U32::Range": 10,
+              "number::F32::Range": 10,
+              "number::I64::Range": 10,
+              "number::U64::Range": 10,
+              "number::F64::Range": 10,
+              "bool::constant": 3,
+              "bool::frequency": 3,
+              "bool::categorical": 3,
+              "series::cyclical": 1,
+              "series::poisson": 1,
+              "series::incrementing": 1,
+              "series::zip": 1,
+              "null": 1,
+              "date_time": 1,
+              "array": 1,
+              "object": 1,
+              "same_as": 1,
+              "one_of": 1,
+              "unique": 1,
+              "hidden": 1
+            }
+          }
+        }
+      }
     }
 }
 ```

@@ -47,7 +47,7 @@ pub trait RelationalDataSource: DataSource {
 
     async fn insert_relational_data(
         &self,
-        collection_name: String,
+        collection_name: &str,
         collection: &[Value],
     ) -> Result<()> {
         let batch_size = DEFAULT_INSERT_BATCH_SIZE;
@@ -60,10 +60,8 @@ pub trait RelationalDataSource: DataSource {
             return Ok(());
         }
 
-        let column_infos = self.get_columns_infos(&collection_name).await?;
-        let first_valueset = collection
-            .get(0)
-            .expect("Explicit check is done above that this collection is non-empty")
+        let column_infos = self.get_columns_infos(collection_name).await?;
+        let first_valueset = collection[0]
             .as_object()
             .expect("This is always an object (sampler contract)");
 
@@ -96,7 +94,7 @@ pub trait RelationalDataSource: DataSource {
             .collect::<Vec<String>>()
             .join(",");
 
-        let mut futures = vec![];
+        let mut futures = Vec::with_capacity(collection.len());
 
         for rows in collection.chunks(batch_size) {
             let mut query = format!(
@@ -127,7 +125,7 @@ pub trait RelationalDataSource: DataSource {
             futures.push(future);
         }
 
-        let results: Vec<Result<Self::QueryResult>> = join_all(futures).await;
+        let results = join_all(futures).await;
 
         if let Err(e) = results.into_iter().bcollect::<Vec<Self::QueryResult>>() {
             bail!("One or more database inserts failed: {:?}", e)

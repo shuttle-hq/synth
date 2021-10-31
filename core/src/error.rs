@@ -2,43 +2,43 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! generate_error_variants {
     {
-	$(#[$attr:meta])*
-	$vis:vis enum $id:ident {
-	    $(
-		$(#[$variant_attr:meta])*
-		$variant:ident -> $func_name:ident,
-	    )*
-	}
+        $(#[$attr:meta])*
+        $vis:vis enum $id:ident {
+            $(
+                $(#[$variant_attr:meta])*
+                $variant:ident -> $func_name:ident,
+            )*
+        }
     } => {
-	$(#[$attr])*
-	$vis enum $id {
-	    $(
-		$(#[$variant_attr])*
-		$variant,
-	    )*
-	}
+        $(#[$attr])*
+        $vis enum $id {
+            $(
+                $(#[$variant_attr])*
+                $variant,
+            )*
+        }
 
- 	impl Error {
-	    $(
-		#[inline]
-		pub fn $func_name<R: AsRef<str>>(msg: R) -> Self {
-	            Self::new_target_debug($id::$variant, msg)
-		}
-	    )*
-	}
+        impl Error {
+            $(
+                #[inline]
+                pub fn $func_name<R: AsRef<str>>(msg: R) -> Self {
+                    Self::new($id::$variant, msg, crate::error::Target::Debug)
+                }
+            )*
+        }
     }
 }
 
 macro_rules! failed_crate {
     (target: $target:ident, $lit: literal$(, $arg:expr)*) => {
-	failed_crate!(target: $target, BadRequest => $lit$(, $arg)*)
+        failed_crate!(target: $target, BadRequest => $lit$(, $arg)*)
     };
     (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
-	crate::error::Error::new_with_target(
-	    crate::error::ErrorKind::$variant,
-	    format!($lit$(, $arg)*),
-	    crate::error::Target::$target
-	)
+        crate::error::Error::new(
+            crate::error::ErrorKind::$variant,
+            format!($lit$(, $arg)*),
+            crate::error::Target::$target
+        )
     };
 }
 
@@ -53,12 +53,12 @@ macro_rules! failed_crate {
 ///     2) The generator graph (distributions, detected cycles, malformed generators, etc.)
 macro_rules! failed {
     (target: $target:ident, $lit: literal$(, $arg:expr)*) => {
-	failed!(target: $target, BadRequest => $lit$(, $arg)*)
+        failed!(target: $target, BadRequest => $lit$(, $arg)*)
     };
     (target: $target:ident, $variant:ident => $lit:literal$(, $arg:expr)*) => {
-	anyhow::Error::from(
-	    failed_crate!(target: $target, $variant => $lit$(,$arg)*)
-	)
+        anyhow::Error::from(
+            failed_crate!(target: $target, $variant => $lit$(,$arg)*)
+        )
     };
 }
 
@@ -91,7 +91,7 @@ impl Error {
 }
 
 impl Error {
-    pub fn new_with_target<R: AsRef<str>>(kind: ErrorKind, msg: R, target: Target) -> Self {
+    pub fn new<R: AsRef<str>>(kind: ErrorKind, msg: R, target: Target) -> Self {
         Self {
             msg: Some(msg.as_ref().to_string()),
             kind,
@@ -99,30 +99,14 @@ impl Error {
         }
     }
 
-    pub fn new_target_debug<R: AsRef<str>>(kind: ErrorKind, msg: R) -> Self {
-        Self {
-            msg: Some(msg.as_ref().to_string()),
-            kind,
-            target: Target::Debug,
-        }
-    }
-
-    pub fn new_target_release<R: AsRef<str>>(kind: ErrorKind, msg: R) -> Self {
-        Self {
-            msg: Some(msg.as_ref().to_string()),
-            kind,
-            target: Target::Release,
-        }
-    }
-
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
     }
 
-    pub fn sensitive(&self) -> &bool {
+    pub fn sensitive(&self) -> bool {
         match self.target {
-            Target::Debug => &true,
-            Target::Release => &false,
+            Target::Debug => true,
+            Target::Release => false,
         }
     }
 }

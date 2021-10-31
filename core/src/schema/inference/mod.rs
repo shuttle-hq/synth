@@ -380,7 +380,9 @@ pub mod tests {
     use std::str::FromStr;
 
     macro_rules! as_array {
-	[$($ident:ident)*] => { Value::from(vec![$($ident.clone())*]) }
+        [$($ident:ident)*] => {
+            Value::from(vec![$($ident.clone())*])
+        }
     }
 
     #[test]

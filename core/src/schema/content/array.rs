@@ -2,7 +2,7 @@ use super::prelude::*;
 use crate::graph::prelude::content::number::number_content::U64;
 use crate::schema::{NumberContent, RangeStep};
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 pub struct ArrayContent {

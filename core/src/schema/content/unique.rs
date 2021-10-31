@@ -6,7 +6,7 @@ use crate::{Compiler, Content, Graph};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Hash)]
 pub enum UniqueAlgorithm {
     Hash { retries: Option<usize> },
 }
@@ -18,7 +18,7 @@ impl Default for UniqueAlgorithm {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct UniqueContent {
     #[serde(default)]

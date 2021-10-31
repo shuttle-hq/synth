@@ -29,22 +29,8 @@
       ]
     },
     "hospital_id": {
-      "type": "one_of",
-      "variants": [
-        {
-          "weight": 1.0,
-          "type": "number",
-          "range": {
-            "low": 1,
-            "high": 12
-          },
-          "subtype": "i32"
-        },
-        {
-          "weight": 1.0,
-          "type": "null"
-        }
-      ]
+      "type": "same_as",
+      "ref": "hospitals.content.id"
     },
     "id": {
       "type": "number",

@@ -13,7 +13,7 @@ use std::{default::Default, iter::FromIterator};
 #[allow(dead_code)]
 type JsonObject = Map<String, Value>;
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Namespace {
     #[serde(flatten)]
     pub collections: BTreeMap<Name, Content>,
