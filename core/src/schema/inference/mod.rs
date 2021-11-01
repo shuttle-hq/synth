@@ -91,28 +91,6 @@ impl std::fmt::Display for VariationMergeStrategy {
 impl MergeStrategy<Content, Value> for VariationMergeStrategy {
     fn try_merge(self, master: &mut Content, candidate: &Value) -> Result<()> {
         match (master, candidate) {
-            (Content::Object(master), Value::Object(candidate)) => {
-                let keys = master
-                    .iter()
-                    .map(|s| s.0)
-                    .chain(candidate.iter().map(|s| s.0))
-                    .cloned()
-                    .collect::<HashSet<_>>();
-                for key in keys {
-                    let master_content = master.entry(&key);
-                    match (master_content, candidate.get(&key)) {
-                        (std::collections::btree_map::Entry::Vacant(v), Some(s)) => {
-                            v.insert(Content::from(s));
-                        }
-                        (std::collections::btree_map::Entry::Occupied(mut o), Some(s)) => {
-                            let mut removed = o.get_mut();
-                            Self.try_merge(&mut removed, s)?;
-                        }
-                        _ => (),
-                    };
-                }
-                Ok(())
-            }
             (Content::Array(ArrayContent { content, length }), Value::Array(candidate)) => {
                 Self.try_merge(length.as_mut(), &Value::from(candidate.len()))?;
                 candidate
