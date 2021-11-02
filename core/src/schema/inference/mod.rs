@@ -472,6 +472,8 @@ pub mod tests {
     #[test]
     fn test_merge_twice() {
         let user_no_last_name = json!({
+            "user_id" : 123,
+            "first_name" : "John",
             "address" : {
                 "postcode": "abc123",
                 "numbers": 5.0
@@ -479,7 +481,9 @@ pub mod tests {
         });
 
         let user_no_address = json!({
-                "last_name": "Smith"
+            "user_id" : 123,
+            "first_name" : "John",
+            "last_name": "Smith"
         });
 
         let user_no_last_name_as_array = as_array![user_no_last_name];
