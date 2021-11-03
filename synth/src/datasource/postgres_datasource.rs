@@ -14,8 +14,8 @@ use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
 use synth_core::schema::{
-    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, NumberContent,
-    RangeStep, RegexContent, StringContent, Uuid,
+    ArrayContent, BoolContent, Categorical, ChronoValue, ChronoValueAndFormat, ChronoValueType,
+    DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent, Uuid,
 };
 use synth_core::{Content, Value};
 
@@ -379,7 +379,10 @@ impl TryFrom<PgRow> for ValueWrapper {
         let mut kv = BTreeMap::new();
 
         for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
+            let value = try_match_value(&row, column).unwrap_or_else(|err| {
+                info!("try_match_value failed: {}", err);
+                Value::Null(())
+            });
             kv.insert(column.name().to_string(), value);
         }
 
@@ -421,6 +424,107 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
             "{}",
             row.try_get::<chrono::NaiveDate, &str>(column.name())?
         )),
+        "time" => Value::String(format!(
+            "{}",
+            row.try_get::<chrono::NaiveTime, &str>(column.name())?
+        )),
+        "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]" | "unknown[]" => {
+            Value::Array(
+                row.try_get::<Vec<String>, &str>(column.name())
+                    .map(|vec| vec.iter().map(|s| Value::String(s.to_string())).collect())?,
+            )
+        }
+        "bool[]" => Value::Array(
+            row.try_get::<Vec<bool>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|b| Value::Bool(b)).collect())?,
+        ),
+        "int2[]" => Value::Array(
+            row.try_get::<Vec<i16>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "int4[]" => Value::Array(
+            row.try_get::<Vec<i32>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "int8[]" => Value::Array(
+            row.try_get::<Vec<i64>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "float4[]" => Value::Array(
+            row.try_get::<Vec<f32>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "float8[]" => Value::Array(
+            row.try_get::<Vec<f64>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "numeric[]" => {
+            let vec = row.try_get::<Vec<Decimal>, &str>(column.name())?;
+            let result: Result<Vec<Value>, _> = vec
+                .into_iter()
+                .map(|d| {
+                    if let Some(truncated) = d.to_f64() {
+                        return Ok(Value::Number(truncated.into()));
+                    }
+
+                    bail!("Failed to convert Postgresql numeric data type to 64 bit float")
+                })
+                .collect();
+
+            Value::Array(result?)
+        }
+        "timestamp[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveDateTime>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%dT%H:%M:%S".to_owned()),
+                                value: ChronoValue::NaiveDateTime(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "timestamptz[]" => Value::Array(
+            row.try_get::<Vec<chrono::DateTime<chrono::FixedOffset>>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%dT%H:%M:%S%z".to_owned()),
+                                value: ChronoValue::DateTime(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "date[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveDate>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%d".to_owned()),
+                                value: ChronoValue::NaiveDate(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "time[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveTime>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|t| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%H:%M:%S".to_owned()),
+                                value: ChronoValue::NaiveTime(t),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
         _ => {
             bail!(
                 "Could not convert value. Converter not implemented for {}",

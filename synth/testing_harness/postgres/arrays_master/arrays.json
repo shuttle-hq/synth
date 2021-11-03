@@ -21,14 +21,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": -31059,
+              "high": 30176
+            },
             "subtype": "i64"
           }
         },
@@ -48,7 +51,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
@@ -74,7 +77,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
@@ -100,7 +103,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 7,
               "step": 1
             },
             "subtype": "u64"
@@ -108,7 +111,9 @@
           "content": {
             "type": "date_time",
             "format": "%Y-%m-%d",
-            "subtype": "naive_date"
+            "subtype": "naive_date",
+            "begin": "2015-01-02",
+            "end": "2019-12-08"
           }
         },
         {
@@ -127,14 +132,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": -31782.0,
+              "high": 28982.0
+            },
             "subtype": "f64"
           }
         },
@@ -154,14 +162,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 7,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": -27025,
+              "high": 31240
+            },
             "subtype": "i32"
           }
         },
@@ -208,7 +219,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 8,
               "step": 1
             },
             "subtype": "u64"
@@ -234,14 +245,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": -32371.0,
+              "high": 31915.0
+            },
             "subtype": "f64"
           }
         },
@@ -261,14 +275,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": -32448.0,
+              "high": 32168.0
+            },
             "subtype": "f32"
           }
         },
@@ -288,14 +305,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 8,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": -31050,
+              "high": 32734
+            },
             "subtype": "i32"
           }
         },
@@ -315,7 +335,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
@@ -341,7 +361,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 8,
               "step": 1
             },
             "subtype": "u64"
@@ -349,7 +369,9 @@
           "content": {
             "type": "date_time",
             "format": "%H:%M:%S",
-            "subtype": "naive_time"
+            "subtype": "naive_time",
+            "begin": "00:11:49",
+            "end": "22:59:22"
           }
         },
         {
@@ -368,7 +390,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
@@ -376,7 +398,9 @@
           "content": {
             "type": "date_time",
             "format": "%Y-%m-%dT%H:%M:%S",
-            "subtype": "naive_date_time"
+            "subtype": "naive_date_time",
+            "begin": "2015-01-01T03:04:18",
+            "end": "2019-12-16T02:02:24"
           }
         },
         {
@@ -395,7 +419,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
@@ -403,7 +427,9 @@
           "content": {
             "type": "date_time",
             "format": "%Y-%m-%dT%H:%M:%S%z",
-            "subtype": "date_time"
+            "subtype": "date_time",
+            "begin": "2015-02-13T10:58:51+0000",
+            "end": "2019-12-24T00:22:16+0000"
           }
         },
         {
@@ -422,14 +448,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": 176,
+              "high": 32112
+            },
             "subtype": "i64"
           }
         },
@@ -449,14 +478,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 8,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": 901,
+              "high": 32145
+            },
             "subtype": "i32"
           }
         },
@@ -476,14 +508,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 8,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": 1152.0,
+              "high": 32038.0
+            },
             "subtype": "f64"
           }
         },
@@ -503,14 +538,17 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
           },
           "content": {
             "type": "number",
-            "range": {},
+            "range": {
+              "low": 596,
+              "high": 32691
+            },
             "subtype": "i32"
           }
         },
@@ -530,7 +568,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 2,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"
