@@ -279,6 +279,12 @@ impl RelationalDataSource for PostgresDataSource {
                 begin: None,
                 end: None,
             }),
+            "time" => Content::DateTime(DateTimeContent {
+                format: "%H:%M:%S".to_string(),
+                type_: ChronoValueType::NaiveTime,
+                begin: None,
+                end: None,
+            }),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
             _ => {
                 if column_info.data_type.starts_with("_") {

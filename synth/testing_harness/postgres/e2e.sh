@@ -94,14 +94,20 @@ function test-warning() {
 
 function test-arrays() {
   echo -e "${INFO}Testing arrays to postgres${NC}"
-  psql -f arrays/0_arrays.sql postgres://postgres:$PASSWORD@localhost:$PORT/postgres
-  ERRORS=$($SYNTH generate --to postgres://postgres:$PASSWORD@localhost:$PORT/postgres arrays 2>&1)
+  psql -c "CREATE DATABASE arrays;" postgres://postgres:$PASSWORD@localhost:$PORT/postgres
+  psql -f arrays/0_arrays.sql postgres://postgres:$PASSWORD@localhost:$PORT/arrays
+  ERRORS=$($SYNTH generate --to postgres://postgres:$PASSWORD@localhost:$PORT/arrays arrays 2>&1)
   if [ ! -z "$ERRORS" ]
   then
     echo -e "${ERROR}Did not expect errors:${NC}"
     echo $ERRORS
     return 1
   fi
+
+  echo -e "${INFO}Testing importing postgres arrays${NC}"
+  psql -c "ALTER TABLE arrays DROP COLUMN json_array, DROP COLUMN jsonb_array;" postgres://postgres:$PASSWORD@localhost:$PORT/arrays
+  $SYNTH import --from postgres://postgres:${PASSWORD}@localhost:${PORT}/arrays arrays_import || { echo -e "${ERROR}Array import failed${NC}"; return 1; }
+  diff <(jq --sort-keys . arrays_import/*) <(jq --sort-keys . arrays_master/*) || { echo -e "${ERROR}Import arrays do not match${NC}"; return 1; }
 }
 
 function test-local() {
@@ -148,6 +154,7 @@ function cleanup() {
   echo -e "${DEBUG}Cleaning up local files${NC}"
   rm -Rf hospital_import
   rm -Rf complete_import
+  rm -Rf arrays_import
   rm -Rf .synth
 }
 

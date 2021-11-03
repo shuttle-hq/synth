@@ -1,0 +1,550 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "low": 1,
+      "high": 10,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "bigint_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "bool_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "bool",
+            "frequency": 0.5
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "char_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "string",
+            "pattern": "[a-zA-Z0-9]{0, 1}"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "date_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "date_time",
+            "format": "%Y-%m-%d",
+            "subtype": "naive_date"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "double_precision_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "f64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "int_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i32"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "int_array_2d": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i32"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "name_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "string",
+            "pattern": "[a-zA-Z0-9]{0, 1}"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "numeric_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "f64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "real_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "f32"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "smallint_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "string_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "string",
+            "pattern": "[a-zA-Z0-9]{0, 1}"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "time_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "date_time",
+            "format": "%H:%M:%S",
+            "subtype": "naive_time"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "timestamp_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "date_time",
+            "format": "",
+            "subtype": "naive_date_time"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "timestamptz_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "date_time",
+            "format": "",
+            "subtype": "date_time"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "ubigint_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "uint_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i32"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "unumeric_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "f64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "usmallint_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "number",
+            "range": {},
+            "subtype": "i64"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
+    "varchar_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 2,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "string",
+            "pattern": "[a-zA-Z0-9]{0, 1}"
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    }
+  }
+}
