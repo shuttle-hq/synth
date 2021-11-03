@@ -155,7 +155,7 @@
             },
             "content": {
                 "type": "number",
-                "subtype": "i64",
+                "subtype": "f64",
                 "range": {
                     "low": -32766,
                     "high": 32767,
@@ -235,7 +235,7 @@
             },
             "content": {
                 "type": "number",
-                "subtype": "u64",
+                "subtype": "f64",
                 "range": {
                     "low": 0,
                     "high": 32767,

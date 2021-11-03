@@ -296,7 +296,7 @@
           "content": {
             "type": "number",
             "range": {},
-            "subtype": "i64"
+            "subtype": "i32"
           }
         },
         {
@@ -375,7 +375,7 @@
           },
           "content": {
             "type": "date_time",
-            "format": "",
+            "format": "%Y-%m-%dT%H:%M:%S",
             "subtype": "naive_date_time"
           }
         },
@@ -402,7 +402,7 @@
           },
           "content": {
             "type": "date_time",
-            "format": "",
+            "format": "%Y-%m-%dT%H:%M:%S%z",
             "subtype": "date_time"
           }
         },
@@ -511,7 +511,7 @@
           "content": {
             "type": "number",
             "range": {},
-            "subtype": "i64"
+            "subtype": "i32"
           }
         },
         {

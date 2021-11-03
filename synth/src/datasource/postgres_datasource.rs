@@ -255,20 +255,20 @@ impl RelationalDataSource for PostgresDataSource {
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
             }
-            "int2" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
+            "int2" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
             "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
             "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
             "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep::default()))),
             "float8" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
             "numeric" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
             "timestamptz" => Content::DateTime(DateTimeContent {
-                format: "".to_string(), // todo
+                format: "%Y-%m-%dT%H:%M:%S%z".to_string(),
                 type_: ChronoValueType::DateTime,
                 begin: None,
                 end: None,
             }),
             "timestamp" => Content::DateTime(DateTimeContent {
-                format: "".to_string(), // todo
+                format: "%Y-%m-%dT%H:%M:%S".to_string(),
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
