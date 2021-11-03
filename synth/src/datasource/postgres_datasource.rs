@@ -287,9 +287,9 @@ impl RelationalDataSource for PostgresDataSource {
             }),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
             _ => {
-                if column_info.data_type.starts_with("_") {
+                if let Some(data_type) = column_info.data_type.strip_prefix('_') {
                     let mut column_info = column_info.clone();
-                    column_info.data_type = column_info.data_type[1..].to_string();
+                    column_info.data_type = data_type.to_string();
 
                     Content::Array(ArrayContent::from_content_default_length(
                         self.decode_to_content(&column_info)?,
