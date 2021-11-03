@@ -182,3 +182,64 @@ fn collection_from_values_jsonl(values: Vec<Value>) -> Result<Content> {
     OptionalMergeStrategy.try_merge(&mut as_content, &Value::Array(values))?;
     Ok(as_content)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    struct TestImportStrategy {
+        json: Option<Value>,
+        json_lines: Option<Vec<Value>>,
+        format: DataFormat,
+    }
+    impl ImportStrategy for TestImportStrategy {
+        fn get_data_format(&self) -> &DataFormat {
+            &self.format
+        }
+
+        fn as_json_value(&self) -> Result<Value> {
+            self.json.clone().ok_or_else(|| anyhow::anyhow!(""))
+        }
+
+        fn as_json_line_values(&self) -> Result<Vec<Value>> {
+            self.json_lines.clone().ok_or_else(|| anyhow::anyhow!(""))
+        }
+    }
+
+    #[test]
+    fn test_json_and_json_lines_import_equivalence() {
+        let json_lines_strategy = TestImportStrategy {
+            json: None,
+            json_lines: Some(vec![
+                json!({"type": "first", "num": 10, "float": 0.025}),
+                json!({"type": "first", "num": 25, "float": 2.3}),
+                json!({"type": "second", "obj": {"first": "John", "second": "Doe"}}),
+                json!({"type": "first", "num": 16, "float": 25.0002, "optional": true}),
+            ]),
+            format: DataFormat::JsonLines {
+                collection_field_name: "type".to_string(),
+            },
+        };
+
+        let json_strategy = TestImportStrategy {
+            json: Some(serde_json::json!({
+                "first": [
+                    {"num": 10, "float": 0.025},
+                    {"num": 25, "float": 2.3},
+                    {"num": 16, "float": 25.0002, "optional": true}
+                ],
+                "second": [
+                    {"obj": {"first": "John", "second": "Doe"}}
+                ]
+            })),
+            json_lines: None,
+            format: DataFormat::Json,
+        };
+
+        assert_eq!(
+            json_strategy.import().unwrap(),
+            json_lines_strategy.import().unwrap()
+        );
+    }
+}
