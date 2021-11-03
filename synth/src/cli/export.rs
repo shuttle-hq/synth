@@ -1,7 +1,7 @@
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
 use crate::cli::postgres::PostgresExportStrategy;
-use crate::cli::stdf::StdoutExportStrategy;
+use crate::cli::stdf::{FileExportStrategy, StdoutExportStrategy};
 
 use anyhow::{Context, Result};
 
@@ -60,8 +60,10 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
                 if params.uri.path() == "" {
                     Box::new(StdoutExportStrategy { data_format })
                 } else {
-                    unimplemented!();
-                    // TODO: File exporting!
+                    Box::new(FileExportStrategy {
+                        data_format,
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                    })
                 }
             }
             _ => {

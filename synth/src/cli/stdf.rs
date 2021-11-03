@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use super::DataFormat;
 use std::convert::TryFrom;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -33,6 +33,36 @@ impl ImportStrategy for FileImportStrategy {
                 .map(|line| serde_json::from_str(&line.unwrap()))
                 .collect::<serde_json::Result<Vec<Value>>>()?,
         )
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct FileExportStrategy {
+    pub from_file: PathBuf,
+    pub data_format: DataFormat,
+}
+
+impl ExportStrategy for FileExportStrategy {
+    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+        let generator = Sampler::try_from(&params.namespace)?;
+        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
+
+        match &self.data_format {
+            DataFormat::Json => {
+                std::fs::write(&self.from_file, output.clone().into_json().to_string())?
+            }
+            DataFormat::JsonLines {
+                collection_field_name,
+            } => {
+                let mut f = std::io::BufWriter::new(std::fs::File::create(&self.from_file)?);
+
+                for val in output.clone().into_json_lines(collection_field_name) {
+                    f.write_all((val.to_string() + "\n").as_bytes())?;
+                }
+            }
+        }
+
+        Ok(output)
     }
 }
 
