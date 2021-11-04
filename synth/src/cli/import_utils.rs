@@ -5,7 +5,6 @@ use async_std::task;
 use log::debug;
 use serde_json::Value;
 use std::convert::TryFrom;
-use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
     ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
@@ -129,10 +128,9 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
 ) -> Result<()> {
     task::block_on(datasource.set_seed())?;
 
-    for table_name in table_names {
-        let values = task::block_on(datasource.get_deterministic_samples(table_name))?;
-        let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
-        namespace.try_update(OptionalMergeStrategy, table_name, &Value::from(json_values))?;
+    for table in table_names {
+        let json_values = task::block_on(datasource.get_deterministic_samples(table))?;
+        namespace.try_update(OptionalMergeStrategy, table, &Value::from(json_values))?;
     }
 
     Ok(())

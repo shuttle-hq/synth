@@ -105,7 +105,6 @@ function test-arrays() {
   fi
 
   echo -e "${INFO}Testing importing postgres arrays${NC}"
-  psql -c "ALTER TABLE arrays DROP COLUMN json_array, DROP COLUMN jsonb_array;" postgres://postgres:$PASSWORD@localhost:$PORT/arrays
   $SYNTH import --from postgres://postgres:${PASSWORD}@localhost:${PORT}/arrays arrays_import || { echo -e "${ERROR}Array import failed${NC}"; return 1; }
   diff <(jq --sort-keys . arrays_import/*) <(jq --sort-keys . arrays_master/*) || { echo -e "${ERROR}Import arrays do not match${NC}"; return 1; }
 }

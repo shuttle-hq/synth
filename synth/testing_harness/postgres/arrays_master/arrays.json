@@ -209,6 +209,138 @@
         }
       ]
     },
+    "json_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "object"
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        },
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 2,
+              "high": 8,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "one_of",
+            "variants": [
+              {
+                "weight": 1.0,
+                "type": "object",
+                "scores": {
+                  "type": "array",
+                  "length": {
+                    "type": "number",
+                    "range": {
+                      "low": 5,
+                      "high": 6,
+                      "step": 1
+                    },
+                    "subtype": "u64"
+                  },
+                  "content": {
+                    "type": "one_of",
+                    "variants": [
+                      {
+                        "weight": 1.0,
+                        "type": "number",
+                        "range": {
+                          "low": 0,
+                          "high": 99,
+                          "step": 1
+                        },
+                        "subtype": "u64"
+                      }
+                    ]
+                  }
+                },
+                "username": {
+                  "type": "string",
+                  "pattern": "[a-zA-Z0-9]*"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "jsonb_array": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "object"
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        },
+        {
+          "weight": 1.0,
+          "type": "array",
+          "length": {
+            "type": "number",
+            "range": {
+              "low": 1,
+              "high": 10,
+              "step": 1
+            },
+            "subtype": "u64"
+          },
+          "content": {
+            "type": "one_of",
+            "variants": [
+              {
+                "weight": 1.0,
+                "type": "object",
+                "scores": {
+                  "type": "array",
+                  "length": {
+                    "type": "number",
+                    "range": {
+                      "low": 5,
+                      "high": 6,
+                      "step": 1
+                    },
+                    "subtype": "u64"
+                  },
+                  "content": {
+                    "type": "one_of",
+                    "variants": [
+                      {
+                        "weight": 1.0,
+                        "type": "number",
+                        "range": {
+                          "low": 0,
+                          "high": 99,
+                          "step": 1
+                        },
+                        "subtype": "u64"
+                      }
+                    ]
+                  }
+                },
+                "username": {
+                  "type": "string",
+                  "pattern": "[a-zA-Z0-9]*"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
     "name_array": {
       "type": "one_of",
       "variants": [

@@ -9,7 +9,6 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlQueryResult, MySqlRow};
 use sqlx::{Column, MySql, Pool, Row, TypeInfo};
-use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::prelude::rust_2015::Result::Ok;
 use synth_core::schema::number_content::{F64, I64, U64};
@@ -17,7 +16,6 @@ use synth_core::schema::{
     ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent,
 };
 use synth_core::{Content, Value};
-use synth_gen::prelude::*;
 
 /// TODO
 /// Known issues:
@@ -130,7 +128,7 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(())
     }
 
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
+    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<serde_json::Value>> {
         let query = format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
 
         sqlx::query(&query)
@@ -273,50 +271,65 @@ impl TryFrom<MySqlRow> for ValueWrapper {
     type Error = anyhow::Error;
 
     fn try_from(row: MySqlRow) -> Result<Self, Self::Error> {
-        let mut kv = BTreeMap::new();
+        let mut kv = serde_json::Map::new();
 
         for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
+            let value = try_match_value(&row, column).unwrap_or(serde_json::Value::Null);
             kv.insert(column.name().to_string(), value);
         }
 
-        Ok(ValueWrapper(Value::Object(kv)))
+        Ok(ValueWrapper(serde_json::Value::Object(kv)))
     }
 }
 
-fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
+fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<serde_json::Value> {
     let value = match column.type_info().name().to_lowercase().as_str() {
         "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
-            Value::String(row.try_get::<String, &str>(column.name())?)
+            serde_json::Value::String(row.try_get::<String, &str>(column.name())?)
         }
-        "tinyint" => Value::Number(Number::from(row.try_get::<i8, &str>(column.name())?)),
-        "smallint" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
+        "tinyint" => serde_json::Value::Number(row.try_get::<i8, &str>(column.name())?.into()),
+        "smallint" => serde_json::Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
         "mediumint" | "int" | "integer" => {
-            Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?))
+            serde_json::Value::Number(row.try_get::<i32, &str>(column.name())?.into())
         }
-        "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
-        "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
-        "float" => Value::Number(Number::from(row.try_get::<f32, &str>(column.name())? as f64)),
-        "double" => Value::Number(Number::from(row.try_get::<f64, &str>(column.name())?)),
+        "bigint" => serde_json::Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
+        "serial" => serde_json::Value::Number(row.try_get::<u64, &str>(column.name())?.into()),
+        "float" => {
+            let f = row.try_get::<f32, &str>(column.name())?;
+            let serde_f = serde_json::Number::from_f64(f as f64)
+                .ok_or(anyhow!("Failed to convert float4 to number"))?;
+            serde_json::Value::Number(serde_f)
+        }
+        "double" => {
+            let f = row.try_get::<f64, &str>(column.name())?;
+            let serde_f = serde_json::Number::from_f64(f)
+                .ok_or(anyhow!("Failed to convert float4 to number"))?;
+            serde_json::Value::Number(serde_f)
+        }
         "numeric" | "decimal" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
-                return Ok(Value::Number(Number::from(truncated)));
+                return Ok(serde_json::Value::Number(
+                    serde_json::Number::from_f64(truncated).ok_or(anyhow!(
+                        "Failed to convert {} to number",
+                        column.type_info().name()
+                    ))?,
+                ));
             }
 
-            bail!("Failed to convert Postgresql numeric data type to 64 bit float")
+            bail!("Failed to convert Mysql numeric data type to 64 bit float")
         }
-        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "date" => Value::String(format!(
+        "timestamp" => serde_json::Value::String(row.try_get::<String, &str>(column.name())?),
+        "date" => serde_json::Value::String(format!(
             "{}",
             row.try_get::<chrono::NaiveDate, &str>(column.name())?
         )),
-        "datetime" => Value::String(format!(
+        "datetime" => serde_json::Value::String(format!(
             "{}",
             row.try_get::<chrono::NaiveDateTime, &str>(column.name())?
         )),
-        "time" => Value::String(format!(
+        "time" => serde_json::Value::String(format!(
             "{}",
             row.try_get::<chrono::NaiveTime, &str>(column.name())?
         )),
