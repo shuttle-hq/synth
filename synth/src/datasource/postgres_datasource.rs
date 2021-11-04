@@ -414,13 +414,13 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> 
         "float4" => {
             let f = row.try_get::<f32, &str>(column.name())?;
             let serde_f = serde_json::Number::from_f64(f as f64)
-                .ok_or(anyhow!("Failed to convert float4 to number"))?;
+                .ok_or_else(|| anyhow!("Failed to convert float4 to number"))?;
             serde_json::Value::Number(serde_f)
         }
         "float8" => {
             let f = row.try_get::<f64, &str>(column.name())?;
             let serde_f = serde_json::Number::from_f64(f)
-                .ok_or(anyhow!("Failed to convert float8 to number"))?;
+                .ok_or_else(|| anyhow!("Failed to convert float8 to number"))?;
             serde_json::Value::Number(serde_f)
         }
         "numeric" => {
@@ -429,7 +429,7 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> 
             if let Some(truncated) = as_decimal.to_f64() {
                 return Ok(serde_json::Value::Number(
                     serde_json::Number::from_f64(truncated)
-                        .ok_or(anyhow!("Failed to convert numeric to number"))?,
+                        .ok_or_else(|| anyhow!("Failed to convert numeric to number"))?,
                 ));
             }
 
@@ -448,19 +448,13 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> 
         "json" => row.try_get::<serde_json::Value, &str>(column.name())?,
         "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]" | "unknown[]" => {
             let vec = row.try_get::<Vec<String>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|s| serde_json::Value::String(s))
-                .collect();
+            let result = vec.into_iter().map(serde_json::Value::String).collect();
 
             serde_json::Value::Array(result)
         }
         "bool[]" => {
             let vec = row.try_get::<Vec<bool>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|b| serde_json::Value::Bool(b))
-                .collect();
+            let result = vec.into_iter().map(serde_json::Value::Bool).collect();
 
             serde_json::Value::Array(result)
         }
@@ -497,7 +491,7 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> 
                 .into_iter()
                 .map(|f| {
                     let serde_f = serde_json::Number::from_f64(f as f64)
-                        .ok_or(anyhow!("Failed to convert float4 to number"))?;
+                        .ok_or_else(|| anyhow!("Failed to convert float4 to number"))?;
                     Ok(serde_json::Value::Number(serde_f))
                 })
                 .collect();
@@ -510,7 +504,7 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> 
                 .into_iter()
                 .map(|f| {
                     let serde_f = serde_json::Number::from_f64(f)
-                        .ok_or(anyhow!("Failed to convert float8 to number"))?;
+                        .ok_or_else(|| anyhow!("Failed to convert float8 to number"))?;
                     Ok(serde_json::Value::Number(serde_f))
                 })
                 .collect();
@@ -525,7 +519,7 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> 
                     if let Some(truncated) = d.to_f64() {
                         return Ok(serde_json::Value::Number(
                             serde_json::Number::from_f64(truncated)
-                                .ok_or(anyhow!("Failed to convert numeric to number"))?,
+                                .ok_or_else(|| anyhow!("Failed to convert numeric to number"))?,
                         ));
                     }
 

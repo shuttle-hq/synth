@@ -297,13 +297,13 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<serde_json::V
         "float" => {
             let f = row.try_get::<f32, &str>(column.name())?;
             let serde_f = serde_json::Number::from_f64(f as f64)
-                .ok_or(anyhow!("Failed to convert float4 to number"))?;
+                .ok_or_else(|| anyhow!("Failed to convert float4 to number"))?;
             serde_json::Value::Number(serde_f)
         }
         "double" => {
             let f = row.try_get::<f64, &str>(column.name())?;
             let serde_f = serde_json::Number::from_f64(f)
-                .ok_or(anyhow!("Failed to convert float4 to number"))?;
+                .ok_or_else(|| anyhow!("Failed to convert float4 to number"))?;
             serde_json::Value::Number(serde_f)
         }
         "numeric" | "decimal" => {
@@ -311,10 +311,9 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<serde_json::V
 
             if let Some(truncated) = as_decimal.to_f64() {
                 return Ok(serde_json::Value::Number(
-                    serde_json::Number::from_f64(truncated).ok_or(anyhow!(
-                        "Failed to convert {} to number",
-                        column.type_info().name()
-                    ))?,
+                    serde_json::Number::from_f64(truncated).ok_or_else(|| {
+                        anyhow!("Failed to convert {} to number", column.type_info().name())
+                    })?,
                 ));
             }
 
