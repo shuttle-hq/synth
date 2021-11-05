@@ -6,7 +6,7 @@ Raising [issues](https://github.com/getsynth/synth/issues) is encouraged. We hav
 
 ## Running Locally
 
-To compile from source, see the `Compiling from source` tab in the [docs](https://getsynth.github.io/synth/getting_started/installation).
+To compile from source, see the `Compiling from source` tab in the [docs](https://www.getsynth.com/docs/getting_started/installation).
 
 ## Running Tests
 
