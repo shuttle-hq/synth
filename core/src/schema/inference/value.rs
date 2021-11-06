@@ -13,6 +13,7 @@ pub struct ValueMergeStrategy {
     pub replace: bool,
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 enum Squashables {
