@@ -1,88 +1,112 @@
 use std::convert::TryFrom;
 use std::path::PathBuf;
-use std::str::FromStr;
 
-use anyhow::{Context, Result};
-use serde_json::Value;
+use anyhow::Result;
 
-use synth_core::graph::prelude::{MergeStrategy, OptionalMergeStrategy};
 use synth_core::schema::Namespace;
 use synth_core::{Content, Name};
 
 use crate::cli::db_utils::DataSourceParams;
+use crate::cli::json::{JsonFileImportStrategy, JsonStdinImportStrategy};
+use crate::cli::jsonl::{JsonLinesFileImportStrategy, JsonLinesStdinImportStrategy};
 use crate::cli::mongo::MongoImportStrategy;
 use crate::cli::mysql::MySqlImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
-use crate::cli::stdf::{FileImportStrategy, StdinImportStrategy};
+
+use super::collection_field_name_from_uri_query;
 
 pub trait ImportStrategy {
-    fn import(&self) -> Result<Namespace> {
-        ns_from_value(self.as_value()?)
+    /// Import an entire namespace.
+    fn import(&self) -> Result<Namespace>;
+
+    /// Import a single collection. Default implementation works by calling `import` and then extracting from the
+    /// returned namespace the correct collection based on the `name` parameter.
+    fn import_collection(&self, name: &Name) -> Result<Content> {
+        self.import()?
+            .collections
+            .remove(name)
+            .ok_or_else(|| anyhow!("Could not find collection '{}'.", name))
     }
-    fn import_collection(&self, _name: &Name) -> Result<Content> {
-        collection_from_value(&self.as_value()?)
-    }
-    fn as_value(&self) -> Result<Value>;
 }
 
-impl TryFrom<DataSourceParams> for Box<dyn ImportStrategy> {
+impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
     type Error = anyhow::Error;
 
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
-        match params.uri {
-            None => Ok(Box::new(StdinImportStrategy)),
-            Some(uri) => {
-                let import_strategy: Box<dyn ImportStrategy> =
-                    if uri.starts_with("postgres://") || uri.starts_with("postgresql://") {
-                        Box::new(PostgresImportStrategy {
-                            uri,
-                            schema: params.schema,
-                        })
-                    } else if uri.starts_with("mongodb://") {
-                        Box::new(MongoImportStrategy { uri })
-                    } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                        Box::new(MySqlImportStrategy { uri })
-                    } else if let Ok(path) = PathBuf::from_str(&uri) {
-                        Box::new(FileImportStrategy { from_file: path })
-                    } else {
-                        return Err(anyhow!(
-                         "Data source not recognized. Was expecting one of 'mongodb' or 'postgres'"
-                    ));
-                    };
-                Ok(import_strategy)
+        let scheme = params.uri.scheme().as_str().to_lowercase();
+        let import_strategy: Box<dyn ImportStrategy> = match scheme.as_str() {
+            "postgres" | "postgresql" => Box::new(PostgresImportStrategy {
+                uri_string: params.uri.to_string(),
+                schema: params.schema,
+            }),
+            "mongodb" => Box::new(MongoImportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "mysql" | "mariadb" => Box::new(MySqlImportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "json" => {
+                if params.uri.path() == "" {
+                    Box::new(JsonStdinImportStrategy)
+                } else {
+                    Box::new(JsonFileImportStrategy {
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                    })
+                }
             }
-        }
+            "jsonl" => {
+                let collection_field_name =
+                    collection_field_name_from_uri_query(params.uri.query());
+
+                if params.uri.path() == "" {
+                    Box::new(JsonLinesStdinImportStrategy {
+                        collection_field_name,
+                    })
+                } else {
+                    Box::new(JsonLinesFileImportStrategy {
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                        collection_field_name,
+                    })
+                }
+            }
+            _ => {
+                return Err(anyhow!(
+                    "Import URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json' or 'jsonl'."
+                ));
+            }
+        };
+        Ok(import_strategy)
     }
 }
 
-fn collection_from_value(value: &Value) -> Result<Content> {
-    match value {
-        Value::Array(values) => {
-            let fst = values.get(0).unwrap_or(&Value::Null);
-            let mut as_content = Namespace::collection(fst);
-            OptionalMergeStrategy.try_merge(&mut as_content, value)?;
-            Ok(as_content)
-        }
-        unacceptable => Err(anyhow!(
-            "Was expecting a collection, instead got `{}`",
-            unacceptable
-        )),
-    }
-}
+#[cfg(test)]
+mod tests {
+    use crate::cli::json::import_json;
+    use crate::cli::jsonl::import_json_lines;
 
-fn ns_from_value(value: Value) -> Result<Namespace> {
-    match value {
-        Value::Object(object) => object
-            .into_iter()
-            .map(|(name, value)| {
-                collection_from_value(&value)
-                    .and_then(|content| Ok((name.parse()?, content)))
-                    .with_context(|| anyhow!("While importing the collection `{}`", name))
-            })
-            .collect(),
-        unacceptable => Err(anyhow!(
-            "Was expecting an object, instead got `{}`",
-            unacceptable
-        )),
+    #[test]
+    fn test_json_and_json_lines_import_equivalence() {
+        let json_lines = vec![
+            serde_json::json!({"type": "first", "num": 10, "float": 0.025}),
+            serde_json::json!({"type": "first", "num": 25, "float": 2.3}),
+            serde_json::json!({"type": "second", "obj": {"first": "John", "second": "Doe"}}),
+            serde_json::json!({"type": "first", "num": 16, "float": 25.0002, "optional": true}),
+        ];
+
+        let json = serde_json::json!({
+            "first": [
+                {"num": 10, "float": 0.025},
+                {"num": 25, "float": 2.3},
+                {"num": 16, "float": 25.0002, "optional": true}
+            ],
+            "second": [
+                {"obj": {"first": "John", "second": "Doe"}}
+            ]
+        });
+
+        assert_eq!(
+            import_json_lines(json_lines, "type").unwrap(),
+            import_json(json).unwrap()
+        );
     }
 }

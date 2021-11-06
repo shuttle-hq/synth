@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 use mongodb::bson::Bson;
 use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
-use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
@@ -22,23 +21,23 @@ use synth_core::{Content, Name, Namespace, Value};
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {
-    pub uri: String,
+    pub uri_string: String,
 }
 
 #[derive(Clone, Debug)]
 pub struct MongoImportStrategy {
-    pub uri: String,
+    pub uri_string: String,
 }
 
 impl ImportStrategy for MongoImportStrategy {
     fn import(&self) -> Result<Namespace> {
-        let client_options = ClientOptions::parse(&self.uri)?;
+        let client_options = ClientOptions::parse(&self.uri_string)?;
 
-        info!("Connecting to database at {} ...", &self.uri);
+        info!("Connecting to database at {} ...", &self.uri_string);
 
         let client = Client::with_options(client_options)?;
 
-        let db_name = parse_db_name(&self.uri)?;
+        let db_name = parse_db_name(&self.uri_string)?;
 
         // 0: Initialise empty Namespace
         let mut namespace = Namespace::default();
@@ -87,17 +86,6 @@ impl ImportStrategy for MongoImportStrategy {
         }
 
         Ok(namespace)
-    }
-
-    fn import_collection(&self, name: &Name) -> Result<Content> {
-        self.import()?
-            .collections
-            .remove(name)
-            .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
-    }
-
-    fn as_value(&self) -> Result<JsonValue> {
-        unreachable!()
     }
 }
 
@@ -168,17 +156,15 @@ fn bson_to_content(bson: &Bson) -> Content {
 
 impl ExportStrategy for MongoExportStrategy {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let mut client = Client::with_uri_str(&self.uri)?;
+        let mut client = Client::with_uri_str(&self.uri_string)?;
         let sampler = Sampler::try_from(&params.namespace)?;
         let output =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-        match output {
-            SamplerOutput::Collection(ref values) => self.insert_data(
-                &params.collection_name.unwrap().to_string(),
-                values,
-                &mut client,
-            ),
+        match &output {
+            SamplerOutput::Collection(name, values) => {
+                self.insert_data(&name.to_string(), values, &mut client)
+            }
             SamplerOutput::Namespace(ref namespace) => {
                 for (name, values) in namespace {
                     self.insert_data(name, values, &mut client)?;
@@ -198,7 +184,7 @@ impl MongoExportStrategy {
         collection: &[Value],
         client: &mut Client,
     ) -> Result<()> {
-        let db_name = parse_db_name(&self.uri)?;
+        let db_name = parse_db_name(&self.uri_string)?;
 
         let mut docs = Vec::new();
 

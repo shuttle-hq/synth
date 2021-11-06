@@ -5,20 +5,18 @@ use crate::datasource::postgres_datasource::{PostgresConnectParams, PostgresData
 use crate::datasource::DataSource;
 use crate::sampler::SamplerOutput;
 use anyhow::Result;
-use serde_json::Value;
 use synth_core::schema::Namespace;
-use synth_core::{Content, Name};
 
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
-    pub uri: String,
+    pub uri_string: String,
     pub schema: Option<String>,
 }
 
 impl ExportStrategy for PostgresExportStrategy {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let connect_params = PostgresConnectParams {
-            uri: self.uri.clone(),
+            uri: self.uri_string.clone(),
             schema: self.schema.clone(),
         };
 
@@ -30,30 +28,19 @@ impl ExportStrategy for PostgresExportStrategy {
 
 #[derive(Clone, Debug)]
 pub struct PostgresImportStrategy {
-    pub uri: String,
+    pub uri_string: String,
     pub schema: Option<String>,
 }
 
 impl ImportStrategy for PostgresImportStrategy {
     fn import(&self) -> Result<Namespace> {
         let connect_params = PostgresConnectParams {
-            uri: self.uri.clone(),
+            uri: self.uri_string.clone(),
             schema: self.schema.clone(),
         };
 
         let datasource = PostgresDataSource::new(&connect_params)?;
 
         build_namespace_import(&datasource)
-    }
-
-    fn import_collection(&self, name: &Name) -> Result<Content> {
-        self.import()?
-            .collections
-            .remove(name)
-            .ok_or_else(|| anyhow!("Could not find table '{}' in Postgres database.", name))
-    }
-
-    fn as_value(&self) -> Result<Value> {
-        bail!("Postgres import doesn't support conversion into value")
     }
 }

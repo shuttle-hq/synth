@@ -1,17 +1,21 @@
+use crate::cli::json::{JsonFileExportStrategy, JsonStdoutExportStrategy};
+use crate::cli::jsonl::{JsonLinesFileExportStrategy, JsonLinesStdoutExportStrategy};
+use crate::cli::mongo::MongoExportStrategy;
+use crate::cli::mysql::MySqlExportStrategy;
 use crate::cli::postgres::PostgresExportStrategy;
-use crate::cli::stdf::StdoutExportStrategy;
+
 use anyhow::{Context, Result};
 
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use crate::cli::db_utils::DataSourceParams;
-use crate::cli::mongo::MongoExportStrategy;
-use crate::cli::mysql::MySqlExportStrategy;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
+
+use super::collection_field_name_from_uri_query;
 
 pub(crate) trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
@@ -19,42 +23,62 @@ pub(crate) trait ExportStrategy {
 
 pub struct ExportParams {
     pub namespace: Namespace,
+    /// The name of the single collection to generate from if one is specified (via --collection).
     pub collection_name: Option<Name>,
     pub target: usize,
     pub seed: u64,
     pub ns_path: PathBuf,
 }
 
-impl TryFrom<DataSourceParams> for Box<dyn ExportStrategy> {
+impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
     type Error = anyhow::Error;
 
-    /// Here we exhaustively try to pattern match strings until we get something
-    /// that successfully parses. Starting from a file, could be a url to a database etc.
-    /// We assume that these can be unambiguously identified for now.
-    /// For example, `postgres://...` is not going to be a file on the FS
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
-        match params.uri {
-            None => Ok(Box::new(StdoutExportStrategy)),
-            Some(uri) => {
-                let export_strategy: Box<dyn ExportStrategy> = if uri.starts_with("postgres://")
-                    || uri.starts_with("postgresql://")
-                {
-                    Box::new(PostgresExportStrategy {
-                        uri,
-                        schema: params.schema,
-                    })
-                } else if uri.starts_with("mongodb://") {
-                    Box::new(MongoExportStrategy { uri })
-                } else if uri.starts_with("mysql://") || uri.starts_with("mariadb://") {
-                    Box::new(MySqlExportStrategy { uri })
+        // Due to all the schemes used, with the exception of 'mongodb', being non-standard (including 'postgres' and
+        // 'mysql' suprisingly) it seems simpler to just match based on the scheme string instead of on enum variants.
+        let scheme = params.uri.scheme().as_str().to_lowercase();
+        let export_strategy: Box<dyn ExportStrategy> = match scheme.as_str() {
+            "postgres" | "postgresql" => Box::new(PostgresExportStrategy {
+                uri_string: params.uri.to_string(),
+                schema: params.schema,
+            }),
+            "mongodb" => Box::new(MongoExportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "mysql" | "mariadb" => Box::new(MySqlExportStrategy {
+                uri_string: params.uri.to_string(),
+            }),
+            "json" => {
+                if params.uri.path() == "" {
+                    Box::new(JsonStdoutExportStrategy)
                 } else {
-                    return Err(anyhow!(
-                            "Data sink not recognized. Was expecting one of 'mongodb' or 'postgres' or 'mysql' or 'mariadb'"
-                    ));
-                };
-                Ok(export_strategy)
+                    Box::new(JsonFileExportStrategy {
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                    })
+                }
             }
-        }
+            "jsonl" => {
+                let collection_field_name =
+                    collection_field_name_from_uri_query(params.uri.query());
+
+                if params.uri.path() == "" {
+                    Box::new(JsonLinesStdoutExportStrategy {
+                        collection_field_name,
+                    })
+                } else {
+                    Box::new(JsonLinesFileExportStrategy {
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                        collection_field_name,
+                    })
+                }
+            }
+            _ => {
+                return Err(anyhow!(
+                    "Export URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json' or 'jsonl'."
+                ));
+            }
+        };
+        Ok(export_strategy)
     }
 }
 
@@ -66,12 +90,10 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
     let values =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-    match values {
-        SamplerOutput::Collection(ref collection) => insert_data(
-            datasource,
-            &params.collection_name.unwrap().to_string(),
-            collection,
-        ),
+    match &values {
+        SamplerOutput::Collection(name, collection) => {
+            insert_data(datasource, &name.to_string(), collection)
+        }
         SamplerOutput::Namespace(ref namespace) => {
             for (name, collection) in namespace {
                 insert_data(datasource, name, collection)?;

@@ -1,10 +1,11 @@
 mod export;
 mod import;
 mod import_utils;
+mod json;
+mod jsonl;
 mod mongo;
 mod mysql;
 mod postgres;
-mod stdf;
 mod store;
 
 use crate::cli::db_utils::DataSourceParams;
@@ -17,12 +18,13 @@ use anyhow::{Context, Result};
 use rand::RngCore;
 use serde::Serialize;
 use std::cell::Cell;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::path::PathBuf;
 use std::process::exit;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-use synth_core::{graph::json, Name};
+use synth_core::Name;
+use uriparse::URI;
 
 pub(crate) mod config;
 mod db_utils;
@@ -83,32 +85,27 @@ impl Cli {
         match args {
             Args::Init { .. } => Ok(()),
             Args::Generate {
-                ref namespace,
-                ref collection,
+                namespace,
+                collection,
                 size,
                 ref to,
                 seed,
                 random,
                 schema,
             } => self.generate(
-                namespace.clone(),
-                collection.clone(),
+                namespace,
+                collection,
                 size,
-                to.clone(),
+                to,
                 Self::derive_seed(random, seed)?,
                 schema,
             ),
             Args::Import {
-                ref namespace,
-                ref collection,
+                namespace,
+                collection,
                 ref from,
-                ref schema,
-            } => self.import(
-                namespace.clone(),
-                collection.clone(),
-                from.clone(),
-                schema.clone(),
-            ),
+                schema,
+            } => self.import(namespace, collection, from, schema),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd),
             Args::Version => {
@@ -139,14 +136,17 @@ impl Cli {
         &self,
         path: PathBuf,
         collection: Option<Name>,
-        from: Option<String>,
+        from: &str,
         schema: Option<String>,
     ) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
 
-        let import_strategy: Box<dyn ImportStrategy> =
-            DataSourceParams { uri: from, schema }.try_into()?;
+        let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
+            uri: URI::try_from(from).with_context(|| format!("Parsing import URI '{}'", from))?,
+            schema,
+        }
+        .try_into()?;
 
         if let Some(collection) = collection {
             if self.store.collection_exists(&path, &collection) {
@@ -188,7 +188,7 @@ impl Cli {
         ns_path: PathBuf,
         collection: Option<Name>,
         target: usize,
-        to: Option<String>,
+        to: &str,
         seed: u64,
         schema: Option<String>,
     ) -> Result<()> {
@@ -199,8 +199,14 @@ impl Cli {
                 .expect("The provided namespace is not a valid UTF-8 string")
         ))?;
 
-        self.export_strategy
-            .set(Some(DataSourceParams { uri: to, schema }.try_into()?));
+        self.export_strategy.set(Some(
+            DataSourceParams {
+                uri: URI::try_from(to)
+                    .with_context(|| format!("Parsing generation URI '{}'", to))?,
+                schema,
+            }
+            .try_into()?,
+        ));
 
         #[cfg(feature = "telemetry")]
         self.set_telemetry_export_strategy();
@@ -263,10 +269,11 @@ pub enum Args {
         size: usize,
         #[structopt(
             long,
-            help = "The sink into which to generate data. Can be a postgres uri, a mongodb uri. If not specified, data will be written to stdout"
+            help = "The URI into which data will be generated. Can be a file-based URI scheme to output data to the filesystem or stdout ('json:' and 'jsonl:' allow outputting JSON and JSON Lines data respectively) or can be a database URI to write data directly to some database (supports Postgres, MongoDB, and MySQL). Defaults to writing JSON data to stdout.",
+            default_value = "json:"
         )]
         #[serde(skip)]
-        to: Option<String>,
+        to: String,
         #[structopt(
             long,
             help = "an unsigned 64 bit integer seed to be used as a seed for generation"
@@ -300,10 +307,11 @@ pub enum Args {
         collection: Option<Name>,
         #[structopt(
             long,
-            help = "The source from which to import data. Can be a postgres uri, a mongodb uri, a mysql/mariadb uri or a path to a JSON file / directory. If not specified, data will be read from stdin"
+            help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:' and 'jsonl:' allow reading JSON and JSON Lines data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin.",
+            default_value = "json:"
         )]
         #[serde(skip)]
-        from: Option<String>,
+        from: String,
         #[structopt(
             long,
             help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
@@ -316,6 +324,16 @@ pub enum Args {
     Telemetry(TelemetryCommand),
     #[structopt(about = "Version information")]
     Version,
+}
+
+fn collection_field_name_from_uri_query(query_opt: Option<&uriparse::Query>) -> String {
+    let query_str = query_opt.map(uriparse::Query::as_str).unwrap_or_default();
+
+    querystring::querify(query_str)
+        .into_iter()
+        .find_map(|(key, value)| (key == "collection_field_name").then(|| value))
+        .unwrap_or("type")
+        .to_string()
 }
 
 #[cfg(feature = "telemetry")]

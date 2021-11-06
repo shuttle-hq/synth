@@ -14,7 +14,7 @@ pub(crate) struct Sampler {
 #[derive(Clone)]
 pub(crate) enum SamplerOutput {
     Namespace(Vec<(String, Vec<Value>)>),
-    Collection(Vec<Value>),
+    Collection(Name, Vec<Value>),
 }
 
 impl SamplerOutput {
@@ -27,7 +27,7 @@ impl SamplerOutput {
                     .collect();
                 Value::Object(object)
             }
-            Self::Collection(values) => Value::Array(values),
+            Self::Collection(_, values) => Value::Array(values),
         };
         synth_val_to_json(as_synth)
     }
@@ -79,9 +79,10 @@ impl SampleStrategy {
     fn sample<R: Rng>(self, model: Graph, rng: R) -> Result<SamplerOutput> {
         match self {
             SampleStrategy::Namespace(nss) => Ok(SamplerOutput::Namespace(nss.sample(model, rng)?)),
-            SampleStrategy::Collection(css) => {
-                Ok(SamplerOutput::Collection(css.sample(model, rng)?))
-            }
+            SampleStrategy::Collection(css) => Ok(SamplerOutput::Collection(
+                css.name.clone(),
+                css.sample(model, rng)?,
+            )),
         }
     }
 }
