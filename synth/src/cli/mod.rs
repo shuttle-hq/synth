@@ -1,10 +1,11 @@
 mod export;
 mod import;
 mod import_utils;
+mod json;
+mod jsonl;
 mod mongo;
 mod mysql;
 mod postgres;
-mod stdf;
 mod store;
 
 use crate::cli::db_utils::DataSourceParams;
@@ -22,7 +23,7 @@ use std::path::PathBuf;
 use std::process::exit;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-use synth_core::{graph::json, Name};
+use synth_core::Name;
 use uriparse::URI;
 
 pub(crate) mod config;
@@ -325,6 +326,16 @@ pub enum Args {
     Version,
 }
 
+fn collection_field_name_from_uri_query(query_opt: Option<&uriparse::Query>) -> String {
+    let query_str = query_opt.map(uriparse::Query::as_str).unwrap_or_default();
+
+    querystring::querify(query_str)
+        .into_iter()
+        .find_map(|(key, value)| (key == "collection_field_name").then(|| value))
+        .unwrap_or("type")
+        .to_string()
+}
+
 #[cfg(feature = "telemetry")]
 #[derive(StructOpt, Serialize)]
 pub enum TelemetryCommand {
@@ -334,33 +345,6 @@ pub enum TelemetryCommand {
     Disable,
     #[structopt(about = "Check telemetry status")]
     Status,
-}
-
-#[derive(Debug, Clone)]
-pub enum DataFormat {
-    Json,
-    JsonLines { collection_field_name: String },
-}
-
-impl DataFormat {
-    pub fn new(uri_scheme: &str, uri_query: &str) -> Self {
-        match uri_scheme {
-            "jsonl" => DataFormat::JsonLines {
-                collection_field_name: querystring::querify(uri_query)
-                    .into_iter()
-                    .find_map(|(key, value)| (key == "collection_field_name").then(|| value))
-                    .unwrap_or("type")
-                    .to_string(),
-            },
-            _ => DataFormat::Json,
-        }
-    }
-}
-
-impl Default for DataFormat {
-    fn default() -> Self {
-        DataFormat::Json
-    }
 }
 
 #[cfg(test)]

@@ -6,14 +6,13 @@ use log::debug;
 use serde_json::Value;
 use std::convert::TryFrom;
 use std::str::FromStr;
+use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
     ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
     SameAsContent, UniqueContent,
 };
 use synth_core::{Content, Name, Namespace};
-
-use super::json::synth_val_to_json;
 
 #[derive(Debug)]
 pub(crate) struct Collection {

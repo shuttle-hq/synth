@@ -31,50 +31,6 @@ impl SamplerOutput {
         };
         synth_val_to_json(as_synth)
     }
-
-    pub(crate) fn into_json_lines(self, collection_field_name: &str) -> Vec<serde_json::Value> {
-        match self {
-            Self::Namespace(key_values) => {
-                let mut jsonl = Vec::new();
-
-                for (collection, values) in key_values {
-                    let lines = values.into_iter().map(|synth_val| {
-                        // When no specific collection to generate data with is specified with --collection,
-                        // each output line is labelled to indicate which collection in the namespace it was
-                        // generated from.
-
-                        match synth_val {
-                            Value::Object(mut obj_values) => {
-                                // If the collection generates an object, then the collection name is saved directly as
-                                // a field of the object.
-
-                                obj_values.insert(
-                                    collection_field_name.to_string(),
-                                    Value::String(collection.clone()),
-                                );
-
-                                synth_val_to_json(Value::Object(obj_values))
-                            }
-                            non_obj_synth_val => {
-                                // If the collection does not generate a object, then the output value is an object with
-                                // the collection specified as a field, and the generated non-object data as another.
-
-                                serde_json::json!({
-                                    collection_field_name: collection.clone(),
-                                    "data": synth_val_to_json(non_obj_synth_val)
-                                })
-                            }
-                        }
-                    });
-
-                    jsonl.extend(lines);
-                }
-
-                jsonl
-            }
-            Self::Collection(_, values) => values.into_iter().map(synth_val_to_json).collect(),
-        }
-    }
 }
 
 fn sampler_progress_bar(target: u64) -> ProgressBar {

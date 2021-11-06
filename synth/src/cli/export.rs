@@ -1,7 +1,8 @@
+use crate::cli::json::{JsonFileExportStrategy, JsonStdoutExportStrategy};
+use crate::cli::jsonl::{JsonLinesFileExportStrategy, JsonLinesStdoutExportStrategy};
 use crate::cli::mongo::MongoExportStrategy;
 use crate::cli::mysql::MySqlExportStrategy;
 use crate::cli::postgres::PostgresExportStrategy;
-use crate::cli::stdf::{FileExportStrategy, StdoutExportStrategy};
 
 use anyhow::{Context, Result};
 
@@ -14,7 +15,7 @@ use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Name, Namespace, Value};
 
-use super::DataFormat;
+use super::collection_field_name_from_uri_query;
 
 pub(crate) trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
@@ -47,22 +48,27 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
             "mysql" | "mariadb" => Box::new(MySqlExportStrategy {
                 uri_string: params.uri.to_string(),
             }),
-            "json" | "jsonl" => {
-                let data_format = DataFormat::new(
-                    &scheme,
-                    params
-                        .uri
-                        .query()
-                        .map(uriparse::Query::as_str)
-                        .unwrap_or_default(),
-                );
+            "json" => {
+                if params.uri.path() == "" {
+                    Box::new(JsonStdoutExportStrategy)
+                } else {
+                    Box::new(JsonFileExportStrategy {
+                        from_file: PathBuf::from(params.uri.path().to_string()),
+                    })
+                }
+            }
+            "jsonl" => {
+                let collection_field_name =
+                    collection_field_name_from_uri_query(params.uri.query());
 
                 if params.uri.path() == "" {
-                    Box::new(StdoutExportStrategy { data_format })
+                    Box::new(JsonLinesStdoutExportStrategy {
+                        collection_field_name,
+                    })
                 } else {
-                    Box::new(FileExportStrategy {
-                        data_format,
+                    Box::new(JsonLinesFileExportStrategy {
                         from_file: PathBuf::from(params.uri.path().to_string()),
+                        collection_field_name,
                     })
                 }
             }

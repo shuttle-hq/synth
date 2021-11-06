@@ -6,7 +6,6 @@ use crate::datasource::DataSource;
 use crate::sampler::SamplerOutput;
 use anyhow::Result;
 use synth_core::schema::Namespace;
-use synth_core::{Content, Name};
 
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {
@@ -43,12 +42,5 @@ impl ImportStrategy for PostgresImportStrategy {
         let datasource = PostgresDataSource::new(&connect_params)?;
 
         build_namespace_import(&datasource)
-    }
-
-    fn import_collection(&self, name: &Name) -> Result<Content> {
-        self.import()?
-            .collections
-            .remove(name)
-            .ok_or_else(|| anyhow!("Could not find table '{}' in Postgres database.", name))
     }
 }

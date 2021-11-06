@@ -87,13 +87,6 @@ impl ImportStrategy for MongoImportStrategy {
 
         Ok(namespace)
     }
-
-    fn import_collection(&self, name: &Name) -> Result<Content> {
-        self.import()?
-            .collections
-            .remove(name)
-            .ok_or_else(|| anyhow!("Could not find table '{}' in MongoDb database.", name))
-    }
 }
 
 fn doc_to_content(doc: &Document) -> Content {
