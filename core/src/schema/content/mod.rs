@@ -317,6 +317,23 @@ impl Content {
         matches!(self, Self::Unique(_))
     }
 
+    pub fn is_scalar(&self, ns: &Namespace) -> Result<bool> {
+        match self {
+            Self::Array(_) | Self::Object(_) => Ok(false),
+            Self::SameAs(same_as) => ns.get_s_node(&same_as.ref_)?.is_scalar(ns),
+            Self::OneOf(one_of) => {
+                for variant in &one_of.variants {
+                    if !variant.content.is_scalar(ns)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            Self::Unique(unique) => unique.content.is_scalar(ns),
+            _ => Ok(true),
+        }
+    }
+
     #[must_use]
     pub fn into_unique(self) -> Self {
         if !self.is_unique() {
