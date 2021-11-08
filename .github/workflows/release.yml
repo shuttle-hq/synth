@@ -51,7 +51,7 @@ jobs:
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
       with:
-        name: synth-${{ steps.tag.outputs.tag }}-osx-latest-x86_64
+        name: synth-${{ steps.tag.outputs.tag }}-macos-latest-x86_64
         path: target/release/synth.tar.gz
 
   build-windows:
@@ -161,7 +161,7 @@ jobs:
       matrix:
         os:
         - ubuntu-latest
-        - macos-10.15
+        - macos-latest
         - ubuntu-18.04
     steps:
     - uses: actions/download-artifact@v2
