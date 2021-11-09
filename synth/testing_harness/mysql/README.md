@@ -7,7 +7,6 @@ schema and test data within the database.
 
 # Requirements:
 - Docker
-- Mysql client
 - jq
 
 # Instructions

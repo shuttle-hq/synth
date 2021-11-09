@@ -22,8 +22,8 @@ function help() {
 
 commands:
   load-schema [--no-data]|Fills DB with test schema - defaults to loading data too
-  test-generate|Test if 'synth generate' is correct
-  test-import|Test importing from postgres data
+  test-generate|Test generating data to mysql
+  test-import|Test importing from mysql data
   test-local|Run all test on a local machine using the container from 'up' (no need to call 'up' first)
   up|Starts a local Docker instance for testing
   down|Stops container started with 'up'
@@ -32,8 +32,8 @@ commands:
 }
 
 function load-schema() {
-  mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" < 0_hospital_schema.sql || return 1
-  [ ${1} == "--no-data" ] || mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" < 1_hospital_data.sql || return 1
+  docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" < 0_hospital_schema.sql || return 1
+  [ ${1} == "--no-data" ] || docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" < 1_hospital_data.sql || return 1
 }
 
 function test-generate() {
@@ -42,7 +42,7 @@ function test-generate() {
   $SYNTH generate hospital_master --to $SCHEME://root:${PASSWORD}@127.0.0.1:${PORT}/test_db --size 30 || return 1
 
   sum_rows_query="SELECT (SELECT count(*) FROM hospitals) +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
-  sum=`mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" -e "$sum_rows_query" | grep -o '[[:digit:]]*'`
+  sum=`docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" -e "$sum_rows_query" | grep -o '[[:digit:]]*'`
   [ "$sum" -gt "30" ] || { echo -e "${ERROR}Generation did not create more than 30 records${NC}"; return 1; }
 }
 
@@ -77,7 +77,7 @@ function up() {
   docker run --rm --name $NAME -p $PORT:3306 -e MYSQL_ROOT_PASSWORD=$PASSWORD -e MYSQL_DATABASE="test_db" -d $SCHEME > /dev/null
 
   wait_count=0
-  while ! mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" -e "SELECT 1" > /dev/null 2>&1
+  while ! docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P $PORT "test_db" -e "SELECT 1" > /dev/null 2>&1
   do
     range=$(printf "%${wait_count}s")
     echo -en "\\r${DEBUG}Waiting for DB to come up${range// /.}${NC}"
