@@ -46,6 +46,24 @@
       "type": "same_as",
       "ref": "doctors.content.id"
     },
+    "gender": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 1.0,
+          "type": "string",
+          "categorical": {
+            "female": 3,
+            "male": 6,
+            "unspecified": 1
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
     "id": {
       "type": "number",
       "id": {},
@@ -58,24 +76,6 @@
           "weight": 1.0,
           "type": "string",
           "pattern": "[a-zA-Z0-9]{0, 255}"
-        },
-        {
-          "weight": 1.0,
-          "type": "null"
-        }
-      ]
-    },
-    "gender": {
-      "type": "one_of",
-      "variants": [
-        {
-          "weight": 9.0,
-          "type": "string",
-          "categorical": {
-            "male": 9,
-            "female": 9,
-            "unspecified": 1
-          }
         },
         {
           "weight": 1.0,

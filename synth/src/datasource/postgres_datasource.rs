@@ -8,14 +8,14 @@ use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow};
+use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow, PgTypeInfo, PgTypeKind};
 use sqlx::{Column, Executor, Pool, Postgres, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
 use synth_core::schema::{
-    BoolContent, ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent,
-    StringContent, Uuid,
+    BoolContent, Categorical, ChronoValueType, DateTimeContent, NumberContent, RangeStep,
+    RegexContent, StringContent, Uuid,
 };
 use synth_core::{Content, Value};
 
@@ -153,7 +153,7 @@ impl RelationalDataSource for PostgresDataSource {
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
         let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
-        character_maximum_length
+        character_maximum_length, data_type
         FROM information_schema.columns
         WHERE table_name = $1
         AND table_schema = $2
@@ -234,15 +234,23 @@ impl RelationalDataSource for PostgresDataSource {
             .collect()
     }
 
-    fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
-        let content = match data_type.to_lowercase().as_str() {
+    fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
+        if column_info.is_custom_type {
+            return Ok(Content::String(StringContent::Categorical(
+                Categorical::default(),
+            )));
+        }
+
+        let content = match column_info.data_type.to_lowercase().as_str() {
             "bool" => Content::Bool(BoolContent::default()),
             "oid" => {
                 bail!("OID data type not supported")
             }
             "char" | "varchar" | "text" | "citext" | "bpchar" | "name" | "unknown" => {
-                let pattern =
-                    "[a-zA-Z0-9]{0, {}}".replace("{}", &format!("{}", char_max_len.unwrap_or(1)));
+                let pattern = "[a-zA-Z0-9]{0, {}}".replace(
+                    "{}",
+                    &format!("{}", column_info.character_maximum_length.unwrap_or(1)),
+                );
                 Content::String(StringContent::Pattern(
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
@@ -272,7 +280,10 @@ impl RelationalDataSource for PostgresDataSource {
                 end: None,
             }),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
-            _ => bail!("We haven't implemented a converter for {}", data_type),
+            _ => bail!(
+                "We haven't implemented a converter for {}",
+                column_info.data_type
+            ),
         };
 
         Ok(content)
@@ -300,6 +311,7 @@ impl TryFrom<PgRow> for ColumnInfo {
             is_nullable: row.try_get::<String, usize>(2)? == *"YES",
             data_type: row.try_get(3)?,
             character_maximum_length: row.try_get(4)?,
+            is_custom_type: row.try_get::<String, usize>(5)? == "USER-DEFINED",
         })
     }
 }
@@ -344,6 +356,11 @@ impl TryFrom<PgRow> for ValueWrapper {
 }
 
 fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
+    if let PgTypeKind::Enum(_) = column.type_info().kind() {
+        let s = row.try_get::<EnumType, &str>(column.name())?;
+        return Ok(Value::String(s.into()));
+    }
+
     let value = match column.type_info().name().to_lowercase().as_str() {
         "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
         "oid" => {
@@ -381,4 +398,31 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
     };
 
     Ok(value)
+}
+
+/// Special type for importing enums
+struct EnumType(String);
+
+impl sqlx::types::Type<Postgres> for EnumType {
+    fn type_info() -> PgTypeInfo {
+        <&str as sqlx::types::Type<Postgres>>::type_info()
+    }
+
+    fn compatible(ty: &PgTypeInfo) -> bool {
+        matches!(ty.kind(), PgTypeKind::Enum(_))
+    }
+}
+
+impl<'r> sqlx::Decode<'r, Postgres> for EnumType {
+    fn decode(
+        value: sqlx::postgres::PgValueRef<'r>,
+    ) -> std::result::Result<Self, Box<dyn std::error::Error + 'static + Send + Sync>> {
+        Ok(Self(<String as sqlx::Decode<Postgres>>::decode(value)?))
+    }
+}
+
+impl From<EnumType> for String {
+    fn from(enum_type: EnumType) -> Self {
+        enum_type.0
+    }
 }
