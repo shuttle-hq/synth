@@ -24,34 +24,7 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
-      - run: |
-          echo "Running generate test"
-          cd synth/testing_harness/mongodb/synth
-          synth generate hospital --size 100 --to mongodb://localhost:27017/hospital
-          cd ..
-          COLLECTIONS=(hospitals doctors patients)
-          for collection in "${COLLECTIONS[@]}"
-          do
-            docker exec -i mongo-test mongoexport \
-                --db hospital \
-                --collection "$collection" \
-                --forceTableScan \
-                --jsonArray \
-                | jq 'del(.[]._id)' \
-                | diff -y - "hospital_master_data/$collection.json" || exit 1
-          done
-      - run: |
-          echo "Testing import"
-          docker container restart mongo-test
-          cd synth/testing_harness/mongodb/
-          for collection in "${COLLECTIONS[@]}"
-          do
-            cat "hospital_master_data/$collection.json" \
-            | docker exec -i mongo-test mongoimport \
-            --db hospital \
-            --collection "$collection" \
-            --jsonArray
-          done
-          cd synth
-          synth import --from mongodb://localhost:27017/hospital hospital_temp
-          diff <(jq --sort-keys . hospital_temp/*) <(jq --sort-keys . hospital_master/*)
+      - run: ./e2e.sh test-generate
+        working-directory: synth/testing_harness/mongodb
+      - run: ./e2e.sh test-import
+        working-directory: synth/testing_harness/mongodb
