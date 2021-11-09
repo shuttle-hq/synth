@@ -3,10 +3,10 @@ name: synth-mongo
 on:
   push:
     branches: [ master ]
-    paths: [ '**/*.rs' ]
+    paths: [ '**/*.rs', "synth/testing_harness/mongodb/**" ]
   pull_request:
     branches: [ master ]
-    paths: [ '**/*.rs' ]
+    paths: [ '**/*.rs', "synth/testing_harness/mongodb/**" ]
 
   workflow_dispatch:
 
