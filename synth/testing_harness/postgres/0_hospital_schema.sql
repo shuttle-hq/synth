@@ -1,4 +1,8 @@
+drop table if exists patients;
+drop table if exists doctors;
 drop table if exists hospitals;
+
+drop type if exists gender;
 
 create table hospitals
 (
@@ -6,8 +10,6 @@ create table hospitals
     hospital_name varchar(255),
     address       varchar(255)
 );
-
-drop table if exists doctors;
 
 create table doctors
 (
@@ -17,10 +19,7 @@ create table doctors
     date_joined date
 );
 
-drop type if exists gender;
 create type gender as enum ('male', 'female', 'unspecified');
-
-drop table if exists patients;
 
 create table patients
 (
