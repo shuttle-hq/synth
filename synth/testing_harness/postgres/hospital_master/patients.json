@@ -65,6 +65,24 @@
         }
       ]
     },
+    "gender": {
+      "type": "one_of",
+      "variants": [
+        {
+          "weight": 9.0,
+          "type": "string",
+          "categorical": {
+            "male": 9,
+            "female": 9,
+            "unspecified": 1
+          }
+        },
+        {
+          "weight": 1.0,
+          "type": "null"
+        }
+      ]
+    },
     "phone": {
       "type": "one_of",
       "variants": [
