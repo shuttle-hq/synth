@@ -2196,6 +2196,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "paste"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
+
+[[package]]
 name = "pbkdf2"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3276,6 +3282,7 @@ dependencies = [
  "log",
  "num",
  "num_cpus",
+ "paste",
  "rand 0.8.4",
  "rand_regex",
  "regex",

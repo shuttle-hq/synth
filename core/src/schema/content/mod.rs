@@ -13,8 +13,10 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
+use paste::paste;
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
 use serde_json::Value;
 
@@ -104,6 +106,9 @@ pub struct SameAsContent {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct NullContent;
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+pub struct EmptyContent;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ContentLabels {
     #[serde(default)]
@@ -137,11 +142,32 @@ impl ContentLabels {
     }
 }
 
+lazy_static! {
+    static ref UNEXPECTED: BTreeMap<&'static str, Vec<&'static str>> = {
+        let mut m = BTreeMap::new();
+        m.insert("arguments", vec!["format"]);
+        m.insert("low", vec!["range"]);
+        m.insert("high", vec!["range"]);
+        m.insert("step", vec!["range"]);
+        m.insert("include_high", vec!["range"]);
+        m.insert("include_low", vec!["range"]);
+        m.insert("start_at", vec!["id"]);
+        m.insert("start", vec!["incrementing", "poisson", "cyclical"]);
+        m.insert("increment", vec!["incrementing"]);
+        m.insert("rate", vec!["poisson"]);
+        m.insert("min_rate", vec!["cyclical"]);
+        m.insert("max_rate", vec!["cyclical"]);
+        m.insert("period", vec!["cyclical"]);
+        m.insert("series", vec!["zip"]);
+        m
+    };
+}
+
 macro_rules! content {
     {
         labels: $labels:ty,
         variants: {
-            $($name:ident($variant:ty)$(,)?)+
+            $($name:ident($variant:ty) => $msg:tt,)+
         }
     } => {
         #[derive(Debug, Serialize, Clone, PartialEq, Hash)]
@@ -192,6 +218,27 @@ macro_rules! content {
                             let value = map.next_value()?;
                             out.insert(key, value);
                         }
+
+                        if out.is_empty() {
+                            out.insert("type".to_string(), serde_json::Value::String("empty".to_string()));
+                        } else if out.len() == 1 && out.contains_key("type") {
+                            paste! {
+                            match out.get("type").unwrap().as_str() {
+                                $(
+                                    Some(stringify!([<$name:snake>])) => generator_field_error!($name, $msg),
+                                )*
+                                None | Some(_) => {}
+                            }
+                            }
+                        }
+
+                        for key in out.keys() {
+                            if let Some(parent) = UNEXPECTED.get(key as &str) {
+                                let parents = parent.iter().map(|p| format!("`{}`", p)).collect::<Vec<String>>().join(", ");
+                                return Err(A::Error::custom(format!("`{}` is expected to be a field of {}", key, parents)));
+                            }
+                        }
+
                         let __ContentWithLabels { labels, content } = __ContentWithLabels::deserialize(out.into_deserializer()).map_err(A::Error::custom)?;
                         match content {
                             $(
@@ -242,23 +289,34 @@ macro_rules! content {
         }
     }
 }
+macro_rules! generator_field_error {
+    ($name:ident, None) => {
+        {}
+    };
+    ($name:ident, $msg:tt) => {
+        paste! {
+            return Err(A::Error::custom(concat!("`", stringify!([<$name:snake>]), "` generator is ", $msg)))
+        }
+    }
+}
 
 content! {
     labels: ContentLabels,
     variants: {
-        Null(NullContent),
-        Bool(BoolContent),
-        Number(NumberContent),
-        String(StringContent),
-        DateTime(DateTimeContent),
-        Array(ArrayContent),
-        Object(ObjectContent),
-        SameAs(SameAsContent),
-        OneOf(OneOfContent),
-        Series(SeriesContent),
-        Unique(UniqueContent),
-        Hidden(HiddenContent),
-        Datasource(DatasourceContent),
+        Null(NullContent) => None,
+        Bool(BoolContent) => "missing a subtype. Try adding `constant`, or `frequency`",
+        Number(NumberContent) => "missing a subtype. Try adding `constant`, `range`, or `id`",
+        String(StringContent) => "missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `uuid`, `truncated`, or `format`",
+        DateTime(DateTimeContent) => "missing a `format` field",
+        Array(ArrayContent) => "missing a `length` and `content` field",
+        Object(ObjectContent) => None,
+        SameAs(SameAsContent) => "missing a `ref` field",
+        OneOf(OneOfContent) => "missing a `variants` field",
+        Series(SeriesContent) => "missing a variant. Try adding `incrementing`, `poisson`, `cyclical`, or `zip`",
+        Unique(UniqueContent) => "missing a `content` field",
+        Datasource(DatasourceContent) => "missing a `path` field",
+        Hidden(HiddenContent) => "missing a `content` field",
+        Empty(EmptyContent) => None,
     }
 }
 
@@ -452,6 +510,7 @@ impl Content {
             Content::Unique(_) => "unique".to_string(),
             Content::Hidden(_) => "hidden".to_string(),
             Content::Datasource(_) => "datasource".to_string(),
+            Content::Empty(_) => "empty".to_string(),
         }
     }
 }
@@ -582,6 +641,7 @@ impl Compile for Content {
             Self::Hidden(hidden_content) => hidden_content.compile(compiler),
             Self::Null(_) => Ok(Graph::null()),
             Self::Datasource(datasource) => datasource.compile(compiler),
+            Self::Empty(_) => Err(anyhow!("unexpected empty object")),
         }
     }
 }
@@ -637,6 +697,7 @@ impl Default for Weight {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use paste::paste;
 
     lazy_static! {
         pub static ref USER_SCHEMA: Content = schema!({
@@ -835,5 +896,372 @@ pub mod tests {
             "begin": "2020-11-05T09:53:10+0500",
             "end": "2020-11-05T09:53:10+0000"
         });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "`string` generator is missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `uuid`, `truncated`, or `format`"
+    )]
+    fn string_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "string"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "`bool` generator is missing a subtype. Try adding `constant`, or `frequency`"
+    )]
+    fn bool_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "b": {
+                    "type": "bool"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "`number` generator is missing a subtype. Try adding `constant`, `range`, or `id`"
+    )]
+    fn number_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "n": {
+                    "type": "number"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`date_time` generator is missing a `format` field")]
+    fn date_time_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "dt": {
+                    "type": "date_time"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`array` generator is missing a `length` and `content` field")]
+    fn array_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "a": {
+                    "type": "array"
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn object_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "o": {
+                    "type": "object"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`same_as` generator is missing a `ref` field")]
+    fn same_as_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "sa": {
+                    "type": "same_as"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`one_of` generator is missing a `variants` field")]
+    fn one_of_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "oo": {
+                    "type": "one_of"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "`series` generator is missing a variant. Try adding `incrementing`, `poisson`, `cyclical`, or `zip`"
+    )]
+    fn series_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`unique` generator is missing a `content` field")]
+    fn unique_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "u": {
+                    "type": "unique"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`datasource` generator is missing a `path` field")]
+    fn datasource_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "d": {
+                    "type": "datasource"
+                }
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "`hidden` generator is missing a `content` field")]
+    fn hidden_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "h": {
+                    "type": "hidden"
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn null_missing_subtype() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "n": {
+                    "type": "null"
+                }
+            }
+        });
+    }
+
+    macro_rules! unexpected_content_tests {
+        ($($name:ident: {$($schema:tt)*},)*) => {
+        $(paste!{
+            #[test]
+            #[should_panic(expected = "is expected to be a field of")]
+            fn [<unexpected_content_ $name>]() {
+                let _schema: Content = schema!({$($schema)*});
+            }
+        })*
+        }
+    }
+
+    unexpected_content_tests! {
+        format: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "string",
+                    "format": "Hello {name}",
+                    "arguments": {
+                        "name": "synth"
+                    }
+                }
+            }
+        },
+        low: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "low": 1
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        high: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "high": 10
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        step: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "step": 2
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        include_high: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "include_high": true
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        include_low: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "include_low": true
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        start_at: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "start_at": 5
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        start: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "start": "2021-02-01 09:00:00"
+                }
+            }
+        },
+        increment: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "increment": "1m"
+                }
+            }
+        },
+        rate: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "rate": "1m"
+                }
+            }
+        },
+        max_rate: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "max_rate": "1m"
+                }
+            }
+        },
+        min_rate: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "min_rate": "1m"
+                }
+            }
+        },
+        period: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "period": "1d"
+                }
+            }
+        },
+        series: {
+            "type": "array",
+            "length": 1,
+            "content": {
+                "type": "object",
+                "s": {
+                    "type": "series",
+                    "series": []
+                }
+            }
+        },
     }
 }
