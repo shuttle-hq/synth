@@ -1,3 +1,5 @@
+drop table if exists patients;
+drop table if exists doctors;
 drop table if exists hospitals;
 
 create table hospitals
@@ -7,8 +9,6 @@ create table hospitals
     address       varchar(255)
 );
 
-drop table if exists doctors;
-
 create table doctors
 (
     id          int primary key,
@@ -16,8 +16,6 @@ create table doctors
     name        varchar(255),
     date_joined date
 );
-
-drop table if exists patients;
 
 create table patients
 (

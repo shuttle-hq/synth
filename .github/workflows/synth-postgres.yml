@@ -34,13 +34,11 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends postgresql-client jq
+          sudo apt-get install --yes --no-install-recommends jq
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
-      - run: ./e2e.sh load-schema
-        working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-generate
         working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-import
