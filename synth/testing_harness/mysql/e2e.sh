@@ -11,6 +11,7 @@ then
 fi
 
 SYNTH="synth"
+[ "${CI-false}" == "true" ] || SYNTH="cargo run --bin synth"
 
 ERROR='\033[0;31m'
 INFO='\033[0;36m'
@@ -54,9 +55,6 @@ function test-import() {
 }
 
 function test-local() {
-  cargo build --bin synth --release
-  SYNTH="../../../target/release/synth"
-
   up || return 1
 
   result=0

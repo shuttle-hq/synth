@@ -11,6 +11,7 @@ then
 fi
 
 SYNTH="synth"
+[ "${CI-false}" == "true" ] || SYNTH="cargo run --bin synth"
 
 COLLECTIONS=(hospitals doctors patients)
 
@@ -47,6 +48,7 @@ function test-generate() {
   for collection in "${COLLECTIONS[@]}"
   do
     docker exec -i $NAME mongoexport \
+        --quiet \
         --db hospital \
         --collection "$collection" \
         --forceTableScan \
@@ -63,9 +65,10 @@ function test-import() {
   do
     cat "hospital_data/$collection.json" \
     | docker exec -i $NAME mongoimport \
-    --db hospital \
-    --collection "$collection" \
-    --jsonArray
+        --quiet \
+        --db hospital \
+        --collection "$collection" \
+        --jsonArray
   done
 
   $SYNTH import --from mongodb://localhost:${PORT}/hospital hospital_import || { echo -e "${ERROR}Import failed${NC}"; return 1; }
@@ -73,9 +76,6 @@ function test-import() {
 }
 
 function test-local() {
-  cargo build --bin synth --release
-  SYNTH="../../../target/release/synth"
-
   up || return 1
 
   result=0
