@@ -34,8 +34,8 @@ commands:
 }
 
 function load-schema() {
-  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:$PORT/postgres < 0_hospital_schema.sql || return 1
-  [ ${1} == "--no-data" ] || docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:$PORT/postgres < 1_hospital_data.sql || return 1
+  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/postgres < 0_hospital_schema.sql || return 1
+  [ ${1} == "--no-data" ] || docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/postgres < 1_hospital_data.sql || return 1
 }
 
 function test-generate() {
@@ -44,7 +44,7 @@ function test-generate() {
   $SYNTH generate hospital_master --to postgres://postgres:$PASSWORD@localhost:$PORT/postgres --size 30 || return 1
 
   sum_rows_query="SELECT (SELECT count(*) FROM hospitals) +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
-  sum=`docker exec -i $NAME psql -tA postgres://postgres:$PASSWORD@localhost:$PORT/postgres -c "$sum_rows_query"`
+  sum=`docker exec -i $NAME psql -tA postgres://postgres:$PASSWORD@localhost:5432/postgres -c "$sum_rows_query"`
   [ "$sum" -gt "30" ] || { echo -e "${ERROR}Generation did not create more than 30 records${NC}"; return 1; }
 }
 
@@ -57,7 +57,7 @@ function test-import() {
 
 function test-warning() {
   echo -e "${INFO}Testing warnings${NC}"
-  docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:$PORT/postgres < warnings/0_warnings.sql
+  docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:5432/postgres < warnings/0_warnings.sql
   WARNINGS=$($SYNTH generate --size 10 --to postgres://postgres:$PASSWORD@localhost:$PORT/postgres warnings 2>&1)
   if [[ "$WARNINGS" == *"warnings.int32"* && "$WARNINGS" == *"warnings.int64"* ]]
   then
@@ -95,7 +95,7 @@ function up() {
   docker run --rm --name $NAME -p $PORT:5432 -e POSTGRES_PASSWORD=$PASSWORD -d postgres > /dev/null
 
   wait_count=0
-  while ! docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:$PORT/postgres -c "SELECT 1" > /dev/null 2>&1
+  while ! docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:5432/postgres -c "SELECT 1" > /dev/null 2>&1
   do
     range=$(printf "%${wait_count}s")
     echo -en "\\r${DEBUG}Waiting for DB to come up${range// /.}${NC}"
