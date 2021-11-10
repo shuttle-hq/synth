@@ -3,10 +3,10 @@ name: synth-mongo
 on:
   push:
     branches: [ master ]
-    paths: [ '**/*.rs', "synth/testing_harness/mongodb/**" ]
+    paths: [ "**/*.rs", "synth/testing_harness/mongodb/**" ]
   pull_request:
     branches: [ master ]
-    paths: [ '**/*.rs', "synth/testing_harness/mongodb/**" ]
+    paths: [ "**/*.rs", "synth/testing_harness/mongodb/**" ]
 
   workflow_dispatch:
 
@@ -16,10 +16,12 @@ env:
 jobs:
   e2e_tests_mongo:
     runs-on: ubuntu-latest
+    env:
+      PORT: 27017
     steps:
       - uses: actions/checkout@v2
       - run: |
-          docker run -p 27017:27017 --name mongo-test -d mongo:latest
+          docker run -p $PORT:27017 --name mongo-synth-harness -d mongo:latest
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly

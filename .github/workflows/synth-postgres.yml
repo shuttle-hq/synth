@@ -3,10 +3,10 @@ name: synth-postgres
 on:
   push:
     branches: [master]
-    paths: ["**/*.rs", "synth/testing_harness/postgres/**"]
+    paths: [ "**/*.rs", "synth/testing_harness/postgres/**" ]
   pull_request:
     branches: [master]
-    paths: ["**/*.rs", "synth/testing_harness/postgres/**"]
+    paths: [ "**/*.rs", "synth/testing_harness/postgres/**" ]
 
   workflow_dispatch:
 
@@ -22,6 +22,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
+          --name postgres-synth-harness
           -p 5432:5432
           --health-cmd pg_isready
           --health-interval 10s

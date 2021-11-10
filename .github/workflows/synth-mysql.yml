@@ -25,6 +25,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
+          --name mysql-synth-harness
           --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
@@ -37,6 +38,7 @@ jobs:
         ports:
           - 3307:3306
         options: >-
+          --name mysql-synth-harness
           --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
