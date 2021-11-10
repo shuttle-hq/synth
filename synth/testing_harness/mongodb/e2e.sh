@@ -52,7 +52,7 @@ function test-generate() {
         --forceTableScan \
         --jsonArray \
         | jq 'del(.[]._id)' \
-        | diff - "hospital_master_data/$collection.json" || { echo -e "${ERROR}Generation '$collection' does not match${NC}"; return 1; }
+        | diff - "hospital_data/$collection.json" || { echo -e "${ERROR}Generation '$collection' does not match${NC}"; return 1; }
   done
 }
 
@@ -61,7 +61,7 @@ function test-import() {
 
   for collection in "${COLLECTIONS[@]}"
   do
-    cat "hospital_master_data/$collection.json" \
+    cat "hospital_data/$collection.json" \
     | docker exec -i $NAME mongoimport \
     --db hospital \
     --collection "$collection" \
@@ -69,7 +69,7 @@ function test-import() {
   done
 
   $SYNTH import --from mongodb://localhost:${PORT}/hospital hospital_import || { echo -e "${ERROR}Import failed${NC}"; return 1; }
-  diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_import_master/*) || { echo -e "${ERROR}Import namespaces do not match${NC}"; return 1; }
+  diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || { echo -e "${ERROR}Import namespaces do not match${NC}"; return 1; }
 }
 
 function test-local() {
