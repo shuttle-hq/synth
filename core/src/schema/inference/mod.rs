@@ -5,6 +5,7 @@ use serde_json::{Map, Number, Value};
 
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::collections::BTreeMap;
 
 pub mod value;
 pub use value::ValueMergeStrategy;
@@ -31,8 +32,9 @@ impl std::fmt::Display for OptionalMergeStrategy {
     }
 }
 
-impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
-    fn try_merge(self, master: &mut Content, candidate: &Value) -> Result<()> {
+use crate::graph::Value as SynthValue; 
+impl MergeStrategy<Content, SynthValue> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut Content, candidate: &SynthValue) -> Result<()> {
         match (master, candidate) {
             // Logical nodes go first
             (Content::SameAs(_), _) => {
@@ -46,46 +48,46 @@ impl MergeStrategy<Content, Value> for OptionalMergeStrategy {
                 Self.try_merge(unique_content, candidate)
             }
             // Non-logical nodes go after
-            (Content::Object(master_obj), Value::Object(candidate_obj)) => {
+            (Content::Object(master_obj), SynthValue::Object(candidate_obj)) => {
                 Self.try_merge(master_obj, candidate_obj)
             }
-            (Content::Array(ArrayContent { content, length }), Value::Array(values)) => {
-                Self.try_merge(length.as_mut(), &Value::from(values.len()))?;
+            (Content::Array(ArrayContent { content, length }), SynthValue::Array(values)) => {
+                Self.try_merge(length.as_mut(), &SynthValue::from(values.len()))?;
                 values
                     .iter()
                     .try_for_each(|value| Self.try_merge(content.as_mut(), value))
             }
-            (Content::String(string_content), Value::String(string)) => {
+            (Content::String(string_content), SynthValue::String(string)) => {
                 Self.try_merge(string_content, string)
             }
-            (Content::DateTime(date_time_content), Value::String(string)) => {
+            (Content::DateTime(date_time_content), SynthValue::String(string)) => {
                 Self.try_merge(date_time_content, string)
             }
-            (Content::Number(number_content), Value::Number(number)) => {
+            (Content::Number(number_content), SynthValue::Number(number)) => {
                 Self.try_merge(number_content, number)
             }
-            (Content::Bool(bool_content), Value::Bool(boolean)) => {
+            (Content::Bool(bool_content), SynthValue::Bool(boolean)) => {
                 Self.try_merge(bool_content, boolean)
             }
-            (Content::Null(_), Value::Null) => Ok(()),
+            (Content::Null(_), SynthValue::Null(_)) => Ok(()),
             (master, candidate) => Err(failed!(
                 target: Release,
                 "cannot merge a node of type '{}' with a value of type '{}'",
                 master.kind(),
-                candidate.kind()
+                candidate.type_()
             )),
         }
     }
 }
 
-impl MergeStrategy<UniqueContent, Value> for OptionalMergeStrategy {
-    fn try_merge(self, master: &mut UniqueContent, candidate: &Value) -> Result<()> {
+impl MergeStrategy<UniqueContent, SynthValue> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut UniqueContent, candidate: &SynthValue) -> Result<()> {
         Self.try_merge(&mut *master.content, candidate)
     }
 }
 
-impl MergeStrategy<OneOfContent, Value> for OptionalMergeStrategy {
-    fn try_merge(self, master: &mut OneOfContent, candidate: &Value) -> Result<()> {
+impl MergeStrategy<OneOfContent, SynthValue> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut OneOfContent, candidate: &SynthValue) -> Result<()> {
         master.insert_with(self, candidate);
         Ok(())
     }
@@ -132,11 +134,11 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
     }
 }
 
-impl MergeStrategy<ObjectContent, Map<String, Value>> for OptionalMergeStrategy {
+impl MergeStrategy<ObjectContent, BTreeMap<String, SynthValue>> for OptionalMergeStrategy {
     fn try_merge(
         self,
         master: &mut ObjectContent,
-        candidate_obj: &serde_json::Map<String, Value>,
+        candidate_obj: &BTreeMap<String, SynthValue>,
     ) -> Result<()> {
         let master_keys: HashSet<_> = master
             .iter()
@@ -321,32 +323,30 @@ impl MergeStrategy<number_content::F32, f32> for OptionalMergeStrategy {
     }
 }
 
-impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
-    fn try_merge(self, master: &mut NumberContent, value: &Number) -> Result<()> {
+use crate::graph::prelude::Number as SynthNumber;
+impl MergeStrategy<NumberContent, SynthNumber> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut NumberContent, value: &SynthNumber) -> Result<()> {
         match master {
             NumberContent::U64(u64_content) => {
                 if let Some(n) = value.as_u64() {
                     self.try_merge(u64_content, &n)
                 } else {
-                    *master = u64_content.clone().upcast(value.kind())?;
-                    self.try_merge(master, value)
-                }
+			todo!()
+		}
             }
             NumberContent::I64(i64_content) => {
                 if let Some(n) = value.as_i64() {
                     self.try_merge(i64_content, &n)
                 } else {
-                    *master = i64_content.clone().upcast(value.kind())?;
-                    self.try_merge(master, value)
-                }
+			todo!()
+		}
             }
             NumberContent::F64(f64_content) => {
                 if let Some(n) = value.as_f64() {
                     self.try_merge(f64_content, &n)
                 } else {
-                    *master = f64_content.clone().upcast(value.kind())?;
-                    self.try_merge(master, value)
-                }
+	        	todo!()
+		}
             }
             NumberContent::U32(u32_content) => {
                 if let Some(n) = value.as_u64() {

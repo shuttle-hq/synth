@@ -74,6 +74,14 @@ macro_rules! generate_enum {
                 }
             }
         )*
+	
+        impl $id {
+            pub fn type_(&self) -> &'static str {
+                match self {
+                    $( Self::$variant(_) => stringify!($variant), )*
+                }
+            }
+        }	
     };
 }
 
