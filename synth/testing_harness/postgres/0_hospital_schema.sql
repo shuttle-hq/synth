@@ -2,6 +2,8 @@ drop table if exists patients;
 drop table if exists doctors;
 drop table if exists hospitals;
 
+drop type if exists gender;
+
 create table hospitals
 (
     id            int primary key,
@@ -17,11 +19,14 @@ create table doctors
     date_joined date
 );
 
+create type gender as enum ('male', 'female', 'unspecified');
+
 create table patients
 (
     id          int primary key,
     doctor_id   int references doctors (id),
     name        varchar(255),
+    gender      gender,
     date_joined date,
     address     varchar(255),
     phone       varchar(20),
