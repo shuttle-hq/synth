@@ -15,6 +15,7 @@ pub struct ColumnInfo {
     pub(crate) column_name: String,
     pub(crate) ordinal_position: i32,
     pub(crate) is_nullable: bool,
+    pub(crate) is_custom_type: bool,
     pub(crate) data_type: String,
     pub(crate) character_maximum_length: Option<i32>,
 }
@@ -153,7 +154,7 @@ pub trait RelationalDataSource: DataSource {
 
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
-    fn decode_to_content(&self, data_type: &str, _char_max_len: Option<i32>) -> Result<Content>;
+    fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 
     // Returns extended query string + current index
     fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize);
