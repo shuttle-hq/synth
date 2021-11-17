@@ -3,10 +3,10 @@ name: synth-mysql
 on:
   push:
     branches: [ master ]
-    paths: [ '**/*.rs' ]
+    paths: [ "**/*.rs", "synth/testing_harness/mysql/**" ]
   pull_request:
     branches: [ master ]
-    paths: [ '**/*.rs' ]
+    paths: [ "**/*.rs", "synth/testing_harness/mysql/**" ]
 
   workflow_dispatch:
 
@@ -25,6 +25,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
+          --name mysql-synth-harness
           --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
@@ -37,6 +38,7 @@ jobs:
         ports:
           - 3307:3306
         options: >-
+          --name mariadb-synth-harness
           --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
@@ -52,37 +54,16 @@ jobs:
       - uses: actions/checkout@v2
       ## Set env. variables for this job
       - run: |
-          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "MYSQL_USER=root" >> $GITHUB_ENV
-          echo "MYSQL_PORT=${{ matrix.port }}" >> $GITHUB_ENV
-          echo "MYSQL_ROOT_PASSWORD=mysecretpassword" >> $GITHUB_ENV
-          echo "MYSQL_DATABASE=test_db" >> $GITHUB_ENV
-          echo "DB_SCHEME=${{ matrix.db }}" >> $GITHUB_ENV
+          echo "PORT=${{ matrix.port }}" >> $GITHUB_ENV
+          echo "SCHEME=${{ matrix.db }}" >> $GITHUB_ENV
       - run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends mysql-client jq
-      - run: >
-          mysql -h "${{ env.MYSQL_HOST }}" -u "${{ env.MYSQL_USER }}" --password="${{ env.MYSQL_ROOT_PASSWORD }}"
-          -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/0_hospital_schema.sql
+          sudo apt-get install --yes --no-install-recommends jq
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
-      - run: |
-          echo "Running generate test"
-          cd synth/testing_harness/mysql
-          synth generate hospital_master --to ${{ env.DB_SCHEME }}://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} --size 10
-          bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/validate_mysql_gen_count.sh"
-      ## Clear out and repopulate DB
-      - run: >
-          mysql -h "${{ env.MYSQL_HOST }}" -u "${{ env.MYSQL_USER }}" --password="${{ env.MYSQL_ROOT_PASSWORD }}"
-          -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/0_hospital_schema.sql
-      - run: >
-          mysql -h "${{ env.MYSQL_HOST }}" -u "${{ env.MYSQL_USER }}" --password="${{ env.MYSQL_ROOT_PASSWORD }}"
-          -P "${{ env.MYSQL_PORT }}" "${{ env.MYSQL_DATABASE }}" < synth/testing_harness/mysql/1_hospital_data.sql
-      - run: |
-          echo "Testing import"
-          cd synth/testing_harness/mysql
-          synth init || true
-          synth import --from ${{ env.DB_SCHEME }}://${{ env.MYSQL_USER }}:${{ env.MYSQL_ROOT_PASSWORD }}@${{ env.MYSQL_HOST }}:${{ env.MYSQL_PORT }}/${{ env.MYSQL_DATABASE }} hospital_import
-          diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*)
+      - run: ./e2e.sh test-generate
+        working-directory: synth/testing_harness/mysql
+      - run: ./e2e.sh test-import
+        working-directory: synth/testing_harness/mysql

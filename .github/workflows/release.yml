@@ -17,7 +17,6 @@ jobs:
       matrix:
         os:
         - ubuntu-latest
-        - macos-10.15
         # Build for these versions to force backward compat with certain
         # toolchains (GLIBC < 2.29 in case of ubuntu-18.04)
         - ubuntu-18.04
@@ -28,12 +27,31 @@ jobs:
         toolchain: nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
-    - run: cargo +nightly build --release --features telemetry
+    - run: cargo +nightly build --release --features telemetry --bin synth
     - working-directory: target/release
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
       with:
         name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
+        path: target/release/synth.tar.gz
+
+  build-osx:
+    name: build
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+    - id: tag
+      uses: dawidd6/action-get-tag@v1
+    - run: cargo +nightly build --release --features telemetry --bin synth
+    - run: sudo /usr/sbin/purge
+    - working-directory: target/release
+      run: tar -czf synth.tar.gz synth
+    - uses: actions/upload-artifact@v2
+      with:
+        name: synth-${{ steps.tag.outputs.tag }}-macos-latest-x86_64
         path: target/release/synth.tar.gz
 
   build-windows:
@@ -51,7 +69,7 @@ jobs:
         run: |
           VERSION=$(cargo metadata --format-version 1 | jq '.packages[] | select (.name == "synth") | .version' -r)
           echo "::set-output name=version::${VERSION}"
-      - run: cargo +nightly build --release --features telemetry
+      - run: cargo +nightly build --release --features telemetry --bin synth
       - id: install-wix
         run: nuget install WiX -Version 3.11.2
       - id: install-cargo-wix
@@ -83,7 +101,7 @@ jobs:
 
   release:
     name: release
-    needs: [ build, build-windows ]
+    needs: [ build, build-osx, build-windows ]
     runs-on: ubuntu-latest
     steps:
     - id: tag
@@ -143,7 +161,7 @@ jobs:
       matrix:
         os:
         - ubuntu-latest
-        - macos-10.15
+        - macos-latest
         - ubuntu-18.04
     steps:
     - uses: actions/download-artifact@v2

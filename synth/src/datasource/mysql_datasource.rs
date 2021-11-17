@@ -148,11 +148,13 @@ impl RelationalDataSource for MySqlDataSource {
             .collect()
     }
 
-    fn decode_to_content(&self, data_type: &str, char_max_len: Option<i32>) -> Result<Content> {
-        let content = match data_type.to_lowercase().as_str() {
+    fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
+        let content = match column_info.data_type.to_lowercase().as_str() {
             "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
-                let pattern =
-                    "[a-zA-Z0-9]{0, {}}".replace("{}", &format!("{}", char_max_len.unwrap_or(1)));
+                let pattern = "[a-zA-Z0-9]{0, {}}".replace(
+                    "{}",
+                    &format!("{}", column_info.character_maximum_length.unwrap_or(1)),
+                );
                 Content::String(StringContent::Pattern(
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
@@ -188,7 +190,10 @@ impl RelationalDataSource for MySqlDataSource {
                 begin: None,
                 end: None,
             }),
-            _ => bail!("We haven't implemented a converter for {}", data_type),
+            _ => bail!(
+                "We haven't implemented a converter for {}",
+                column_info.data_type
+            ),
         };
 
         Ok(content)
@@ -216,6 +221,7 @@ impl TryFrom<MySqlRow> for ColumnInfo {
             is_nullable: row.try_get::<String, usize>(2)? == *"YES",
             data_type: row.try_get::<String, usize>(3)?,
             character_maximum_length: extract_column_char_max_len(4, row)?,
+            is_custom_type: false,
         })
     }
 }

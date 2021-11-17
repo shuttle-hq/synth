@@ -172,10 +172,7 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, &ColumnInfo)> for FieldC
     type Error = anyhow::Error;
 
     fn try_from(column_meta: (&T, &ColumnInfo)) -> Result<Self> {
-        let data_type = &column_meta.1.data_type;
-        let mut content = column_meta
-            .0
-            .decode_to_content(data_type, column_meta.1.character_maximum_length)?;
+        let mut content = column_meta.0.decode_to_content(column_meta.1)?;
 
         if column_meta.1.is_nullable {
             content = content.into_nullable();
