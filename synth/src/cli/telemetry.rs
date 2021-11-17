@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 
 use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
+use std::convert::TryFrom;
 use std::future::Future;
 use std::hash::{Hash, Hasher};
 use std::io::{self, BufRead, Read, Write};
@@ -316,12 +317,27 @@ where
         Args::Version => "version",
     };
 
+    let integration = match &args {
+        Args::Generate { to: uri_string, .. }
+        | Args::Import {
+            from: uri_string, ..
+        } => uriparse::URI::try_from(uri_string.as_str())
+            .map(|uri| uri.scheme().to_string())
+            .ok(),
+        _ => None,
+    };
+
     func(args)
         .await
         .and_then(|success| {
-            TELEMETRY_CLIENT.success(command_name, success, func_telemetry_context())
+            TELEMETRY_CLIENT.success(
+                command_name,
+                &integration,
+                success,
+                func_telemetry_context(),
+            )
         })
-        .or_else(|err| TELEMETRY_CLIENT.failed(command_name, err))
+        .or_else(|err| TELEMETRY_CLIENT.failed(command_name, &integration, err))
 }
 
 struct PanicReport {
@@ -427,12 +443,16 @@ impl TelemetryClient {
     pub fn success<T>(
         &self,
         command_name: &str,
+        integration: &Option<String>,
         output: T,
         telemetry_context: TelemetryContext,
     ) -> Result<T> {
         let mut event = self.default_telemetry_event(EVENT_NAME)?;
         event.insert_prop("command", command_name)?;
         event.insert_prop("success", CommandResult::Success.to_string())?;
+        if let Some(integration_str) = integration {
+            event.insert_prop("integration", integration_str)?;
+        }
 
         TelemetryClient::add_telemetry_context(&mut event, telemetry_context)?;
 
@@ -443,11 +463,19 @@ impl TelemetryClient {
         Ok(output)
     }
 
-    pub fn failed<T>(&self, command_name: &str, error: Error) -> Result<T> {
+    pub fn failed<T>(
+        &self,
+        command_name: &str,
+        integration: &Option<String>,
+        error: Error,
+    ) -> Result<T> {
         let mut event = self.default_telemetry_event(EVENT_NAME)?;
 
         event.insert_prop("command", command_name)?;
         event.insert_prop("success", CommandResult::Failed.to_string())?;
+        if let Some(integration_str) = integration {
+            event.insert_prop("integration", integration_str)?;
+        }
 
         self.send(event).or_else::<Error, _>(|err| {
             info!("failed to push err of command: {}", err);
@@ -471,6 +499,7 @@ impl TelemetryClient {
     }
 
     fn send(&self, event: posthog_rs::Event) -> Result<()> {
+        println!("{:#?}", event);
         if let Err(err) = self.ph_client.capture(event) {
             debug!("Failed to send message to PostHog. Error: {:?}", err);
             return Err(anyhow!("Failed to send message to PostHog."));
