@@ -499,7 +499,6 @@ impl TelemetryClient {
     }
 
     fn send(&self, event: posthog_rs::Event) -> Result<()> {
-        println!("{:#?}", event);
         if let Err(err) = self.ph_client.capture(event) {
             debug!("Failed to send message to PostHog. Error: {:?}", err);
             return Err(anyhow!("Failed to send message to PostHog."));
