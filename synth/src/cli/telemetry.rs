@@ -91,11 +91,13 @@ fn send_panic_report(synth_command: &str, telemetry_client: &TelemetryClient) {
 pub(crate) fn enable() -> Result<()> {
     // Initialise the `uuid` if it hasn't been initialised yet.
     let _ = get_or_initialise_uuid();
-    Ok(config::set_telemetry_enabled(true))
+    config::set_telemetry_enabled(true);
+    Ok(())
 }
 
 pub(crate) fn disable() -> Result<()> {
-    Ok(config::set_telemetry_enabled(false))
+    config::set_telemetry_enabled(false);
+    Ok(())
 }
 
 pub(crate) fn is_enabled() -> bool {
@@ -392,7 +394,7 @@ impl TelemetryClient {
         event: &mut posthog_rs::Event,
         telemetry_context: TelemetryContext,
     ) -> Result<()> {
-        if telemetry_context.generators.len() > 0 {
+        if !telemetry_context.generators.is_empty() {
             event.insert_prop("generators", telemetry_context.generators)?;
         }
 
