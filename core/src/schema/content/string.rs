@@ -194,14 +194,14 @@ pub struct TruncatedContent {
     length: Box<Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub struct SlicedContent {
     content: Box<Content>,
     slice: Box<Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct ConstantContent(String);
 
 impl From<String> for ConstantContent {
@@ -210,7 +210,7 @@ impl From<String> for ConstantContent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct FormatContent {
     format: String,
