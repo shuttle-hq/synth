@@ -793,6 +793,52 @@ If the output of its inner generator is less than or equal to the length, it is 
 }
 ```
 
+## sliced
+
+The `sliced` generator takes a character slice of a string. 
+
+The slice format is `[start]:[finish]` and if it fails to parse the original string will be returned.
+
+`sliced` has 2 fields,
+- `slice`: A string with a optional start and optional end separated by `:`
+- `content`: The content to be sliced. This can be any Synth generator that yields a String.
+
+#### Example
+
+```json synth
+{
+  "type": "string",
+  "sliced": {
+    "content": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{10, 20}"
+    },
+    "slice": "3:5"
+  }
+}
+```
+
+## constant
+
+The `constant` generator allows you to generate a constant string. Strings that begin with `@` can
+also be declared constant instead of being treated as a reference, although you need to use the long-form version:
+
+```json synth
+{
+  "type": "string",
+  "constant": "@foobar"
+}
+```
+
+Or shorthand notation if you are declaring an object field:
+
+```json synth
+{
+  "type": "object",
+  "name": "bob"
+}
+```
+
 
 
 ## categorical

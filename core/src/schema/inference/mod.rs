@@ -127,6 +127,8 @@ impl MergeStrategy<StringContent, String> for OptionalMergeStrategy {
             StringContent::Serialized(_) => Ok(()), // we can probably do better here
             StringContent::Uuid(_) => Ok(()),
             StringContent::Truncated(_) => Ok(()),
+            StringContent::Sliced(_) => Ok(()),
+            StringContent::Constant(_) => Ok(()),
             StringContent::Format(_) => Ok(()),
         }
     }

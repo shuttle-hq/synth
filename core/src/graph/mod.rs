@@ -749,6 +749,22 @@ pub mod tests {
                     "a_large_number": {
                         "type": "number",
                         "range": {}
+                    },
+                    "constant_id": "42",
+                    "created_at_year": {
+                        "type": "string",
+                        "sliced": {
+                            "content": {
+                                "type": "string",
+                                "format": {
+                                    "format": "{date} ",
+                                    "arguments": {
+                                        "date": "@users.content.created_at_date"
+                                    }
+                                }
+                            },
+                            "slice": "0:4"
+                        }
                     }
                 }
             },
@@ -839,6 +855,8 @@ pub mod tests {
             created_at_time: String,
             last_login_at: String,
             num_logins_again: u64,
+            constant_id: String,
+            created_at_year: String,
         }
 
         for _ in 0..100 {
@@ -857,6 +875,8 @@ pub mod tests {
                 assert!(user.bank_country == "GB" || user.bank_country == "ES");
                 assert!(user.id >= 100);
                 assert!(user.username.len() <= 5);
+                assert_eq!(user.constant_id, "42");
+                assert_eq!(user.created_at_year, user.created_at_date[0..4]);
 
                 all_users.insert(user.username.as_str());
 
