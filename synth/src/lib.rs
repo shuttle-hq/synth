@@ -1,11 +1,4 @@
-#![feature(
-    format_args_capture,
-    async_closure,
-    map_first_last,
-    box_patterns,
-    concat_idents,
-    error_iter
-)]
+#![feature(async_closure, map_first_last, box_patterns, concat_idents, error_iter)]
 #![allow(type_alias_bounds)]
 
 #[macro_use]

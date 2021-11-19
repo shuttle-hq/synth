@@ -2,7 +2,7 @@ use std::hash::{Hash, Hasher};
 
 use super::prelude::*;
 use super::Categorical;
-use crate::graph::string::Serialized;
+use crate::graph::string::{Constant, Serialized, Sliced};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
@@ -14,7 +14,9 @@ pub enum StringContent {
     Serialized(SerializedContent),
     Uuid(Uuid),
     Truncated(TruncatedContent),
+    Sliced(SlicedContent),
     Format(FormatContent),
+    Constant(ConstantContent),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
@@ -29,6 +31,8 @@ impl StringContent {
             Self::Serialized(_) => "serialized".to_string(),
             Self::Uuid(_) => "uuid".to_string(),
             Self::Truncated(_) => "truncated".to_string(),
+            Self::Sliced(_) => "sliced".to_string(),
+            Self::Constant(_) => "constant".to_string(),
             Self::Format(_) => "format".to_string(),
         }
     }
@@ -190,6 +194,22 @@ pub struct TruncatedContent {
     length: Box<Content>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[serde(rename_all = "lowercase")]
+pub struct SlicedContent {
+    content: Box<Content>,
+    slice: Box<Content>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+pub struct ConstantContent(String);
+
+impl From<String> for ConstantContent {
+    fn from(s: String) -> Self {
+        ConstantContent(s)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "lowercase")]
 pub struct FormatContent {
@@ -253,6 +273,17 @@ impl Compile for StringContent {
                 let content = compiler.build("content", content)?.into_string();
                 let length = compiler.build("length", length)?.into_size();
                 RandomString::from(Truncated::new(content, length)).into()
+            }
+            StringContent::Sliced(SlicedContent {
+                box slice,
+                box content,
+            }) => {
+                let content = compiler.build("content", content)?.into_string();
+                let slice = compiler.build("slice", slice)?.into_string();
+                RandomString::from(Sliced::new(content, slice)).into()
+            }
+            StringContent::Constant(ConstantContent(s)) => {
+                RandomString::from(Constant(s.into())).into()
             }
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };

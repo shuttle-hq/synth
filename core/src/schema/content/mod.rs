@@ -26,7 +26,8 @@ pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt
 
 mod string;
 pub use string::{
-    FakerContent, FakerContentArgument, FormatContent, RegexContent, StringContent, Uuid,
+    ConstantContent, FakerContent, FakerContentArgument, FormatContent, RegexContent,
+    SlicedContent, StringContent, Uuid,
 };
 
 mod date_time;
@@ -228,7 +229,7 @@ macro_rules! content {
                             let ref_ = FieldRef::deserialize(s.into_deserializer())?;
                             Ok(Content::SameAs(SameAsContent { ref_ }))
                         } else {
-                            Err(E::custom("string literals are synonymous to `same_as` and must start with `@` followed by the address of the referent"))
+                            Ok(Content::String(StringContent::Constant(ConstantContent::from(v.to_string()))))
                         }
                     }
                 }
