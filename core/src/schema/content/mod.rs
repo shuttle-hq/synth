@@ -18,6 +18,8 @@ use std::hash::{Hash, Hasher};
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::graph::Value as SynthValue;
+
 mod r#bool;
 pub use self::r#bool::BoolContent;
 
@@ -240,6 +242,22 @@ macro_rules! content {
     }
 }
 
+use crate::graph::Value as SynthValue;
+impl From<SynthValue> for Content {
+    fn from(value: SynthValue) -> Self {
+/*        match value {
+            Value::Null(_) => {}
+            Value::Bool(_) => {}
+            Value::Number(_) => {}
+            Value::String(_) => {}
+            Value::DateTime(_) => {}
+            Value::Object(_) => {}
+            Value::Array(_) => {}
+        }*/
+	todo!()
+    }
+}
+
 content! {
     labels: ContentLabels,
     variants: {
@@ -436,22 +454,22 @@ impl std::fmt::Display for Content {
     }
 }
 
-impl<'r> From<&'r Value> for Content {
-    fn from(value: &'r Value) -> Self {
+impl<'r> From<&'r SynthValue> for Content {
+    fn from(value: &'r SynthValue) -> Self {
         match value {
             // TODO not sure what the correct behaviour is here
-            Value::Null => Content::Null(NullContent),
-            Value::Bool(_) => Content::Bool(BoolContent::default()),
-            Value::String(_) => Content::String(StringContent::default()),
-            Value::Array(arr) => {
+            SynthValue::Null(_) => Content::Null(NullContent),
+            SynthValue::Bool(_) => Content::Bool(BoolContent::default()),
+            SynthValue::String(_) => Content::String(StringContent::default()),
+            SynthValue::Array(arr) => {
                 let length = arr.len();
                 let one_of_content = arr.iter().collect();
                 Content::Array(ArrayContent {
-                    length: Box::new(Content::from(&Value::from(length as u64))),
+                    length: Box::new(Content::from(&SynthValue::from(length as u64))),
                     content: Box::new(Content::OneOf(one_of_content)),
                 })
             }
-            Value::Object(obj) => {
+            SynthValue::Object(obj) => {
                 let fields = obj
                     .iter()
                     .map(|(key, value)| (key.to_string(), Content::from(value)))
@@ -461,7 +479,7 @@ impl<'r> From<&'r Value> for Content {
                     ..Default::default()
                 })
             }
-            Value::Number(number_value) => {
+            SynthValue::Number(number_value) => {
                 let number_content = if number_value.is_f64() {
                     let value = number_value.as_f64().unwrap();
                     NumberContent::F64(number_content::F64::Range(RangeStep::new(
@@ -488,6 +506,7 @@ impl<'r> From<&'r Value> for Content {
                 };
                 Content::Number(number_content)
             }
+            _ => { todo!() }
         }
     }
 }

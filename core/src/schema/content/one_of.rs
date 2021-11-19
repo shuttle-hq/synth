@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use super::prelude::*;
 
 use super::Weight;
+use crate::graph::Value as SynthValue;
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -71,8 +72,8 @@ impl FromIterator<Content> for OneOfContent {
     }
 }
 
-impl<'t> FromIterator<&'t Value> for OneOfContent {
-    fn from_iter<T: IntoIterator<Item = &'t Value>>(iter: T) -> Self {
+impl<'t> FromIterator<&'t SynthValue> for OneOfContent {
+    fn from_iter<T: IntoIterator<Item = &'t SynthValue>>(iter: T) -> Self {
         let mut out = Self {
             variants: Vec::new(),
         };
@@ -118,9 +119,9 @@ impl OneOfContent {
         self.variants.push(VariantContent::new(variant))
     }
 
-    pub fn insert_with<M>(&mut self, strategy: M, what: &Value)
+    pub fn insert_with<M>(&mut self, strategy: M, what: &SynthValue)
     where
-        M: MergeStrategy<Self, Value> + MergeStrategy<Content, Value> + Copy,
+        M: MergeStrategy<Self, SynthValue> + MergeStrategy<Content, SynthValue> + Copy,
     {
         let res: Vec<_> = self
             .iter_mut()

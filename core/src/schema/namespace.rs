@@ -43,6 +43,7 @@ impl FromIterator<(Name, Content)> for Namespace {
     }
 }
 
+use crate::graph::Value as SynthValue;
 impl Namespace {
     pub fn new() -> Self {
         Self::default()
@@ -63,15 +64,15 @@ impl Namespace {
         self.collections.keys()
     }
 
-    pub fn default_try_update(&mut self, name: &Name, value: &Value) -> Result<()> {
+    pub fn default_try_update(&mut self, name: &Name, value: &SynthValue) -> Result<()> {
         self.try_update(OptionalMergeStrategy, name, value)
     }
 
-    pub fn try_update<M: MergeStrategy<Content, Value>>(
+    pub fn try_update<M: MergeStrategy<Content, SynthValue>>(
         &mut self,
         strategy: M,
         name: &Name,
-        value: &Value,
+        value: &SynthValue,
     ) -> Result<()> {
         let collection = self.get_collection_mut(name)?;
         strategy.try_merge(collection, value)?;
