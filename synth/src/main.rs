@@ -10,7 +10,12 @@ async fn main() -> Result<()> {
     let args = Args::from_args();
     let cli = Cli::new()?;
 
-    let notify_handle = thread::spawn(synth::version::notify_new_version_message);
+    // The `synth version` command already checks for new Synth versions. Therefore, don't spawn
+    // another thread that will do virtually the same task.
+    let notify_handle = match args {
+        Args::Version => None,
+        _ => Some(thread::spawn(synth::version::notify_new_version_message)),
+    };
 
     #[cfg(feature = "telemetry")]
     synth::cli::telemetry::with_telemetry(
@@ -23,7 +28,9 @@ async fn main() -> Result<()> {
     #[cfg(not(feature = "telemetry"))]
     cli.run(args).await?;
 
-    print_notify(notify_handle);
+    if let Some(notify_handle) = notify_handle {
+        print_notify(notify_handle);
+    }
 
     Ok(())
 }

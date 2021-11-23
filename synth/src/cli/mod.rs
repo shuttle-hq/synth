@@ -20,7 +20,6 @@ use serde::Serialize;
 use std::cell::Cell;
 use std::convert::{TryFrom, TryInto};
 use std::path::PathBuf;
-use std::process::exit;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 use synth_core::Name;
@@ -110,8 +109,7 @@ impl Cli {
             Args::Telemetry(cmd) => self.telemetry(cmd),
             Args::Version => {
                 print_version_message();
-                // Exiting so we don't get the message twice
-                exit(0);
+                Ok(())
             }
         }
     }
