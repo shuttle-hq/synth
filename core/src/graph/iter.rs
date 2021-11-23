@@ -21,3 +21,49 @@ impl Generator for IterNode {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{Generator, GeneratorState, Graph, IterNode, Number, Value};
+    use rand::SeedableRng;
+
+    #[test]
+    fn generator() {
+        let iter = (1..2).into_iter().map(|i| Value::Number(i.into()));
+
+        let mut graph = Graph::Iter(IterNode {
+            iter: Box::new(iter),
+        });
+        let mut seed = rand::rngs::StdRng::seed_from_u64(5);
+
+        assert!(matches!(
+            graph.next(&mut seed),
+            GeneratorState::Complete(Ok(Value::Number(Number::I32(1))))
+        ));
+
+        assert!(matches!(
+            graph.next(&mut seed),
+            GeneratorState::Complete(Err(_))
+        ));
+    }
+
+    #[test]
+    fn generator_cycle() {
+        let iter = (1..2).into_iter().map(|i| Value::Number(i.into())).cycle();
+
+        let mut graph = Graph::Iter(IterNode {
+            iter: Box::new(iter),
+        });
+        let mut seed = rand::rngs::StdRng::seed_from_u64(5);
+
+        assert!(matches!(
+            graph.next(&mut seed),
+            GeneratorState::Complete(Ok(Value::Number(Number::I32(1))))
+        ));
+
+        assert!(matches!(
+            graph.next(&mut seed),
+            GeneratorState::Complete(Ok(Value::Number(Number::I32(1))))
+        ));
+    }
+}
