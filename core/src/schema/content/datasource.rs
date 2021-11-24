@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::Value;
+use crate::{DataSourceParams, Value};
 use std::convert::{TryFrom, TryInto};
 use std::path::PathBuf;
 use uriparse::URI;
@@ -19,11 +19,6 @@ impl Compile for DatasourceContent {
 
         Ok(Graph::Iter(IterNode { iter: iter }))
     }
-}
-
-pub struct DataSourceParams<'a> {
-    pub uri: URI<'a>,
-    pub schema: Option<String>, // PostgreSQL
 }
 
 impl TryFrom<DataSourceParams<'_>> for Box<dyn Iterator<Item = Value>> {
