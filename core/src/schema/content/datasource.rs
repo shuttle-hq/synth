@@ -1,69 +1,74 @@
 use super::prelude::*;
 use crate::{DataSourceParams, Value};
-use std::convert::{TryFrom, TryInto};
+use anyhow::Error;
 use std::path::PathBuf;
 use uriparse::URI;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct DatasourceContent {
     pub path: String,
+    #[serde(default)]
+    pub cycle: bool,
 }
 
 impl Compile for DatasourceContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut _compiler: C) -> Result<Graph> {
-        let iter = DataSourceParams {
+        let params = DataSourceParams {
             uri: URI::try_from(self.path.as_str())?,
             schema: None,
-        }
-        .try_into()?;
+        };
+        let iter = get_iter(params).map(|i| -> Box<dyn Iterator<Item = Value>> {
+            if !self.cycle {
+                Box::new(i)
+            } else {
+                Box::new(i.cycle())
+            }
+        })?;
 
         Ok(Graph::Iter(IterNode { iter: iter }))
     }
 }
 
-impl TryFrom<DataSourceParams<'_>> for Box<dyn Iterator<Item = Value>> {
-    type Error = anyhow::Error;
+fn get_iter(params: DataSourceParams) -> Result<impl Iterator<Item = Value> + Clone, Error> {
+    let scheme = params.uri.scheme().as_str().to_lowercase();
 
-    fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
-        let scheme = params.uri.scheme().as_str().to_lowercase();
+    let iter = match scheme.as_str() {
+        "json" => {
+            let path = PathBuf::from(params.uri.path().to_string());
+            let file = std::fs::File::open(&path).or_else(|e| {
+                Err(failed_crate!(
+                    target: Release,
+                    "failed to open file: {}: {}",
+                    path.display(),
+                    e
+                ))
+            })?;
+            let arr: Vec<Value> = serde_json::from_reader(file).or_else(|e| {
+                Err(failed_crate!(
+                    target: Release,
+                    "failed to read file: {}: {}",
+                    path.display(),
+                    e
+                ))
+            })?;
 
-        let iter = match scheme.as_str() {
-            "json" => {
-                let path = PathBuf::from(params.uri.path().to_string());
-                let file = std::fs::File::open(&path).or_else(|e| {
-                    Err(failed_crate!(
-                        target: Release,
-                        "failed to open file: {}: {}",
-                        path.display(),
-                        e
-                    ))
-                })?;
-                let arr: Vec<Value> = serde_json::from_reader(file).or_else(|e| {
-                    Err(failed_crate!(
-                        target: Release,
-                        "failed to read file: {}: {}",
-                        path.display(),
-                        e
-                    ))
-                })?;
+            arr.into_iter()
+        }
+        _ => {
+            return Err(anyhow!(
+                "Datasource path scheme not recognised. Was expecting 'json'."
+            ));
+        }
+    };
 
-                arr.into_iter()
-            }
-            _ => {
-                return Err(anyhow!(
-                    "Datasource path scheme not recognised. Was expecting 'json'."
-                ));
-            }
-        };
-
-        Ok(Box::new(iter))
-    }
+    Ok(iter)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Content, DatasourceContent};
+    use super::{Content, DatasourceContent, Generator, GeneratorState};
     use crate::compile::NamespaceCompiler;
+    use rand::SeedableRng;
     use std::path::PathBuf;
 
     #[test]
@@ -73,6 +78,7 @@ mod tests {
 
         let content = DatasourceContent {
             path: format!("json:{}", p.display()),
+            cycle: false,
         };
 
         let content = Content::Datasource(content);
@@ -81,10 +87,65 @@ mod tests {
     }
 
     #[test]
+    fn compile_not_cycle() {
+        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        p.push("src/schema/content/test.json");
+
+        let content = DatasourceContent {
+            path: format!("json:{}", p.display()),
+            cycle: false,
+        };
+
+        let content = Content::Datasource(content);
+        let compiler = NamespaceCompiler::new_flat(&content);
+        let mut graph = compiler.compile().unwrap();
+
+        let mut seed = rand::rngs::StdRng::seed_from_u64(5);
+
+        // test.json only has 6 items
+        for _ in 0..6 {
+            assert!(matches!(
+                graph.next(&mut seed),
+                GeneratorState::Complete(Ok(_))
+            ));
+        }
+        assert!(matches!(
+            graph.next(&mut seed),
+            GeneratorState::Complete(Err(_))
+        ));
+    }
+
+    #[test]
+    fn compile_cycle() {
+        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        p.push("src/schema/content/test.json");
+
+        let content = DatasourceContent {
+            path: format!("json:{}", p.display()),
+            cycle: true,
+        };
+
+        let content = Content::Datasource(content);
+        let compiler = NamespaceCompiler::new_flat(&content);
+        let mut graph = compiler.compile().unwrap();
+
+        let mut seed = rand::rngs::StdRng::seed_from_u64(5);
+
+        // test.json only has 6 items, but cycle is true
+        for _ in 0..60 {
+            assert!(matches!(
+                graph.next(&mut seed),
+                GeneratorState::Complete(Ok(_))
+            ));
+        }
+    }
+
+    #[test]
     #[should_panic(expected = "scheme not recognised")]
     fn compile_unsupported_scheme() {
         let content = DatasourceContent {
             path: "mysql:".to_string(),
+            cycle: false,
         };
 
         let content = Content::Datasource(content);
@@ -97,6 +158,7 @@ mod tests {
     fn compile_file_not_found() {
         let content = DatasourceContent {
             path: "json:missing.json".to_string(),
+            cycle: false,
         };
 
         let content = Content::Datasource(content);
@@ -112,6 +174,7 @@ mod tests {
 
         let content = DatasourceContent {
             path: format!("json:{}", p.display()),
+            cycle: false,
         };
 
         let content = Content::Datasource(content);
