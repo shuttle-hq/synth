@@ -25,7 +25,7 @@ impl Compile for DatasourceContent {
             }
         })?;
 
-        Ok(Graph::Iter(IterNode { iter: iter }))
+        Ok(Graph::Iter(IterNode { iter }))
     }
 }
 
@@ -35,21 +35,21 @@ fn get_iter(params: DataSourceParams) -> Result<impl Iterator<Item = Value> + Cl
     let iter = match scheme.as_str() {
         "json" => {
             let path = PathBuf::from(params.uri.path().to_string());
-            let file = std::fs::File::open(&path).or_else(|e| {
-                Err(failed_crate!(
+            let file = std::fs::File::open(&path).map_err(|e| {
+                failed_crate!(
                     target: Release,
                     "failed to open file: {}: {}",
                     path.display(),
                     e
-                ))
+                )
             })?;
-            let arr: Vec<Value> = serde_json::from_reader(file).or_else(|e| {
-                Err(failed_crate!(
+            let arr: Vec<Value> = serde_json::from_reader(file).map_err(|e| {
+                failed_crate!(
                     target: Release,
                     "failed to read file: {}: {}",
                     path.display(),
                     e
-                ))
+                )
             })?;
 
             arr.into_iter()
