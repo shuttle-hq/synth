@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "failed to open file: missing.json: No such file")]
+    #[should_panic(expected = "failed to open file: missing.json: ")]
     fn compile_file_not_found() {
         let content = DatasourceContent {
             path: "json:missing.json".to_string(),
