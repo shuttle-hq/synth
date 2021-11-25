@@ -76,6 +76,8 @@ mod tests {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         p.push("src/schema/content/test.json");
 
+        println!("p: {}", p.display());
+
         let content = DatasourceContent {
             path: format!("json:{}", p.display()),
             cycle: false,
