@@ -84,7 +84,7 @@ mod tests {
         println!("p: {}", p.display());
 
         let content = DatasourceContent {
-            path: format!("json:{}", p.display()),
+            path: format!("json:///{}", p.display()),
             cycle: false,
         };
 
