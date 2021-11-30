@@ -80,6 +80,8 @@ mod tests {
                 .collect::<PathBuf>(),
         );
 
+        println!("p: {}", p.display());
+
         let content = DatasourceContent {
             path: format!("json:{}", p.display()),
             cycle: false,
