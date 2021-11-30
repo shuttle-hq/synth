@@ -30,7 +30,6 @@ impl Compile for DatasourceContent {
 }
 
 fn get_iter(params: DataSourceParams) -> Result<impl Iterator<Item = Value> + Clone, Error> {
-    println!("uri: {}", params.uri);
     let scheme = params.uri.scheme().as_str().to_lowercase();
 
     let iter = match scheme.as_str() {
@@ -80,8 +79,6 @@ mod tests {
                 .iter()
                 .collect::<PathBuf>(),
         );
-
-        println!("p: {}", p.display());
 
         let content = DatasourceContent {
             path: format!(
