@@ -74,11 +74,7 @@ mod tests {
     #[test]
     fn compile() {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        p.push(
-            vec!["src", "schema", "content", "test.json"]
-                .iter()
-                .collect::<PathBuf>(),
-        );
+        p.push("src/schema/content/test.json");
 
         let content = DatasourceContent {
             path: format!(
@@ -96,11 +92,7 @@ mod tests {
     #[test]
     fn compile_not_cycle() {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        p.push(
-            vec!["src", "schema", "content", "test.json"]
-                .iter()
-                .collect::<PathBuf>(),
-        );
+        p.push("src/schema/content/test.json");
 
         let content = DatasourceContent {
             path: format!(
@@ -132,11 +124,7 @@ mod tests {
     #[test]
     fn compile_cycle() {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        p.push(
-            vec!["src", "schema", "content", "test.json"]
-                .iter()
-                .collect::<PathBuf>(),
-        );
+        p.push("src/schema/content/test.json");
 
         let content = DatasourceContent {
             path: format!(
@@ -191,11 +179,7 @@ mod tests {
     #[should_panic(expected = "failed to read file: ")]
     fn compile_not_array() {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        p.push(
-            vec!["src", "schema", "content", "invalid.json"]
-                .iter()
-                .collect::<PathBuf>(),
-        );
+        p.push("src/schema/content/invalid.json");
 
         let content = DatasourceContent {
             path: format!(
