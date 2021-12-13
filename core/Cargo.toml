@@ -6,7 +6,7 @@ authors = [
   "Christos Hadjiaslanis <christos@getsynth.com>",
   "Andre Bogus <andre@getsynth.com>"
 ]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 
 [dev-dependencies]
