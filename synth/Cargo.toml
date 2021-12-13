@@ -18,12 +18,6 @@ harness = false
 default = []
 telemetry = ["posthog-rs", "uuid", "backtrace", "console"]
 
-[target.x86_64-pc-windows-msvc]
-rustflags = ["-C", "target-feature=+crt-static"]
-
-[target.i686-pc-windows-msvc]
-rustflags = ["-C", "target-feature=+crt-static"]
-
 [build-dependencies]
 git2 = "0.13.20"
 
