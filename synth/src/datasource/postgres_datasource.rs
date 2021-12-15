@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, ValueWrapper,
+    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -113,6 +113,30 @@ impl PostgresDataSource {
     }
 }
 
+impl<'q> SqlxDataSource<'q> for PostgresDataSource {
+    type DB = Postgres;
+
+    fn get_table_names_query(&self) -> &'q str {
+        r"SELECT table_name
+        FROM information_schema.tables
+        WHERE table_catalog = current_catalog
+        AND table_schema = $1
+        AND table_type = 'BASE TABLE'"
+    }
+
+    fn get_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.single_thread_pool)
+    }
+
+    fn query(
+        &self,
+        query: &'q str,
+    ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
+    {
+        sqlx::query(query).bind(self.schema.clone())
+    }
+}
+
 #[async_trait]
 impl RelationalDataSource for PostgresDataSource {
     type QueryResult = PgQueryResult;
@@ -132,24 +156,6 @@ impl RelationalDataSource for PostgresDataSource {
         let result = query.execute(&self.pool).await?;
 
         Ok(result)
-    }
-
-    async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query = r"SELECT table_name
-        FROM information_schema.tables
-        WHERE table_catalog = current_catalog
-        AND table_schema = $1
-        AND table_type = 'BASE TABLE'";
-
-        let tables = sqlx::query(query)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .iter()
-            .map(|row| row.try_get(0).map_err(|e| anyhow!("{:?}", e)))
-            .collect();
-
-        tables
     }
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {

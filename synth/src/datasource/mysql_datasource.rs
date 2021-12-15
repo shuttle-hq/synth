@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, ValueWrapper,
+    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -49,6 +49,27 @@ impl DataSource for MySqlDataSource {
     }
 }
 
+impl<'q> SqlxDataSource<'q> for MySqlDataSource {
+    type DB = MySql;
+
+    fn get_table_names_query(&self) -> &'q str {
+        r"SELECT table_name FROM information_schema.tables
+            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'"
+    }
+
+    fn get_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.pool)
+    }
+
+    fn query(
+        &self,
+        query: &'q str,
+    ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
+    {
+        sqlx::query(query)
+    }
+}
+
 #[async_trait]
 impl RelationalDataSource for MySqlDataSource {
     type QueryResult = MySqlQueryResult;
@@ -68,20 +89,6 @@ impl RelationalDataSource for MySqlDataSource {
         let result = query.execute(&self.pool).await?;
 
         Ok(result)
-    }
-
-    async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query = r"SELECT table_name FROM information_schema.tables
-            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'";
-
-        let table_names: Vec<String> = sqlx::query(query)
-            .fetch_all(&self.pool)
-            .await?
-            .iter()
-            .map(|row| row.get::<String, usize>(0))
-            .collect();
-
-        Ok(table_names)
     }
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {

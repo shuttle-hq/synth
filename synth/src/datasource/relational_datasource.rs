@@ -3,6 +3,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
+use sqlx::{database::HasArguments, query::Query, Database, Pool};
 use synth_core::{Content, Value};
 use synth_gen::value::Number;
 
@@ -38,6 +39,22 @@ pub struct ForeignKey {
 /// Wrapper around `Value` since we can't impl `TryFrom` on a struct in a non-owned crate
 #[derive(Debug)]
 pub struct ValueWrapper(pub(crate) Value);
+
+pub trait SqlxDataSource<'q>: DataSource {
+    type DB: Database + HasArguments<'q>;
+
+    /// Gets a pool to execute queries with
+    fn get_pool(&self) -> Pool<Self::DB>;
+
+    /// Prepare a single query with data source specifics
+    fn query(
+        &self,
+        query: &'q str,
+    ) -> Query<'q, Self::DB, <Self::DB as HasArguments<'q>>::Arguments>;
+
+    /// Get query for table names
+    fn get_table_names_query(&self) -> &'q str;
+}
 
 /// All relational databases should define this trait and implement database specific queries in
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
@@ -153,8 +170,6 @@ pub trait RelationalDataSource: DataSource {
         query: String,
         query_params: Vec<Value>,
     ) -> Result<Self::QueryResult>;
-
-    async fn get_table_names(&self) -> Result<Vec<String>>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
 

@@ -1,9 +1,10 @@
-use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource};
+use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource, SqlxDataSource};
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
 use async_std::task;
 use log::debug;
 use serde_json::Value;
+use sqlx::{database::HasArguments, Database, Executor, IntoArguments, Row};
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
@@ -21,10 +22,20 @@ pub(crate) struct Collection {
 /// Wrapper around `FieldContent` since we cant' impl `TryFrom` on a struct in a non-owned crate
 struct FieldContentWrapper(Content);
 
-pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
-    datasource: &T,
-) -> Result<Namespace> {
-    let table_names = task::block_on(datasource.get_table_names())
+pub(crate) fn build_namespace_import<
+    'q,
+    T: DataSource + RelationalDataSource + SqlxDataSource<'q>,
+>(
+    datasource: &'q T,
+) -> Result<Namespace>
+where
+    <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Decode<'d, T::DB>,
+    usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
+{
+    let table_names = task::block_on(get_table_names(datasource))
         .with_context(|| "Failed to get table names".to_string())?;
 
     let mut namespace = Namespace::default();
@@ -42,6 +53,27 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
     populate_namespace_values(&mut namespace, &table_names, datasource)?;
 
     Ok(namespace)
+}
+
+async fn get_table_names<'q, T: SqlxDataSource<'q>>(datasource: &'q T) -> Result<Vec<String>>
+where
+    <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Decode<'d, T::DB>,
+    usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
+{
+    let query = datasource.get_table_names_query();
+    let pool = datasource.get_pool();
+
+    let rows = datasource.query(query).fetch_all(&pool).await?;
+
+    let table_names = rows
+        .into_iter()
+        .map(|row| row.get::<String, usize>(0))
+        .collect();
+
+    Ok(table_names)
 }
 
 fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
