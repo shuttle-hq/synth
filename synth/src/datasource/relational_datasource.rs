@@ -54,6 +54,9 @@ pub trait SqlxDataSource<'q>: DataSource {
 
     /// Get query for table names
     fn get_table_names_query(&self) -> &'q str;
+
+    /// Get query for primary keys
+    fn get_primary_keys_query(&self) -> &'q str;
 }
 
 /// All relational databases should define this trait and implement database specific queries in
@@ -172,8 +175,6 @@ pub trait RelationalDataSource: DataSource {
     ) -> Result<Self::QueryResult>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
-
-    async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>>;
 
     async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>>;
 

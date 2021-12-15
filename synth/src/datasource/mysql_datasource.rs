@@ -52,11 +52,6 @@ impl DataSource for MySqlDataSource {
 impl<'q> SqlxDataSource<'q> for MySqlDataSource {
     type DB = MySql;
 
-    fn get_table_names_query(&self) -> &'q str {
-        r"SELECT table_name FROM information_schema.tables
-            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'"
-    }
-
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.pool)
     }
@@ -67,6 +62,17 @@ impl<'q> SqlxDataSource<'q> for MySqlDataSource {
     ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
     {
         sqlx::query(query)
+    }
+
+    fn get_table_names_query(&self) -> &'q str {
+        r"SELECT table_name FROM information_schema.tables
+            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'"
+    }
+
+    fn get_primary_keys_query(&self) -> &'q str {
+        r"SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'"
     }
 }
 
@@ -103,20 +109,6 @@ impl RelationalDataSource for MySqlDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        let query: &str = r"SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(PrimaryKey::try_from)
             .collect()
     }
 

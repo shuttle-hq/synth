@@ -1,4 +1,6 @@
-use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource, SqlxDataSource};
+use crate::datasource::relational_datasource::{
+    ColumnInfo, PrimaryKey, RelationalDataSource, SqlxDataSource,
+};
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
 use async_std::task;
@@ -32,8 +34,9 @@ where
     <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
     for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
-    for<'d> String: sqlx::Decode<'d, T::DB>,
+    for<'d> String: sqlx::Decode<'d, T::DB> + sqlx::Encode<'d, T::DB>,
     usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
+    PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let table_names = task::block_on(get_table_names(datasource))
         .with_context(|| "Failed to get table names".to_string())?;
@@ -95,13 +98,20 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
     Ok(())
 }
 
-fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
+fn populate_namespace_primary_keys<'q, T: DataSource + RelationalDataSource + SqlxDataSource<'q>>(
     namespace: &mut Namespace,
     table_names: &[String],
-    datasource: &T,
-) -> Result<()> {
+    datasource: &'q T,
+) -> Result<()>
+where
+    <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
     for table_name in table_names.iter() {
-        let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
+        let primary_keys = task::block_on(get_primary_keys(datasource, table_name.to_string()))?;
 
         if primary_keys.len() > 1 {
             bail!(
@@ -134,6 +144,30 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
     }
 
     Ok(())
+}
+
+async fn get_primary_keys<'q, T: SqlxDataSource<'q>>(
+    datasource: &'q T,
+    table_name: String,
+) -> Result<Vec<PrimaryKey>>
+where
+    <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let query = datasource.get_primary_keys_query();
+    let pool = datasource.get_pool();
+
+    datasource
+        .query(query)
+        .bind(table_name)
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(PrimaryKey::try_from)
+        .collect()
 }
 
 fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(

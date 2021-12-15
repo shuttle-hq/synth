@@ -116,14 +116,6 @@ impl PostgresDataSource {
 impl<'q> SqlxDataSource<'q> for PostgresDataSource {
     type DB = Postgres;
 
-    fn get_table_names_query(&self) -> &'q str {
-        r"SELECT table_name
-        FROM information_schema.tables
-        WHERE table_catalog = current_catalog
-        AND table_schema = $1
-        AND table_type = 'BASE TABLE'"
-    }
-
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.single_thread_pool)
     }
@@ -134,6 +126,21 @@ impl<'q> SqlxDataSource<'q> for PostgresDataSource {
     ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
     {
         sqlx::query(query).bind(self.schema.clone())
+    }
+
+    fn get_table_names_query(&self) -> &'q str {
+        r"SELECT table_name
+        FROM information_schema.tables
+        WHERE table_catalog = current_catalog
+        AND table_schema = $1
+        AND table_type = 'BASE TABLE'"
+    }
+
+    fn get_primary_keys_query(&self) -> &'q str {
+        r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+        FROM pg_index i
+        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+        WHERE  i.indrelid = cast($2 as regclass) AND i.indisprimary"
     }
 }
 
@@ -173,21 +180,6 @@ impl RelationalDataSource for PostgresDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        let query = r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
-        FROM pg_index i
-        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-        WHERE  i.indrelid = cast($1 as regclass) AND i.indisprimary";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(PrimaryKey::try_from)
             .collect()
     }
 
