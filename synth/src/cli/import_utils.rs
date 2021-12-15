@@ -31,6 +31,7 @@ pub(crate) fn build_namespace_import<
     datasource: &'q T,
 ) -> Result<Namespace>
 where
+    T: Sync,
     <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
     for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
@@ -212,11 +213,14 @@ where
         .collect()
 }
 
-fn populate_namespace_values<T: DataSource + RelationalDataSource>(
+fn populate_namespace_values<'q, T: DataSource + RelationalDataSource + SqlxDataSource<'q>>(
     namespace: &mut Namespace,
     table_names: &[String],
-    datasource: &T,
-) -> Result<()> {
+    datasource: &'q T,
+) -> Result<()>
+where
+    T: Sync,
+{
     task::block_on(datasource.set_seed())?;
 
     for table_name in table_names {

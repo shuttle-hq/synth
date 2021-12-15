@@ -40,6 +40,7 @@ pub struct ForeignKey {
 #[derive(Debug)]
 pub struct ValueWrapper(pub(crate) Value);
 
+#[async_trait]
 pub trait SqlxDataSource<'q>: DataSource {
     type DB: Database + HasArguments<'q>;
 
@@ -60,6 +61,11 @@ pub trait SqlxDataSource<'q>: DataSource {
 
     /// Get query for foreign keys
     fn get_foreign_keys_query(&self) -> &'q str;
+
+    async fn set_seed(&self) -> Result<()> {
+        // Default for sources that don't need to set a seed
+        Ok(())
+    }
 }
 
 /// All relational databases should define this trait and implement database specific queries in
@@ -178,8 +184,6 @@ pub trait RelationalDataSource: DataSource {
     ) -> Result<Self::QueryResult>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
-
-    async fn set_seed(&self) -> Result<()>;
 
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 

@@ -113,6 +113,7 @@ impl PostgresDataSource {
     }
 }
 
+#[async_trait]
 impl<'q> SqlxDataSource<'q> for PostgresDataSource {
     type DB = Postgres;
 
@@ -155,6 +156,15 @@ impl<'q> SqlxDataSource<'q> for PostgresDataSource {
             and tc.table_schema = $1
             and tc.table_catalog = current_catalog"
     }
+
+    /// Must use the singled threaded pool when setting this in conjunction with random, called by
+    /// [get_deterministic_samples]. Otherwise, expect endless facepalms (-_Q)
+    async fn set_seed(&self) -> Result<()> {
+        sqlx::query("SELECT setseed(0.5)")
+            .execute(&self.single_thread_pool)
+            .await?;
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -194,15 +204,6 @@ impl RelationalDataSource for PostgresDataSource {
             .into_iter()
             .map(ColumnInfo::try_from)
             .collect()
-    }
-
-    /// Must use the singled threaded pool when setting this in conjunction with random, called by
-    /// [get_deterministic_samples]. Otherwise, expect endless facepalms (-_Q)
-    async fn set_seed(&self) -> Result<()> {
-        sqlx::query("SELECT setseed(0.5)")
-            .execute(&self.single_thread_pool)
-            .await?;
-        Ok(())
     }
 
     /// Must use the singled threaded pool when setting this in conjunction with setseed, called by

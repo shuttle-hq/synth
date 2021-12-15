@@ -118,11 +118,6 @@ impl RelationalDataSource for MySqlDataSource {
             .collect()
     }
 
-    async fn set_seed(&self) -> Result<()> {
-        // MySql doesn't set seed in a separate query
-        Ok(())
-    }
-
     async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
         let query = format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
 
