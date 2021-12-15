@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, PrimaryKey, RelationalDataSource, SqlxDataSource,
+    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, SqlxDataSource,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -37,6 +37,7 @@ where
     for<'d> String: sqlx::Decode<'d, T::DB> + sqlx::Encode<'d, T::DB>,
     usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
     PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let table_names = task::block_on(get_table_names(datasource))
         .with_context(|| "Failed to get table names".to_string())?;
@@ -170,11 +171,16 @@ where
         .collect()
 }
 
-fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
+fn populate_namespace_foreign_keys<'q, T: DataSource + RelationalDataSource + SqlxDataSource<'q>>(
     namespace: &mut Namespace,
-    datasource: &T,
-) -> Result<()> {
-    let foreign_keys = task::block_on(datasource.get_foreign_keys())?;
+    datasource: &'q T,
+) -> Result<()>
+where
+    <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let foreign_keys = task::block_on(get_foreign_keys(datasource))?;
 
     debug!("{} foreign keys found.", foreign_keys.len());
 
@@ -186,6 +192,24 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
     }
 
     Ok(())
+}
+
+async fn get_foreign_keys<'q, T: SqlxDataSource<'q>>(datasource: &'q T) -> Result<Vec<ForeignKey>>
+where
+    <T::DB as HasArguments<'q>>::Arguments: IntoArguments<'q, T::DB>,
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let query = datasource.get_foreign_keys_query();
+    let pool = datasource.get_pool();
+
+    datasource
+        .query(query)
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(ForeignKey::try_from)
+        .collect()
 }
 
 fn populate_namespace_values<T: DataSource + RelationalDataSource>(

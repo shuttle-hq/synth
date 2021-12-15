@@ -74,6 +74,12 @@ impl<'q> SqlxDataSource<'q> for MySqlDataSource {
             FROM information_schema.columns
             WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'"
     }
+
+    fn get_foreign_keys_query(&self) -> &'q str {
+        r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
+            FROM information_schema.key_column_usage
+            WHERE referenced_table_schema = DATABASE()"
+    }
 }
 
 #[async_trait]
@@ -109,19 +115,6 @@ impl RelationalDataSource for MySqlDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str = r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
-            FROM information_schema.key_column_usage
-            WHERE referenced_table_schema = DATABASE()";
-
-        sqlx::query(query)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(ForeignKey::try_from)
             .collect()
     }
 

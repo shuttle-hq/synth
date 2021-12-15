@@ -142,6 +142,19 @@ impl<'q> SqlxDataSource<'q> for PostgresDataSource {
         JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
         WHERE  i.indrelid = cast($2 as regclass) AND i.indisprimary"
     }
+
+    fn get_foreign_keys_query(&self) -> &'q str {
+        r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name,
+            ccu.column_name AS foreign_column_name
+            FROM information_schema.table_constraints AS tc
+            JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+            JOIN information_schema.constraint_column_usage AS ccu
+            ON ccu.constraint_name = tc.constraint_name
+            WHERE constraint_type = 'FOREIGN KEY'
+            and tc.table_schema = $1
+            and tc.table_catalog = current_catalog"
+    }
 }
 
 #[async_trait]
@@ -180,27 +193,6 @@ impl RelationalDataSource for PostgresDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str = r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name,
-            ccu.column_name AS foreign_column_name
-            FROM information_schema.table_constraints AS tc
-            JOIN information_schema.key_column_usage AS kcu
-            ON tc.constraint_name = kcu.constraint_name
-            JOIN information_schema.constraint_column_usage AS ccu
-            ON ccu.constraint_name = tc.constraint_name
-            WHERE constraint_type = 'FOREIGN KEY'
-            and tc.table_schema = $1
-            and tc.table_catalog = current_catalog";
-
-        sqlx::query(query)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ForeignKey::try_from)
             .collect()
     }
 
