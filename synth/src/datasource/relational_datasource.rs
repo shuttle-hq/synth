@@ -3,7 +3,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
-use sqlx::{database::HasArguments, query::Query, Database, Pool};
+use sqlx::{query::Query, Arguments, Database, IntoArguments, Pool};
 use synth_core::{Content, Value};
 use synth_gen::value::Number;
 
@@ -41,31 +41,32 @@ pub struct ForeignKey {
 pub struct ValueWrapper(pub(crate) Value);
 
 #[async_trait]
-pub trait SqlxDataSource<'q>: DataSource {
-    type DB: Database + HasArguments<'q>;
+pub trait SqlxDataSource: DataSource {
+    type DB: Database<Arguments = Self::Arguments>;
+    type Arguments: for<'q> Arguments<'q, Database = Self::DB> + for<'q> IntoArguments<'q, Self::DB>;
 
     /// Gets a pool to execute queries with
     fn get_pool(&self) -> Pool<Self::DB>;
 
     /// Prepare a single query with data source specifics
-    fn query(
-        &self,
-        query: &'q str,
-    ) -> Query<'q, Self::DB, <Self::DB as HasArguments<'q>>::Arguments>;
+    fn query<'q>(&self, query: &'q str) -> Query<'q, Self::DB, Self::Arguments>;
 
     /// Get query for table names
-    fn get_table_names_query(&self) -> &'q str;
+    fn get_table_names_query(&self) -> &str;
 
     /// Get query for primary keys
-    fn get_primary_keys_query(&self) -> &'q str;
+    fn get_primary_keys_query(&self) -> &str;
 
     /// Get query for foreign keys
-    fn get_foreign_keys_query(&self) -> &'q str;
+    fn get_foreign_keys_query(&self) -> &str;
 
     async fn set_seed(&self) -> Result<()> {
         // Default for sources that don't need to set a seed
         Ok(())
     }
+
+    /// Get query for deterministic values
+    fn get_deterministic_samples_query(&self, table_name: String) -> String;
 }
 
 /// All relational databases should define this trait and implement database specific queries in
@@ -184,8 +185,6 @@ pub trait RelationalDataSource: DataSource {
     ) -> Result<Self::QueryResult>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
-
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 

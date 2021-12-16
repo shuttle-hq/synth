@@ -114,14 +114,15 @@ impl PostgresDataSource {
 }
 
 #[async_trait]
-impl<'q> SqlxDataSource<'q> for PostgresDataSource {
+impl SqlxDataSource for PostgresDataSource {
     type DB = Postgres;
+    type Arguments = sqlx::postgres::PgArguments;
 
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.single_thread_pool)
     }
 
-    fn query(
+    fn query<'q>(
         &self,
         query: &'q str,
     ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
@@ -129,7 +130,7 @@ impl<'q> SqlxDataSource<'q> for PostgresDataSource {
         sqlx::query(query).bind(self.schema.clone())
     }
 
-    fn get_table_names_query(&self) -> &'q str {
+    fn get_table_names_query(&self) -> &str {
         r"SELECT table_name
         FROM information_schema.tables
         WHERE table_catalog = current_catalog
@@ -137,14 +138,14 @@ impl<'q> SqlxDataSource<'q> for PostgresDataSource {
         AND table_type = 'BASE TABLE'"
     }
 
-    fn get_primary_keys_query(&self) -> &'q str {
+    fn get_primary_keys_query(&self) -> &str {
         r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
         FROM pg_index i
         JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
         WHERE  i.indrelid = cast($2 as regclass) AND i.indisprimary"
     }
 
-    fn get_foreign_keys_query(&self) -> &'q str {
+    fn get_foreign_keys_query(&self) -> &str {
         r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name,
             ccu.column_name AS foreign_column_name
             FROM information_schema.table_constraints AS tc
@@ -164,6 +165,10 @@ impl<'q> SqlxDataSource<'q> for PostgresDataSource {
             .execute(&self.single_thread_pool)
             .await?;
         Ok(())
+    }
+
+    fn get_deterministic_samples_query(&self, table_name: String) -> String {
+        format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name)
     }
 }
 
@@ -203,26 +208,6 @@ impl RelationalDataSource for PostgresDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    /// Must use the singled threaded pool when setting this in conjunction with setseed, called by
-    /// [set_seed]. Otherwise, expect big regrets :(
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
-        let query: &str = &format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name);
-
-        sqlx::query(query)
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ValueWrapper::try_from)
-            .map(|v| match v {
-                Ok(wrapper) => Ok(wrapper.0),
-                Err(e) => bail!(
-                    "Failed to convert to value wrapper from query results: {:?}",
-                    e
-                ),
-            })
             .collect()
     }
 

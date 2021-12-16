@@ -49,14 +49,15 @@ impl DataSource for MySqlDataSource {
     }
 }
 
-impl<'q> SqlxDataSource<'q> for MySqlDataSource {
+impl SqlxDataSource for MySqlDataSource {
     type DB = MySql;
+    type Arguments = sqlx::mysql::MySqlArguments;
 
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.pool)
     }
 
-    fn query(
+    fn query<'q>(
         &self,
         query: &'q str,
     ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
@@ -64,21 +65,25 @@ impl<'q> SqlxDataSource<'q> for MySqlDataSource {
         sqlx::query(query)
     }
 
-    fn get_table_names_query(&self) -> &'q str {
+    fn get_table_names_query(&self) -> &str {
         r"SELECT table_name FROM information_schema.tables
             WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'"
     }
 
-    fn get_primary_keys_query(&self) -> &'q str {
+    fn get_primary_keys_query(&self) -> &str {
         r"SELECT column_name, data_type
             FROM information_schema.columns
             WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'"
     }
 
-    fn get_foreign_keys_query(&self) -> &'q str {
+    fn get_foreign_keys_query(&self) -> &str {
         r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
             FROM information_schema.key_column_usage
             WHERE referenced_table_schema = DATABASE()"
+    }
+
+    fn get_deterministic_samples_query(&self, table_name: String) -> String {
+        format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name)
     }
 }
 
@@ -115,24 +120,6 @@ impl RelationalDataSource for MySqlDataSource {
             .await?
             .into_iter()
             .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
-        let query = format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
-
-        sqlx::query(&query)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(ValueWrapper::try_from)
-            .map(|v| match v {
-                Ok(wrapper) => Ok(wrapper.0),
-                Err(e) => bail!(
-                    "Failed to convert to value wrapper from query results: {:?}",
-                    e
-                ),
-            })
             .collect()
     }
 
