@@ -4,7 +4,7 @@ use rand::SeedableRng;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
-use synth_core::{Graph, Name, Namespace, Value};
+use synth_core::{Graph, Namespace, Value};
 use synth_gen::prelude::*;
 
 pub(crate) struct Sampler {
@@ -14,7 +14,7 @@ pub(crate) struct Sampler {
 #[derive(Clone)]
 pub(crate) enum SamplerOutput {
     Namespace(Vec<(String, Vec<Value>)>),
-    Collection(Name, Vec<Value>),
+    Collection(String, Vec<Value>),
 }
 
 impl SamplerOutput {
@@ -44,7 +44,7 @@ fn sampler_progress_bar(target: u64) -> ProgressBar {
 impl Sampler {
     pub(crate) fn sample_seeded(
         self,
-        collection_name: Option<Name>,
+        collection_name: Option<String>,
         target: usize,
         seed: u64,
     ) -> Result<SamplerOutput> {
@@ -69,7 +69,7 @@ enum SampleStrategy {
 }
 
 impl SampleStrategy {
-    fn new(collection_name: Option<Name>, target: usize) -> Self {
+    fn new(collection_name: Option<String>, target: usize) -> Self {
         match collection_name {
             None => SampleStrategy::Namespace(NamespaceSampleStrategy { target }),
             Some(name) => SampleStrategy::Collection(CollectionSampleStrategy { name, target }),
@@ -141,7 +141,7 @@ impl NamespaceSampleStrategy {
 }
 
 struct CollectionSampleStrategy {
-    name: Name,
+    name: String,
     target: usize,
 }
 
@@ -156,13 +156,12 @@ impl CollectionSampleStrategy {
         while generated < self.target {
             let round_start = generated;
             let next = model.complete(&mut rng)?;
-            let collection_value =
-                as_object(next)?.remove(self.name.as_ref()).ok_or_else(|| {
-                    anyhow!(
-                        "generated namespace does not have a collection '{}'",
-                        self.name
-                    )
-                })?;
+            let collection_value = as_object(next)?.remove(&self.name).ok_or_else(|| {
+                anyhow!(
+                    "generated namespace does not have a collection '{}'",
+                    self.name
+                )
+            })?;
             match collection_value {
                 Value::Array(vec) => {
                     generated += vec.len();

@@ -94,7 +94,7 @@ pub use error::Error;
 
 #[macro_use]
 pub mod schema;
-pub use schema::{Content, Name, Namespace};
+pub use schema::{Content, Namespace};
 
 pub mod graph;
 pub use graph::{Graph, Value};

@@ -1,5 +1,5 @@
 use super::inference::MergeStrategy;
-use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
+use super::{suggest_closest, ArrayContent, Content, FieldRef, Find};
 use crate::compile::{Compile, Compiler};
 use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
@@ -16,27 +16,27 @@ type JsonObject = Map<String, Value>;
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Namespace {
     #[serde(flatten)]
-    pub collections: BTreeMap<Name, Content>,
+    pub collections: BTreeMap<String, Content>,
 }
 
-impl AsRef<BTreeMap<Name, Content>> for Namespace {
-    fn as_ref(&self) -> &BTreeMap<Name, Content> {
+impl AsRef<BTreeMap<String, Content>> for Namespace {
+    fn as_ref(&self) -> &BTreeMap<String, Content> {
         &self.collections
     }
 }
 
 impl IntoIterator for Namespace {
-    type Item = (Name, Content);
+    type Item = (String, Content);
 
-    type IntoIter = std::collections::btree_map::IntoIter<Name, Content>;
+    type IntoIter = std::collections::btree_map::IntoIter<String, Content>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.collections.into_iter()
     }
 }
 
-impl FromIterator<(Name, Content)> for Namespace {
-    fn from_iter<T: IntoIterator<Item = (Name, Content)>>(iter: T) -> Self {
+impl FromIterator<(String, Content)> for Namespace {
+    fn from_iter<T: IntoIterator<Item = (String, Content)>>(iter: T) -> Self {
         Self {
             collections: iter.into_iter().collect(),
         }
@@ -49,28 +49,28 @@ impl Namespace {
     }
 
     #[cfg(test)]
-    pub fn accepts(&self, name: &Name, value: &Value) -> Result<()> {
+    pub fn accepts(&self, name: &str, value: &Value) -> Result<()> {
         self.get_collection(name)?.accepts(value)
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = (&Name, &Content)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Content)> {
         self.collections.iter()
     }
 
     #[inline]
-    pub fn keys(&self) -> impl Iterator<Item = &Name> {
+    pub fn keys(&self) -> impl Iterator<Item = &String> {
         self.collections.keys()
     }
 
-    pub fn default_try_update(&mut self, name: &Name, value: &Value) -> Result<()> {
+    pub fn default_try_update(&mut self, name: &str, value: &Value) -> Result<()> {
         self.try_update(OptionalMergeStrategy, name, value)
     }
 
     pub fn try_update<M: MergeStrategy<Content, Value>>(
         &mut self,
         strategy: M,
-        name: &Name,
+        name: &str,
         value: &Value,
     ) -> Result<()> {
         let collection = self.get_collection_mut(name)?;
@@ -78,11 +78,11 @@ impl Namespace {
         Ok(())
     }
 
-    pub fn collection_exists(&self, name: &Name) -> bool {
+    pub fn collection_exists(&self, name: &str) -> bool {
         self.collections.contains_key(name)
     }
 
-    pub fn put_collection(&mut self, name: &Name, content: Content) -> Result<()> {
+    pub fn put_collection(&mut self, name: String, content: Content) -> Result<()> {
         if self.collections.insert(name.clone(), content).is_some() {
             Err(failed!(
                 target: Release,
@@ -95,19 +95,20 @@ impl Namespace {
     }
 
     pub fn collection(value: &Value) -> Content {
+        // TODO: this function is confusing?! Rename and move?
         Content::Array(ArrayContent {
             length: Box::new(Content::from(&Value::from(1))),
             content: Box::new(value.into()),
         })
     }
 
-    pub fn create_collection(&mut self, name: &Name, value: &Value) -> Result<()> {
+    pub fn create_collection(&mut self, name: String, value: &Value) -> Result<()> {
         let as_content = Self::collection(value);
         self.put_collection(name, as_content)?;
         Ok(())
     }
 
-    pub fn delete_collection(&mut self, name: &Name) -> Result<()> {
+    pub fn delete_collection(&mut self, name: &str) -> Result<()> {
         if self.collections.remove(name).is_none() {
             return Err(failed!(
                 target: Release,
@@ -126,7 +127,7 @@ impl Namespace {
     // May remove this in due course. Or add an only visible for testing flag
     // or something like that.
     #[allow(dead_code)]
-    pub fn export_schema(&self, name: &Name) -> Result<Content> {
+    pub fn export_schema(&self, name: &str) -> Result<Content> {
         let schema = self.get_collection(name)?;
         Ok(schema.clone())
     }
@@ -145,8 +146,8 @@ impl Namespace {
             .with_context(|| format!("in a collection: '{}'", collection))
     }
 
-    pub fn get_collection_mut(&mut self, name: &Name) -> Result<&mut Content> {
-        let suggest = suggest_closest(self.collections.keys(), name.as_ref()).unwrap_or_default();
+    pub fn get_collection_mut(&mut self, name: &str) -> Result<&mut Content> {
+        let suggest = suggest_closest(self.collections.keys(), name).unwrap_or_default();
         if let Some(collection) = self.collections.get_mut(name) {
             Ok(collection)
         } else {
@@ -154,8 +155,8 @@ impl Namespace {
         }
     }
 
-    pub fn get_collection(&self, name: &Name) -> Result<&Content> {
-        let suggest = suggest_closest(self.collections.keys(), name.as_ref()).unwrap_or_default();
+    pub fn get_collection(&self, name: &str) -> Result<&Content> {
+        let suggest = suggest_closest(self.collections.keys(), name).unwrap_or_default();
         if let Some(collection) = self.collections.get(name) {
             Ok(collection)
         } else {

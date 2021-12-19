@@ -13,7 +13,7 @@ use crate::cli::db_utils::DataSourceParams;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
-use synth_core::{Name, Namespace, Value};
+use synth_core::{Namespace, Value};
 
 use super::collection_field_name_from_uri_query;
 
@@ -24,7 +24,7 @@ pub(crate) trait ExportStrategy {
 pub struct ExportParams {
     pub namespace: Namespace,
     /// The name of the single collection to generate from if one is specified (via --collection).
-    pub collection_name: Option<Name>,
+    pub collection_name: Option<String>,
     pub target: usize,
     pub seed: u64,
     pub ns_path: PathBuf,
