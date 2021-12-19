@@ -57,13 +57,13 @@ impl Namespace {
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = (&String, &Content)> {
-        self.collections.iter()
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &Content)> {
+        self.collections.iter().map(|(k, v)| (k.as_str(), v))
     }
 
     #[inline]
-    pub fn keys(&self) -> impl Iterator<Item = &String> {
-        self.collections.keys()
+    pub fn keys(&self) -> impl Iterator<Item = &str> {
+        self.collections.keys().map(String::as_str)
     }
 
     pub fn default_try_update(&mut self, name: &str, value: &Value) -> Result<()> {
@@ -169,8 +169,8 @@ impl Compile for Namespace {
             .iter()
             .map(|(name, content)| {
                 compiler
-                    .build(name.as_ref(), content)
-                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph, false))
+                    .build(name, content)
+                    .map(|graph| KeyValueOrNothing::always(name, graph, false))
             })
             .collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
