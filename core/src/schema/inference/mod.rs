@@ -408,7 +408,7 @@ pub mod tests {
 
         let collection_name = "users".to_string();
         let mut ns = Namespace::default();
-        ns.create_collection(collection_name.clone(), &user_no_last_name)
+        ns.put_collection_from_json(collection_name.clone(), &user_no_last_name)
             .unwrap();
         assert!(ns
             .accepts(&collection_name, &user_no_last_name_as_array)
@@ -452,7 +452,7 @@ pub mod tests {
 
         let collection_name = "users".to_string();
         let mut ns = Namespace::default();
-        ns.create_collection(collection_name.clone(), &user_no_last_name)
+        ns.put_collection_from_json(collection_name.clone(), &user_no_last_name)
             .unwrap();
         ns.try_update(
             OptionalMergeStrategy,
@@ -505,7 +505,7 @@ pub mod tests {
 
         let collection_name = "users".to_string();
         let mut ns = Namespace::default();
-        ns.create_collection(collection_name.clone(), &user_no_last_name)
+        ns.put_collection_from_json(collection_name.clone(), &user_no_last_name)
             .unwrap();
         ns.try_update(
             OptionalMergeStrategy,

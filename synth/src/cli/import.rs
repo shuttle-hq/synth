@@ -23,8 +23,7 @@ pub trait ImportStrategy {
     /// returned namespace the correct collection based on the `name` parameter.
     fn import_collection(&self, name: &str) -> Result<Content> {
         self.import()?
-            .collections
-            .remove(name)
+            .remove_collection(name)
             .ok_or_else(|| anyhow!("Could not find collection '{}'.", name))
     }
 }

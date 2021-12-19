@@ -3,12 +3,14 @@ use super::{suggest_closest, ArrayContent, Content, FieldRef, Find};
 use crate::compile::{Compile, Compiler};
 use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
-use serde_json::{value::Value, Map};
+
 use std::collections::BTreeMap;
 use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
+
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use serde_json::{value::Value, Map};
 
 #[allow(dead_code)]
 type JsonObject = Map<String, Value>;
@@ -16,7 +18,7 @@ type JsonObject = Map<String, Value>;
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Namespace {
     #[serde(flatten)]
-    pub collections: BTreeMap<String, Content>,
+    collections: BTreeMap<String, Content>,
 }
 
 impl AsRef<BTreeMap<String, Content>> for Namespace {
@@ -35,6 +37,7 @@ impl IntoIterator for Namespace {
     }
 }
 
+// TODO: Could allow entering invalid collection names.
 impl FromIterator<(String, Content)> for Namespace {
     fn from_iter<T: IntoIterator<Item = (String, Content)>>(iter: T) -> Self {
         Self {
@@ -83,6 +86,8 @@ impl Namespace {
     }
 
     pub fn put_collection(&mut self, name: String, content: Content) -> Result<()> {
+        super::check_collection_name_is_valid(&name)?;
+
         if self.collections.insert(name.clone(), content).is_some() {
             Err(failed!(
                 target: Release,
@@ -94,6 +99,12 @@ impl Namespace {
         }
     }
 
+    pub fn put_collection_from_json(&mut self, name: String, value: &Value) -> Result<()> {
+        let as_content = Self::collection(value);
+        self.put_collection(name, as_content)?;
+        Ok(())
+    }
+
     pub fn collection(value: &Value) -> Content {
         // TODO: this function is confusing?! Rename and move?
         Content::Array(ArrayContent {
@@ -102,21 +113,8 @@ impl Namespace {
         })
     }
 
-    pub fn create_collection(&mut self, name: String, value: &Value) -> Result<()> {
-        let as_content = Self::collection(value);
-        self.put_collection(name, as_content)?;
-        Ok(())
-    }
-
-    pub fn delete_collection(&mut self, name: &str) -> Result<()> {
-        if self.collections.remove(name).is_none() {
-            return Err(failed!(
-                target: Release,
-                "collection does not exist: {}",
-                name
-            ));
-        }
-        Ok(())
+    pub fn remove_collection(&mut self, name: &str) -> Option<Content> {
+        self.collections.remove(name)
     }
 
     #[inline]
@@ -176,5 +174,24 @@ impl Compile for Namespace {
             })
             .collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::NullContent;
+
+    #[test]
+    fn check_name_valid_on_collection_insert() {
+        let mut ns = Namespace::new();
+
+        assert!(ns
+            .put_collection("世界".to_string(), Content::Null(NullContent))
+            .is_err());
+
+        assert!(ns
+            .put_collection_from_json("!!!".to_string(), &Value::Null)
+            .is_err());
     }
 }
