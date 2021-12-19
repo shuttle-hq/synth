@@ -42,8 +42,6 @@ impl ValueKindExt for JsonValue {
     }
 }
 
-//const NAME_RE: &str = "[A-Za-z_0-9]+";
-
 #[allow(dead_code)]
 pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<bool, D::Error> {
     let as_str = String::deserialize(d)?;
@@ -84,7 +82,9 @@ impl FromStr for FieldRef {
 
         let parser = Parser::new(lexer);
 
-        parser.parse()
+        parser.parse().and_then(|field_ref| {
+            check_collection_name_is_valid(&field_ref.collection).map(|_| field_ref)
+        })
     }
 }
 
@@ -94,7 +94,7 @@ impl IntoIterator for FieldRef {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        std::iter::once(self.collection.to_string()).chain(self.fields.into_iter())
+        std::iter::once(self.collection).chain(self.fields.into_iter())
     }
 }
 
@@ -121,11 +121,11 @@ impl FieldRef {
         Self::from_str(s.as_ref())
     }
 
-    pub fn from_collection_name(collection: String) -> Self {
-        Self {
+    pub fn from_collection_name(collection: String) -> Result<Self> {
+        check_collection_name_is_valid(&collection).map(|_| Self {
             collection,
             fields: Vec::new(),
-        }
+        })
     }
 
     pub fn collection(&self) -> &str {
@@ -133,7 +133,7 @@ impl FieldRef {
     }
 
     pub fn iter_fields(&self) -> impl Iterator<Item = &str> {
-        self.fields.iter().map(|value| value.as_str())
+        self.fields.iter().map(String::as_str)
     }
 
     pub(crate) fn iter(&self) -> impl Iterator<Item = &str> {
@@ -160,6 +160,18 @@ impl FieldRef {
 
     pub(crate) fn is_top_level(&self) -> bool {
         self.fields.is_empty()
+    }
+}
+
+lazy_static! {
+    static ref COLLECTION_NAME_REGEX: Regex = Regex::new("[A-Za-z_0-9]+").unwrap();
+}
+
+fn check_collection_name_is_valid(name: &str) -> Result<()> {
+    if COLLECTION_NAME_REGEX.is_match(name) {
+        Ok(())
+    } else {
+        Err(anyhow!("illegal collection name: {}", name))
     }
 }
 
@@ -343,8 +355,6 @@ enum Token {
 
 #[cfg(test)]
 pub mod tests {
-    use std::collections::BTreeMap;
-
     use super::*;
 
     use super::content::tests::USER_SCHEMA;
@@ -438,8 +448,11 @@ pub mod tests {
     }
 
     lazy_static! {
-        pub static ref USER_NAMESPACE: Namespace = Namespace {
-            collections: BTreeMap::from([("users".to_string(), USER_SCHEMA.clone())])
+        pub static ref USER_NAMESPACE: Namespace = {
+            let mut n = Namespace::new();
+            n.put_collection("users".to_string(), USER_SCHEMA.clone())
+                .unwrap();
+            n
         };
     }
 }

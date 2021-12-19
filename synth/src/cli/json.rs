@@ -68,7 +68,7 @@ pub fn import_json(val: serde_json::Value) -> Result<Namespace> {
             .into_iter()
             .map(|(name, value)| {
                 collection_from_value(&value)
-                    .and_then(|content| Ok((name.parse()?, content)))
+                    .map(|content| (name.clone(), content))
                     .with_context(|| anyhow!("While importing the collection `{}`", name))
             })
             .collect(),
