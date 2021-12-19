@@ -1,5 +1,5 @@
 use super::inference::MergeStrategy;
-use super::{suggest_closest, ArrayContent, Content, FieldRef, Find};
+use super::{suggest_closest, Content, FieldRef, Find};
 use crate::compile::{Compile, Compiler};
 use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
@@ -100,17 +100,7 @@ impl Namespace {
     }
 
     pub fn put_collection_from_json(&mut self, name: String, value: &Value) -> Result<()> {
-        let as_content = Self::collection(value);
-        self.put_collection(name, as_content)?;
-        Ok(())
-    }
-
-    pub fn collection(value: &Value) -> Content {
-        // TODO: this function is confusing?! Rename and move?
-        Content::Array(ArrayContent {
-            length: Box::new(Content::from(&Value::from(1))),
-            content: Box::new(value.into()),
-        })
+        self.put_collection(name, Content::from_value_wrapped_in_array(value))
     }
 
     pub fn remove_collection(&mut self, name: &str) -> Option<Content> {
