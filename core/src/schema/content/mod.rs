@@ -259,6 +259,13 @@ content! {
 }
 
 impl Content {
+    pub fn from_value_wrapped_in_array(value: &Value) -> Self {
+        Content::Array(ArrayContent {
+            length: Box::new(Content::from(&Value::from(1))),
+            content: Box::new(value.into()),
+        })
+    }
+
     pub fn is_null(&self) -> bool {
         matches!(self, Self::Null(_))
     }
