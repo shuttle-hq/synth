@@ -8,7 +8,6 @@ use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use std::str::FromStr;
 use synth_core::graph::prelude::content::number_content::U64;
 use synth_core::graph::prelude::number_content::I64;
 use synth_core::graph::prelude::{ChronoValue, Number, NumberContent, ObjectContent, RangeStep};
@@ -17,7 +16,7 @@ use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, RegexContent,
     StringContent,
 };
-use synth_core::{Content, Name, Namespace, Value};
+use synth_core::{Content, Namespace, Value};
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {
@@ -54,7 +53,7 @@ impl ImportStrategy for MongoImportStrategy {
                 let as_array = Content::Array(ArrayContent::from_content_default_length(
                     doc_to_content(&some_obj),
                 ));
-                namespace.put_collection(&Name::from_str(&collection_name)?, as_array)?;
+                namespace.put_collection(collection_name, as_array)?;
             } else {
                 info!("Collection {} is empty. Skipping...", collection_name);
                 continue;
@@ -79,10 +78,8 @@ impl ImportStrategy for MongoImportStrategy {
                 doc.remove("_id");
             });
 
-            namespace.default_try_update(
-                &Name::from_str(&collection_name)?,
-                &serde_json::to_value(random_sample)?,
-            )?;
+            namespace
+                .default_try_update(&collection_name, &serde_json::to_value(random_sample)?)?;
         }
 
         Ok(namespace)

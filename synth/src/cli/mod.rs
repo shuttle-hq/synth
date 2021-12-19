@@ -23,7 +23,6 @@ use std::path::PathBuf;
 use std::process::exit;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-use synth_core::Name;
 use uriparse::URI;
 
 pub(crate) mod config;
@@ -135,7 +134,7 @@ impl Cli {
     fn import(
         &self,
         path: PathBuf,
-        collection: Option<Name>,
+        collection_name: Option<String>,
         from: &str,
         schema: Option<String>,
     ) -> Result<()> {
@@ -148,13 +147,16 @@ impl Cli {
         }
         .try_into()?;
 
-        if let Some(collection) = collection {
-            if self.store.collection_exists(&path, &collection) {
-                return Err(anyhow!("The collection `{}` already exists. Will not import into an existing collection.",Store::relative_collection_path(&path, &collection).display()));
+        if let Some(collection_name) = collection_name {
+            if self.store.collection_exists(&path, &collection_name) {
+                return Err(anyhow!(
+                    "The collection `{}` already exists. Will not import into an existing collection.",
+                    Store::relative_collection_path(&path, &collection_name).display()
+                ));
             } else {
-                let content = import_strategy.import_collection(&collection)?;
+                let content = import_strategy.import_collection(&collection_name)?;
                 self.store
-                    .save_collection_path(&path, collection, content)?;
+                    .save_collection_path(&path, collection_name, content)?;
 
                 #[cfg(feature = "telemetry")]
                 self.telemetry_context.borrow_mut().set_num_collections(1);
@@ -173,7 +175,7 @@ impl Cli {
             TelemetryExportStrategy::fill_telemetry_pre(
                 Rc::clone(&self.telemetry_context),
                 &ns,
-                collection.clone(),
+                collection_name,
                 path.clone(),
             )?;
 
@@ -186,7 +188,7 @@ impl Cli {
     fn generate(
         &self,
         ns_path: PathBuf,
-        collection: Option<Name>,
+        collection_name: Option<String>,
         target: usize,
         to: &str,
         seed: u64,
@@ -213,7 +215,7 @@ impl Cli {
 
         let params = ExportParams {
             namespace,
-            collection_name: collection,
+            collection_name,
             target,
             seed,
             ns_path: ns_path.clone(),
@@ -264,7 +266,7 @@ pub enum Args {
         namespace: PathBuf,
         #[structopt(long, help = "The specific collection from which to generate")]
         #[serde(skip)]
-        collection: Option<Name>,
+        collection: Option<String>,
         #[structopt(long, help = "the number of samples", default_value = "1")]
         size: usize,
         #[structopt(
@@ -304,7 +306,7 @@ pub enum Args {
             help = "The name of a collection into which the data will be imported"
         )]
         #[serde(skip)]
-        collection: Option<Name>,
+        collection: Option<String>,
         #[structopt(
             long,
             help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:' and 'jsonl:' allow reading JSON and JSON Lines data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin.",

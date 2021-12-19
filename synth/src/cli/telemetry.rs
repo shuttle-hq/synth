@@ -22,7 +22,7 @@ use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
-    Compile, Compiler, Content, Graph, Name, Namespace,
+    Compile, Compiler, Content, Graph, Namespace,
 };
 
 use super::{Args, TelemetryCommand};
@@ -215,7 +215,7 @@ impl TelemetryExportStrategy {
     pub(super) fn fill_telemetry_pre(
         context: Rc<RefCell<TelemetryContext>>,
         namespace: &Namespace,
-        collection: Option<Name>,
+        collection: Option<String>,
         ns_path: PathBuf,
     ) -> Result<()> {
         let crawler = TelemetryCrawler {

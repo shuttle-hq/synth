@@ -320,7 +320,7 @@ impl Content {
             Content::Object(ObjectContent { fields, .. }) => {
                 let mut namespace = Namespace::new();
                 for (key, content) in fields.into_iter() {
-                    namespace.put_collection(&key.parse()?, content)?;
+                    namespace.put_collection(key, content)?;
                 }
                 Ok(namespace)
             }
