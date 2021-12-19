@@ -60,7 +60,7 @@ impl Serialize for FieldRef {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&format!("{}", &self))
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -82,9 +82,7 @@ impl FromStr for FieldRef {
 
         let parser = Parser::new(lexer);
 
-        parser.parse().and_then(|field_ref| {
-            check_collection_name_is_valid(&field_ref.collection).map(|_| field_ref)
-        })
+        parser.parse()
     }
 }
 
@@ -164,7 +162,7 @@ impl FieldRef {
 }
 
 lazy_static! {
-    static ref COLLECTION_NAME_REGEX: Regex = Regex::new("[A-Za-z_0-9]+").unwrap();
+    static ref COLLECTION_NAME_REGEX: Regex = Regex::new("^[A-Za-z_0-9]+$").unwrap();
 }
 
 fn check_collection_name_is_valid(name: &str) -> Result<()> {
@@ -240,7 +238,7 @@ impl Parser {
             };
         }
 
-        Ok(FieldRef {
+        check_collection_name_is_valid(&self.collection).map(|_| FieldRef {
             collection: self.collection,
             fields: self.field_chunks,
         })
@@ -379,6 +377,7 @@ pub mod tests {
         assert!("users.".parse::<FieldRef>().is_err());
         assert!(".users.".parse::<FieldRef>().is_err());
         assert!("users.some_field".parse::<FieldRef>().is_ok());
+        assert!("us@%ers.some_field".parse::<FieldRef>().is_err());
     }
 
     #[test]
