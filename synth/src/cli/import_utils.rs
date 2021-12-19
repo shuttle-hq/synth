@@ -55,7 +55,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
         let column_infos = task::block_on(datasource.get_columns_infos(table_name))?;
 
         namespace.put_collection(
-            table_name.clone(), // check table name is valid?
+            table_name.clone(),
             Collection::try_from((datasource, column_infos))?.collection,
         )?;
     }
