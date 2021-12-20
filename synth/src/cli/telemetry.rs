@@ -225,7 +225,7 @@ impl TelemetryExportStrategy {
         };
 
         if let Some(name) = collection {
-            if let Some(content) = namespace.as_ref().get(&name) {
+            if let Ok(content) = namespace.get_collection(&name) {
                 content.compile(crawler)?;
                 context.borrow_mut().num_collections = Some(1);
 
@@ -236,7 +236,7 @@ impl TelemetryExportStrategy {
             }
         } else {
             namespace.compile(crawler)?;
-            let num_col = namespace.as_ref().len();
+            let num_col = namespace.len();
             context.borrow_mut().num_collections = Some(num_col);
 
             // Namespace, length and content for each collection
