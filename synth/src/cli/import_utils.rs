@@ -77,7 +77,7 @@ where
     Ok(table_names)
 }
 
-fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
+fn populate_namespace_collections<T: DataSource + RelationalDataSource + SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
@@ -258,7 +258,7 @@ where
         .collect()
 }
 
-impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Collection {
+impl<T: SqlxDataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Collection {
     type Error = anyhow::Error;
 
     fn try_from(columns_meta: (&T, Vec<ColumnInfo>)) -> Result<Self> {
@@ -283,7 +283,7 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Co
     }
 }
 
-impl<T: RelationalDataSource + DataSource> TryFrom<(&T, &ColumnInfo)> for FieldContentWrapper {
+impl<T: SqlxDataSource> TryFrom<(&T, &ColumnInfo)> for FieldContentWrapper {
     type Error = anyhow::Error;
 
     fn try_from(column_meta: (&T, &ColumnInfo)) -> Result<Self> {

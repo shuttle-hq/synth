@@ -170,46 +170,6 @@ impl SqlxDataSource for PostgresDataSource {
     fn get_deterministic_samples_query(&self, table_name: String) -> String {
         format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name)
     }
-}
-
-#[async_trait]
-impl RelationalDataSource for PostgresDataSource {
-    type QueryResult = PgQueryResult;
-    const IDENTIFIER_QUOTE: char = '\"';
-
-    async fn execute_query(
-        &self,
-        query: String,
-        query_params: Vec<Value>,
-    ) -> Result<PgQueryResult> {
-        let mut query = sqlx::query(query.as_str());
-
-        for param in query_params {
-            query = query.bind(param);
-        }
-
-        let result = query.execute(&self.pool).await?;
-
-        Ok(result)
-    }
-
-    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
-        character_maximum_length, data_type
-        FROM information_schema.columns
-        WHERE table_name = $1
-        AND table_schema = $2
-        AND table_catalog = current_catalog";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ColumnInfo::try_from)
-            .collect()
-    }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
         if column_info.is_custom_type {
@@ -285,6 +245,46 @@ impl RelationalDataSource for PostgresDataSource {
         };
 
         Ok(content)
+    }
+}
+
+#[async_trait]
+impl RelationalDataSource for PostgresDataSource {
+    type QueryResult = PgQueryResult;
+    const IDENTIFIER_QUOTE: char = '\"';
+
+    async fn execute_query(
+        &self,
+        query: String,
+        query_params: Vec<Value>,
+    ) -> Result<PgQueryResult> {
+        let mut query = sqlx::query(query.as_str());
+
+        for param in query_params {
+            query = query.bind(param);
+        }
+
+        let result = query.execute(&self.pool).await?;
+
+        Ok(result)
+    }
+
+    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
+        let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
+        character_maximum_length, data_type
+        FROM information_schema.columns
+        WHERE table_name = $1
+        AND table_schema = $2
+        AND table_catalog = current_catalog";
+
+        sqlx::query(query)
+            .bind(table_name)
+            .bind(self.schema.clone())
+            .fetch_all(&self.single_thread_pool)
+            .await?
+            .into_iter()
+            .map(ColumnInfo::try_from)
+            .collect()
     }
 
     fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>) {

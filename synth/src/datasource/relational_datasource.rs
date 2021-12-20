@@ -67,6 +67,9 @@ pub trait SqlxDataSource: DataSource {
 
     /// Get query for deterministic values
     fn get_deterministic_samples_query(&self, table_name: String) -> String;
+
+    /// Decodes column to our Content
+    fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 }
 
 /// All relational databases should define this trait and implement database specific queries in
@@ -185,8 +188,6 @@ pub trait RelationalDataSource: DataSource {
     ) -> Result<Self::QueryResult>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
-
-    fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 
     // Returns extended query string + current index
     fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>);
