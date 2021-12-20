@@ -70,13 +70,31 @@ pub trait SqlxDataSource: DataSource {
 
     /// Decodes column to our Content
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
+
+    // Returns extended query string + current index
+    fn extend_parameterised_query(
+        query: &mut String,
+        _curr_index: usize,
+        query_params: Vec<Value>,
+    ) {
+        let extend = query_params.len();
+
+        query.push('(');
+        for i in 0..extend {
+            query.push('?');
+            if i != extend - 1 {
+                query.push(',');
+            }
+        }
+        query.push(')');
+    }
 }
 
 /// All relational databases should define this trait and implement database specific queries in
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
 /// handle it.
 #[async_trait]
-pub trait RelationalDataSource: DataSource {
+pub trait RelationalDataSource: DataSource + SqlxDataSource {
     type QueryResult: Send + Sync;
 
     const IDENTIFIER_QUOTE: char;
@@ -188,7 +206,4 @@ pub trait RelationalDataSource: DataSource {
     ) -> Result<Self::QueryResult>;
 
     async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
-
-    // Returns extended query string + current index
-    fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>);
 }

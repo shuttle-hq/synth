@@ -173,23 +173,6 @@ impl RelationalDataSource for MySqlDataSource {
             .map(ColumnInfo::try_from)
             .collect()
     }
-
-    fn extend_parameterised_query(
-        query: &mut String,
-        _curr_index: usize,
-        query_params: Vec<Value>,
-    ) {
-        let extend = query_params.len();
-
-        query.push('(');
-        for i in 0..extend {
-            query.push('?');
-            if i != extend - 1 {
-                query.push(',');
-            }
-        }
-        query.push(')');
-    }
 }
 
 impl TryFrom<MySqlRow> for ColumnInfo {
