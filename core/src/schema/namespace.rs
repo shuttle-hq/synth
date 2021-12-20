@@ -5,7 +5,6 @@ use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
 
 use std::collections::BTreeMap;
-use std::convert::AsRef;
 use std::{default::Default, iter::FromIterator};
 
 use anyhow::{Context, Result};
@@ -19,12 +18,6 @@ type JsonObject = Map<String, Value>;
 pub struct Namespace {
     #[serde(flatten)]
     collections: BTreeMap<String, Content>,
-}
-
-impl AsRef<BTreeMap<String, Content>> for Namespace {
-    fn as_ref(&self) -> &BTreeMap<String, Content> {
-        &self.collections
-    }
 }
 
 impl IntoIterator for Namespace {
@@ -110,6 +103,10 @@ impl Namespace {
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.collections.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.collections.len()
     }
 
     // May remove this in due course. Or add an only visible for testing flag

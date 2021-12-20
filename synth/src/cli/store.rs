@@ -136,7 +136,6 @@ impl Store {
         let collection_file_content = std::fs::read_to_string(dir_entry.path())?;
         let collection = UNDERLYING.parse(&collection_file_content)?;
 
-        // TODO: Check collection name validity?
         Ok((collection_name, collection))
     }
 }
