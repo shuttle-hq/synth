@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, SqlxDataSource, ValueWrapper,
+    insert_relational_data, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -82,8 +82,7 @@ impl DataSource for PostgresDataSource {
     }
 
     async fn insert_data(&self, collection_name: &str, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection)
-            .await
+        insert_relational_data(self, collection_name, collection).await
     }
 }
 
@@ -119,6 +118,8 @@ impl SqlxDataSource for PostgresDataSource {
     type Arguments = sqlx::postgres::PgArguments;
     type Connection = sqlx::postgres::PgConnection;
 
+    const IDENTIFIER_QUOTE: char = '\"';
+
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.single_thread_pool)
     }
@@ -127,11 +128,7 @@ impl SqlxDataSource for PostgresDataSource {
         Pool::clone(&self.pool)
     }
 
-    fn query<'q>(
-        &self,
-        query: &'q str,
-    ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
-    {
+    fn query<'q>(&self, query: &'q str) -> sqlx::query::Query<'q, Self::DB, Self::Arguments> {
         sqlx::query(query).bind(self.schema.clone())
     }
 
@@ -286,11 +283,6 @@ impl SqlxDataSource for PostgresDataSource {
         AND table_schema = $1
         AND table_catalog = current_catalog"
     }
-}
-
-#[async_trait]
-impl RelationalDataSource for PostgresDataSource {
-    const IDENTIFIER_QUOTE: char = '\"';
 }
 
 impl TryFrom<PgRow> for ColumnInfo {

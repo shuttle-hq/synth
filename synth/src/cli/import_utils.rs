@@ -78,7 +78,7 @@ where
     Ok(table_names)
 }
 
-fn populate_namespace_collections<T: DataSource + SqlxDataSource>(
+fn populate_namespace_collections<T: SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
@@ -103,7 +103,7 @@ where
     Ok(())
 }
 
-fn populate_namespace_primary_keys<T: DataSource + SqlxDataSource>(
+fn populate_namespace_primary_keys<T: SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
@@ -173,7 +173,7 @@ where
         .collect()
 }
 
-fn populate_namespace_foreign_keys<T: DataSource + SqlxDataSource>(
+fn populate_namespace_foreign_keys<T: SqlxDataSource>(
     namespace: &mut Namespace,
     datasource: &T,
 ) -> Result<()>
@@ -212,7 +212,7 @@ where
         .collect()
 }
 
-fn populate_namespace_values<T: DataSource + SqlxDataSource>(
+fn populate_namespace_values<T: SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,

@@ -49,6 +49,8 @@ pub trait SqlxDataSource: DataSource {
     type Arguments: for<'q> Arguments<'q, Database = Self::DB> + for<'q> IntoArguments<'q, Self::DB>;
     type Connection: Connection<Database = Self::DB>;
 
+    const IDENTIFIER_QUOTE: char;
+
     /// Gets a pool to execute queries with
     fn get_pool(&self) -> Pool<Self::DB>;
 
@@ -121,121 +123,112 @@ pub trait SqlxDataSource: DataSource {
     }
 }
 
-/// All relational databases should define this trait and implement database specific queries in
-/// their own impl. APIs should be defined async when possible, delegating to the caller on how to
-/// handle it.
-#[async_trait]
-pub trait RelationalDataSource: DataSource + SqlxDataSource
+pub async fn insert_relational_data<T: SqlxDataSource + Sync>(
+    datasource: &T,
+    collection_name: &str,
+    collection: &[Value],
+) -> Result<()>
 where
-    Self: Sized,
-    for<'c> &'c mut Self::Connection: Executor<'c, Database = Self::DB>,
-    String: sqlx::Type<Self::DB>,
-    for<'d> String: sqlx::Encode<'d, Self::DB>,
-    ColumnInfo: TryFrom<<Self::DB as sqlx::Database>::Row, Error = anyhow::Error>,
-    Value: Type<Self::DB>,
-    for<'d> Value: Encode<'d, Self::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: Type<T::DB>,
+    for<'d> String: Encode<'d, T::DB>,
+    ColumnInfo: TryFrom<<T::DB as Database>::Row, Error = anyhow::Error>,
+    Value: Type<T::DB>,
+    for<'d> Value: Encode<'d, T::DB>,
 {
-    const IDENTIFIER_QUOTE: char;
+    let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
-    async fn insert_relational_data(
-        &self,
-        collection_name: &str,
-        collection: &[Value],
-    ) -> Result<()> {
-        let batch_size = DEFAULT_INSERT_BATCH_SIZE;
-
-        if collection.is_empty() {
-            println!(
-                "Collection {} generated 0 values. Skipping insertion...",
-                collection_name
-            );
-            return Ok(());
-        }
-
-        let column_infos = get_columns_info(self, collection_name.to_string()).await?;
-        let first_valueset = collection[0]
-            .as_object()
-            .expect("This is always an object (sampler contract)");
-
-        for column_info in column_infos {
-            if let Some(value) = first_valueset.get(&column_info.column_name) {
-                match (value, &*column_info.data_type) {
-                    (
-                        Value::Number(Number::U64(_)),
-                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
-                    ) => warn!(
-                        "Trying to put an unsigned u64 into a {} typed column {}.{}",
-                        column_info.data_type, collection_name, column_info.column_name
-                    ),
-                    (
-                        Value::Number(Number::U32(_)),
-                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
-                    ) => warn!(
-                        "Trying to put an unsigned u32 into a {} typed column {}.{}",
-                        column_info.data_type, collection_name, column_info.column_name
-                    ),
-                    (Value::Number(Number::I64(_)), "int2" | "int4" | "smallint" | "int") => warn!(
-                        "Trying to put a signed i64 into a {} typed column {}.{}",
-                        column_info.data_type, collection_name, column_info.column_name
-                    ),
-                    (Value::Number(Number::I32(_)), "int2" | "int8" | "smallint" | "bigint") => {
-                        warn!(
-                            "Trying to put a signed i32 into a {} typed column {}.{}",
-                            column_info.data_type, collection_name, column_info.column_name
-                        )
-                    }
-                    //TODO: More variants
-                    _ => {}
-                }
-            }
-        }
-
-        let column_names = first_valueset
-            .keys()
-            .map(|k| format!("{}{}{}", Self::IDENTIFIER_QUOTE, k, Self::IDENTIFIER_QUOTE))
-            .collect::<Vec<String>>()
-            .join(",");
-
-        let mut futures = Vec::with_capacity(collection.len());
-
-        for rows in collection.chunks(batch_size) {
-            let mut query = format!(
-                "INSERT INTO {} ({}) VALUES \n",
-                collection_name, column_names
-            );
-
-            let mut curr_index = 0;
-            let mut query_params = vec![];
-
-            for (i, row) in rows.iter().enumerate() {
-                let row_obj = row
-                    .as_object()
-                    .expect("This is always an object (sampler contract)");
-
-                let mut curr_query_params: Vec<Value> = row_obj.values().cloned().collect();
-                Self::extend_parameterised_query(&mut query, curr_index, curr_query_params.clone());
-                curr_index += curr_query_params.len();
-                query_params.append(&mut curr_query_params);
-
-                if i == rows.len() - 1 {
-                    query.push_str(";\n");
-                } else {
-                    query.push_str(",\n");
-                }
-            }
-            let future = self.execute_query(query, query_params);
-            futures.push(future);
-        }
-
-        let results = join_all(futures).await;
-
-        if let Err(e) = results.into_iter().bcollect::<Vec<_>>() {
-            bail!("One or more database inserts failed: {:?}", e)
-        }
-
-        info!("Inserted {} rows...", collection.len());
-        Ok(())
+    if collection.is_empty() {
+        println!(
+            "Collection {} generated 0 values. Skipping insertion...",
+            collection_name
+        );
+        return Ok(());
     }
+
+    let column_infos = get_columns_info(datasource, collection_name.to_string()).await?;
+    let first_valueset = collection[0]
+        .as_object()
+        .expect("This is always an object (sampler contract)");
+
+    for column_info in column_infos {
+        if let Some(value) = first_valueset.get(&column_info.column_name) {
+            match (value, &*column_info.data_type) {
+                (
+                    Value::Number(Number::U64(_)),
+                    "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
+                ) => warn!(
+                    "Trying to put an unsigned u64 into a {} typed column {}.{}",
+                    column_info.data_type, collection_name, column_info.column_name
+                ),
+                (
+                    Value::Number(Number::U32(_)),
+                    "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
+                ) => warn!(
+                    "Trying to put an unsigned u32 into a {} typed column {}.{}",
+                    column_info.data_type, collection_name, column_info.column_name
+                ),
+                (Value::Number(Number::I64(_)), "int2" | "int4" | "smallint" | "int") => warn!(
+                    "Trying to put a signed i64 into a {} typed column {}.{}",
+                    column_info.data_type, collection_name, column_info.column_name
+                ),
+                (Value::Number(Number::I32(_)), "int2" | "int8" | "smallint" | "bigint") => {
+                    warn!(
+                        "Trying to put a signed i32 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    )
+                }
+                //TODO: More variants
+                _ => {}
+            }
+        }
+    }
+
+    let column_names = first_valueset
+        .keys()
+        .map(|k| format!("{}{}{}", T::IDENTIFIER_QUOTE, k, T::IDENTIFIER_QUOTE))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let mut futures = Vec::with_capacity(collection.len());
+
+    for rows in collection.chunks(batch_size) {
+        let mut query = format!(
+            "INSERT INTO {} ({}) VALUES \n",
+            collection_name, column_names
+        );
+
+        let mut curr_index = 0;
+        let mut query_params = vec![];
+
+        for (i, row) in rows.iter().enumerate() {
+            let row_obj = row
+                .as_object()
+                .expect("This is always an object (sampler contract)");
+
+            let mut curr_query_params: Vec<Value> = row_obj.values().cloned().collect();
+            T::extend_parameterised_query(&mut query, curr_index, curr_query_params.clone());
+            curr_index += curr_query_params.len();
+            query_params.append(&mut curr_query_params);
+
+            if i == rows.len() - 1 {
+                query.push_str(";\n");
+            } else {
+                query.push_str(",\n");
+            }
+        }
+        let future = datasource.execute_query(query, query_params);
+        futures.push(future);
+    }
+
+    let results = join_all(futures).await;
+
+    if let Err(e) = results.into_iter().bcollect::<Vec<_>>() {
+        bail!("One or more database inserts failed: {:?}", e)
+    }
+
+    info!("Inserted {} rows...", collection.len());
+    Ok(())
 }
 
 pub async fn get_columns_info<T: SqlxDataSource>(
@@ -244,9 +237,9 @@ pub async fn get_columns_info<T: SqlxDataSource>(
 ) -> Result<Vec<ColumnInfo>>
 where
     for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
-    String: sqlx::Type<T::DB>,
-    for<'d> String: sqlx::Encode<'d, T::DB>,
-    ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    String: Type<T::DB>,
+    for<'d> String: Encode<'d, T::DB>,
+    ColumnInfo: TryFrom<<T::DB as Database>::Row, Error = anyhow::Error>,
 {
     let query = datasource.get_columns_info_query();
     let pool = datasource.get_pool();

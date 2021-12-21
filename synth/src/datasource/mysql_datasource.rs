@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, SqlxDataSource, ValueWrapper,
+    insert_relational_data, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -44,8 +44,7 @@ impl DataSource for MySqlDataSource {
     }
 
     async fn insert_data(&self, collection_name: &str, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection)
-            .await
+        insert_relational_data(self, collection_name, collection).await
     }
 }
 
@@ -53,6 +52,8 @@ impl SqlxDataSource for MySqlDataSource {
     type DB = MySql;
     type Arguments = sqlx::mysql::MySqlArguments;
     type Connection = sqlx::mysql::MySqlConnection;
+
+    const IDENTIFIER_QUOTE: char = '`';
 
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.pool)
@@ -62,11 +63,7 @@ impl SqlxDataSource for MySqlDataSource {
         Pool::clone(&self.pool)
     }
 
-    fn query<'q>(
-        &self,
-        query: &'q str,
-    ) -> sqlx::query::Query<'q, Self::DB, <Self::DB as sqlx::database::HasArguments>::Arguments>
-    {
+    fn query<'q>(&self, query: &'q str) -> sqlx::query::Query<'q, Self::DB, Self::Arguments> {
         sqlx::query(query)
     }
 
@@ -148,11 +145,6 @@ impl SqlxDataSource for MySqlDataSource {
             FROM information_schema.columns
             WHERE table_name = ? AND table_schema = DATABASE()"
     }
-}
-
-#[async_trait]
-impl RelationalDataSource for MySqlDataSource {
-    const IDENTIFIER_QUOTE: char = '`';
 }
 
 impl TryFrom<MySqlRow> for ColumnInfo {
