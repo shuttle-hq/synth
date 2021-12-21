@@ -8,7 +8,7 @@ use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow, PgTypeInfo, PgTypeKind};
+use sqlx::postgres::{PgColumn, PgPoolOptions, PgRow, PgTypeInfo, PgTypeKind};
 use sqlx::{Column, Executor, Pool, Postgres, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -117,9 +117,14 @@ impl PostgresDataSource {
 impl SqlxDataSource for PostgresDataSource {
     type DB = Postgres;
     type Arguments = sqlx::postgres::PgArguments;
+    type Connection = sqlx::postgres::PgConnection;
 
     fn get_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.single_thread_pool)
+    }
+
+    fn get_multithread_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.pool)
     }
 
     fn query<'q>(
@@ -285,24 +290,7 @@ impl SqlxDataSource for PostgresDataSource {
 
 #[async_trait]
 impl RelationalDataSource for PostgresDataSource {
-    type QueryResult = PgQueryResult;
     const IDENTIFIER_QUOTE: char = '\"';
-
-    async fn execute_query(
-        &self,
-        query: String,
-        query_params: Vec<Value>,
-    ) -> Result<PgQueryResult> {
-        let mut query = sqlx::query(query.as_str());
-
-        for param in query_params {
-            query = query.bind(param);
-        }
-
-        let result = query.execute(&self.pool).await?;
-
-        Ok(result)
-    }
 }
 
 impl TryFrom<PgRow> for ColumnInfo {

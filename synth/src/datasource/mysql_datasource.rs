@@ -7,7 +7,7 @@ use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlQueryResult, MySqlRow};
+use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlRow};
 use sqlx::{Column, MySql, Pool, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -52,8 +52,13 @@ impl DataSource for MySqlDataSource {
 impl SqlxDataSource for MySqlDataSource {
     type DB = MySql;
     type Arguments = sqlx::mysql::MySqlArguments;
+    type Connection = sqlx::mysql::MySqlConnection;
 
     fn get_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.pool)
+    }
+
+    fn get_multithread_pool(&self) -> Pool<Self::DB> {
         Pool::clone(&self.pool)
     }
 
@@ -147,24 +152,7 @@ impl SqlxDataSource for MySqlDataSource {
 
 #[async_trait]
 impl RelationalDataSource for MySqlDataSource {
-    type QueryResult = MySqlQueryResult;
     const IDENTIFIER_QUOTE: char = '`';
-
-    async fn execute_query(
-        &self,
-        query: String,
-        query_params: Vec<Value>,
-    ) -> Result<MySqlQueryResult> {
-        let mut query = sqlx::query(query.as_str());
-
-        for param in query_params {
-            query = query.bind(param);
-        }
-
-        let result = query.execute(&self.pool).await?;
-
-        Ok(result)
-    }
 }
 
 impl TryFrom<MySqlRow> for ColumnInfo {

@@ -3,7 +3,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
-use sqlx::{query::Query, Arguments, Database, Executor, IntoArguments, Pool};
+use sqlx::{
+    query::Query, Arguments, Connection, Database, Encode, Executor, IntoArguments, Pool, Type,
+};
 use std::convert::TryFrom;
 use synth_core::{Content, Value};
 use synth_gen::value::Number;
@@ -43,11 +45,15 @@ pub struct ValueWrapper(pub(crate) Value);
 
 #[async_trait]
 pub trait SqlxDataSource: DataSource {
-    type DB: Database<Arguments = Self::Arguments>;
+    type DB: Database<Arguments = Self::Arguments, Connection = Self::Connection>;
     type Arguments: for<'q> Arguments<'q, Database = Self::DB> + for<'q> IntoArguments<'q, Self::DB>;
+    type Connection: Connection<Database = Self::DB>;
 
     /// Gets a pool to execute queries with
     fn get_pool(&self) -> Pool<Self::DB>;
+
+    /// Gets a multithread pool to execute queries with
+    fn get_multithread_pool(&self) -> Pool<Self::DB>;
 
     /// Prepare a single query with data source specifics
     fn query<'q>(&self, query: &'q str) -> Query<'q, Self::DB, Self::Arguments>;
@@ -92,6 +98,27 @@ pub trait SqlxDataSource: DataSource {
         }
         query.push(')');
     }
+
+    async fn execute_query(
+        &self,
+        query: String,
+        query_params: Vec<Value>,
+    ) -> Result<<Self::DB as Database>::QueryResult>
+    where
+        for<'c> &'c mut Self::Connection: Executor<'c, Database = Self::DB>,
+        Value: Type<Self::DB>,
+        for<'d> Value: Encode<'d, Self::DB>,
+    {
+        let mut query = sqlx::query::<Self::DB>(query.as_str());
+
+        for param in query_params {
+            query = query.bind(param);
+        }
+
+        let result = query.execute(&self.get_multithread_pool()).await?;
+
+        Ok(result)
+    }
 }
 
 /// All relational databases should define this trait and implement database specific queries in
@@ -101,13 +128,13 @@ pub trait SqlxDataSource: DataSource {
 pub trait RelationalDataSource: DataSource + SqlxDataSource
 where
     Self: Sized,
-    for<'c> &'c mut <Self::DB as Database>::Connection: Executor<'c, Database = Self::DB>,
+    for<'c> &'c mut Self::Connection: Executor<'c, Database = Self::DB>,
     String: sqlx::Type<Self::DB>,
     for<'d> String: sqlx::Encode<'d, Self::DB>,
     ColumnInfo: TryFrom<<Self::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    Value: Type<Self::DB>,
+    for<'d> Value: Encode<'d, Self::DB>,
 {
-    type QueryResult: Send + Sync;
-
     const IDENTIFIER_QUOTE: char;
 
     async fn insert_relational_data(
@@ -202,19 +229,13 @@ where
 
         let results = join_all(futures).await;
 
-        if let Err(e) = results.into_iter().bcollect::<Vec<Self::QueryResult>>() {
+        if let Err(e) = results.into_iter().bcollect::<Vec<_>>() {
             bail!("One or more database inserts failed: {:?}", e)
         }
 
         info!("Inserted {} rows...", collection.len());
         Ok(())
     }
-
-    async fn execute_query(
-        &self,
-        query: String,
-        query_params: Vec<Value>,
-    ) -> Result<Self::QueryResult>;
 }
 
 pub async fn get_columns_info<T: SqlxDataSource>(
@@ -222,7 +243,7 @@ pub async fn get_columns_info<T: SqlxDataSource>(
     table_name: String,
 ) -> Result<Vec<ColumnInfo>>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Encode<'d, T::DB>,
     ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,

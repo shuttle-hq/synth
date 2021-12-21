@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use async_std::task;
 use log::debug;
 use serde_json::Value;
-use sqlx::{Database, Executor, Row};
+use sqlx::{Executor, Row};
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
@@ -29,7 +29,7 @@ pub(crate) fn build_namespace_import<T: DataSource + SqlxDataSource>(
 ) -> Result<Namespace>
 where
     T: Sync,
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Decode<'d, T::DB> + sqlx::Encode<'d, T::DB>,
     usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
@@ -60,7 +60,7 @@ where
 
 async fn get_table_names<T: SqlxDataSource>(datasource: &T) -> Result<Vec<String>>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Decode<'d, T::DB>,
     usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
@@ -84,7 +84,7 @@ fn populate_namespace_collections<T: DataSource + SqlxDataSource>(
     datasource: &T,
 ) -> Result<()>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Encode<'d, T::DB>,
     ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
@@ -109,7 +109,7 @@ fn populate_namespace_primary_keys<T: DataSource + SqlxDataSource>(
     datasource: &T,
 ) -> Result<()>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Encode<'d, T::DB>,
     PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
@@ -155,7 +155,7 @@ async fn get_primary_keys<T: SqlxDataSource>(
     table_name: String,
 ) -> Result<Vec<PrimaryKey>>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Encode<'d, T::DB>,
     PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
@@ -178,7 +178,7 @@ fn populate_namespace_foreign_keys<T: DataSource + SqlxDataSource>(
     datasource: &T,
 ) -> Result<()>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let foreign_keys = task::block_on(get_foreign_keys(datasource))?;
@@ -197,7 +197,7 @@ where
 
 async fn get_foreign_keys<T: SqlxDataSource>(datasource: &T) -> Result<Vec<ForeignKey>>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let query = datasource.get_foreign_keys_query();
@@ -219,7 +219,7 @@ fn populate_namespace_values<T: DataSource + SqlxDataSource>(
 ) -> Result<()>
 where
     T: Sync,
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Encode<'d, T::DB>,
     ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
@@ -243,7 +243,7 @@ async fn get_deterministic_samples<T: SqlxDataSource>(
     table: String,
 ) -> Result<Vec<synth_core::Value>>
 where
-    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let query = datasource.get_deterministic_samples_query(table);
