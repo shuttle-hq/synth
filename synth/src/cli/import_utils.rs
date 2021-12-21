@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, SqlxDataSource, ValueWrapper,
+    get_columns_info, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -24,7 +24,7 @@ pub(crate) struct Collection {
 /// Wrapper around `FieldContent` since we cant' impl `TryFrom` on a struct in a non-owned crate
 struct FieldContentWrapper(Content);
 
-pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource + SqlxDataSource>(
+pub(crate) fn build_namespace_import<T: DataSource + SqlxDataSource>(
     datasource: &T,
 ) -> Result<Namespace>
 where
@@ -36,6 +36,7 @@ where
     PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
     ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
     ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let table_names = task::block_on(get_table_names(datasource))
         .with_context(|| "Failed to get table names".to_string())?;
@@ -77,15 +78,21 @@ where
     Ok(table_names)
 }
 
-fn populate_namespace_collections<T: DataSource + RelationalDataSource + SqlxDataSource>(
+fn populate_namespace_collections<T: DataSource + SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
-) -> Result<()> {
+) -> Result<()>
+where
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
     for table_name in table_names.iter() {
         info!("Building {} collection...", table_name);
 
-        let column_infos = task::block_on(datasource.get_columns_infos(table_name))?;
+        let column_infos = task::block_on(get_columns_info(datasource, table_name.to_string()))?;
 
         namespace.put_collection(
             table_name.clone(),
@@ -96,7 +103,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource + SqlxDat
     Ok(())
 }
 
-fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource + SqlxDataSource>(
+fn populate_namespace_primary_keys<T: DataSource + SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
@@ -166,7 +173,7 @@ where
         .collect()
 }
 
-fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource + SqlxDataSource>(
+fn populate_namespace_foreign_keys<T: DataSource + SqlxDataSource>(
     namespace: &mut Namespace,
     datasource: &T,
 ) -> Result<()>
@@ -205,7 +212,7 @@ where
         .collect()
 }
 
-fn populate_namespace_values<T: DataSource + RelationalDataSource + SqlxDataSource>(
+fn populate_namespace_values<T: DataSource + SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,

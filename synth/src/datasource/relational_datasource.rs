@@ -3,7 +3,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
-use sqlx::{query::Query, Arguments, Database, IntoArguments, Pool};
+use sqlx::{query::Query, Arguments, Database, Executor, IntoArguments, Pool};
+use std::convert::TryFrom;
 use synth_core::{Content, Value};
 use synth_gen::value::Number;
 
@@ -60,6 +61,9 @@ pub trait SqlxDataSource: DataSource {
     /// Get query for foreign keys
     fn get_foreign_keys_query(&self) -> &str;
 
+    /// Get query for columns info
+    fn get_columns_info_query(&self) -> &str;
+
     async fn set_seed(&self) -> Result<()> {
         // Default for sources that don't need to set a seed
         Ok(())
@@ -94,7 +98,14 @@ pub trait SqlxDataSource: DataSource {
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
 /// handle it.
 #[async_trait]
-pub trait RelationalDataSource: DataSource + SqlxDataSource {
+pub trait RelationalDataSource: DataSource + SqlxDataSource
+where
+    Self: Sized,
+    for<'c> &'c mut <Self::DB as Database>::Connection: Executor<'c, Database = Self::DB>,
+    String: sqlx::Type<Self::DB>,
+    for<'d> String: sqlx::Encode<'d, Self::DB>,
+    ColumnInfo: TryFrom<<Self::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
     type QueryResult: Send + Sync;
 
     const IDENTIFIER_QUOTE: char;
@@ -114,7 +125,7 @@ pub trait RelationalDataSource: DataSource + SqlxDataSource {
             return Ok(());
         }
 
-        let column_infos = self.get_columns_infos(collection_name).await?;
+        let column_infos = get_columns_info(self, collection_name.to_string()).await?;
         let first_valueset = collection[0]
             .as_object()
             .expect("This is always an object (sampler contract)");
@@ -204,6 +215,27 @@ pub trait RelationalDataSource: DataSource + SqlxDataSource {
         query: String,
         query_params: Vec<Value>,
     ) -> Result<Self::QueryResult>;
+}
 
-    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>>;
+pub async fn get_columns_info<T: SqlxDataSource>(
+    datasource: &T,
+    table_name: String,
+) -> Result<Vec<ColumnInfo>>
+where
+    for<'c> &'c mut <T::DB as Database>::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let query = datasource.get_columns_info_query();
+    let pool = datasource.get_pool();
+
+    datasource
+        .query(query)
+        .bind(table_name)
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(ColumnInfo::try_from)
+        .collect()
 }

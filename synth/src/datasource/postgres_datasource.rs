@@ -272,6 +272,15 @@ impl SqlxDataSource for PostgresDataSource {
         }
         query.push(')');
     }
+
+    fn get_columns_info_query(&self) -> &str {
+        r"SELECT column_name, ordinal_position, is_nullable, udt_name,
+        character_maximum_length, data_type
+        FROM information_schema.columns
+        WHERE table_name = $2
+        AND table_schema = $1
+        AND table_catalog = current_catalog"
+    }
 }
 
 #[async_trait]
@@ -293,24 +302,6 @@ impl RelationalDataSource for PostgresDataSource {
         let result = query.execute(&self.pool).await?;
 
         Ok(result)
-    }
-
-    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
-        character_maximum_length, data_type
-        FROM information_schema.columns
-        WHERE table_name = $1
-        AND table_schema = $2
-        AND table_catalog = current_catalog";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ColumnInfo::try_from)
-            .collect()
     }
 }
 

@@ -136,6 +136,13 @@ impl SqlxDataSource for MySqlDataSource {
 
         Ok(content)
     }
+
+    fn get_columns_info_query(&self) -> &str {
+        r"SELECT column_name, ordinal_position, is_nullable, data_type,
+            character_maximum_length
+            FROM information_schema.columns
+            WHERE table_name = ? AND table_schema = DATABASE()"
+    }
 }
 
 #[async_trait]
@@ -157,21 +164,6 @@ impl RelationalDataSource for MySqlDataSource {
         let result = query.execute(&self.pool).await?;
 
         Ok(result)
-    }
-
-    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query = r"SELECT column_name, ordinal_position, is_nullable, data_type,
-            character_maximum_length
-            FROM information_schema.columns
-            WHERE table_name = ? AND table_schema = DATABASE()";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(ColumnInfo::try_from)
-            .collect()
     }
 }
 
