@@ -63,10 +63,6 @@ impl SqlxDataSource for MySqlDataSource {
         Pool::clone(&self.pool)
     }
 
-    fn query<'q>(&self, query: &'q str) -> sqlx::query::Query<'q, Self::DB, Self::Arguments> {
-        sqlx::query(query)
-    }
-
     fn get_table_names_query(&self) -> &str {
         r"SELECT table_name FROM information_schema.tables
             WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'"

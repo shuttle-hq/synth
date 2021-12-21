@@ -43,6 +43,8 @@ pub struct ForeignKey {
 #[derive(Debug)]
 pub struct ValueWrapper(pub(crate) Value);
 
+/// All sqlx databases should define this trait and implement database specific queries in
+/// their own implementations.
 #[async_trait]
 pub trait SqlxDataSource: DataSource {
     type DB: Database<Arguments = Self::Arguments, Connection = Self::Connection>;
@@ -58,7 +60,9 @@ pub trait SqlxDataSource: DataSource {
     fn get_multithread_pool(&self) -> Pool<Self::DB>;
 
     /// Prepare a single query with data source specifics
-    fn query<'q>(&self, query: &'q str) -> Query<'q, Self::DB, Self::Arguments>;
+    fn query<'q>(&self, query: &'q str) -> Query<'q, Self::DB, Self::Arguments> {
+        sqlx::query(query)
+    }
 
     /// Get query for table names
     fn get_table_names_query(&self) -> &str;
