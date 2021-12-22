@@ -57,13 +57,15 @@ function test-import() {
 }
 
 function test-complete() {
+  rm -Rf complete_import
+
   echo -e "${INFO}Test complete${NC}"
   docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/postgres -c "DROP DATABASE IF EXISTS complete" || { echo -e "${ERROR}Failed to drop complete database${NC}"; return 1; }
   docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/postgres -c "CREATE DATABASE complete" || { echo -e "${ERROR}Failed to create complete database${NC}"; return 1; }
-  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/complete < 0_all_schema.sql || { echo -e "${ERROR}Failed to load complete schema${NC}"; return 1; }
-  $SYNTH generate all_master --to postgres://postgres:$PASSWORD@localhost:$PORT/complete || return 1
+  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/complete < 0_complete_schema.sql || { echo -e "${ERROR}Failed to load complete schema${NC}"; return 1; }
+  $SYNTH generate complete_master --to postgres://postgres:$PASSWORD@localhost:$PORT/complete || return 1
 
-  sum_rows_query="SELECT (SELECT count(*) FROM synth)"
+  sum_rows_query="SELECT (SELECT count(*) FROM types)"
   sum=`docker exec -i $NAME psql -tA postgres://postgres:$PASSWORD@localhost:5432/complete -c "$sum_rows_query"`
   [ "$sum" -eq "10" ] || { echo -e "${ERROR}Generation did not create 10 records${NC}"; return 1; }
 

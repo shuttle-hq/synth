@@ -1,6 +1,6 @@
-drop table if exists synth;
+drop table if exists types;
 
-create table synth
+create table types
 (
   id int primary key,
   nully text,
