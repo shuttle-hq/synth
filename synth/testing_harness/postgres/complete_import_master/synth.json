@@ -10,6 +10,7 @@
     }
   },
   "content": {
+    "type": "object",
     "id": {
       "type": "number",
       "subtype": "i32",
@@ -29,6 +30,33 @@
         }
       ]
     },
-    "type": "object"
+    "bool": {
+      "type": "bool",
+      "frequency": 0.5
+    },
+    "string_char": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 1}"
+    },
+    "string_varchar": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 5}"
+    },
+    "string_text": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 1}"
+    },
+    "string_bpchar": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 6}"
+    },
+    "string_name": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 1}"
+    },
+    "string_uuid": {
+      "type": "string",
+      "uuid": null
+    }
   }
 }

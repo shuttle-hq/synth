@@ -12,6 +12,42 @@
     },
     "nully": {
       "type": "null"
+    },
+    "bool": {
+      "type": "bool",
+      "frequency": 0.5
+    },
+    "string_char": {
+      "type": "string",
+      "pattern": "[a-z]"
+    },
+    "string_varchar": {
+      "type": "string",
+      "faker": {
+        "generator": "title"
+      }
+    },
+    "string_text": {
+      "type": "string",
+      "faker": {
+        "generator": "name"
+      }
+    },
+    "string_bpchar": {
+      "type": "string",
+      "faker": {
+        "generator": "suffix"
+      }
+    },
+    "string_name": {
+      "type": "string",
+      "faker": {
+        "generator": "name"
+      }
+    },
+    "string_uuid": {
+      "type": "string",
+      "uuid": {}
     }
   }
 }
