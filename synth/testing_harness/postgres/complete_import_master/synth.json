@@ -54,9 +54,37 @@
       "type": "string",
       "pattern": "[a-zA-Z0-9]{0, 1}"
     },
-    "string_uuid": {
-      "type": "string",
-      "uuid": null
+    "i32_int4": {
+      "type": "number",
+      "subtype": "i32",
+      "range": {
+        "low": -1730162052,
+        "high": -1730162052
+      }
+    },
+    "i64_int8": {
+      "type": "number",
+      "subtype": "i64",
+      "range": {
+        "low": -9112054025815705000,
+        "high": -9112054025815705000
+      }
+    },
+    "f32_float4": {
+      "type": "number",
+      "subtype": "f32",
+      "range": {
+        "low": 3.1415927410125732,
+        "high": 3.1415927410125732
+      }
+    },
+    "f64_float8": {
+      "type": "number",
+      "subtype": "f64",
+      "range": {
+        "low": 3.141592653589793,
+        "high": 3.141592653589793
+      }
     }
   }
 }

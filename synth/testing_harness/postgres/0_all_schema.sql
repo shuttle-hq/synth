@@ -10,5 +10,11 @@ create table synth
   string_text text NOT NULL,
   string_bpchar bpchar(6) NOT NULL,
   string_name name NOT NULL,
-  string_uuid uuid NOT NULL
+  /* string_uuid uuid NOT NULL, */
+  /* i64_int2 int2 NOT NULL, */
+  i32_int4 int4 NOT NULL,
+  i64_int8 int8 NOT NULL,
+  f32_float4 float4 NOT NULL,
+  f64_float8 float8 NOT NULL
+  /* f64_numeric numeric NOT NULL, */
 )
