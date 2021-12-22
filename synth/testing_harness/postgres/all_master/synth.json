@@ -1,0 +1,17 @@
+{
+  "type": "array",
+  "length": 10,
+  "content": {
+    "type": "object",
+    "id": {
+      "type": "number",
+      "subtype": "i32",
+      "id": {
+        "start_at": 0
+      }
+    },
+    "nully": {
+      "type": "null"
+    }
+  }
+}

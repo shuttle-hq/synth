@@ -1,0 +1,34 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "subtype": "u64",
+    "range": {
+      "low": 1,
+      "high": 10,
+      "step": 1
+    }
+  },
+  "content": {
+    "id": {
+      "type": "number",
+      "subtype": "i32",
+      "id": {}
+    },
+    "nully": {
+      "type": "one_of",
+      "variants": [
+        {
+          "pattern": "[a-zA-Z0-9]{0, 1}",
+          "type": "string",
+          "weight": 1
+        },
+        {
+          "type": "null",
+          "weight": 1
+        }
+      ]
+    },
+    "type": "object"
+  }
+}
