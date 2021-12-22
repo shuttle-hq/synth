@@ -64,6 +64,23 @@
       "type": "number",
       "subtype": "f64",
       "constant": 3.14159265358979323
+    },
+    "date_time_timestamptz": {
+      "type": "date_time",
+      "subtype": "date_time",
+      "format": ""
+    },
+    "naive_date_time_timestamp": {
+      "type": "date_time",
+      "subtype": "naive_date_time",
+      "format": ""
+    },
+    "naive_date_date": {
+      "type": "date_time",
+      "subtype": "naive_date",
+      "format": "%Y-%m-%d",
+      "begin": "2021-12-16",
+      "end": "2021-12-18"
     }
   }
 }

@@ -85,6 +85,43 @@
         "low": 3.141592653589793,
         "high": 3.141592653589793
       }
+    },
+    "date_time_timestamptz": {
+      "type": "one_of",
+      "variants": [
+        {
+          "type": "date_time",
+          "subtype": "date_time",
+          "format": "",
+          "weight": 1
+        },
+        {
+          "type": "null",
+          "weight": 1
+        }
+      ]
+    },
+    "naive_date_time_timestamp": {
+      "type": "one_of",
+      "variants": [
+        {
+          "type": "date_time",
+          "subtype": "naive_date_time",
+          "format": "",
+          "weight": 1
+        },
+        {
+          "type": "null",
+          "weight": 1
+        }
+      ]
+    },
+    "naive_date_date": {
+      "type": "date_time",
+      "subtype": "naive_date",
+      "format": "%Y-%m-%d",
+      "begin": "2021-12-16",
+      "end": "2021-12-17"
     }
   }
 }

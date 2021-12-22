@@ -15,6 +15,9 @@ create table synth
   i32_int4 int4 NOT NULL,
   i64_int8 int8 NOT NULL,
   f32_float4 float4 NOT NULL,
-  f64_float8 float8 NOT NULL
+  f64_float8 float8 NOT NULL,
   /* f64_numeric numeric NOT NULL, */
+  date_time_timestamptz timestamptz NOT NULL,
+  naive_date_time_timestamp timestamp NOT NULL,
+  naive_date_date date NOT NULL
 )
