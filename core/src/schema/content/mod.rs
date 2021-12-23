@@ -278,6 +278,7 @@ impl Content {
         self.as_nullable().is_some()
     }
 
+    #[must_use]
     pub fn into_nullable(self) -> Self {
         if !self.is_nullable() {
             Content::OneOf(vec![self, Content::null()].into_iter().collect())
@@ -286,6 +287,7 @@ impl Content {
         }
     }
 
+    #[must_use]
     pub fn into_hidden(self) -> Self {
         if !self.is_hidden() {
             Content::Hidden(HiddenContent {
@@ -304,6 +306,7 @@ impl Content {
         matches!(self, Self::Unique(_))
     }
 
+    #[must_use]
     pub fn into_unique(self) -> Self {
         if !self.is_unique() {
             Content::Unique(UniqueContent {

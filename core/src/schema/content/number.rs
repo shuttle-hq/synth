@@ -18,6 +18,7 @@ pub enum NumberContentKind {
 }
 
 impl NumberContentKind {
+    #[must_use]
     pub fn upcast(self) -> Self {
         match self {
             Self::U64 => Self::I64,

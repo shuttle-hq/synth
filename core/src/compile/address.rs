@@ -31,6 +31,7 @@ impl Address {
         self.0.is_empty()
     }
 
+    #[must_use]
     pub fn root(&self) -> Self {
         self.iter().map(|node| node.to_string()).take(1).collect()
     }
@@ -50,6 +51,7 @@ impl Address {
         self.0.pop_back()
     }
 
+    #[must_use]
     #[inline]
     pub fn into_shallower(mut self) -> Self {
         self.shallower().unwrap();
@@ -72,6 +74,7 @@ impl Address {
         self.0.is_empty()
     }
 
+    #[must_use]
     #[inline]
     pub fn into_within(mut self, scope: &str) -> Self {
         self.within(scope);
@@ -84,6 +87,7 @@ impl Address {
         self
     }
 
+    #[must_use]
     #[inline]
     pub fn into_at(mut self, attribute: &str) -> Self {
         self.at(attribute);
@@ -114,6 +118,7 @@ impl Address {
         Some(out)
     }
 
+    #[must_use]
     pub fn concat(&self, other: &Self) -> Self {
         let mut out = self.clone();
         out.extend(other.clone().into_iter());
@@ -126,6 +131,7 @@ impl Address {
         (root, relative)
     }
 
+    #[must_use]
     pub fn common_root(&self, other: &Self) -> Self {
         self.iter()
             .zip(other.iter())

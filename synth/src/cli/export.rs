@@ -92,7 +92,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
 
     match &values {
         SamplerOutput::Collection(name, collection) => {
-            insert_data(datasource, &name.to_string(), collection)
+            insert_data(datasource, name.as_ref(), collection)
         }
         SamplerOutput::Namespace(ref namespace) => {
             for (name, collection) in namespace {
