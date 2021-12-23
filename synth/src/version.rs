@@ -1,13 +1,11 @@
 use crate::cli::config;
 use anyhow::Result;
-use core::option::Option;
-use core::option::Option::{None, Some};
-use core::result::Result::Ok;
-use core::time::Duration;
+use chrono::Utc;
 use reqwest::header::USER_AGENT;
 use semver::Version;
 use serde_json::map::Map;
 use serde_json::value::Value;
+use std::time::Duration;
 
 /// This is used when the user does `synth version`.
 /// It will always display a new version if it exists.
@@ -25,8 +23,19 @@ pub fn print_version_message() {
 // If a new version is seen, it is notified once and then stored in
 // config.
 pub fn notify_new_version_message() -> Result<Option<String>> {
+    let now = Utc::now();
+
+    // If we already cached the GET request and it hasn't expired, return successfully.
+    if let Some(version_check_delay) = config::get_version_check_delay() {
+        if version_check_delay > now {
+            return Ok(None);
+        }
+    }
+
     let (version_info, latest_version) = version_update_info()?;
     let mut ret = None;
+    config::set_version_check_delay(now + chrono::Duration::days(1));
+
     // if this is `Some`, our version is out of date.
     if let Some(version_info) = version_info {
         if !has_notified_for_version(latest_version) {

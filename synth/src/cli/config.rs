@@ -1,4 +1,5 @@
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -43,6 +44,7 @@ config! {
     uuid: String => get_uuid, set_uuid
     telemetry_enabled: bool => get_telemetry_enabled, set_telemetry_enabled
     seen_versions: HashSet<String> => get_seen_versions, set_seen_versions
+    version_check_delay: DateTime<Utc> => get_version_check_delay, set_version_check_delay
 }
 
 impl Config {
