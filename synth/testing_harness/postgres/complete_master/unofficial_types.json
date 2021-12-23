@@ -1,0 +1,51 @@
+{
+  "type": "array",
+  "length": 10,
+  "content": {
+    "type": "object",
+    "bool": {
+      "type": "bool",
+      "frequency": 0.4
+    },
+    "string_character": {
+      "type": "string",
+      "pattern": "[A-F0-9]"
+    },
+    "string_character_varying": {
+      "type": "string",
+      "faker": {
+        "generator": "color"
+      }
+    },
+    "i32_int": {
+      "type": "number",
+      "subtype": "i32",
+      "constant": 5
+    },
+    "i32_integer": {
+      "type": "number",
+      "subtype": "i32",
+      "constant": 5
+    },
+    "i64_bigint": {
+      "type": "number",
+      "subtype": "i64",
+      "constant": 2987203982353462435
+    },
+    "f32_real": {
+      "type": "number",
+      "subtype": "f32",
+      "constant": 0.929767370223999
+    },
+    "f64_double_precision": {
+      "type": "number",
+      "subtype": "f64",
+      "constant": 0.10061751745697767
+    },
+    "date_time_timestamp_with_time_zone": {
+      "type": "date_time",
+      "subtype": "date_time",
+      "format": ""
+    }
+  }
+}
