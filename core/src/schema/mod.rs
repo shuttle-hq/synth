@@ -10,8 +10,6 @@ use serde::{
 };
 use serde_json::Value as JsonValue;
 
-use crate::error::Error;
-
 pub mod inference;
 pub use inference::{MergeStrategy, OptionalMergeStrategy, ValueMergeStrategy};
 
@@ -44,8 +42,6 @@ impl ValueKindExt for JsonValue {
     }
 }
 
-const NAME_RE: &str = "[A-Za-z_0-9]+";
-
 #[allow(dead_code)]
 pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<bool, D::Error> {
     let as_str = String::deserialize(d)?;
@@ -53,79 +49,67 @@ pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<boo
         .parse()
         .map_err(|e| D::Error::custom(format!("not a boolean: {}", e)))
 }
-
-#[derive(Hash, PartialEq, Eq, Debug, Clone, Ord, PartialOrd)]
-pub struct Name(String);
-
-impl Name {
-    #[allow(dead_code)]
-    pub fn distance(&self, other: &Name) -> usize {
-        strsim::levenshtein(&self.0, &other.0)
-    }
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct FieldRef {
+    collection: String,
+    fields: Vec<String>,
 }
 
-impl FromStr for Name {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(NAME_RE).unwrap();
-        }
-        let s = s.to_string();
-        if RE.is_match(&s) {
-            Ok(Self(s))
-        } else {
-            Err(Self::Err::bad_request(format!("illegal name: {}", s)))
-        }
-    }
-}
-
-impl std::convert::AsRef<str> for Name {
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
-    }
-}
-
-impl std::fmt::Display for Name {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-impl Serialize for Name {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+impl Serialize for FieldRef {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
-        self.0.serialize(serializer)
+        serializer.serialize_str(&self.to_string())
     }
 }
 
-impl<'de> Deserialize<'de> for Name {
+impl<'de> Deserialize<'de> for FieldRef {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        let as_str = String::deserialize(deserializer)?;
-        Self::from_str(&as_str).map_err(|err| {
-            let msg = format!("invalid name: {}", err);
-            D::Error::custom(msg)
-        })
+        let s = String::deserialize(deserializer)?;
+        FromStr::from_str(&s).map_err(de::Error::custom)
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct FieldRef {
-    collection: Name,
-    fields: Vec<String>,
+impl FromStr for FieldRef {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lexer = Lexer::lex(s.to_string());
+
+        let parser = Parser::new(lexer);
+
+        parser.parse()
+    }
 }
 
-impl From<Name> for FieldRef {
-    fn from(collection: Name) -> Self {
-        Self {
-            collection,
-            fields: Vec::new(),
+impl IntoIterator for FieldRef {
+    type IntoIter = Chain<Once<String>, <Vec<String> as IntoIterator>::IntoIter>;
+    type Item = String;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        std::iter::once(self.collection).chain(self.fields.into_iter())
+    }
+}
+
+impl std::fmt::Display for FieldRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, chunk) in self.iter().enumerate() {
+            if i != 0 {
+                write!(f, ".")?
+            }
+
+            if chunk.contains('.') {
+                write!(f, "\"{}\"", chunk)?
+            } else {
+                write!(f, "{}", chunk)?
+            }
         }
+        Ok(())
     }
 }
 
@@ -135,12 +119,19 @@ impl FieldRef {
         Self::from_str(s.as_ref())
     }
 
-    pub fn collection(&self) -> &Name {
+    pub fn from_collection_name(collection: String) -> Result<Self> {
+        check_collection_name_is_valid(&collection).map(|_| Self {
+            collection,
+            fields: Vec::new(),
+        })
+    }
+
+    pub fn collection(&self) -> &str {
         &self.collection
     }
 
     pub fn iter_fields(&self) -> impl Iterator<Item = &str> {
-        self.fields.iter().map(|value| value.as_str())
+        self.fields.iter().map(String::as_str)
     }
 
     pub(crate) fn iter(&self) -> impl Iterator<Item = &str> {
@@ -161,12 +152,24 @@ impl FieldRef {
     pub(crate) fn last(&self) -> String {
         match self.fields.last() {
             Some(field) => field.clone(),
-            None => self.collection.clone().to_string(),
+            None => self.collection.clone(),
         }
     }
 
     pub(crate) fn is_top_level(&self) -> bool {
         self.fields.is_empty()
+    }
+}
+
+lazy_static! {
+    static ref COLLECTION_NAME_REGEX: Regex = Regex::new("^[A-Za-z_0-9]+$").unwrap();
+}
+
+fn check_collection_name_is_valid(name: &str) -> Result<()> {
+    if COLLECTION_NAME_REGEX.is_match(name) {
+        Ok(())
+    } else {
+        Err(anyhow!("illegal collection name: {}", name))
     }
 }
 
@@ -235,8 +238,8 @@ impl Parser {
             };
         }
 
-        Ok(FieldRef {
-            collection: Name::from_str(&self.collection)?,
+        check_collection_name_is_valid(&self.collection).map(|_| FieldRef {
+            collection: self.collection,
             fields: self.field_chunks,
         })
     }
@@ -348,68 +351,8 @@ enum Token {
     Quote,
 }
 
-impl Serialize for FieldRef {
-    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&format!("{}", &self))
-    }
-}
-
-impl<'de> Deserialize<'de> for FieldRef {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        FromStr::from_str(&s).map_err(de::Error::custom)
-    }
-}
-
-impl FromStr for FieldRef {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let lexer = Lexer::lex(s.to_string());
-
-        let parser = Parser::new(lexer);
-
-        parser.parse()
-    }
-}
-
-impl IntoIterator for FieldRef {
-    type IntoIter = Chain<Once<String>, <Vec<String> as IntoIterator>::IntoIter>;
-    type Item = String;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        std::iter::once(self.collection.to_string()).chain(self.fields.into_iter())
-    }
-}
-
-impl std::fmt::Display for FieldRef {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (i, chunk) in self.iter().enumerate() {
-            if i != 0 {
-                write!(f, ".")?
-            }
-
-            if chunk.contains('.') {
-                write!(f, "\"{}\"", chunk)?
-            } else {
-                write!(f, "{}", chunk)?
-            }
-        }
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
-    use std::collections::BTreeMap;
-
     use super::*;
 
     use super::content::tests::USER_SCHEMA;
@@ -418,13 +361,13 @@ pub mod tests {
     fn test_new() {
         let reference: FieldRef = "users.address.postcode".parse().unwrap();
         println!("{:?}", reference);
-        assert_eq!("users".parse::<Name>().unwrap(), *reference.collection());
+        assert_eq!("users".to_string(), *reference.collection());
         let mut fields = reference.iter_fields();
         assert_eq!("address", fields.next().unwrap());
         assert_eq!("postcode", fields.next().unwrap());
 
         let reference: FieldRef = "users.\"address.postcode\"".parse().unwrap();
-        assert_eq!("users".parse::<Name>().unwrap(), *reference.collection());
+        assert_eq!("users".to_string(), *reference.collection());
         let mut fields = reference.iter_fields();
         assert_eq!("address.postcode", fields.next().unwrap());
     }
@@ -434,6 +377,7 @@ pub mod tests {
         assert!("users.".parse::<FieldRef>().is_err());
         assert!(".users.".parse::<FieldRef>().is_err());
         assert!("users.some_field".parse::<FieldRef>().is_ok());
+        assert!("us@%ers.some_field".parse::<FieldRef>().is_err());
     }
 
     #[test]
@@ -503,8 +447,11 @@ pub mod tests {
     }
 
     lazy_static! {
-        pub static ref USER_NAMESPACE: Namespace = Namespace {
-            collections: BTreeMap::from([("users".parse().unwrap(), USER_SCHEMA.clone())])
+        pub static ref USER_NAMESPACE: Namespace = {
+            let mut n = Namespace::new();
+            n.put_collection("users".to_string(), USER_SCHEMA.clone())
+                .unwrap();
+            n
         };
     }
 }

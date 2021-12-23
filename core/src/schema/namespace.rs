@@ -1,14 +1,15 @@
 use super::inference::MergeStrategy;
-use super::{suggest_closest, ArrayContent, Content, FieldRef, Find, Name};
+use super::{suggest_closest, Content, FieldRef, Find};
 use crate::compile::{Compile, Compiler};
 use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
+
+use std::collections::BTreeMap;
+use std::{default::Default, iter::FromIterator};
+
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::Value, Map};
-use std::collections::BTreeMap;
-use std::convert::AsRef;
-use std::{default::Default, iter::FromIterator};
 
 #[allow(dead_code)]
 type JsonObject = Map<String, Value>;
@@ -16,27 +17,22 @@ type JsonObject = Map<String, Value>;
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, Hash)]
 pub struct Namespace {
     #[serde(flatten)]
-    pub collections: BTreeMap<Name, Content>,
-}
-
-impl AsRef<BTreeMap<Name, Content>> for Namespace {
-    fn as_ref(&self) -> &BTreeMap<Name, Content> {
-        &self.collections
-    }
+    collections: BTreeMap<String, Content>,
 }
 
 impl IntoIterator for Namespace {
-    type Item = (Name, Content);
+    type Item = (String, Content);
 
-    type IntoIter = std::collections::btree_map::IntoIter<Name, Content>;
+    type IntoIter = std::collections::btree_map::IntoIter<String, Content>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.collections.into_iter()
     }
 }
 
-impl FromIterator<(Name, Content)> for Namespace {
-    fn from_iter<T: IntoIterator<Item = (Name, Content)>>(iter: T) -> Self {
+// TODO: Could allow entering invalid collection names.
+impl FromIterator<(String, Content)> for Namespace {
+    fn from_iter<T: IntoIterator<Item = (String, Content)>>(iter: T) -> Self {
         Self {
             collections: iter.into_iter().collect(),
         }
@@ -49,28 +45,28 @@ impl Namespace {
     }
 
     #[cfg(test)]
-    pub fn accepts(&self, name: &Name, value: &Value) -> Result<()> {
+    pub fn accepts(&self, name: &str, value: &Value) -> Result<()> {
         self.get_collection(name)?.accepts(value)
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = (&Name, &Content)> {
-        self.collections.iter()
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &Content)> {
+        self.collections.iter().map(|(k, v)| (k.as_str(), v))
     }
 
     #[inline]
-    pub fn keys(&self) -> impl Iterator<Item = &Name> {
-        self.collections.keys()
+    pub fn keys(&self) -> impl Iterator<Item = &str> {
+        self.collections.keys().map(String::as_str)
     }
 
-    pub fn default_try_update(&mut self, name: &Name, value: &Value) -> Result<()> {
+    pub fn default_try_update(&mut self, name: &str, value: &Value) -> Result<()> {
         self.try_update(OptionalMergeStrategy, name, value)
     }
 
     pub fn try_update<M: MergeStrategy<Content, Value>>(
         &mut self,
         strategy: M,
-        name: &Name,
+        name: &str,
         value: &Value,
     ) -> Result<()> {
         let collection = self.get_collection_mut(name)?;
@@ -78,11 +74,13 @@ impl Namespace {
         Ok(())
     }
 
-    pub fn collection_exists(&self, name: &Name) -> bool {
+    pub fn collection_exists(&self, name: &str) -> bool {
         self.collections.contains_key(name)
     }
 
-    pub fn put_collection(&mut self, name: &Name, content: Content) -> Result<()> {
+    pub fn put_collection(&mut self, name: String, content: Content) -> Result<()> {
+        super::check_collection_name_is_valid(&name)?;
+
         if self.collections.insert(name.clone(), content).is_some() {
             Err(failed!(
                 target: Release,
@@ -94,28 +92,12 @@ impl Namespace {
         }
     }
 
-    pub fn collection(value: &Value) -> Content {
-        Content::Array(ArrayContent {
-            length: Box::new(Content::from(&Value::from(1))),
-            content: Box::new(value.into()),
-        })
+    pub fn put_collection_from_json(&mut self, name: String, value: &Value) -> Result<()> {
+        self.put_collection(name, Content::from_value_wrapped_in_array(value))
     }
 
-    pub fn create_collection(&mut self, name: &Name, value: &Value) -> Result<()> {
-        let as_content = Self::collection(value);
-        self.put_collection(name, as_content)?;
-        Ok(())
-    }
-
-    pub fn delete_collection(&mut self, name: &Name) -> Result<()> {
-        if self.collections.remove(name).is_none() {
-            return Err(failed!(
-                target: Release,
-                "collection does not exist: {}",
-                name
-            ));
-        }
-        Ok(())
+    pub fn remove_collection(&mut self, name: &str) -> Option<Content> {
+        self.collections.remove(name)
     }
 
     #[inline]
@@ -123,10 +105,14 @@ impl Namespace {
         self.collections.is_empty()
     }
 
+    pub fn len(&self) -> usize {
+        self.collections.len()
+    }
+
     // May remove this in due course. Or add an only visible for testing flag
     // or something like that.
     #[allow(dead_code)]
-    pub fn export_schema(&self, name: &Name) -> Result<Content> {
+    pub fn export_schema(&self, name: &str) -> Result<Content> {
         let schema = self.get_collection(name)?;
         Ok(schema.clone())
     }
@@ -145,8 +131,8 @@ impl Namespace {
             .with_context(|| format!("in a collection: '{}'", collection))
     }
 
-    pub fn get_collection_mut(&mut self, name: &Name) -> Result<&mut Content> {
-        let suggest = suggest_closest(self.collections.keys(), name.as_ref()).unwrap_or_default();
+    pub fn get_collection_mut(&mut self, name: &str) -> Result<&mut Content> {
+        let suggest = suggest_closest(self.collections.keys(), name).unwrap_or_default();
         if let Some(collection) = self.collections.get_mut(name) {
             Ok(collection)
         } else {
@@ -154,8 +140,8 @@ impl Namespace {
         }
     }
 
-    pub fn get_collection(&self, name: &Name) -> Result<&Content> {
-        let suggest = suggest_closest(self.collections.keys(), name.as_ref()).unwrap_or_default();
+    pub fn get_collection(&self, name: &str) -> Result<&Content> {
+        let suggest = suggest_closest(self.collections.keys(), name).unwrap_or_default();
         if let Some(collection) = self.collections.get(name) {
             Ok(collection)
         } else {
@@ -170,10 +156,29 @@ impl Compile for Namespace {
             .iter()
             .map(|(name, content)| {
                 compiler
-                    .build(name.as_ref(), content)
-                    .map(|graph| KeyValueOrNothing::always(name.as_ref(), graph, false))
+                    .build(name, content)
+                    .map(|graph| KeyValueOrNothing::always(name, graph, false))
             })
             .collect::<Result<_>>()?;
         Ok(Graph::Object(object_node))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::NullContent;
+
+    #[test]
+    fn check_name_valid_on_collection_insert() {
+        let mut ns = Namespace::new();
+
+        assert!(ns
+            .put_collection("世界".to_string(), Content::Null(NullContent))
+            .is_err());
+
+        assert!(ns
+            .put_collection_from_json("!!!".to_string(), &Value::Null)
+            .is_err());
     }
 }

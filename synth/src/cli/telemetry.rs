@@ -22,7 +22,7 @@ use crate::version::version;
 
 use synth_core::{
     compile::{Address, CompilerState, FromLink, Source},
-    Compile, Compiler, Content, Graph, Name, Namespace,
+    Compile, Compiler, Content, Graph, Namespace,
 };
 
 use super::{Args, TelemetryCommand};
@@ -215,7 +215,7 @@ impl TelemetryExportStrategy {
     pub(super) fn fill_telemetry_pre(
         context: Rc<RefCell<TelemetryContext>>,
         namespace: &Namespace,
-        collection: Option<Name>,
+        collection: Option<String>,
         ns_path: PathBuf,
     ) -> Result<()> {
         let crawler = TelemetryCrawler {
@@ -225,7 +225,7 @@ impl TelemetryExportStrategy {
         };
 
         if let Some(name) = collection {
-            if let Some(content) = namespace.collections.get(&name) {
+            if let Ok(content) = namespace.get_collection(&name) {
                 content.compile(crawler)?;
                 context.borrow_mut().num_collections = Some(1);
 
@@ -236,7 +236,7 @@ impl TelemetryExportStrategy {
             }
         } else {
             namespace.compile(crawler)?;
-            let num_col = namespace.collections.len();
+            let num_col = namespace.len();
             context.borrow_mut().num_collections = Some(num_col);
 
             // Namespace, length and content for each collection

@@ -5,14 +5,13 @@ use async_std::task;
 use log::debug;
 use serde_json::Value;
 use std::convert::TryFrom;
-use std::str::FromStr;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
     ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
     SameAsContent, UniqueContent,
 };
-use synth_core::{Content, Name, Namespace};
+use synth_core::{Content, Namespace};
 
 #[derive(Debug)]
 pub(crate) struct Collection {
@@ -56,7 +55,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
         let column_infos = task::block_on(datasource.get_columns_infos(table_name))?;
 
         namespace.put_collection(
-            &Name::from_str(table_name)?,
+            table_name.clone(),
             Collection::try_from((datasource, column_infos))?.collection,
         )?;
     }
@@ -130,14 +129,10 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
 ) -> Result<()> {
     task::block_on(datasource.set_seed())?;
 
-    for table in table_names {
-        let values = task::block_on(datasource.get_deterministic_samples(table))?;
+    for table_name in table_names {
+        let values = task::block_on(datasource.get_deterministic_samples(table_name))?;
         let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
-        namespace.try_update(
-            OptionalMergeStrategy,
-            &Name::from_str(table).unwrap(),
-            &Value::from(json_values),
-        )?;
+        namespace.try_update(OptionalMergeStrategy, table_name, &Value::from(json_values))?;
     }
 
     Ok(())

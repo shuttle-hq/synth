@@ -184,7 +184,7 @@ fn json_lines_from_sampler_output(
 /// collection.
 fn collection_from_values_jsonl(values: Vec<serde_json::Value>) -> Result<Content> {
     let fst = values.first().unwrap_or(&serde_json::Value::Null);
-    let mut as_content = Namespace::collection(fst);
+    let mut as_content = Content::from_value_wrapped_in_array(fst);
     OptionalMergeStrategy.try_merge(&mut as_content, &serde_json::Value::Array(values))?;
     Ok(as_content)
 }

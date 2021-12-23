@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use synth_core::schema::Namespace;
-use synth_core::{Content, Name};
+use synth_core::Content;
 
 use crate::cli::db_utils::DataSourceParams;
 use crate::cli::json::{JsonFileImportStrategy, JsonStdinImportStrategy};
@@ -21,10 +21,9 @@ pub trait ImportStrategy {
 
     /// Import a single collection. Default implementation works by calling `import` and then extracting from the
     /// returned namespace the correct collection based on the `name` parameter.
-    fn import_collection(&self, name: &Name) -> Result<Content> {
+    fn import_collection(&self, name: &str) -> Result<Content> {
         self.import()?
-            .collections
-            .remove(name)
+            .remove_collection(name)
             .ok_or_else(|| anyhow!("Could not find collection '{}'.", name))
     }
 }

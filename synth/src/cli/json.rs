@@ -68,7 +68,7 @@ pub fn import_json(val: serde_json::Value) -> Result<Namespace> {
             .into_iter()
             .map(|(name, value)| {
                 collection_from_value(&value)
-                    .and_then(|content| Ok((name.parse()?, content)))
+                    .map(|content| (name.clone(), content))
                     .with_context(|| anyhow!("While importing the collection `{}`", name))
             })
             .collect(),
@@ -83,7 +83,7 @@ fn collection_from_value(value: &serde_json::Value) -> Result<Content> {
     match value {
         serde_json::Value::Array(values) => {
             let fst = values.first().unwrap_or(&serde_json::Value::Null);
-            let mut as_content = Namespace::collection(fst);
+            let mut as_content = Content::from_value_wrapped_in_array(fst);
             OptionalMergeStrategy.try_merge(&mut as_content, value)?;
             Ok(as_content)
         }

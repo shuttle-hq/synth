@@ -259,6 +259,13 @@ content! {
 }
 
 impl Content {
+    pub fn from_value_wrapped_in_array(value: &Value) -> Self {
+        Content::Array(ArrayContent {
+            length: Box::new(Content::from(&Value::from(1))),
+            content: Box::new(value.into()),
+        })
+    }
+
     pub fn is_null(&self) -> bool {
         matches!(self, Self::Null(_))
     }
@@ -323,7 +330,7 @@ impl Content {
             Content::Object(ObjectContent { fields, .. }) => {
                 let mut namespace = Namespace::new();
                 for (key, content) in fields.into_iter() {
-                    namespace.put_collection(&key.parse()?, content)?;
+                    namespace.put_collection(key, content)?;
                 }
                 Ok(namespace)
             }
