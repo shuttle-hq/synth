@@ -26,8 +26,8 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
+pub use state::CompilerState;
 use state::{Artifact, OutputState, Symbols};
-pub use state::{CompilerState, Source};
 
 pub mod address;
 pub use address::Address;
@@ -37,7 +37,7 @@ pub use link::{FromLink, Link};
 use link::{GeneratorRecorder, GeneratorSliceRef, Ordered, Recorder};
 
 use crate::graph::Graph;
-use crate::schema::{Content, Namespace};
+use crate::schema::Content;
 
 /// A trait for visitors of the [`Content`](crate::schema::Content) tree.
 ///
@@ -67,13 +67,13 @@ impl<'a> NamespaceCompiler<'a> {
         Self { state, vtable }
     }
 
-    pub fn new(namespace: &'a Namespace) -> Self {
-        let state = CompilerState::namespace(namespace);
+    pub fn new(namespace: &'a Content) -> Self {
+        let state = CompilerState::new(namespace);
         Self::new_at(state)
     }
 
     pub fn new_flat(content: &'a Content) -> Self {
-        let state = CompilerState::content(content);
+        let state = CompilerState::new(content);
         Self::new_at(state)
     }
 
@@ -242,10 +242,8 @@ pub struct ContentCompiler<'c, 'a: 'c> {
 
 impl<'c, 'a: 'c> ContentCompiler<'c, 'a> {
     fn compile(self) -> Result<Graph> {
-        match self.state.source() {
-            Source::Namespace(namespace) => namespace.compile(self),
-            Source::Content(content) => content.compile(self),
-        }
+        let src = self.state.source();
+        src.compile(self)
     }
 }
 
@@ -301,10 +299,8 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
     }
 
     fn compile(self) -> Result<()> {
-        match self.state.source() {
-            Source::Namespace(namespace) => namespace.compile(self)?,
-            Source::Content(content) => content.compile(self)?,
-        };
+        let src = self.state.source();
+        src.compile(self)?;
         Ok(())
     }
 }

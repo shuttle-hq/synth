@@ -61,7 +61,7 @@ pub use hidden::HiddenContent;
 
 use prelude::*;
 
-use super::{FieldRef, Namespace};
+use super::FieldRef;
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -322,21 +322,6 @@ impl Content {
             })
         } else {
             self
-        }
-    }
-
-    pub fn into_namespace(self) -> Result<Namespace> {
-        match self {
-            Content::Object(ObjectContent { fields, .. }) => {
-                let mut namespace = Namespace::new();
-                for (key, content) in fields.into_iter() {
-                    namespace.put_collection(key, content)?;
-                }
-                Ok(namespace)
-            }
-            _ => Err(anyhow!(
-                "cannot convert a non-object content to a namespace"
-            )),
         }
     }
 
