@@ -242,8 +242,8 @@ pub struct ContentCompiler<'c, 'a: 'c> {
 
 impl<'c, 'a: 'c> ContentCompiler<'c, 'a> {
     fn compile(self) -> Result<Graph> {
-        let src = self.state.source();
-        src.compile(self)
+        // TODO: self.state.source().compile(self)
+        panic!()
     }
 }
 
@@ -299,8 +299,7 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
     }
 
     fn compile(self) -> Result<()> {
-        let src = self.state.source();
-        src.compile(self)?;
+        // TODO: self.state.source().compile(self)?;
         Ok(())
     }
 }

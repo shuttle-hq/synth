@@ -4,7 +4,7 @@ use crate::sampler::{Sampler, SamplerOutput};
 
 use synth_core::graph::{json::synth_val_to_json, Value};
 use synth_core::schema::{MergeStrategy, OptionalMergeStrategy};
-use synth_core::{Content, Namespace};
+use synth_core::Content;
 
 use anyhow::{Context, Result};
 

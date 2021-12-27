@@ -289,7 +289,7 @@ impl<'a, G: Generator> CompilerState<'a, G> {
 
     #[inline]
     pub fn source(&self) -> &Content {
-        &self.src
+        self.src
     }
 
     #[inline]

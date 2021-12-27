@@ -13,6 +13,7 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
@@ -259,6 +260,13 @@ content! {
 }
 
 impl Content {
+    pub fn new_object(fields: BTreeMap<String, Content>) -> Self {
+        Content::Object(ObjectContent {
+            fields,
+            ..Default::default()
+        })
+    }
+
     pub fn from_value_wrapped_in_array(value: &Value) -> Self {
         Content::Array(ArrayContent {
             length: Box::new(Content::from(&Value::from(1))),
@@ -415,6 +423,30 @@ impl Content {
             Content::Series(content) => format!("series::{}", content.kind()),
             Content::Unique(_) => "unique".to_string(),
             Content::Hidden(_) => "hidden".to_string(),
+        }
+    }
+
+    pub fn get_s_node(&self, reference: &FieldRef) -> Result<&Content> {
+        self.find(reference.iter().peekable())
+    }
+
+    pub fn get_s_node_mut(&mut self, reference: &FieldRef) -> Result<&mut Content> {
+        self.find_mut(reference.iter().peekable())
+    }
+
+    pub fn get(&self, key: &str) -> Result<&Content> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            return fields.get(key).context("no such key in object");
+        } else {
+            Err(anyhow!("cannot find a key/value pair in a non-object type"))
+        }
+    }
+
+    pub fn get_mut(&mut self, key: &str) -> Result<&mut Content> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            return fields.get_mut(key).context("no such key in object");
+        } else {
+            Err(anyhow!("cannot find a key/value pair in a non-object type"))
         }
     }
 }

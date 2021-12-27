@@ -5,7 +5,6 @@ use crate::datasource::postgres_datasource::{PostgresConnectParams, PostgresData
 use crate::datasource::DataSource;
 use crate::sampler::SamplerOutput;
 use anyhow::Result;
-use synth_core::schema::Namespace;
 
 #[derive(Clone, Debug)]
 pub struct PostgresExportStrategy {

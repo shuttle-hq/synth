@@ -11,7 +11,7 @@ use synth_core::schema::{
     ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
     SameAsContent, UniqueContent,
 };
-use synth_core::{Content, Namespace};
+use synth_core::Content;
 
 #[derive(Debug)]
 pub(crate) struct Collection {

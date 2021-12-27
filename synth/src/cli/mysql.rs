@@ -5,7 +5,6 @@ use crate::datasource::mysql_datasource::MySqlDataSource;
 use crate::datasource::DataSource;
 use crate::sampler::SamplerOutput;
 use anyhow::Result;
-use synth_core::schema::Namespace;
 
 #[derive(Clone, Debug)]
 pub struct MySqlExportStrategy {

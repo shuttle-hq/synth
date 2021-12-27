@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use lazy_static::lazy_static;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
-use synth_core::schema::{Content, Namespace};
+use synth_core::schema::Content;
 
 lazy_static! {
     static ref UNDERLYING: Underlying = Underlying {

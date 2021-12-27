@@ -4,7 +4,7 @@ use rand::SeedableRng;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
-use synth_core::{Graph, Namespace, Value};
+use synth_core::{Content, Graph, Value};
 use synth_gen::prelude::*;
 
 pub(crate) struct Sampler {
@@ -54,11 +54,11 @@ impl Sampler {
     }
 }
 
-impl TryFrom<&Namespace> for Sampler {
+impl TryFrom<&Content> for Sampler {
     type Error = anyhow::Error;
-    fn try_from(namespace: &Namespace) -> Result<Self> {
+    fn try_from(ns: &Content) -> Result<Self> {
         Ok(Self {
-            graph: Graph::from_namespace(namespace)?,
+            graph: Graph::try_from(ns)?,
         })
     }
 }

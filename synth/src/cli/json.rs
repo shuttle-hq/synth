@@ -3,7 +3,7 @@ use crate::cli::import::ImportStrategy;
 use crate::sampler::{Sampler, SamplerOutput};
 
 use synth_core::schema::{MergeStrategy, OptionalMergeStrategy};
-use synth_core::{Content, Namespace};
+use synth_core::Content;
 
 use anyhow::{Context, Result};
 

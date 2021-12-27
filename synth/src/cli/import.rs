@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-use synth_core::schema::Namespace;
 use synth_core::Content;
 
 use crate::cli::db_utils::DataSourceParams;

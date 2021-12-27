@@ -923,7 +923,9 @@ pub mod tests {
 
     #[test]
     fn test_schema_compiles_and_generates() {
-        let mut model = Graph::from_namespace(&USER_NAMESPACE).unwrap().aggregate();
+        let mut model = Graph::try_from(&USER_NAMESPACE.clone())
+            .unwrap()
+            .aggregate();
         let mut rng = rand::thread_rng();
         let ser = OwnedSerializable::new(model.try_next_yielded(&mut rng).unwrap());
         serde_json::to_string_pretty(&ser).unwrap();

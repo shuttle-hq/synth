@@ -21,8 +21,8 @@ use crate::utils::META_OS;
 use crate::version::version;
 
 use synth_core::{
-    compile::{Address, CompilerState, FromLink, Source},
-    Compile, Compiler, Content, Graph, Namespace,
+    compile::{Address, CompilerState, FromLink},
+    Compile, Compiler, Content, Graph,
 };
 
 use super::{Args, TelemetryCommand};
@@ -511,7 +511,7 @@ impl TelemetryClient {
 #[cfg(test)]
 pub mod tests {
     use super::{
-        ExportParams, ExportStrategy, Namespace, SamplerOutput, TelemetryClient, TelemetryContext,
+        ExportParams, ExportStrategy, SamplerOutput, TelemetryClient, TelemetryContext,
         TelemetryExportStrategy,
     };
     use crate::sampler::Sampler;

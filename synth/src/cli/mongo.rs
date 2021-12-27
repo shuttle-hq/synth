@@ -16,7 +16,7 @@ use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, RegexContent,
     StringContent,
 };
-use synth_core::{Content, Namespace, Value};
+use synth_core::{Content, Value};
 
 #[derive(Clone, Debug)]
 pub struct MongoExportStrategy {
