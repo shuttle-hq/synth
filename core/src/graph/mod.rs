@@ -36,6 +36,9 @@ pub use number::{
 pub mod boolean;
 pub use boolean::{BoolNode, RandomBool};
 
+pub mod iter;
+pub use iter::IterNode;
+
 pub mod array;
 pub use array::ArrayNode;
 
@@ -542,6 +545,7 @@ derive_generator!(
         Unique(UniqueNode),
         Link(Box<LinkNode>),
         Hidden(Box<Graph>),
+        Iter(IterNode),
     }
 );
 
