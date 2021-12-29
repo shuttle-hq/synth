@@ -79,7 +79,7 @@ mod tests {
         let content = DatasourceContent {
             path: format!(
                 "json:{}",
-                p.into_os_string().into_string().unwrap().replace("\\", "/")
+                p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
         };
@@ -97,7 +97,7 @@ mod tests {
         let content = DatasourceContent {
             path: format!(
                 "json:{}",
-                p.into_os_string().into_string().unwrap().replace("\\", "/")
+                p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
         };
@@ -129,7 +129,7 @@ mod tests {
         let content = DatasourceContent {
             path: format!(
                 "json:{}",
-                p.into_os_string().into_string().unwrap().replace("\\", "/")
+                p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: true,
         };
@@ -184,7 +184,7 @@ mod tests {
         let content = DatasourceContent {
             path: format!(
                 "json:{}",
-                p.into_os_string().into_string().unwrap().replace("\\", "/")
+                p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
         };
