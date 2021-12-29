@@ -55,7 +55,6 @@ and you should see an output very close to the output of the snippet.
 * For more complex real life examples, see the [examples][examples] section.
 
 [synth]: cli.md
-[synth-init]: cli.md#command-init
 [schema]: schema.md
 [generators]: ../content/object.md
 [core-concepts]: core-concepts.md

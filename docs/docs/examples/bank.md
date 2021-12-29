@@ -46,7 +46,7 @@ application testing.
 We first create a new workspace to import our dataset into Synth:
 
 ```bash
-mkdir synth_workspace && cd synth_workspace && synth init
+mkdir synth_workspace && cd synth_workspace
 ```
 
 Synth supports importing from JSON files. To create a namespace, copy the JSON blob below to a file outside your workspace and use the `import` command:
@@ -163,10 +163,9 @@ At this stage, we can run the `tree` command to see how the `synth import` sub-c
 ```bash
 $ tree -a
 .
-├── bank_db
-│   ├── transactions.json
-│   └── users.json
-└── .synth
+└── bank_db
+    ├── transactions.json
+    └── users.json
 ```
 
 The directory `bank_db` (remember from [Core Concepts](../getting_started/core-concepts) a subdirectory in a workspace represents a
