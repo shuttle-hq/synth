@@ -175,7 +175,7 @@ We can now generate data from our namespace using the `synth generate` sub-comma
 into [`jq`](https://stedolan.github.io/jq/download/) for the auto-formatting but this is optional.)
 
 ```bash
-synth generate bank_db/ | jq
+synth generate bank_db | jq
 {
   "transactions": [
     {

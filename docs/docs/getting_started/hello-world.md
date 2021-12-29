@@ -44,7 +44,7 @@ data.
 Finally, run
 
 ```bash
-synth generate hello_synth/
+synth generate hello_synth
 ```
 
 and you should see an output very close to the output of the snippet.
