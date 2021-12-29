@@ -267,7 +267,8 @@ impl Content {
         })
     }
 
-    pub fn from_value_wrapped_in_array(value: &Value) -> Self {
+    /// Convert a [`serde_json::Value`] to an instance of [`Content`] wrapped inside a [`Content::Array`] of length 1.
+    pub fn new_collection(value: &Value) -> Self {
         Content::Array(ArrayContent {
             length: Box::new(Content::from(&Value::from(1))),
             content: Box::new(value.into()),
@@ -436,7 +437,10 @@ impl Content {
 
     pub fn get(&self, key: &str) -> Result<&Content> {
         if let Content::Object(ObjectContent { fields, .. }) = self {
-            return fields.get(key).context("no such key in object");
+            let suggestion = suggest_closest(fields.keys(), key).unwrap_or_default();
+            return fields
+                .get(key)
+                .context(format!("no such collection: '{}'{}", key, suggestion));
         } else {
             Err(anyhow!("cannot find a key/value pair in a non-object type"))
         }
@@ -444,7 +448,10 @@ impl Content {
 
     pub fn get_mut(&mut self, key: &str) -> Result<&mut Content> {
         if let Content::Object(ObjectContent { fields, .. }) = self {
-            return fields.get_mut(key).context("no such key in object");
+            let suggestion = suggest_closest(fields.keys(), key).unwrap_or_default();
+            return fields
+                .get_mut(key)
+                .context(format!("no such collection: '{}'{}", key, suggestion));
         } else {
             Err(anyhow!("cannot find a key/value pair in a non-object type"))
         }

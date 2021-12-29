@@ -141,6 +141,47 @@ impl<'a, G: Generator> Iterator for IntoIter<'a, G> {
     }
 }
 
+pub enum Source<'a> {
+    Namespace(&'a Content),
+    Schema(&'a Content),
+}
+
+impl<'a> std::fmt::Display for Source<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Namespace(_) => write!(f, "namespace"),
+            Self::Schema(_) => write!(f, "schema"),
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl<'a> Source<'a> {
+    #[inline]
+    pub(super) fn as_namespace(&self) -> Result<&'a Content> {
+        match self {
+            Self::Namespace(namespace) => Ok(namespace),
+            other => Err(failed!(
+                target: Release,
+                "source node type mismatch: expected namespace, found {}",
+                other
+            )),
+        }
+    }
+
+    #[inline]
+    pub(super) fn as_schema(&self) -> Result<&'a Content> {
+        match self {
+            Self::Schema(content) => Ok(content),
+            other => Err(failed!(
+                target: Release,
+                "source node type mismatch: expected schema, found {}",
+                other
+            )),
+        }
+    }
+}
+
 pub(super) enum Artifact<G, Y, R> {
     Just(G),
     Link(Link<G, Y, R>),
@@ -215,7 +256,7 @@ impl<G: Generator> OutputState<G> {
 }
 
 pub struct CompilerState<'a, G: Generator> {
-    src: &'a Content,
+    src: Source<'a>,
     output: OutputState<G>,
     scope: StructuredState<'a, G>,
     refs: BTreeSet<Address>,
@@ -230,13 +271,23 @@ impl<'a, G: Generator> std::iter::Extend<(String, CompilerState<'a, G>)> for Com
 
 impl<'a, G: Generator> CompilerState<'a, G> {
     #[inline]
-    pub(super) fn new(source: &'a Content) -> Self {
+    pub(super) fn new(source: Source<'a>) -> Self {
         Self {
             src: source,
             output: OutputState::default(),
             scope: StructuredState::default(),
             refs: BTreeSet::default(),
         }
+    }
+
+    #[inline]
+    pub(super) fn schema(content: &'a Content) -> Self {
+        Self::new(Source::Schema(content))
+    }
+
+    #[inline]
+    pub fn namespace(content: &'a Content) -> Self {
+        Self::new(Source::Namespace(content))
     }
 
     #[inline]
@@ -288,8 +339,8 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 
     #[inline]
-    pub fn source(&self) -> &Content {
-        self.src
+    pub fn source(&self) -> &Source<'a> {
+        &self.src
     }
 
     #[inline]
@@ -328,7 +379,7 @@ impl<'t, 'a, G: Generator> Entry<'t, 'a, G> {
         if !self.node.scope.children.contains_key(&self.field) {
             self.node
                 .scope
-                .insert(self.field.clone(), CompilerState::new(content));
+                .insert(self.field.clone(), CompilerState::schema(content));
         }
         self.node.get_mut(&self.field).unwrap()
     }

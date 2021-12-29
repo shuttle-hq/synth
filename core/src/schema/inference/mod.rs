@@ -409,9 +409,10 @@ pub mod tests {
 
         let collection_name = "users".to_string();
         let mut fields = BTreeMap::new();
-        fields
-            .insert(collection_name.clone(), (&user_no_last_name).into())
-            .unwrap();
+        fields.insert(
+            collection_name.clone(),
+            Content::new_collection(&user_no_last_name),
+        );
         let mut ns = Content::new_object(fields);
 
         assert!(ns
@@ -466,9 +467,10 @@ pub mod tests {
 
         let collection_name = "users".to_string();
         let mut fields = BTreeMap::new();
-        fields
-            .insert(collection_name.clone(), (&user_no_last_name).into())
-            .unwrap();
+        fields.insert(
+            collection_name.clone(),
+            Content::new_collection(&user_no_last_name),
+        );
         let mut ns = Content::new_object(fields);
 
         OptionalMergeStrategy
@@ -527,7 +529,10 @@ pub mod tests {
 
         let collection_name = "users".to_string();
         let mut fields = BTreeMap::new();
-        fields.insert(collection_name.clone(), (&user_no_last_name).into());
+        fields.insert(
+            collection_name.clone(),
+            Content::new_collection(&user_no_last_name),
+        );
         let mut ns = Content::new_object(fields);
 
         OptionalMergeStrategy
