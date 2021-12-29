@@ -12,7 +12,7 @@ use std::path::PathBuf;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
-use synth_core::{DataSourceParams, Name, Namespace, Value};
+use synth_core::{DataSourceParams, Namespace, Value};
 
 use super::collection_field_name_from_uri_query;
 

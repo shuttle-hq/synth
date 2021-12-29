@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use synth_core::schema::Namespace;
-use synth_core::{Content, DataSourceParams, Name};
+use synth_core::{Content, DataSourceParams};
 
 use crate::cli::json::{JsonFileImportStrategy, JsonStdinImportStrategy};
 use crate::cli::jsonl::{JsonLinesFileImportStrategy, JsonLinesStdinImportStrategy};

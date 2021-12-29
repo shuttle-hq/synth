@@ -21,7 +21,7 @@ use std::convert::{TryFrom, TryInto};
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
-use synth_core::{DataSourceParams, Name};
+use synth_core::DataSourceParams;
 use uriparse::URI;
 
 pub(crate) mod config;
