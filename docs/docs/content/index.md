@@ -21,7 +21,6 @@ various classes of string:
   * [pattern](string#pattern) takes a regular expression and
   generates matching strings
   * [uuid](string#uuid) generates hyphenated UUIDs
-  * [date_time](string#date_time) generates dates and times,
   optionally with time zone
   * [faker](string#faker) has a large number of generators for names,
   contact information, credit card numbers, sentences, and much more
@@ -33,6 +32,7 @@ various classes of string:
   within length limits
   * [categorical](string#categorical) is like a
   [one_of](one-of) specialized for strings
+* [date_time](date-time) generates dates and times
 * [object](object) creates an object with string keys containing
 generators for the values
 * [array](array) fills an array of the given length with elements of
