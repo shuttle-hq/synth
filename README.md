@@ -102,14 +102,11 @@ Next let's create a `users` collection using Synth's configuration language, and
             }
         },
         "joined_on": {
-            "type": "object",
-            "date": {
-                "type": "date_time",
-                "format": "%Y-%m-%d",
-                "subtype": "naive_date",
-                "begin": "2010-01-01",
-                "end": "2020-01-01"
-            }
+            "type": "date_time",
+            "format": "%Y-%m-%d",
+            "subtype": "naive_date",
+            "begin": "2010-01-01",
+            "end": "2020-01-01"
         }
     }
 }
@@ -124,16 +121,12 @@ $ synth generate my_app/ --size 2 | jq
     {
       "email": "patricia40@jordan.com",
       "id": 1,
-      "joined_on": {
-        "date": "2014-12-14
-      }
+      "joined_on": "2014-12-14"
     },
     {
       "email": "benjamin00@yahoo.com",
       "id": 2,
-      "joined_on": {
-        "date": "2013-04-06"
-      }
+      "joined_on": "2013-04-06"
     }
   ]
 }
