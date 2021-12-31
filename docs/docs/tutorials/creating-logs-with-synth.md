@@ -345,7 +345,7 @@ In this case the we're assigning weights to the variants of the categorical.
 And finally `bytes`. For `bytes` we'll use a [number range](/docs/content/number#range) generator 
 from 1 b to 1 MiB:
 
-```json synth
+```json synth[logs.json]
 {
     "type": "array",
     "length": 1,

@@ -151,7 +151,7 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
     },
     "user_id": {
       "type": "same_as",
-      "ref": "users.Schema.user_id"
+      "ref": "users.content.user_id"
     }
   }
 }
@@ -159,7 +159,7 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
 
 And the second, the `users` collection:
 
-```json synth
+```json synth[users.json]
 {
     "type": "array",
     "length": {

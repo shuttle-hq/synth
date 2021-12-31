@@ -224,7 +224,7 @@ As `synth` evolves, inference will get better - but for now, we need to tweak th
 To modify the schema, open the workspace in your favourite editor. Let's take a look at `bank_db/transactions.json`
 first.
 
-```json synth
+```json synth[users.json]
 {
   "type": "array",
   "length": {

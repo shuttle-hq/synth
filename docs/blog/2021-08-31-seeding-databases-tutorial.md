@@ -572,7 +572,7 @@ OK, so we now know how to generate the `id` and the `email` properties of
 our [`User` model](#prisma-is-awesome). But we do not yet know how to put them
 together in one object. For that we need the [`object`][synth-object] type:
 
-```json synth
+```json synth[User.json]
 {
     "type": "object",
     "id": {
