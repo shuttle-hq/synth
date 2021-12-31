@@ -345,7 +345,7 @@ it should be a [date_time](/content/date-time).
 The `user_id` field should point to a valid entry in the `users` collection, so let's use
 the [same_as](../content/same-as) content type to express this foreign key relationship.
 
-```json
+```json synth
 {
   "type": "same_as",
   "ref": "users.content.id"

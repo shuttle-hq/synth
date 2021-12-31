@@ -106,7 +106,7 @@ Below is a tree representation of the schema Schema tree:
 
 The corresponding namespace can be broken into 2 collections. The first, `transactions`:
 
-```json
+```json synth[transactions.json]
 {
   "type": "array",
   "length": {

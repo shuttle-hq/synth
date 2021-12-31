@@ -732,7 +732,7 @@ Here is the end result:
 It all looks pretty similar to the `User.json` collection, except for one
 important difference at the line
 
-```json
+```json synth
     "authorId": "@User.content.id"
 ```
 

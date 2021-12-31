@@ -426,7 +426,7 @@ creating another file in our namespace called `formatted.json`. We'll then
 use a combination of the `format` and [`same_as`](/docs/content/same-as) generators to compose 
 together fields from our original collection `logs.json`.
 
-```json
+```json synth[formatted.json]
 {
     "type": "array",
     "length": 1,
