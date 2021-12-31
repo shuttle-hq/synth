@@ -183,7 +183,7 @@ And the second, the `users` collection:
         "user_email": {
             "type": "string",
             "faker": {
-                "generator": "email"
+                "generator": "safe_email"
             }
         }
     }
