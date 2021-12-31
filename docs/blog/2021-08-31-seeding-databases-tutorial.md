@@ -597,7 +597,7 @@ the `createdAt` and `nickname` fields.
 
 Here is the finished result for our `User.json` collection:
 
-```json synth
+```json synth[expect = "unknown variant `date_time`"]
 {
     "type": "array",
     "length": 3,
@@ -695,7 +695,7 @@ the `Post.json` collection.
 
 Here is the end result:
 
-```json
+```json synth[expect = "unknown variant `date_time`"]
 {
   "type": "array",
   "length": 5,
