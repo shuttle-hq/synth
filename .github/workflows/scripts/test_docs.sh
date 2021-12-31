@@ -12,8 +12,9 @@
 ###############################################################################
 
 ERROR='\033[0;31m'
-INFO='\033[0;36m'
-DEBUG='\033[0;37m'
+SUCCESS='\033[0;32m'
+DEBUG='\033[0;30m'
+INFO='\033[0;37m'
 NC='\033[0m' # No Color
 
 function test_file(){
@@ -126,13 +127,13 @@ function test_file(){
         echo -e "$output"
         return 1
       else
-        echo -e "${INFO}$file has expected errors ($expected_errors)${NC}"
+        echo -e "${SUCCESS}$file has expected errors ($expected_errors)${NC}"
       fi
     else
-      echo -e "${INFO}$file passed${NC}"
+      echo -e "${SUCCESS}$file passed${NC}"
     fi
   else
-    echo -e "${DEBUG}$file has nothing to test${NC}"
+    echo -e "${INFO}$file has nothing to test${NC}"
   fi
   
   # Cleanup if passed
