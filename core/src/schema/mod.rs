@@ -354,8 +354,6 @@ pub mod tests {
 
     use super::content::tests::USER_SCHEMA;
 
-    use std::collections::BTreeMap;
-
     #[test]
     fn test_new() {
         let reference: FieldRef = "users.address.postcode".parse().unwrap();
@@ -447,9 +445,10 @@ pub mod tests {
 
     lazy_static! {
         pub static ref USER_NAMESPACE: Content = {
-            let mut m = BTreeMap::new();
-            m.insert("users".to_string(), USER_SCHEMA.clone());
-            Content::new_object(m)
+            let mut c = Content::new_object();
+            c.put_collection("users".to_string(), USER_SCHEMA.clone())
+                .unwrap();
+            c
         };
     }
 }

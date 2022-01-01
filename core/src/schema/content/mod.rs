@@ -13,7 +13,6 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
-use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
@@ -260,18 +259,15 @@ content! {
 }
 
 impl Content {
-    pub fn new_object(fields: BTreeMap<String, Content>) -> Self {
-        Content::Object(ObjectContent {
-            fields,
-            ..Default::default()
-        })
+    pub fn new_object() -> Self {
+        Content::Object(ObjectContent::default())
     }
 
-    /// Convert a [`serde_json::Value`] to an instance of [`Content`] wrapped inside a [`Content::Array`] of length 1.
-    pub fn new_collection(value: &Value) -> Self {
+    /// Wrap a parsed schema inside a [`Content::Array`] of length 1.
+    pub fn new_collection(content: Content) -> Self {
         Content::Array(ArrayContent {
             length: Box::new(Content::from(&Value::from(1))),
-            content: Box::new(value.into()),
+            content: Box::new(content),
         })
     }
 
@@ -435,25 +431,61 @@ impl Content {
         self.find_mut(reference.iter().peekable())
     }
 
-    pub fn get(&self, key: &str) -> Result<&Content> {
+    pub fn get_collection(&self, key: &str) -> Result<&Content> {
         if let Content::Object(ObjectContent { fields, .. }) = self {
             let suggestion = suggest_closest(fields.keys(), key).unwrap_or_default();
             return fields
                 .get(key)
                 .context(format!("no such collection: '{}'{}", key, suggestion));
         } else {
-            Err(anyhow!("cannot find a key/value pair in a non-object type"))
+            Err(anyhow!("cannot fetch a collection from a non-object"))
         }
     }
 
-    pub fn get_mut(&mut self, key: &str) -> Result<&mut Content> {
+    pub fn get_collection_mut(&mut self, key: &str) -> Result<&mut Content> {
         if let Content::Object(ObjectContent { fields, .. }) = self {
             let suggestion = suggest_closest(fields.keys(), key).unwrap_or_default();
             return fields
                 .get_mut(key)
                 .context(format!("no such collection: '{}'{}", key, suggestion));
         } else {
-            Err(anyhow!("cannot find a key/value pair in a non-object type"))
+            Err(anyhow!("cannot fetch a collection from a non-object"))
+        }
+    }
+
+    pub fn put_collection(&mut self, key: String, value: Content) -> Result<()> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            super::check_collection_name_is_valid(&key)?;
+
+            if fields.insert(key.clone(), value).is_some() {
+                Err(anyhow!("collection already exists: {}", key))
+            } else {
+                Ok(())
+            }
+        } else {
+            Err(anyhow!("cannot insert collection into a non-object"))
+        }
+    }
+
+    pub fn put_collection_from_json(&mut self, key: String, value: &Value) -> Result<()> {
+        self.put_collection(key, Content::new_collection(value.into()))
+    }
+
+    pub fn remove_collection(&mut self, key: &str) -> Result<Content> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            fields
+                .remove(key)
+                .ok_or_else(|| anyhow!("no such collection: '{}'", key))
+        } else {
+            Err(anyhow!("cannot remove collection from a non-object"))
+        }
+    }
+
+    pub fn count_collections(&self) -> Result<usize> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            Ok(fields.len())
+        } else {
+            Err(anyhow!("cannot count collections in a non-object"))
         }
     }
 }
@@ -522,6 +554,29 @@ impl<'r> From<&'r Value> for Content {
                 };
                 Content::Number(number_content)
             }
+        }
+    }
+}
+
+impl FromIterator<(String, Content)> for Content {
+    fn from_iter<I: IntoIterator<Item = (String, Content)>>(iter: I) -> Content {
+        let mut ns = Content::new_object();
+        for (key, value) in iter {
+            let _ = ns.put_collection(key, value); // TODO: Handle result.
+        }
+        ns
+    }
+}
+
+impl IntoIterator for Content {
+    type Item = (String, Content);
+    type IntoIter = std::collections::btree_map::IntoIter<String, Content>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            fields.into_iter()
+        } else {
+            panic!("can only turn `Content::Object` into iterator")
         }
     }
 }

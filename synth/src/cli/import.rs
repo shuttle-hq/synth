@@ -16,14 +16,12 @@ use super::collection_field_name_from_uri_query;
 
 pub trait ImportStrategy {
     /// Import an entire namespace.
-    fn import(&self) -> Result<Namespace>;
+    fn import_namespace(&self) -> Result<Content>;
 
     /// Import a single collection. Default implementation works by calling `import` and then extracting from the
     /// returned namespace the correct collection based on the `name` parameter.
     fn import_collection(&self, name: &str) -> Result<Content> {
-        self.import()?
-            .remove_collection(name)
-            .ok_or_else(|| anyhow!("Could not find collection '{}'.", name))
+        self.import_namespace()?.remove_collection(name)
     }
 }
 

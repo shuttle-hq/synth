@@ -24,8 +24,8 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
-pub use state::CompilerState;
-use state::{Artifact, OutputState, Source, Symbols};
+use state::{Artifact, OutputState, Symbols};
+pub use state::{CompilerState, Source};
 
 pub mod address;
 pub use address::Address;
@@ -242,7 +242,7 @@ impl<'c, 'a: 'c> CollectionCompiler<'c, 'a> {
     fn compile(self) -> Result<Graph> {
         match self.state.source() {
             // TODO: Just have `Source` implement `Compile`?
-            Source::Schema(schema) => schema.compile(self),
+            Source::Collection(schema) => schema.compile(self),
             Source::Namespace(ns) => ns.compile(self),
         }
     }
@@ -302,7 +302,7 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
     fn compile(self) -> Result<()> {
         match self.state.source() {
             // TODO: Just have `Source` implement `Compile`?
-            Source::Schema(schema) => schema.compile(self)?,
+            Source::Collection(schema) => schema.compile(self)?,
             Source::Namespace(ns) => ns.compile(self)?,
         };
         Ok(())

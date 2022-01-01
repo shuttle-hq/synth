@@ -6,10 +6,9 @@ use std::iter::FromIterator;
 use synth_gen::prelude::*;
 
 use super::link::{Recorder, SliceRef, TapeView};
-use super::Address;
-use super::{FromLink, Link};
+use super::{Address, Compile, Compiler, FromLink, Link};
 
-use crate::schema::Content;
+use crate::{Content, Graph};
 
 /// A holder struct for the compiler's internal state of the children of a given node.
 ///
@@ -143,14 +142,23 @@ impl<'a, G: Generator> Iterator for IntoIter<'a, G> {
 
 pub enum Source<'a> {
     Namespace(&'a Content),
-    Schema(&'a Content),
+    Collection(&'a Content),
 }
 
 impl<'a> std::fmt::Display for Source<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Namespace(_) => write!(f, "namespace"),
-            Self::Schema(_) => write!(f, "schema"),
+            Self::Collection(_) => write!(f, "schema"),
+        }
+    }
+}
+
+impl Compile for Source<'_> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph> {
+        match self {
+            Source::Collection(schema) => schema.compile(compiler),
+            Source::Namespace(ns) => ns.compile(compiler),
         }
     }
 }
@@ -172,7 +180,7 @@ impl<'a> Source<'a> {
     #[inline]
     pub(super) fn as_schema(&self) -> Result<&'a Content> {
         match self {
-            Self::Schema(content) => Ok(content),
+            Self::Collection(content) => Ok(content),
             other => Err(failed!(
                 target: Release,
                 "source node type mismatch: expected schema, found {}",
@@ -256,7 +264,7 @@ impl<G: Generator> OutputState<G> {
 }
 
 pub struct CompilerState<'a, G: Generator> {
-    src: Source<'a>,
+    pub src: Source<'a>,
     output: OutputState<G>,
     scope: StructuredState<'a, G>,
     refs: BTreeSet<Address>,
@@ -282,7 +290,7 @@ impl<'a, G: Generator> CompilerState<'a, G> {
 
     #[inline]
     pub(super) fn schema(content: &'a Content) -> Self {
-        Self::new(Source::Schema(content))
+        Self::new(Source::Collection(content))
     }
 
     #[inline]

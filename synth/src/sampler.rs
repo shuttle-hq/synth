@@ -13,6 +13,7 @@ pub(crate) struct Sampler {
 
 #[derive(Clone)]
 pub(crate) enum SamplerOutput {
+    // TODO: This enum is unnecessary?
     Namespace(Vec<(String, Vec<Value>)>),
     Collection(String, Vec<Value>),
 }

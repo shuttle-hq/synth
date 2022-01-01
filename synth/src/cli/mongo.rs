@@ -13,8 +13,8 @@ use synth_core::graph::prelude::number_content::I64;
 use synth_core::graph::prelude::{ChronoValue, Number, NumberContent, ObjectContent, RangeStep};
 use synth_core::schema::number_content::F64;
 use synth_core::schema::{
-    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, RegexContent,
-    StringContent,
+    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, MergeStrategy,
+    OptionalMergeStrategy, RegexContent, StringContent,
 };
 use synth_core::{Content, Value};
 
@@ -29,7 +29,7 @@ pub struct MongoImportStrategy {
 }
 
 impl ImportStrategy for MongoImportStrategy {
-    fn import(&self) -> Result<Namespace> {
+    fn import_namespace(&self) -> Result<Content> {
         let client_options = ClientOptions::parse(&self.uri_string)?;
 
         info!("Connecting to database at {} ...", &self.uri_string);
@@ -39,7 +39,7 @@ impl ImportStrategy for MongoImportStrategy {
         let db_name = parse_db_name(&self.uri_string)?;
 
         // 0: Initialise empty Namespace
-        let mut namespace = Namespace::default();
+        let mut namespace = Content::new_object();
         let database = client.database(db_name);
 
         // 1: First pass - create master schema
@@ -78,8 +78,10 @@ impl ImportStrategy for MongoImportStrategy {
                 doc.remove("_id");
             });
 
-            namespace
-                .default_try_update(&collection_name, &serde_json::to_value(random_sample)?)?;
+            OptionalMergeStrategy.try_merge(
+                namespace.get_collection_mut(&collection_name)?,
+                &serde_json::to_value(random_sample)?,
+            )?
         }
 
         Ok(namespace)

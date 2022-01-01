@@ -379,8 +379,6 @@ impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
 pub mod tests {
     use super::*;
 
-    use std::collections::BTreeMap;
-
     macro_rules! as_array {
         [$($ident:ident)*] => {
             Value::from(vec![$($ident.clone())*])
@@ -408,38 +406,35 @@ pub mod tests {
         let user_no_address_as_array = as_array![user_no_address];
 
         let collection_name = "users".to_string();
-        let mut fields = BTreeMap::new();
-        fields.insert(
-            collection_name.clone(),
-            Content::new_collection(&user_no_last_name),
-        );
-        let mut ns = Content::new_object(fields);
+        let mut ns = Content::new_object();
+        ns.put_collection_from_json(collection_name.clone(), &user_no_last_name)
+            .unwrap();
 
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_last_name_as_array)
             .is_ok());
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_address_as_array)
             .is_err());
 
         OptionalMergeStrategy
             .try_merge(
-                ns.get_mut(&collection_name).unwrap(),
+                ns.get_collection_mut(&collection_name).unwrap(),
                 &user_no_address_as_array,
             )
             .unwrap();
 
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_last_name_as_array)
             .is_ok());
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_address_as_array)
             .is_ok());
@@ -466,33 +461,30 @@ pub mod tests {
         let user_no_last_name_as_array = as_array![user_no_last_name];
 
         let collection_name = "users".to_string();
-        let mut fields = BTreeMap::new();
-        fields.insert(
-            collection_name.clone(),
-            Content::new_collection(&user_no_last_name),
-        );
-        let mut ns = Content::new_object(fields);
+        let mut ns = Content::new_object();
+        ns.put_collection_from_json(collection_name.clone(), &user_no_last_name)
+            .unwrap();
 
         OptionalMergeStrategy
             .try_merge(
-                ns.get_mut(&collection_name).unwrap(),
+                ns.get_collection_mut(&collection_name).unwrap(),
                 &user_no_address_as_array,
             )
             .unwrap();
         OptionalMergeStrategy
             .try_merge(
-                ns.get_mut(&collection_name).unwrap(),
+                ns.get_collection_mut(&collection_name).unwrap(),
                 &user_no_address_as_array,
             )
             .unwrap();
 
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_last_name_as_array)
             .is_ok());
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_address_as_array)
             .is_ok());
@@ -528,32 +520,29 @@ pub mod tests {
         let user_no_last_name_as_array = as_array![user_no_last_name];
 
         let collection_name = "users".to_string();
-        let mut fields = BTreeMap::new();
-        fields.insert(
-            collection_name.clone(),
-            Content::new_collection(&user_no_last_name),
-        );
-        let mut ns = Content::new_object(fields);
+        let mut ns = Content::new_object();
+        ns.put_collection_from_json(collection_name.clone(), &user_no_last_name)
+            .unwrap();
 
         OptionalMergeStrategy
             .try_merge(
-                ns.get_mut(&collection_name).unwrap(),
+                ns.get_collection_mut(&collection_name).unwrap(),
                 &user_no_address_as_array,
             )
             .unwrap();
 
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_last_name_as_array)
             .is_ok());
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&user_no_address_as_array)
             .is_ok());
         assert!(ns
-            .get(&collection_name)
+            .get_collection(&collection_name)
             .unwrap()
             .accepts(&as_array![user_malformed_address])
             .is_err());

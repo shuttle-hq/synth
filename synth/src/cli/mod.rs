@@ -167,7 +167,7 @@ impl Cli {
                 path.display()
             ))
         } else {
-            let ns = import_strategy.import()?;
+            let ns = import_strategy.import_namespace()?;
 
             #[cfg(feature = "telemetry")]
             TelemetryExportStrategy::fill_telemetry_pre(
@@ -192,7 +192,7 @@ impl Cli {
         seed: u64,
         schema: Option<String>,
     ) -> Result<()> {
-        let namespace = self.store.get_ns(ns_path.clone()).context(format!(
+        let namespace = self.store.read_ns(ns_path.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
             ns_path
                 .to_str()

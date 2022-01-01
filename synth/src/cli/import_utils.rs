@@ -8,8 +8,8 @@ use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
-    ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
-    SameAsContent, UniqueContent,
+    ArrayContent, FieldRef, MergeStrategy, NumberContent, ObjectContent, OptionalMergeStrategy,
+    RangeStep, SameAsContent, UniqueContent,
 };
 use synth_core::Content;
 
@@ -23,11 +23,11 @@ struct FieldContentWrapper(Content);
 
 pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
     datasource: &T,
-) -> Result<Namespace> {
+) -> Result<Content> {
     let table_names = task::block_on(datasource.get_table_names())
         .with_context(|| "Failed to get table names".to_string())?;
 
-    let mut namespace = Namespace::default();
+    let mut namespace = Content::new_object();
 
     info!("Building namespace collections...");
     populate_namespace_collections(&mut namespace, &table_names, datasource)?;
@@ -45,7 +45,7 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     table_names: &[String],
     datasource: &T,
 ) -> Result<()> {
@@ -64,7 +64,7 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     table_names: &[String],
     datasource: &T,
 ) -> Result<()> {
@@ -105,7 +105,7 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     datasource: &T,
 ) -> Result<()> {
     let foreign_keys = task::block_on(datasource.get_foreign_keys())?;
@@ -123,7 +123,7 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
 }
 
 fn populate_namespace_values<T: DataSource + RelationalDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     table_names: &[String],
     datasource: &T,
 ) -> Result<()> {
@@ -132,7 +132,10 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
     for table_name in table_names {
         let values = task::block_on(datasource.get_deterministic_samples(table_name))?;
         let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
-        namespace.try_update(OptionalMergeStrategy, table_name, &Value::from(json_values))?;
+        OptionalMergeStrategy.try_merge(
+            namespace.get_collection_mut(table_name)?,
+            &Value::from(json_values),
+        )?;
     }
 
     Ok(())

@@ -60,7 +60,7 @@ pub struct JsonLinesFileImportStrategy {
 }
 
 impl ImportStrategy for JsonLinesFileImportStrategy {
-    fn import(&self) -> Result<Namespace> {
+    fn import_namespace(&self) -> Result<Content> {
         import_json_lines(
             std::io::BufReader::new(std::fs::File::open(&self.from_file)?)
                 .lines()
@@ -76,7 +76,7 @@ pub struct JsonLinesStdinImportStrategy {
 }
 
 impl ImportStrategy for JsonLinesStdinImportStrategy {
-    fn import(&self) -> Result<Namespace> {
+    fn import_namespace(&self) -> Result<Content> {
         import_json_lines(
             std::io::stdin()
                 .lock()
@@ -91,7 +91,7 @@ impl ImportStrategy for JsonLinesStdinImportStrategy {
 pub fn import_json_lines(
     json_lines: Vec<serde_json::Value>,
     collection_field_name: &str,
-) -> Result<Namespace> {
+) -> Result<Content> {
     let mut collection_names_to_values: HashMap<Option<String>, Vec<serde_json::Value>> =
         HashMap::new();
 
@@ -184,7 +184,7 @@ fn json_lines_from_sampler_output(
 /// collection.
 fn collection_from_values_jsonl(values: Vec<serde_json::Value>) -> Result<Content> {
     let fst = values.first().unwrap_or(&serde_json::Value::Null);
-    let mut as_content = Content::from_value_wrapped_in_array(fst);
+    let mut as_content = Content::new_collection(fst.into());
     OptionalMergeStrategy.try_merge(&mut as_content, &serde_json::Value::Array(values))?;
     Ok(as_content)
 }

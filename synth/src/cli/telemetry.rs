@@ -21,7 +21,7 @@ use crate::utils::META_OS;
 use crate::version::version;
 
 use synth_core::{
-    compile::{Address, CompilerState, FromLink},
+    compile::{Address, CompilerState, FromLink, Source},
     Compile, Compiler, Content, Graph,
 };
 
@@ -171,7 +171,7 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
     fn compile(self) -> Result<()> {
         match self.state.source() {
             Source::Namespace(namespace) => namespace.compile(self)?,
-            Source::Content(content) => content.compile(self)?,
+            Source::Collection(content) => content.compile(self)?,
         };
         Ok(())
     }
@@ -214,7 +214,7 @@ impl TelemetryExportStrategy {
 
     pub(super) fn fill_telemetry_pre(
         context: Rc<RefCell<TelemetryContext>>,
-        namespace: &Namespace,
+        namespace: &Content,
         collection: Option<String>,
         ns_path: PathBuf,
     ) -> Result<()> {
@@ -236,7 +236,7 @@ impl TelemetryExportStrategy {
             }
         } else {
             namespace.compile(crawler)?;
-            let num_col = namespace.len();
+            let num_col = namespace.count_collections()?;
             context.borrow_mut().num_collections = Some(num_col);
 
             // Namespace, length and content for each collection
@@ -544,7 +544,7 @@ pub mod tests {
 
     #[test]
     fn telemetry_export_strategy() {
-        let mut schema: Namespace = schema!({
+        let mut schema = schema!({
             "type": "object",
             "strings": {
                 "type": "array",
