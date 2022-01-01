@@ -582,9 +582,7 @@ pub mod tests {
                     }
                 }
             }
-        })
-        .into_namespace()
-        .unwrap();
+        });
 
         let context = Rc::new(RefCell::new(TelemetryContext::new()));
         let export_strategy =
@@ -617,8 +615,8 @@ pub mod tests {
                 ),
                 num_collections: Some(2),
                 num_fields: Some(4),
-                namespace_name_sha: Some(15302706232490290083),
-                namespace_sha: Some(10334654735128021143),
+                namespace_name_sha: Some(15958021001824619157),
+                namespace_sha: Some(10572529758725673244),
                 bytes: Some(138),
             },
             "string fakers should be correct"
@@ -675,9 +673,7 @@ pub mod tests {
                     }
                 }
             }
-        })
-        .into_namespace()
-        .unwrap();
+        });
 
         export_strategy
             .export(ExportParams {
@@ -705,8 +701,8 @@ pub mod tests {
                 ),
                 num_collections: Some(1),
                 num_fields: Some(6),
-                namespace_name_sha: Some(15302706232490290083),
-                namespace_sha: Some(7413555395156765757),
+                namespace_name_sha: Some(15958021001824619157),
+                namespace_sha: Some(5425759925702296223),
                 bytes: Some(140),
             },
             "int ranges should be correct"
@@ -752,9 +748,7 @@ pub mod tests {
                     }
                 }
             }
-        })
-        .into_namespace()
-        .unwrap();
+        });
 
         export_strategy
             .export(ExportParams {
@@ -781,8 +775,8 @@ pub mod tests {
                 ),
                 num_collections: Some(1),
                 num_fields: Some(5),
-                namespace_name_sha: Some(15302706232490290083),
-                namespace_sha: Some(1231538834371280080),
+                namespace_name_sha: Some(15958021001824619157),
+                namespace_sha: Some(11932649130297002998),
                 bytes: Some(151),
             },
             "other generators should be correct"
@@ -829,9 +823,7 @@ pub mod tests {
                     }
                 }
             }
-        })
-        .into_namespace()
-        .unwrap();
+        });
 
         export_strategy
             .export(ExportParams {
@@ -853,8 +845,8 @@ pub mod tests {
                 ),
                 num_collections: Some(1),
                 num_fields: Some(1),
-                namespace_name_sha: Some(6868949361385231259),
-                namespace_sha: Some(5224534078999940403),
+                namespace_name_sha: Some(15942663951453216254),
+                namespace_sha: Some(13157132388508458458),
                 bytes: Some(27),
             },
             "should only have stats for collection 2"
