@@ -8,7 +8,6 @@ mod mysql;
 mod postgres;
 mod store;
 
-use crate::cli::db_utils::DataSourceParams;
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
@@ -22,10 +21,10 @@ use std::convert::{TryFrom, TryInto};
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
+use synth_core::DataSourceParams;
 use uriparse::URI;
 
 pub(crate) mod config;
-mod db_utils;
 
 #[cfg(feature = "telemetry")]
 use std::cell::RefCell;

@@ -215,7 +215,8 @@ activity:
             "same_as": 1,
             "one_of": 1,
             "unique": 1,
-            "hidden": 1
+            "hidden": 1,
+            "datasource": 1
           }
         }
       }

@@ -3244,6 +3244,7 @@ dependencies = [
  "strsim 0.10.0",
  "synth-gen",
  "tempfile",
+ "uriparse",
  "uuid",
 ]
 

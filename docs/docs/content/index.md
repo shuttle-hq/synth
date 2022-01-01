@@ -37,6 +37,8 @@ various classes of string:
 generators for the values
 * [array](array) fills an array of the given length with elements of
 the contained generator
+* [datasource](datasource) pulls data from an external source
+like a file
 
 ## Modifiers
 

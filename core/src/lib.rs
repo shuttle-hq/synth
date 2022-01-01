@@ -92,6 +92,9 @@ extern crate humantime_serde;
 pub mod error;
 pub use error::Error;
 
+pub mod db_utils;
+pub use db_utils::DataSourceParams;
+
 #[macro_use]
 pub mod schema;
 pub use schema::{Content, Namespace};

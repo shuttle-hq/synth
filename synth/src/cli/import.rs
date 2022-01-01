@@ -4,9 +4,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use synth_core::schema::Namespace;
-use synth_core::Content;
+use synth_core::{Content, DataSourceParams};
 
-use crate::cli::db_utils::DataSourceParams;
 use crate::cli::json::{JsonFileImportStrategy, JsonStdinImportStrategy};
 use crate::cli::jsonl::{JsonLinesFileImportStrategy, JsonLinesStdinImportStrategy};
 use crate::cli::mongo::MongoImportStrategy;
