@@ -5,7 +5,7 @@ use crate::sampler::{Sampler, SamplerOutput};
 
 use synth_core::schema::content::{number_content, ArrayContent, NumberContent};
 use synth_core::schema::{MergeStrategy, OptionalMergeStrategy};
-use synth_core::{Content, Namespace, Value};
+use synth_core::{Content, Value};
 use synth_gen::value::Number;
 
 use anyhow::Result;
@@ -74,8 +74,8 @@ pub struct CsvFileImportStrategy {
 }
 
 impl ImportStrategy for CsvFileImportStrategy {
-    fn import(&self) -> Result<Namespace> {
-        let mut namespace = Namespace::new();
+    fn import_namespace(&self) -> Result<Content> {
+        let mut namespace = Content::new_object();
 
         for entry in std::fs::read_dir(&self.from_dir)? {
             let entry = entry?;
@@ -109,7 +109,7 @@ pub struct CsvStdinImportStrategy {
 }
 
 impl ImportStrategy for CsvStdinImportStrategy {
-    fn import(&self) -> Result<Namespace> {
+    fn import_namespace(&self) -> Result<Content> {
         let stdin = std::io::stdin();
         let reader = csv::ReaderBuilder::new()
             .has_headers(self.expect_header_row)
@@ -117,7 +117,7 @@ impl ImportStrategy for CsvStdinImportStrategy {
 
         let name = "collection".to_string();
         import_csv_collection(reader, self.expect_header_row).map(|collection| {
-            let mut namespace = Namespace::new();
+            let mut namespace = Content::new_object();
             namespace.put_collection(name, collection).unwrap();
             namespace
         })
@@ -148,7 +148,7 @@ pub fn import_csv_collection(
         .map(|res| res.map(|record| csv_record_to_value(&record, &headers)))
         .collect::<csv::Result<Result<Vec<serde_json::Value>>>>()??;
 
-    let mut content = Content::from_value_wrapped_in_array(&head);
+    let mut content = Content::new_collection((&head).into());
 
     let mut values = vec![head];
     values.extend(tail.into_iter());
@@ -260,10 +260,7 @@ pub enum CsvOutput {
     SingleCollection(String),
 }
 
-fn csv_output_from_sampler_ouput(
-    output: SamplerOutput,
-    namespace: &Namespace,
-) -> Result<CsvOutput> {
+fn csv_output_from_sampler_ouput(output: SamplerOutput, namespace: &Content) -> Result<CsvOutput> {
     Ok(match output {
         SamplerOutput::Namespace(key_values) => CsvOutput::Namespace(
             key_values
@@ -285,7 +282,7 @@ fn csv_output_from_sampler_ouput(
 fn to_csv_string(
     collection_name: String,
     values: Vec<Value>,
-    namespace: &Namespace,
+    namespace: &Content,
 ) -> Result<String> {
     match namespace.get_collection(&collection_name)? {
         Content::Array(array_content) => {
@@ -308,7 +305,7 @@ fn to_csv_string(
     }
 }
 
-fn synth_val_to_csv_record(val: Value, content: &Content, namespace: &Namespace) -> Vec<String> {
+fn synth_val_to_csv_record(val: Value, content: &Content, namespace: &Content) -> Vec<String> {
     match val {
         Value::Null(_) => vec![String::new()],
         Value::Bool(b) => vec![b.to_string()],
@@ -386,7 +383,7 @@ fn determine_content_array_max_length(array_content: &ArrayContent) -> usize {
     }
 }
 
-fn count_scalars_in_content(content: &Content, ns: &Namespace) -> usize {
+fn count_scalars_in_content(content: &Content, ns: &Content) -> usize {
     match content {
         Content::Array(array_content) => {
             determine_content_array_max_length(array_content)
@@ -513,7 +510,7 @@ mod tests {
 
         let collection_name = "collection".to_string();
 
-        let mut ns = Namespace::new();
+        let mut ns = Content::new_object();
         ns.put_collection(collection_name.clone(), content).unwrap();
 
         let generator = Sampler::try_from(&ns).unwrap();

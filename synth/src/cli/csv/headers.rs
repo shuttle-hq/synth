@@ -1,5 +1,5 @@
 use synth_core::schema::content::{ArrayContent, ObjectContent, SameAsContent};
-use synth_core::{Content, Namespace};
+use synth_core::Content;
 
 use super::determine_content_array_max_length;
 
@@ -14,7 +14,7 @@ pub struct CsvHeaders(Vec<CsvHeader>);
 impl CsvHeaders {
     /// Flattern a `Content` instance into a set of CSV headers. The `content` parameter should correspond to the inner
     /// content value inside of the outer most array generator in a schema.
-    pub fn from_content(content: &Content, namespace: &Namespace) -> Result<Self> {
+    pub fn from_content(content: &Content, namespace: &Content) -> Result<Self> {
         match content {
             Content::Object(obj) => parse_object_to_headers(None, obj, namespace),
             Content::Array(array) => parse_array_to_headers(None, array, namespace),
@@ -190,7 +190,7 @@ impl fmt::Display for CsvHeader {
 fn parse_content_to_headers(
     parent: CsvHeader,
     content: &Content,
-    namespace: &Namespace,
+    namespace: &Content,
 ) -> Result<Vec<CsvHeader>> {
     match content {
         Content::Object(obj) => parse_object_to_headers(Some(&parent), obj, namespace),
@@ -205,7 +205,7 @@ fn parse_content_to_headers(
 fn parse_object_to_headers(
     parent: Option<&CsvHeader>,
     obj: &ObjectContent,
-    ns: &Namespace,
+    ns: &Content,
 ) -> Result<Vec<CsvHeader>> {
     let mut flatterned = Vec::new();
 
@@ -226,7 +226,7 @@ fn parse_object_to_headers(
 fn parse_array_to_headers(
     parent: Option<&CsvHeader>,
     array: &ArrayContent,
-    ns: &Namespace,
+    ns: &Content,
 ) -> Result<Vec<CsvHeader>> {
     let max_length = determine_content_array_max_length(array);
 
@@ -253,7 +253,7 @@ fn parse_array_to_headers(
 fn parse_same_as_to_headers(
     parent: CsvHeader,
     same_as: &SameAsContent,
-    ns: &Namespace,
+    ns: &Content,
 ) -> Result<Vec<CsvHeader>> {
     // Should be safe to unwrap as references have already been checked.
     let same_as_node = ns.get_s_node(&same_as.ref_).unwrap();
@@ -263,7 +263,7 @@ fn parse_same_as_to_headers(
 fn parse_one_of_to_headers(
     parent: CsvHeader,
     content: &Content,
-    ns: &Namespace,
+    ns: &Content,
 ) -> Result<Vec<CsvHeader>> {
     if !content.is_scalar(ns)? {
         return Err(anyhow::anyhow!(
@@ -390,7 +390,7 @@ mod tests {
             ..Default::default()
         });
 
-        let mut namespace = Namespace::new();
+        let mut namespace = Content::new_object();
         namespace
             .put_collection("my_collection".to_string(), content.clone())
             .unwrap();

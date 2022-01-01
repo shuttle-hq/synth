@@ -41,9 +41,6 @@ pub use array::ArrayContent;
 mod object;
 pub use object::ObjectContent;
 
-mod datasource;
-pub use datasource::DatasourceContent;
-
 mod one_of;
 pub use one_of::{OneOfContent, VariantContent};
 
@@ -258,7 +255,6 @@ content! {
         Series(SeriesContent),
         Unique(UniqueContent),
         Hidden(HiddenContent),
-        Datasource(DatasourceContent),
     }
 }
 
@@ -322,7 +318,7 @@ impl Content {
         matches!(self, Self::Unique(_))
     }
 
-    pub fn is_scalar(&self, ns: &Namespace) -> Result<bool> {
+    pub fn is_scalar(&self, ns: &Content) -> Result<bool> {
         match self {
             Self::Array(_) | Self::Object(_) => Ok(false),
             Self::SameAs(same_as) => ns.get_s_node(&same_as.ref_)?.is_scalar(ns),
@@ -441,7 +437,6 @@ impl Content {
             Content::Series(content) => format!("series::{}", content.kind()),
             Content::Unique(_) => "unique".to_string(),
             Content::Hidden(_) => "hidden".to_string(),
-            Content::Datasource(_) => "datasource".to_string(),
         }
     }
 
@@ -660,7 +655,6 @@ impl Compile for Content {
             Self::Unique(unique_content) => unique_content.compile(compiler),
             Self::Hidden(hidden_content) => hidden_content.compile(compiler),
             Self::Null(_) => Ok(Graph::null()),
-            Self::Datasource(datasource) => datasource.compile(compiler),
         }
     }
 }
