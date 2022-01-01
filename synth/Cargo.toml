@@ -79,3 +79,5 @@ semver = "1.0.4"
 
 uriparse = "0.6.3"
 querystring = "1.1.0"
+
+csv = "1.1.6"

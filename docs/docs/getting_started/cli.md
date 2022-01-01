@@ -26,13 +26,15 @@ If a subdirectory for a given namespace does not exist, Synth will create it.
 
 - `--from <uri>` - The location from which to import. Synth uses Uniform Resource Identifiers (URIs) to define interactions with databases and the filesystem. `<uri>` must therefore be a valid RFC 3986 URI.
 
-  It is possible to import from a file using the URI schemes `json:` and `jsonl:` depending of course on whether the data specified is encoded as JSON or JSON Lines respectively. For example, one could import data from a file `data.jsonl` in the current working directory by specifying `jsonl:data.json`. Note the lack of `//` that you may be used to seeing - this can be omitted as this URI will never have an authority component (unlike, for example, a database URI).
-
-  Data can be imported from standard input by simply not specifying a path in the URI (e.g. `json:` will read JSON data from standard input while `jsonl:` will read JSON Lines data). If no `--from` argument is specified, JSON data will read from standard input by default.
-
   Importing from a database is possible using the standard URI format of the respective database. For example: `postgres://user:pass@localhost:5432/tpch`
 
+  It is possible to import from a file using the URI schemes `json:`, `jsonl:`, `csv:` depending on whether the data specified is encoded as JSON, JSON Lines or CSV respectively. For example, one could import data from a file `data.jsonl` in the current working directory by specifying `jsonl:data.json`. Note the lack of `//` that you may be used to seeing - this can be omitted as this URI will never have an authority component (unlike, for example, a database URI).
+
+  Data can be imported from standard input by simply not specifying a path in the URI (e.g. `jsonl:` will read JSON Lines data directly from standard input). If no `--from` argument is specified, JSON data will read from standard input by default.
+
   When dealing with JSON Lines and not specifying a single collection with the `--collection` argument, each generated object is tagged with the name of the collection it was generated from. By default, this is done by adding a property `type` to the object (e.g. `"type": "collection_name"`). The name of this property can be changed using an additional parameter `collection_field_name` added at the end of the URI like so: `jsonl:file.jsonl?collection_field_name=foobar` - with this URI used with `--from`, generate objects will instead have a property like `"foobar": "collection_name"`.
+
+  With regards to CSV importing/exporting, it is important to note that the URI path should specify a directory and not an individual file. This is because, unlike JSON and JSON Lines, a single CSV file cannot easily represent data from multiple collections so each collection's data is stored in a separate `.csv` file. Also, when importing CSV, Synth by default assumes that the input data will contain a header row, unless a `?header_row=false` argument is present at the end of the URI.
 
 ---
 

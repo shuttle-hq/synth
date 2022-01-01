@@ -6,13 +6,14 @@ use anyhow::Result;
 use synth_core::schema::Namespace;
 use synth_core::{Content, DataSourceParams};
 
+use crate::cli::csv::{CsvFileImportStrategy, CsvStdinImportStrategy};
 use crate::cli::json::{JsonFileImportStrategy, JsonStdinImportStrategy};
 use crate::cli::jsonl::{JsonLinesFileImportStrategy, JsonLinesStdinImportStrategy};
 use crate::cli::mongo::MongoImportStrategy;
 use crate::cli::mysql::MySqlImportStrategy;
 use crate::cli::postgres::PostgresImportStrategy;
 
-use super::collection_field_name_from_uri_query;
+use super::map_from_uri_query;
 
 pub trait ImportStrategy {
     /// Import an entire namespace.
@@ -32,6 +33,8 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
 
     fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
         let scheme = params.uri.scheme().as_str().to_lowercase();
+        let query = map_from_uri_query(params.uri.query());
+
         let import_strategy: Box<dyn ImportStrategy> = match scheme.as_str() {
             "postgres" | "postgresql" => Box::new(PostgresImportStrategy {
                 uri_string: params.uri.to_string(),
@@ -53,8 +56,10 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
                 }
             }
             "jsonl" => {
-                let collection_field_name =
-                    collection_field_name_from_uri_query(params.uri.query());
+                let collection_field_name = query
+                    .get("collection_field_name")
+                    .unwrap_or(&"type")
+                    .to_string();
 
                 if params.uri.path() == "" {
                     Box::new(JsonLinesStdinImportStrategy {
@@ -67,9 +72,26 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
                     })
                 }
             }
+            "csv" => {
+                // TODO: Would rather have this work as a flag e.g. `csv:directory?no_header_row` implies no header row
+                // in CSV data, otherwise assume there will be one.
+                let expect_header_row = query
+                    .get("header_row")
+                    .map(|x| *x != "false")
+                    .unwrap_or(true);
+
+                if params.uri.path() == "" {
+                    Box::new(CsvStdinImportStrategy { expect_header_row })
+                } else {
+                    Box::new(CsvFileImportStrategy {
+                        from_dir: PathBuf::from(params.uri.path().to_string()),
+                        expect_header_row,
+                    })
+                }
+            }
             _ => {
                 return Err(anyhow!(
-                    "Import URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json' or 'jsonl'."
+                    "Import URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json', 'jsonl', or 'csv'."
                 ));
             }
         };
@@ -79,6 +101,7 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
 
 #[cfg(test)]
 mod tests {
+    use crate::cli::csv::import_csv_collection;
     use crate::cli::json::import_json;
     use crate::cli::jsonl::import_json_lines;
 
@@ -105,6 +128,69 @@ mod tests {
         assert_eq!(
             import_json_lines(json_lines, "type").unwrap(),
             import_json(json).unwrap()
+        );
+    }
+
+    fn json_csv_equiv_assert(csv: &str, json: serde_json::Value) {
+        let from_csv =
+            import_csv_collection(csv::Reader::from_reader(csv.as_bytes()), true).unwrap();
+        let from_json = import_json(json)
+            .unwrap()
+            .get_collection("collection")
+            .unwrap()
+            .clone();
+
+        assert_eq!(from_csv, from_json);
+    }
+
+    #[test]
+    fn test_json_and_csv_import_equivalence() {
+        json_csv_equiv_assert(
+            concat!(
+                "a,b[0].c,b[0].d,b[1].c,b[1].d,e.f[0],e.f[1],e.f[2],e.g\n",
+                "10,true,3.56,,,1,2,3,\n",
+                "25,false,-12.5,true,45.3,1,,,5"
+            ),
+            serde_json::json!({
+                "collection": [
+                    {
+                        "a": 10,
+                        "b": [
+                            { "c": true, "d": 3.56 },
+                            { "c": null, "d": null }
+                        ],
+                        "e": {
+                            "f": [1, 2, 3],
+                            "g": null
+                        }
+                    },
+                    {
+                        "a": 25,
+                        "b": [
+                            { "c": false, "d": -12.5 },
+                            { "c": true, "d": 45.3 }
+                        ],
+                        "e": {
+                            "f": [1, null, null],
+                            "g": 5
+                        }
+                    }
+                ]
+            }),
+        );
+
+        json_csv_equiv_assert(
+            concat!(
+                "[0].x,[0].y[0],[0].y[1],[1].x,[1].y[0],[1].y[1]\n",
+                "10.2,abc,def,-12.5,ghi,jkl\n",
+                "m,foo,bar,n,bar,foo"
+            ),
+            serde_json::json!({
+                "collection": [
+                    [ { "x": 10.2, "y": ["abc", "def"] }, { "x": -12.5, "y": ["ghi", "jkl"] } ],
+                    [ { "x": "m", "y": ["foo", "bar"] }, { "x": "n", "y": ["bar", "foo"] } ]
+                ]
+            }),
         );
     }
 }
