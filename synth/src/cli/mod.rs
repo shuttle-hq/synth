@@ -1,3 +1,4 @@
+mod csv;
 mod export;
 mod import;
 mod import_utils;
@@ -8,7 +9,6 @@ mod mysql;
 mod postgres;
 mod store;
 
-use crate::cli::db_utils::DataSourceParams;
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
@@ -18,14 +18,16 @@ use anyhow::{Context, Result};
 use rand::RngCore;
 use serde::Serialize;
 use std::cell::Cell;
+use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
+use std::iter::FromIterator;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
+use synth_core::DataSourceParams;
 use uriparse::URI;
 
 pub(crate) mod config;
-mod db_utils;
 
 #[cfg(feature = "telemetry")]
 use std::cell::RefCell;
@@ -269,7 +271,7 @@ pub enum Args {
         size: usize,
         #[structopt(
             long,
-            help = "The URI into which data will be generated. Can be a file-based URI scheme to output data to the filesystem or stdout ('json:' and 'jsonl:' allow outputting JSON and JSON Lines data respectively) or can be a database URI to write data directly to some database (supports Postgres, MongoDB, and MySQL). Defaults to writing JSON data to stdout.",
+            help = "The URI into which data will be generated. Can be a file-based URI scheme to output data to the filesystem or stdout ('json:', 'jsonl:' and 'csv:' allow outputting JSON, JSON Lines and CSV data respectively) or can be a database URI to write data directly to some database (supports Postgres, MongoDB, and MySQL). Defaults to writing JSON data to stdout. [example: jsonl:/tmp/generation_output]",
             default_value = "json:"
         )]
         #[serde(skip)]
@@ -307,7 +309,7 @@ pub enum Args {
         collection: Option<String>,
         #[structopt(
             long,
-            help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:' and 'jsonl:' allow reading JSON and JSON Lines data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin.",
+            help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:', 'jsonl:' and 'csv:' allow reading JSON, JSON Lines and CSV data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin. [example: jsonl:/tmp/test_data_input]",
             default_value = "json:"
         )]
         #[serde(skip)]
@@ -326,14 +328,10 @@ pub enum Args {
     Version,
 }
 
-fn collection_field_name_from_uri_query(query_opt: Option<&uriparse::Query>) -> String {
+fn map_from_uri_query<'a>(query_opt: Option<&'a uriparse::Query<'a>>) -> HashMap<&'a str, &'a str> {
     let query_str = query_opt.map(uriparse::Query::as_str).unwrap_or_default();
 
-    querystring::querify(query_str)
-        .into_iter()
-        .find_map(|(key, value)| (key == "collection_field_name").then(|| value))
-        .unwrap_or("type")
-        .to_string()
+    HashMap::<_, _>::from_iter(querystring::querify(query_str).into_iter())
 }
 
 #[cfg(feature = "telemetry")]

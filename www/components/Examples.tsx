@@ -6,12 +6,10 @@ import Section from "./Section";
 const timeSeriesExample = {
     "type": "object",
     "timestamp": {
-        "type": "string",
-        "date_time": {
-            "format": "%Y-%m-%dT%H:%M:%S",
-            "subtype": "naive_date_time",
-            "begin": "2020-06-07T12:00:00"
-        }
+        "type": "date_time",
+        "subtype": "naive_date_time",
+        "format": "%Y-%m-%dT%H:%M:%S",
+        "begin": "2020-06-07T12:00:00"
     },
     "px_last": {
         "type": "number",
@@ -62,11 +60,10 @@ const eventsExample = {
         }
     },
     "timestamp": {
-        "type": "string",
-        "date_time": {
-            "format": "%Y-%m-%dT%H:%M:%S",
-            "subtype": "naive_date_time",
-            "begin": "2020-06-07T12:00:00"
+        "type": "date_time",
+        "subtype": "naive_date_time",
+        "format": "%Y-%m-%dT%H:%M:%S",
+        "begin": "2020-06-07T12:00:00"
         }
     },
     "ip_v4": {

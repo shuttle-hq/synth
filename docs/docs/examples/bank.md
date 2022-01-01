@@ -37,6 +37,7 @@ application testing.
   "amount": 5001.70,
   "currency": "GIP",
   "timestamp": "2020-05-13T20:48:01+0000",
+  "description": "Walmart Credit Purchase",
   "user_id": 1
 }
 ```
@@ -46,7 +47,7 @@ application testing.
 We first create a new workspace to import our dataset into Synth:
 
 ```bash
-mkdir synth_workspace && cd synth_workspace && synth init
+mkdir synth_workspace && cd synth_workspace
 ```
 
 Synth supports importing from JSON files. To create a namespace, copy the JSON blob below to a file outside your workspace and use the `import` command:
@@ -117,6 +118,7 @@ synth import bank_db/ --from json:/path/to/the/file.json
       "amount": 5001.7,
       "currency": "GIP",
       "timestamp": "2020-05-13T20:48:01+0000",
+      "description": "Walmart Credit Purchase",
       "user_id": 1
     },
     {
@@ -124,6 +126,7 @@ synth import bank_db/ --from json:/path/to/the/file.json
       "amount": 274.4,
       "currency": "GIP",
       "timestamp": "2020-04-07T20:19:23+0000",
+      "description": "Amazon - Kindle reading tablet",
       "user_id": 1
     },
     {
@@ -131,6 +134,7 @@ synth import bank_db/ --from json:/path/to/the/file.json
       "amount": 6199.9,
       "currency": "KHR",
       "timestamp": "2020-02-03T11:24:36+0000",
+      "description": "Apple store subscription",
       "user_id": 2
     },
     {
@@ -138,6 +142,7 @@ synth import bank_db/ --from json:/path/to/the/file.json
       "amount": 3747.6,
       "currency": "KHR",
       "timestamp": "2020-04-02T02:37:22+0000",
+      "description": "Google store rental",
       "user_id": 2
     },
     {
@@ -145,6 +150,7 @@ synth import bank_db/ --from json:/path/to/the/file.json
       "amount": 4358.4,
       "currency": "KHR",
       "timestamp": "2020-03-20T04:12:11+0000",
+      "description": "Apple accessories",
       "user_id": 2
     },
     {
@@ -152,6 +158,7 @@ synth import bank_db/ --from json:/path/to/the/file.json
       "amount": 6597.5,
       "currency": "EUR",
       "timestamp": "2020-09-16T07:26:02+0000",
+      "description": "Amazon Kindle subscription",
       "user_id": 3
     }
   ]
@@ -163,10 +170,9 @@ At this stage, we can run the `tree` command to see how the `synth import` sub-c
 ```bash
 $ tree -a
 .
-├── bank_db
-│   ├── transactions.json
-│   └── users.json
-└── .synth
+└── bank_db
+    ├── transactions.json
+    └── users.json
 ```
 
 The directory `bank_db` (remember from [Core Concepts](../getting_started/core-concepts) a subdirectory in a workspace represents a
@@ -176,12 +182,13 @@ We can now generate data from our namespace using the `synth generate` sub-comma
 into [`jq`](https://stedolan.github.io/jq/download/) for the auto-formatting but this is optional.)
 
 ```bash
-synth generate bank_db/ | jq
+synth generate bank_db | jq
 {
   "transactions": [
     {
       "amount": 5336.4,
       "currency": "k1BFV",
+      "description": "z86x3QSvEY9pCVdTsr3zDyuf04ccmf5",
       "id": 1,
       "timestamp": "kfAuUrNEb8dgGT5",
       "user_id": 2
@@ -270,6 +277,10 @@ first.
       "optional": false,
       "type": "string",
       "pattern": "[a-zA-Z0-9]*"
+    },
+    description": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]*"
     }
   }
 }
@@ -341,7 +352,7 @@ the [same_as](../content/same-as) content type to express this foreign key relat
 }
 ```
 
-Finally, the `currency` field should reflect the real currencies that the bank supports. We could use
+The `currency` field should reflect the real currencies that the bank supports. We could use
 the [string::faker](../content/string) support `currency_code` generator to do this, but the bank only supports `USD`
 , `GBP` and `EUR`. So she uses a [string::categorical](../content/string)  instead. Roughly 80% of transactions are
 in `USD` so let's assign a higher probability to that variant.
@@ -357,6 +368,31 @@ in `USD` so let's assign a higher probability to that variant.
 }
 ```
 
+Finally, the `description` can be more descriptive. We can again use a [string::categorical](../content/string)
+generator, but don't want to put thousands of descriptive lines in our declaration file. Instead, we'll use an
+external JSON [datasource](../content/datasource) to pull descriptions from. First copy the following JSON to
+a `descriptions.json` file in the workspace.
+
+```json
+[
+  "Walmart Credit Purchase",
+  "Amazon - Kindle reading tablet",
+  "Apple store subscription",
+  "Google store rental",
+  "Apple accessories",
+  "Amazon Kindle subscription"
+]
+```
+
+Next, edit the `description` field as follow:
+```json synth
+{
+  "type": "datasource",
+  "path": "json:descriptions.json",
+  "cycle": true
+}
+```
+
 Now let's generate data from the `transactions` collection again:
 
 ```bash
@@ -365,6 +401,7 @@ synth generate bank_db --collection transactions --size 10 | jq
   {
     "amount": 1458.2,
     "currency": "GBP",
+    "description": "Walmart Credit Purchase",
     "id": 0,
     "timestamp": "2014-12-15T22:49:23+0000",
     "user_id": 3
@@ -372,6 +409,7 @@ synth generate bank_db --collection transactions --size 10 | jq
   {
     "amount": 6043.2,
     "currency": "USD",
+    "description": "Amazon - Kindle reading tablet",
     "id": 1,
     "timestamp": "2002-10-10T23:41:32+0000",
     "user_id": 1
@@ -379,6 +417,7 @@ synth generate bank_db --collection transactions --size 10 | jq
   {
     "amount": 2515.7000000000003,
     "currency": "GBP",
+    "description": "Apple store subscription",
     "id": 2,
     "timestamp": "2000-07-17T05:50:27+0000",
     "user_id": 3

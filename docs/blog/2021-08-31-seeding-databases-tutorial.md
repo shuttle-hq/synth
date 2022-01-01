@@ -592,7 +592,7 @@ together in one object. For that we need the [`object`][synth-object] type:
 
 Now we have everything we need to finish writing down
 our [`User` model](#prisma-is-awesome) as a `synth` schema. A quick lookup of
-the [documentation pages][synth-datetime] will tell us how to generate
+the [documentation pages][synth-string] will tell us how to generate
 the `createdAt` and `nickname` fields.
 
 Here is the finished result for our `User.json` collection:
@@ -629,6 +629,12 @@ Here is the finished result for our `User.json` collection:
     }
 }
 ```
+
+:::caution
+
+[`date_time`][synth-datetime] is now a generator on its own and is no longer a subtype of the `string` generator
+
+:::
 
 ### Making sure our constraints are satisfied
 
@@ -716,6 +722,12 @@ Here is the end result:
   }
 }
 ```
+
+:::caution
+
+[`date_time`][synth-datetime] is now a generator on its own and is no longer a subtype of the `string` generator
+
+:::
 
 It all looks pretty similar to the `User.json` collection, except for one
 important difference at the line
@@ -838,7 +850,7 @@ community would be happy to help if you encounter an issue!
 
 [synth-modifiers]: /docs/content/modifiers
 
-[synth-datetime]: /docs/content/string#date_time
+[synth-datetime]: /docs/content/date-time
 
 [synth-optional]: /docs/content/modifiers#optional
 

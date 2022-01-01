@@ -60,7 +60,6 @@ Synth's telemetry collects 8 fields:
   at `~/.config/synth/config.json`
 - `command`: The command that was issued by the user. This is a text field whose
   value is one of the following:
-  - `init`
   - `import`
   - `generate`
   - `telemetry::enabled`
@@ -93,7 +92,6 @@ activity:
       "categorical": {
           "import": 1,
           "generate": 10,
-          "init": 1,
           "telemetry::enabled": 10,
           "telemetry::disabled": 1
       }
@@ -215,7 +213,8 @@ activity:
             "same_as": 1,
             "one_of": 1,
             "unique": 1,
-            "hidden": 1
+            "hidden": 1,
+            "datasource": 1
           }
         }
       }

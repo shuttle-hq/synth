@@ -1,3 +1,4 @@
+use crate::cli::csv::{CsvFileExportStrategy, CsvStdoutExportStrategy};
 use crate::cli::json::{JsonFileExportStrategy, JsonStdoutExportStrategy};
 use crate::cli::jsonl::{JsonLinesFileExportStrategy, JsonLinesStdoutExportStrategy};
 use crate::cli::mongo::MongoExportStrategy;
@@ -9,13 +10,12 @@ use anyhow::{Context, Result};
 use std::convert::TryFrom;
 use std::path::PathBuf;
 
-use crate::cli::db_utils::DataSourceParams;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
 use synth_core::{Content, Value};
 
-use super::collection_field_name_from_uri_query;
+use super::map_from_uri_query;
 
 pub(crate) trait ExportStrategy {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
@@ -37,6 +37,8 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
         // Due to all the schemes used, with the exception of 'mongodb', being non-standard (including 'postgres' and
         // 'mysql' suprisingly) it seems simpler to just match based on the scheme string instead of on enum variants.
         let scheme = params.uri.scheme().as_str().to_lowercase();
+        let query = map_from_uri_query(params.uri.query());
+
         let export_strategy: Box<dyn ExportStrategy> = match scheme.as_str() {
             "postgres" | "postgresql" => Box::new(PostgresExportStrategy {
                 uri_string: params.uri.to_string(),
@@ -58,8 +60,10 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
                 }
             }
             "jsonl" => {
-                let collection_field_name =
-                    collection_field_name_from_uri_query(params.uri.query());
+                let collection_field_name = query
+                    .get("collection_field_name")
+                    .unwrap_or(&"type")
+                    .to_string();
 
                 if params.uri.path() == "" {
                     Box::new(JsonLinesStdoutExportStrategy {
@@ -72,9 +76,18 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
                     })
                 }
             }
+            "csv" => {
+                if params.uri.path() == "" {
+                    Box::new(CsvStdoutExportStrategy)
+                } else {
+                    Box::new(CsvFileExportStrategy {
+                        to_dir: PathBuf::from(params.uri.path().to_string()),
+                    })
+                }
+            }
             _ => {
                 return Err(anyhow!(
-                    "Export URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json' or 'jsonl'."
+                    "Export URI scheme not recognised. Was expecting one of 'mongodb', 'postgres', 'mysql', 'mariadb', 'json', 'jsonl' or 'csv'."
                 ));
             }
         };
