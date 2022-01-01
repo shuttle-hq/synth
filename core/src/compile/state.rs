@@ -178,7 +178,7 @@ impl<'a> Source<'a> {
     }
 
     #[inline]
-    pub(super) fn as_schema(&self) -> Result<&'a Content> {
+    pub(super) fn as_collection(&self) -> Result<&'a Content> {
         match self {
             Self::Collection(content) => Ok(content),
             other => Err(failed!(
@@ -264,7 +264,7 @@ impl<G: Generator> OutputState<G> {
 }
 
 pub struct CompilerState<'a, G: Generator> {
-    pub src: Source<'a>,
+    src: Source<'a>,
     output: OutputState<G>,
     scope: StructuredState<'a, G>,
     refs: BTreeSet<Address>,
@@ -289,7 +289,7 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 
     #[inline]
-    pub(super) fn schema(content: &'a Content) -> Self {
+    pub(super) fn collection(content: &'a Content) -> Self {
         Self::new(Source::Collection(content))
     }
 
@@ -387,7 +387,7 @@ impl<'t, 'a, G: Generator> Entry<'t, 'a, G> {
         if !self.node.scope.children.contains_key(&self.field) {
             self.node
                 .scope
-                .insert(self.field.clone(), CompilerState::schema(content));
+                .insert(self.field.clone(), CompilerState::collection(content));
         }
         self.node.get_mut(&self.field).unwrap()
     }

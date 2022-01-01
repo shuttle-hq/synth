@@ -71,7 +71,7 @@ impl<'a> NamespaceCompiler<'a> {
     }
 
     pub fn new_flat(content: &'a Content) -> Self {
-        let state = CompilerState::schema(content);
+        let state = CompilerState::collection(content);
         Self::new_at(state)
     }
 
@@ -231,7 +231,7 @@ impl<'a> NamespaceCompiler<'a> {
     }
 }
 
-pub struct CollectionCompiler<'c, 'a: 'c> {
+struct CollectionCompiler<'c, 'a: 'c> {
     scope: Address,
     state: &'c mut CompilerState<'a, Graph>,
     children: &'c mut BTreeMap<String, (GeneratorRecorder<Graph>, GeneratorSliceRef<Graph>)>,
@@ -241,7 +241,6 @@ pub struct CollectionCompiler<'c, 'a: 'c> {
 impl<'c, 'a: 'c> CollectionCompiler<'c, 'a> {
     fn compile(self) -> Result<Graph> {
         match self.state.source() {
-            // TODO: Just have `Source` implement `Compile`?
             Source::Collection(schema) => schema.compile(self),
             Source::Namespace(ns) => ns.compile(self),
         }
