@@ -98,9 +98,9 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ImportStrategy> {
 
 #[cfg(test)]
 mod tests {
+    use crate::cli::csv::import_csv_collection;
     use crate::cli::json::import_json;
     use crate::cli::jsonl::import_json_lines;
-    use crate::cli::csv::import_csv_collection;
 
     #[test]
     fn test_json_and_json_lines_import_equivalence() {
