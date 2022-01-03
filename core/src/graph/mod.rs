@@ -452,12 +452,10 @@ impl Value {
 
 impl Encode<'_, Postgres> for Value {
     fn produces(&self) -> Option<PgTypeInfo> {
-        let (typ, depth) = self.get_postgres_type();
-
-        if depth > 0 {
-            Some(PgTypeInfo::with_name("text"))
-        } else {
-            Some(PgTypeInfo::with_name(typ))
+        // Only arrays needs a special type
+        match self {
+            Value::Array(_) => Some(PgTypeInfo::with_name("text")),
+            _ => None,
         }
     }
 
