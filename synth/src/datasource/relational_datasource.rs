@@ -37,7 +37,7 @@ pub struct ForeignKey {
 
 /// Wrapper around `Value` since we can't impl `TryFrom` on a struct in a non-owned crate
 #[derive(Debug)]
-pub struct ValueWrapper(pub(crate) serde_json::Value);
+pub struct ValueWrapper(pub(crate) Value);
 
 /// All relational databases should define this trait and implement database specific queries in
 /// their own impl. APIs should be defined async when possible, delegating to the caller on how to
@@ -152,7 +152,7 @@ pub trait RelationalDataSource: DataSource {
 
     async fn set_seed(&self) -> Result<()>;
 
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<serde_json::Value>>;
+    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>>;
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 

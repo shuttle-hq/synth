@@ -14,8 +14,8 @@ use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
 use synth_core::schema::{
-    ArrayContent, BoolContent, Categorical, ChronoValueType, DateTimeContent, NumberContent,
-    ObjectContent, RangeStep, RegexContent, StringContent, Uuid,
+    ArrayContent, BoolContent, Categorical, ChronoValue, ChronoValueAndFormat, ChronoValueType,
+    DateTimeContent, NumberContent, ObjectContent, RangeStep, RegexContent, StringContent, Uuid,
 };
 use synth_core::{Content, Value};
 
@@ -216,7 +216,7 @@ impl RelationalDataSource for PostgresDataSource {
 
     /// Must use the singled threaded pool when setting this in conjunction with setseed, called by
     /// [set_seed]. Otherwise, expect big regrets :(
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<serde_json::Value>> {
+    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
         let query: &str = &format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name);
 
         sqlx::query(query)
@@ -380,192 +380,156 @@ impl TryFrom<PgRow> for ValueWrapper {
     type Error = anyhow::Error;
 
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
-        let mut kv = serde_json::Map::new();
+        let mut kv = BTreeMap::new();
 
         for column in row.columns() {
             let value = try_match_value(&row, column).unwrap_or_else(|err| {
                 debug!("try_match_value failed: {}", err);
-                serde_json::Value::Null
+                Value::Null(())
             });
             kv.insert(column.name().to_string(), value);
         }
 
-        Ok(ValueWrapper(serde_json::Value::Object(kv)))
+        Ok(ValueWrapper(Value::Object(kv)))
     }
 }
 
-fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<serde_json::Value> {
-    // if let PgTypeKind::Enum(_) = column.type_info().kind() {
-    //     let s = row.try_get::<EnumType, &str>(column.name())?;
-    //     return Ok(Value::String(s.into()));
-    // }
+fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
+    if let PgTypeKind::Enum(_) = column.type_info().kind() {
+        let s = row.try_get::<EnumType, &str>(column.name())?;
+        return Ok(Value::String(s.into()));
+    }
 
     let value = match column.type_info().name().to_lowercase().as_str() {
-        "bool" => serde_json::Value::Bool(row.try_get::<bool, &str>(column.name())?),
+        "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
         "oid" => {
             bail!("OID data type not supported for Postgresql")
         }
         "char" | "varchar" | "text" | "citext" | "bpchar" | "name" | "unknown" => {
-            serde_json::Value::String(row.try_get::<String, &str>(column.name())?)
+            Value::String(row.try_get::<String, &str>(column.name())?)
         }
-        "int2" => serde_json::Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
-        "int4" => serde_json::Value::Number(row.try_get::<i32, &str>(column.name())?.into()),
-        "int8" => serde_json::Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
-        "float4" => {
-            let f = row.try_get::<f32, &str>(column.name())?;
-            let serde_f = serde_json::Number::from_f64(f as f64)
-                .ok_or_else(|| anyhow!("Failed to convert float4 to number"))?;
-            serde_json::Value::Number(serde_f)
-        }
-        "float8" => {
-            let f = row.try_get::<f64, &str>(column.name())?;
-            let serde_f = serde_json::Number::from_f64(f)
-                .ok_or_else(|| anyhow!("Failed to convert float8 to number"))?;
-            serde_json::Value::Number(serde_f)
-        }
+        "int2" => Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
+        "int4" => Value::Number(row.try_get::<i32, &str>(column.name())?.into()),
+        "int8" => Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
+        "float4" => Value::Number(row.try_get::<f32, &str>(column.name())?.into()),
+        "float8" => Value::Number(row.try_get::<f64, &str>(column.name())?.into()),
         "numeric" => {
             let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
             if let Some(truncated) = as_decimal.to_f64() {
-                return Ok(serde_json::Value::Number(
-                    serde_json::Number::from_f64(truncated)
-                        .ok_or_else(|| anyhow!("Failed to convert numeric to number"))?,
-                ));
+                return Ok(Value::Number(truncated.into()));
             }
 
             bail!("Failed to convert Postgresql numeric data type to 64 bit float")
         }
-        "timestampz" => serde_json::Value::String(row.try_get::<String, &str>(column.name())?),
-        "timestamp" => serde_json::Value::String(row.try_get::<String, &str>(column.name())?),
-        "date" => serde_json::Value::String(format!(
+        "timestampz" => Value::String(row.try_get::<String, &str>(column.name())?),
+        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
+        "date" => Value::String(format!(
             "{}",
             row.try_get::<chrono::NaiveDate, &str>(column.name())?
         )),
-        "time" => serde_json::Value::String(format!(
+        "time" => Value::String(format!(
             "{}",
             row.try_get::<chrono::NaiveTime, &str>(column.name())?
         )),
-        "json" => row.try_get::<serde_json::Value, &str>(column.name())?,
+        // "json" => row.try_get::<serde_json::Value, &str>(column.name())?,
         "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]" | "unknown[]" => {
-            let vec = row.try_get::<Vec<String>, &str>(column.name())?;
-            let result = vec.into_iter().map(serde_json::Value::String).collect();
-
-            serde_json::Value::Array(result)
+            Value::Array(
+                row.try_get::<Vec<String>, &str>(column.name())
+                    .map(|vec| vec.iter().map(|s| Value::String(s.to_string())).collect())?,
+            )
         }
-        "bool[]" => {
-            let vec = row.try_get::<Vec<bool>, &str>(column.name())?;
-            let result = vec.into_iter().map(serde_json::Value::Bool).collect();
-
-            serde_json::Value::Array(result)
-        }
-        "int2[]" => {
-            let vec = row.try_get::<Vec<i16>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|i| serde_json::Value::Number(i.into()))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
-        "int4[]" => {
-            let vec = row.try_get::<Vec<i32>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|i| serde_json::Value::Number(i.into()))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
-        "int8[]" => {
-            let vec = row.try_get::<Vec<i64>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|i| serde_json::Value::Number(i.into()))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
-        "float4[]" => {
-            let vec = row.try_get::<Vec<f32>, &str>(column.name())?;
-            let result: Result<Vec<serde_json::Value>, anyhow::Error> = vec
-                .into_iter()
-                .map(|f| {
-                    let serde_f = serde_json::Number::from_f64(f as f64)
-                        .ok_or_else(|| anyhow!("Failed to convert float4 to number"))?;
-                    Ok(serde_json::Value::Number(serde_f))
-                })
-                .collect();
-
-            serde_json::Value::Array(result?)
-        }
-        "float8[]" => {
-            let vec = row.try_get::<Vec<f64>, &str>(column.name())?;
-            let result: Result<Vec<serde_json::Value>, anyhow::Error> = vec
-                .into_iter()
-                .map(|f| {
-                    let serde_f = serde_json::Number::from_f64(f)
-                        .ok_or_else(|| anyhow!("Failed to convert float8 to number"))?;
-                    Ok(serde_json::Value::Number(serde_f))
-                })
-                .collect();
-
-            serde_json::Value::Array(result?)
-        }
+        "bool[]" => Value::Array(
+            row.try_get::<Vec<bool>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(Value::Bool).collect())?,
+        ),
+        "int2[]" => Value::Array(
+            row.try_get::<Vec<i16>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "int4[]" => Value::Array(
+            row.try_get::<Vec<i32>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "int8[]" => Value::Array(
+            row.try_get::<Vec<i64>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "float4[]" => Value::Array(
+            row.try_get::<Vec<f32>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "float8[]" => Value::Array(
+            row.try_get::<Vec<f64>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
         "numeric[]" => {
             let vec = row.try_get::<Vec<Decimal>, &str>(column.name())?;
-            let result: Result<Vec<serde_json::Value>, _> = vec
+            let result: Result<Vec<Value>, _> = vec
                 .into_iter()
                 .map(|d| {
                     if let Some(truncated) = d.to_f64() {
-                        return Ok(serde_json::Value::Number(
-                            serde_json::Number::from_f64(truncated)
-                                .ok_or_else(|| anyhow!("Failed to convert numeric to number"))?,
-                        ));
+                        return Ok(Value::Number(truncated.into()));
                     }
 
                     bail!("Failed to convert Postgresql numeric data type to 64 bit float")
                 })
                 .collect();
 
-            serde_json::Value::Array(result?)
+            Value::Array(result?)
         }
-        "timestamp[]" => {
-            let vec = row.try_get::<Vec<chrono::NaiveDateTime>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|d| serde_json::Value::String(format!("{}", d.format("%Y-%m-%dT%H:%M:%S"))))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
-        "timestamptz[]" => {
-            let vec =
-                row.try_get::<Vec<chrono::DateTime<chrono::FixedOffset>>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|d| serde_json::Value::String(format!("{}", d.format("%Y-%m-%dT%H:%M:%S%z"))))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
-        "date[]" => {
-            let vec = row.try_get::<Vec<chrono::NaiveDate>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|d| serde_json::Value::String(format!("{}", d)))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
-        "time[]" => {
-            let vec = row.try_get::<Vec<chrono::NaiveTime>, &str>(column.name())?;
-            let result = vec
-                .into_iter()
-                .map(|d| serde_json::Value::String(format!("{}", d)))
-                .collect();
-
-            serde_json::Value::Array(result)
-        }
+        "timestamp[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveDateTime>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%dT%H:%M:%S".to_owned()),
+                                value: ChronoValue::NaiveDateTime(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "timestamptz[]" => Value::Array(
+            row.try_get::<Vec<chrono::DateTime<chrono::FixedOffset>>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%dT%H:%M:%S%z".to_owned()),
+                                value: ChronoValue::DateTime(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "date[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveDate>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%d".to_owned()),
+                                value: ChronoValue::NaiveDate(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "time[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveTime>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|t| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%H:%M:%S".to_owned()),
+                                value: ChronoValue::NaiveTime(t),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
         _ => {
             bail!(
                 "Could not convert value. Converter not implemented for {}",
