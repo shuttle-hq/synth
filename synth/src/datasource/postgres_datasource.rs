@@ -432,7 +432,10 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
             "{}",
             row.try_get::<chrono::NaiveTime, &str>(column.name())?
         )),
-        // "json" => row.try_get::<serde_json::Value, &str>(column.name())?,
+        "json" => {
+            let serde_value = row.try_get::<serde_json::Value, &str>(column.name())?;
+            serde_json::from_value(serde_value)?
+        }
         "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]" | "unknown[]" => {
             Value::Array(
                 row.try_get::<Vec<String>, &str>(column.name())
