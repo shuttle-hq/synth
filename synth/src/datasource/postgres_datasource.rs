@@ -285,7 +285,7 @@ impl RelationalDataSource for PostgresDataSource {
                 begin: None,
                 end: None,
             }),
-            "json" => Content::Object(ObjectContent {
+            "json" | "jsonb" => Content::Object(ObjectContent {
                 skip_when_null: false,
                 fields: BTreeMap::new(),
             }),
@@ -432,7 +432,7 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
             "{}",
             row.try_get::<chrono::NaiveTime, &str>(column.name())?
         )),
-        "json" => {
+        "json" | "jsonb" => {
             let serde_value = row.try_get::<serde_json::Value, &str>(column.name())?;
             serde_json::from_value(serde_value)?
         }

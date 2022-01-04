@@ -100,7 +100,7 @@ function test-arrays() {
   if [ ! -z "$ERRORS" ]
   then
     echo -e "${ERROR}Did not expect errors:${NC}"
-    echo $ERRORS
+    echo -e $ERRORS
     return 1
   fi
 
