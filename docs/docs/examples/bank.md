@@ -278,7 +278,7 @@ first.
       "type": "string",
       "pattern": "[a-zA-Z0-9]*"
     },
-    description": {
+    "description": {
       "type": "string",
       "pattern": "[a-zA-Z0-9]*"
     }
