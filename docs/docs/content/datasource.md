@@ -15,7 +15,7 @@ exhausted when set to `true`.
 When pulling from a JSON file, the JSON is expected to be an array with every item being the value for a single Synth
 generator. The following is a valid JSON datasource:
 
-```json
+```json[addresses.json]
 [
   "21 Mary Street",
   "5 Diascia Avenue",

@@ -21,6 +21,7 @@ function test_file(){
   file=$1
 
   in_code_block=false
+  in_data_file=false
   code_block=""
   file_name=""
   expected_errors=()
@@ -28,20 +29,31 @@ function test_file(){
   line_count=0
 
   ns=$(basename $file .md)
-  mkdir -p "tmp/$ns"
+  mkdir -p "$ns"
 
   while IFS= read -r line
   do
     line_count=$((line_count+1))
 
-    if [ "$line" = "\`\`\`json" ]
+    if [ $(echo "$line" | grep -Pc "^\`\`\`json(\[.*\])?$") -gt 0 ]
     then
-      echo -e "${DEBUG}$file:$line_count has a JSON only code block that will be skipped${NC}"
+      # Copy datasource data files marked with `json[file_name.json]`
+      file_name=$(echo "$line" | grep -Po "(?<=\[).*\.json(?=\])")
+
+      # File not marked
+      if [ -z "$file_name" ]
+      then
+        echo -e "${DEBUG}$file:$line_count has a JSON only code block that will be skipped${NC}"
+        continue
+      fi
+
+      echo -e "${DEBUG}$file:$line_count($file_name) is a JSON data file that will be copied${NC}"
+      in_data_file=true
       continue
     fi
 
     # Find start of code blocks
-    if [ "$in_code_block" = false ] && [ $(echo "$line" | grep -Pc "^\`\`\`json synth(\[.*\])?$") -gt 0 ]
+    if [ "$in_code_block" = false ] && [ "$in_data_file" = false ] && [ $(echo "$line" | grep -Pc "^\`\`\`json synth(\[.*\])?$") -gt 0 ]
     then
       file_name=$(echo "$line" | grep -Po "(?<=\[).*\.json(?=\])")
 
@@ -61,7 +73,7 @@ function test_file(){
       continue
     fi
 
-    if [ "$in_code_block" = false ]
+    if [ "$in_code_block" = false ] && [ "$in_data_file" = false ]
     then
       continue
     fi
@@ -69,30 +81,36 @@ function test_file(){
     # Find end of active code blocks
     if [ "$line" = "\`\`\`" ]
     then
-      # Wrap one liners in array
-      if [ $(echo -e "$code_block" | wc -l) -lt 3 ]
+      if [ "$in_data_file" = false ]
       then
-        code_block=$( echo "{
-          \"type\": \"array\",
-          \"length\": 1,
-          \"content\": {
-            \"type\": \"object\",
-            $code_block
-          }
-        }")
-      # Wrap not having array type in array
-      elif echo -e "$code_block" | sed -n 3p | grep -vq "\"type\": \"array\","
-      then
-        code_block=$( echo "{
-          \"type\": \"array\",
-          \"length\": 1,
-          \"content\": $code_block
-        }")
+        # Wrap one liners in array
+        if [ $(echo -e "$code_block" | wc -l) -lt 3 ]
+        then
+          code_block=$( echo "{
+            \"type\": \"array\",
+            \"length\": 1,
+            \"content\": {
+              \"type\": \"object\",
+              $code_block
+            }
+          }")
+        # Wrap not having array type in array
+        elif echo -e "$code_block" | sed -n 3p | grep -vq "\"type\": \"array\","
+        then
+          code_block=$( echo "{
+            \"type\": \"array\",
+            \"length\": 1,
+            \"content\": $code_block
+          }")
+        fi
+
+        echo -e "$code_block" > "$ns/$file_name"
+      else
+        echo -e "$code_block" > "$file_name"
       fi
 
-      echo -e "$code_block" > "tmp/$ns/$file_name"
-
       in_code_block=false
+      in_data_file=false
       code_block=""
       file_name=""
       schema_files=$((schema_files+1))
@@ -108,7 +126,7 @@ function test_file(){
   # Only test namespace if it has any files
   if [ $schema_files -gt 0 ]
   then
-    output=$(2>&1 1>/dev/null synth generate "tmp/$ns")
+    output=$(2>&1 1>/dev/null synth generate "$ns")
 
     if [ "$output" != "" ]
     then
@@ -137,10 +155,13 @@ function test_file(){
   fi
   
   # Cleanup if passed
-  rm -r "tmp/$ns"
+  rm -r "$ns"
 }
 
-markdown_files=$(find . -type d -name node_modules -prune -o -type f -name "*.md")
+mkdir -p tmp
+cd tmp
+
+markdown_files=$(find ../ -type d -name node_modules -prune -o -type f -name "*.md")
 result=0
 
 for file in $markdown_files

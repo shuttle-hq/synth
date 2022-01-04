@@ -373,7 +373,7 @@ generator, but don't want to put thousands of descriptive lines in our declarati
 external JSON [datasource](../content/datasource) to pull descriptions from. First copy the following JSON to
 a `descriptions.json` file in the workspace.
 
-```json
+```json[descriptions.json]
 [
   "Walmart Credit Purchase",
   "Amazon - Kindle reading tablet",
