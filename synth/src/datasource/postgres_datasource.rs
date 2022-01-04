@@ -314,7 +314,7 @@ impl RelationalDataSource for PostgresDataSource {
         let extend = query_params.len();
 
         query.push('(');
-        for (i, param) in query_params.iter().enumerate().take(extend) {
+        for (i, param) in query_params.iter().enumerate() {
             let extra = if let Value::Array(_) = param {
                 let (typ, depth) = param.get_postgres_type();
                 if typ == "unknown" {
