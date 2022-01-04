@@ -96,11 +96,11 @@ function test-arrays() {
   echo -e "${INFO}Testing arrays to postgres${NC}"
   psql -c "CREATE DATABASE arrays;" postgres://postgres:$PASSWORD@localhost:$PORT/postgres
   psql -f arrays/0_arrays.sql postgres://postgres:$PASSWORD@localhost:$PORT/arrays
-  ERRORS=$($SYNTH generate --to postgres://postgres:$PASSWORD@localhost:$PORT/arrays arrays 2>&1)
-  if [ ! -z "$ERRORS" ]
+  errors=$($SYNTH generate --to postgres://postgres:$PASSWORD@localhost:$PORT/arrays arrays 2>&1)
+  if [ ! -z "$errors" ]
   then
     echo -e "${ERROR}Did not expect errors:${NC}"
-    echo -e $ERRORS
+    echo -e $errors
     return 1
   fi
 
