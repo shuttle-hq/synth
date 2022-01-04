@@ -11,7 +11,7 @@ then
 fi
 
 SYNTH="synth"
-[ "${CI-false}" == "true" ] || SYNTH="cargo run --bin synth"
+[ "${CI-false}" == "true" ] || SYNTH="cargo run --quiet --bin synth"
 
 COLLECTIONS=(hospitals doctors patients)
 

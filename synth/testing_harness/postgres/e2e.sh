@@ -11,7 +11,7 @@ then
 fi
 
 SYNTH="synth"
-[ "${CI-false}" == "true" ] || SYNTH="cargo run --bin synth"
+[ "${CI-false}" == "true" ] || SYNTH="cargo run --quiet --bin synth"
 
 ERROR='\033[0;31m'
 INFO='\033[0;36m'
