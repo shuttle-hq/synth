@@ -6,9 +6,9 @@ use std::iter::FromIterator;
 use synth_gen::prelude::*;
 
 use super::link::{Recorder, SliceRef, TapeView};
-use super::{Address, Compile, Compiler, FromLink, Link};
+use super::{Address, FromLink, Link};
 
-use crate::{Content, Graph};
+use crate::Content;
 
 /// A holder struct for the compiler's internal state of the children of a given node.
 ///
@@ -140,56 +140,6 @@ impl<'a, G: Generator> Iterator for IntoIter<'a, G> {
     }
 }
 
-pub enum Source<'a> {
-    Namespace(&'a Content),
-    Collection(&'a Content),
-}
-
-impl<'a> std::fmt::Display for Source<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Namespace(_) => write!(f, "namespace"),
-            Self::Collection(_) => write!(f, "schema"),
-        }
-    }
-}
-
-impl Compile for Source<'_> {
-    fn compile<'a, C: Compiler<'a>>(&'a self, compiler: C) -> Result<Graph> {
-        match self {
-            Source::Collection(schema) => schema.compile(compiler),
-            Source::Namespace(ns) => ns.compile(compiler),
-        }
-    }
-}
-
-#[allow(dead_code)]
-impl<'a> Source<'a> {
-    #[inline]
-    pub(super) fn as_namespace(&self) -> Result<&'a Content> {
-        match self {
-            Self::Namespace(namespace) => Ok(namespace),
-            other => Err(failed!(
-                target: Release,
-                "source node type mismatch: expected namespace, found {}",
-                other
-            )),
-        }
-    }
-
-    #[inline]
-    pub(super) fn as_collection(&self) -> Result<&'a Content> {
-        match self {
-            Self::Collection(content) => Ok(content),
-            other => Err(failed!(
-                target: Release,
-                "source node type mismatch: expected schema, found {}",
-                other
-            )),
-        }
-    }
-}
-
 pub(super) enum Artifact<G, Y, R> {
     Just(G),
     Link(Link<G, Y, R>),
@@ -264,7 +214,7 @@ impl<G: Generator> OutputState<G> {
 }
 
 pub struct CompilerState<'a, G: Generator> {
-    src: Source<'a>,
+    src: &'a Content,
     output: OutputState<G>,
     scope: StructuredState<'a, G>,
     refs: BTreeSet<Address>,
@@ -279,23 +229,13 @@ impl<'a, G: Generator> std::iter::Extend<(String, CompilerState<'a, G>)> for Com
 
 impl<'a, G: Generator> CompilerState<'a, G> {
     #[inline]
-    pub(super) fn new(source: Source<'a>) -> Self {
+    pub fn new(src: &'a Content) -> Self {
         Self {
-            src: source,
+            src,
             output: OutputState::default(),
             scope: StructuredState::default(),
             refs: BTreeSet::default(),
         }
-    }
-
-    #[inline]
-    pub(super) fn collection(content: &'a Content) -> Self {
-        Self::new(Source::Collection(content))
-    }
-
-    #[inline]
-    pub fn namespace(content: &'a Content) -> Self {
-        Self::new(Source::Namespace(content))
     }
 
     #[inline]
@@ -347,8 +287,8 @@ impl<'a, G: Generator> CompilerState<'a, G> {
     }
 
     #[inline]
-    pub fn source(&self) -> &Source<'a> {
-        &self.src
+    pub fn source(&self) -> &'a Content {
+        self.src
     }
 
     #[inline]
@@ -387,7 +327,7 @@ impl<'t, 'a, G: Generator> Entry<'t, 'a, G> {
         if !self.node.scope.children.contains_key(&self.field) {
             self.node
                 .scope
-                .insert(self.field.clone(), CompilerState::collection(content));
+                .insert(self.field.clone(), CompilerState::new(content));
         }
         self.node.get_mut(&self.field).unwrap()
     }

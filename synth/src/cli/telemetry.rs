@@ -21,7 +21,7 @@ use crate::utils::META_OS;
 use crate::version::version;
 
 use synth_core::{
-    compile::{Address, CompilerState, FromLink, Source},
+    compile::{Address, CompilerState, FromLink},
     Compile, Compiler, Content, Graph,
 };
 
@@ -169,10 +169,7 @@ impl<'t, 'a: 't> TelemetryCrawler<'t, 'a> {
     }
 
     fn compile(self) -> Result<()> {
-        match self.state.source() {
-            Source::Namespace(namespace) => namespace.compile(self)?,
-            Source::Collection(content) => content.compile(self)?,
-        };
+        self.state.source().compile(self)?;
         Ok(())
     }
 }
@@ -219,7 +216,7 @@ impl TelemetryExportStrategy {
         ns_path: PathBuf,
     ) -> Result<()> {
         let crawler = TelemetryCrawler {
-            state: &mut CompilerState::namespace(namespace),
+            state: &mut CompilerState::new(namespace),
             position: Address::new_root(),
             context: Rc::clone(&context),
         };

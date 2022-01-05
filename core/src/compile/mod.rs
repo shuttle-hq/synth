@@ -24,8 +24,8 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
+pub use state::CompilerState;
 use state::{Artifact, OutputState, Symbols};
-pub use state::{CompilerState, Source};
 
 pub mod address;
 pub use address::Address;
@@ -66,12 +66,7 @@ impl<'a> NamespaceCompiler<'a> {
     }
 
     pub fn new(namespace: &'a Content) -> Self {
-        let state = CompilerState::namespace(namespace);
-        Self::new_at(state)
-    }
-
-    pub fn new_flat(content: &'a Content) -> Self {
-        let state = CompilerState::collection(content);
+        let state = CompilerState::new(namespace);
         Self::new_at(state)
     }
 
@@ -240,10 +235,7 @@ struct CollectionCompiler<'c, 'a: 'c> {
 
 impl<'c, 'a: 'c> CollectionCompiler<'c, 'a> {
     fn compile(self) -> Result<Graph> {
-        match self.state.source() {
-            Source::Collection(schema) => schema.compile(self),
-            Source::Namespace(ns) => ns.compile(self),
-        }
+        self.state.source().compile(self)
     }
 }
 
@@ -299,11 +291,7 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
     }
 
     fn compile(self) -> Result<()> {
-        match self.state.source() {
-            // TODO: Just have `Source` implement `Compile`?
-            Source::Collection(schema) => schema.compile(self)?,
-            Source::Namespace(ns) => ns.compile(self)?,
-        };
+        self.state.source().compile(self)?;
         Ok(())
     }
 }
