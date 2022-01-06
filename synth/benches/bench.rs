@@ -1,6 +1,8 @@
 // we can ignore irrefutable patterns here, because we might run this with or without a feature
 #![allow(irrefutable_let_patterns)]
 
+use std::io;
+
 use synth::cli::{Args, Cli};
 
 fn bench_generate_1_to_stdout() {
@@ -27,7 +29,8 @@ fn bench_generate_n_to_stdout(size: usize) {
             random: false,
             schema: None,
         };
-        Cli::new().unwrap().run(args).await.unwrap()
+        let output = io::stdout();
+        Cli::new().unwrap().run(args, output).await.unwrap()
     });
 }
 

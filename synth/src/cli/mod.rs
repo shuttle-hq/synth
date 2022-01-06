@@ -9,7 +9,7 @@ mod mysql;
 mod postgres;
 mod store;
 
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportParams;
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
 use crate::version::print_version_message;
@@ -17,9 +17,9 @@ use crate::version::print_version_message;
 use anyhow::{Context, Result};
 use rand::RngCore;
 use serde::Serialize;
-use std::cell::Cell;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
+use std::io::Write;
 use std::iter::FromIterator;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
@@ -39,14 +39,15 @@ pub mod telemetry;
 #[cfg(feature = "telemetry")]
 use telemetry::{TelemetryContext, TelemetryExportStrategy};
 
+use self::export::ExportStrategyBuilder;
+
 pub struct Cli {
     store: Store,
-    export_strategy: Cell<Option<Box<dyn ExportStrategy>>>,
     #[cfg(feature = "telemetry")]
     telemetry_context: Rc<RefCell<TelemetryContext>>,
 }
 
-impl Cli {
+impl<'w> Cli {
     pub fn new() -> Result<Self> {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
@@ -58,7 +59,6 @@ impl Cli {
 
         Ok(Self {
             store: Store::init()?,
-            export_strategy: Default::default(),
             #[cfg(feature = "telemetry")]
             telemetry_context: Rc::new(RefCell::new(TelemetryContext::new())),
         })
@@ -81,7 +81,7 @@ impl Cli {
         }
     }
 
-    pub async fn run(&self, args: Args) -> Result<()> {
+    pub async fn run<W: Write + 'w>(&self, args: Args, writer: W) -> Result<()> {
         match args {
             Args::Init { .. } => Ok(()),
             Args::Generate {
@@ -99,6 +99,7 @@ impl Cli {
                 to,
                 Self::derive_seed(random, seed)?,
                 schema,
+                writer,
             ),
             Args::Import {
                 namespace,
@@ -107,24 +108,32 @@ impl Cli {
                 schema,
             } => self.import(namespace, collection, from, schema),
             #[cfg(feature = "telemetry")]
-            Args::Telemetry(cmd) => self.telemetry(cmd),
+            Args::Telemetry(cmd) => self.telemetry(cmd, writer),
             Args::Version => {
-                print_version_message();
+                print_version_message(writer);
                 Ok(())
             }
         }
     }
 
     #[cfg(feature = "telemetry")]
-    fn telemetry(&self, cmd: TelemetryCommand) -> Result<()> {
+    fn telemetry<W: Write>(&self, cmd: TelemetryCommand, mut writer: W) -> Result<()> {
         match cmd {
             TelemetryCommand::Enable => telemetry::enable(),
             TelemetryCommand::Disable => telemetry::disable(),
             TelemetryCommand::Status => {
                 if telemetry::is_enabled() {
-                    println!("Telemetry is enabled. To disable it run `synth telemetry disable`.");
+                    writeln!(
+                        writer,
+                        "Telemetry is enabled. To disable it run `synth telemetry disable`."
+                    )
+                    .expect("failed to write telemetry status");
                 } else {
-                    println!("Telemetry is disabled. To enable it run `synth telemetry enable`.");
+                    writeln!(
+                        writer,
+                        "Telemetry is disabled. To enable it run `synth telemetry enable`."
+                    )
+                    .expect("failed to write telemetry status");
                 }
                 Ok(())
             }
@@ -185,7 +194,7 @@ impl Cli {
         }
     }
 
-    fn generate(
+    fn generate<W: Write + 'w>(
         &self,
         ns_path: PathBuf,
         collection_name: Option<String>,
@@ -193,6 +202,7 @@ impl Cli {
         to: &str,
         seed: u64,
         schema: Option<String>,
+        writer: W,
     ) -> Result<()> {
         let namespace = self.store.get_ns(ns_path.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
@@ -201,17 +211,23 @@ impl Cli {
                 .expect("The provided namespace is not a valid UTF-8 string")
         ))?;
 
-        self.export_strategy.set(Some(
-            DataSourceParams {
-                uri: URI::try_from(to)
-                    .with_context(|| format!("Parsing generation URI '{}'", to))?,
-                schema,
-            }
-            .try_into()?,
-        ));
+        let builder: ExportStrategyBuilder<_> = DataSourceParams {
+            uri: URI::try_from(to).with_context(|| format!("Parsing generation URI '{}'", to))?,
+            schema,
+        }
+        .try_into()?;
+
+        let builder = builder.set_writer(writer);
+
+        let mut export_strategy = builder.build()?;
 
         #[cfg(feature = "telemetry")]
-        self.set_telemetry_export_strategy();
+        {
+            export_strategy = Box::new(TelemetryExportStrategy::new(
+                export_strategy,
+                Rc::clone(&self.telemetry_context),
+            ));
+        }
 
         let params = ExportParams {
             namespace,
@@ -221,23 +237,11 @@ impl Cli {
             ns_path: ns_path.clone(),
         };
 
-        self.export_strategy
-            .take()
-            .unwrap()
+        export_strategy
             .export(params)
             .with_context(|| format!("At namespace {:?}", ns_path))?;
 
         Ok(())
-    }
-
-    #[cfg(feature = "telemetry")]
-    fn set_telemetry_export_strategy(&self) {
-        let delegate = self.export_strategy.take();
-        self.export_strategy
-            .set(Some(Box::new(TelemetryExportStrategy::new(
-                delegate.unwrap(),
-                Rc::clone(&self.telemetry_context),
-            ))));
     }
 }
 

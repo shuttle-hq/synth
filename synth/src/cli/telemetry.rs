@@ -199,13 +199,16 @@ impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     }
 }
 
-pub(super) struct TelemetryExportStrategy {
-    exporter: Box<dyn ExportStrategy>,
+pub(super) struct TelemetryExportStrategy<'w> {
+    exporter: Box<dyn ExportStrategy + 'w>,
     telemetry_context: Rc<RefCell<TelemetryContext>>,
 }
 
-impl TelemetryExportStrategy {
-    pub fn new(strategy: Box<dyn ExportStrategy>, context: Rc<RefCell<TelemetryContext>>) -> Self {
+impl<'w> TelemetryExportStrategy<'w> {
+    pub fn new(
+        strategy: Box<dyn ExportStrategy + 'w>,
+        context: Rc<RefCell<TelemetryContext>>,
+    ) -> Self {
         TelemetryExportStrategy {
             exporter: strategy,
             telemetry_context: context,
@@ -268,7 +271,7 @@ impl TelemetryExportStrategy {
     }
 }
 
-impl ExportStrategy for TelemetryExportStrategy {
+impl<'w> ExportStrategy for TelemetryExportStrategy<'w> {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         Self::fill_telemetry_pre(
             Rc::clone(&self.telemetry_context),

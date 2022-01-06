@@ -5,18 +5,20 @@ use reqwest::header::USER_AGENT;
 use semver::Version;
 use serde_json::map::Map;
 use serde_json::value::Value;
+use std::io::Write;
 use std::time::Duration;
 
 /// This is used when the user does `synth version`.
 /// It will always display a new version if it exists.
-pub fn print_version_message() {
+pub fn print_version_message<W: Write>(mut writer: W) {
     let current_version = version();
     let version_update_info = version_update_info()
         .map(|(info, _)| info)
         .unwrap_or_default()
         .map(|info| format!("\n{}", info))
         .unwrap_or_default();
-    println!("synth {}{}", current_version, version_update_info);
+    writeln!(writer, "synth {}{}", current_version, version_update_info)
+        .expect("failed to write version");
 }
 
 // This is used when the user runs any command (except for version)

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::io;
 use std::thread;
 use std::thread::JoinHandle;
 use structopt::StructOpt;
@@ -16,17 +17,18 @@ async fn main() -> Result<()> {
         Args::Version => None,
         _ => Some(thread::spawn(synth::version::notify_new_version_message)),
     };
+    let output = io::stdout();
 
     #[cfg(feature = "telemetry")]
     synth::cli::telemetry::with_telemetry(
         args,
-        |args| cli.run(args),
+        |args| cli.run(args, output),
         || cli.get_telemetry_context(),
     )
     .await?;
 
     #[cfg(not(feature = "telemetry"))]
-    cli.run(args).await?;
+    cli.run(args, output).await?;
 
     if let Some(notify_handle) = notify_handle {
         print_notify(notify_handle);
