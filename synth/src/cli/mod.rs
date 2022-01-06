@@ -49,8 +49,6 @@ pub struct Cli {
 
 impl<'w> Cli {
     pub fn new() -> Result<Self> {
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
-
         #[cfg(debug_assertions)]
         {
             let splash = crate::utils::splash::Splash::auto()?;
