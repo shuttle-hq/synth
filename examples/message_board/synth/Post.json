@@ -10,7 +10,9 @@
     "postedAt": {
       "type": "date_time",
       "format": "%Y-%m-%d %H:%M:%S",
-      "begin": "2020-01-01 12:00:00"
+      "subtype": "naive_date_time",
+      "begin": "2020-01-01 12:00:00",
+      "end": "2021-01-01 12:00:00"
     },
     "title": {
       "type": "string",
