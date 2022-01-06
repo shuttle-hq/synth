@@ -217,6 +217,7 @@ impl<'w> Cli {
 
         let builder = builder.set_writer(writer);
 
+        #[allow(unused_mut)]
         let mut export_strategy = builder.build()?;
 
         #[cfg(feature = "telemetry")]
