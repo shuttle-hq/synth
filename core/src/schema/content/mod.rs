@@ -579,7 +579,7 @@ impl FromIterator<(String, Content)> for Content {
     fn from_iter<I: IntoIterator<Item = (String, Content)>>(iter: I) -> Content {
         let mut ns = Content::new_object();
         for (key, value) in iter {
-            let _ = ns.put_collection(key, value); // TODO: Handle result.
+            let _ = ns.put_collection(key, value);
         }
         ns
     }
