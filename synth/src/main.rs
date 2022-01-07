@@ -8,9 +8,9 @@ use synth::cli::Cli;
 
 #[async_std::main]
 async fn main() -> Result<()> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     let args = Args::from_args();
     let cli = Cli::new()?;
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
     // The `synth version` command already checks for new Synth versions. Therefore, don't spawn
     // another thread that will do virtually the same task.
