@@ -14,8 +14,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use uuid::Uuid;
 
-use crate::cli::config;
 use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::{config, GenerateCommand, ImportCommand};
 use crate::sampler::SamplerOutput;
 use crate::utils::META_OS;
 use crate::version::version;
@@ -321,10 +321,10 @@ where
     };
 
     let integration = match &args {
-        Args::Generate { to: uri_string, .. }
-        | Args::Import {
+        Args::Generate(GenerateCommand { to: uri_string, .. })
+        | Args::Import(ImportCommand {
             from: uri_string, ..
-        } => uriparse::URI::try_from(uri_string.as_str())
+        }) => uriparse::URI::try_from(uri_string.as_str())
             .map(|uri| uri.scheme().to_string())
             .ok(),
         _ => None,

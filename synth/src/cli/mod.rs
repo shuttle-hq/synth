@@ -82,29 +82,8 @@ impl<'w> Cli {
     pub async fn run<W: Write + 'w>(&self, args: Args, writer: W) -> Result<()> {
         match args {
             Args::Init { .. } => Ok(()),
-            Args::Generate {
-                namespace,
-                collection,
-                size,
-                ref to,
-                seed,
-                random,
-                schema,
-            } => self.generate(
-                namespace,
-                collection,
-                size,
-                to,
-                Self::derive_seed(random, seed)?,
-                schema,
-                writer,
-            ),
-            Args::Import {
-                namespace,
-                collection,
-                ref from,
-                schema,
-            } => self.import(namespace, collection, from, schema),
+            Args::Generate(cmd) => self.generate(cmd, writer),
+            Args::Import(cmd) => self.import(cmd),
             #[cfg(feature = "telemetry")]
             Args::Telemetry(cmd) => self.telemetry(cmd, writer),
             Args::Version => {
@@ -138,42 +117,37 @@ impl<'w> Cli {
         }
     }
 
-    fn import(
-        &self,
-        path: PathBuf,
-        collection_name: Option<String>,
-        from: &str,
-        schema: Option<String>,
-    ) -> Result<()> {
+    fn import(&self, cmd: ImportCommand) -> Result<()> {
         // TODO: If ns exists and no collection: break
         // If collection and ns exists and collection exists: break
 
         let import_strategy: Box<dyn ImportStrategy> = DataSourceParams {
-            uri: URI::try_from(from).with_context(|| format!("Parsing import URI '{}'", from))?,
-            schema,
+            uri: URI::try_from(cmd.from.as_str())
+                .with_context(|| format!("Parsing import URI '{}'", cmd.from))?,
+            schema: cmd.schema,
         }
         .try_into()?;
 
-        if let Some(collection_name) = collection_name {
-            if self.store.collection_exists(&path, &collection_name) {
+        if let Some(collection) = cmd.collection {
+            if self.store.collection_exists(&cmd.namespace, &collection) {
                 return Err(anyhow!(
                     "The collection `{}` already exists. Will not import into an existing collection.",
-                    Store::relative_collection_path(&path, &collection_name).display()
+                    Store::relative_collection_path(&cmd.namespace, &collection).display()
                 ));
             } else {
-                let content = import_strategy.import_collection(&collection_name)?;
+                let content = import_strategy.import_collection(&collection)?;
                 self.store
-                    .save_collection_path(&path, collection_name, content)?;
+                    .save_collection_path(&cmd.namespace, collection, content)?;
 
                 #[cfg(feature = "telemetry")]
                 self.telemetry_context.borrow_mut().set_num_collections(1);
 
                 Ok(())
             }
-        } else if self.store.ns_exists(&path) {
+        } else if self.store.ns_exists(&cmd.namespace) {
             Err(anyhow!(
                 "The directory at `{}` already exists. Will not import into an existing directory.",
-                path.display()
+                cmd.namespace.display()
             ))
         } else {
             let ns = import_strategy.import()?;
@@ -182,36 +156,28 @@ impl<'w> Cli {
             TelemetryExportStrategy::fill_telemetry_pre(
                 Rc::clone(&self.telemetry_context),
                 &ns,
-                collection_name,
-                path.clone(),
+                cmd.collection,
+                cmd.namespace.clone(),
             )?;
 
-            self.store.save_ns_path(path, ns)?;
+            self.store.save_ns_path(cmd.namespace, ns)?;
 
             Ok(())
         }
     }
 
-    fn generate<W: Write + 'w>(
-        &self,
-        ns_path: PathBuf,
-        collection_name: Option<String>,
-        target: usize,
-        to: &str,
-        seed: u64,
-        schema: Option<String>,
-        writer: W,
-    ) -> Result<()> {
-        let namespace = self.store.get_ns(ns_path.clone()).context(format!(
+    fn generate<W: Write + 'w>(&self, cmd: GenerateCommand, writer: W) -> Result<()> {
+        let namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
-            ns_path
+            cmd.namespace
                 .to_str()
                 .expect("The provided namespace is not a valid UTF-8 string")
         ))?;
 
         let builder: ExportStrategyBuilder<_> = DataSourceParams {
-            uri: URI::try_from(to).with_context(|| format!("Parsing generation URI '{}'", to))?,
-            schema,
+            uri: URI::try_from(cmd.to.as_str())
+                .with_context(|| format!("Parsing generation URI '{}'", cmd.to))?,
+            schema: cmd.schema,
         }
         .try_into()?;
 
@@ -228,17 +194,19 @@ impl<'w> Cli {
             ));
         }
 
+        let seed = Self::derive_seed(cmd.random, cmd.seed)?;
+
         let params = ExportParams {
             namespace,
-            collection_name,
-            target,
+            collection_name: cmd.collection,
+            target: cmd.size,
             seed,
-            ns_path: ns_path.clone(),
+            ns_path: cmd.namespace.clone(),
         };
 
         export_strategy
             .export(params)
-            .with_context(|| format!("At namespace {:?}", ns_path))?;
+            .with_context(|| format!("At namespace {:?}", cmd.namespace))?;
 
         Ok(())
     }
@@ -260,70 +228,9 @@ pub enum Args {
         init_path: Option<PathBuf>,
     },
     #[structopt(about = "Generate data from a namespace", alias = "gen")]
-    Generate {
-        #[structopt(
-            help = "The namespace directory from which to read schema files",
-            parse(from_os_str)
-        )]
-        #[serde(skip)]
-        namespace: PathBuf,
-        #[structopt(long, help = "The specific collection from which to generate")]
-        #[serde(skip)]
-        collection: Option<String>,
-        #[structopt(long, help = "the number of samples", default_value = "1")]
-        size: usize,
-        #[structopt(
-            long,
-            help = "The URI into which data will be generated. Can be a file-based URI scheme to output data to the filesystem or stdout ('json:', 'jsonl:' and 'csv:' allow outputting JSON, JSON Lines and CSV data respectively) or can be a database URI to write data directly to some database (supports Postgres, MongoDB, and MySQL). Defaults to writing JSON data to stdout. [example: jsonl:/tmp/generation_output]",
-            default_value = "json:"
-        )]
-        #[serde(skip)]
-        to: String,
-        #[structopt(
-            long,
-            help = "an unsigned 64 bit integer seed to be used as a seed for generation"
-        )]
-        seed: Option<u64>,
-        #[structopt(
-            long,
-            help = "generation will use a random seed - this cannot be used with --seed"
-        )]
-        random: bool,
-        #[structopt(
-            long,
-            help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
-        )]
-        #[serde(skip)]
-        schema: Option<String>,
-    },
+    Generate(GenerateCommand),
     #[structopt(about = "Import data from an external source")]
-    Import {
-        #[structopt(
-            help = "The namespace directory into which to save imported schema files",
-            parse(from_os_str)
-        )]
-        #[serde(skip)]
-        namespace: PathBuf,
-        #[structopt(
-            long,
-            help = "The name of a collection into which the data will be imported"
-        )]
-        #[serde(skip)]
-        collection: Option<String>,
-        #[structopt(
-            long,
-            help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:', 'jsonl:' and 'csv:' allow reading JSON, JSON Lines and CSV data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin. [example: jsonl:/tmp/test_data_input]",
-            default_value = "json:"
-        )]
-        #[serde(skip)]
-        from: String,
-        #[structopt(
-            long,
-            help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
-        )]
-        #[serde(skip)]
-        schema: Option<String>,
-    },
+    Import(ImportCommand),
     #[cfg(feature = "telemetry")]
     #[structopt(about = "Toggle anonymous usage data collection")]
     Telemetry(TelemetryCommand),
@@ -335,6 +242,73 @@ fn map_from_uri_query<'a>(query_opt: Option<&'a uriparse::Query<'a>>) -> HashMap
     let query_str = query_opt.map(uriparse::Query::as_str).unwrap_or_default();
 
     HashMap::<_, _>::from_iter(querystring::querify(query_str).into_iter())
+}
+
+#[derive(StructOpt, Serialize)]
+pub struct GenerateCommand {
+    #[structopt(
+        help = "The namespace directory from which to read schema files",
+        parse(from_os_str)
+    )]
+    #[serde(skip)]
+    pub namespace: PathBuf,
+    #[structopt(long, help = "The specific collection from which to generate")]
+    #[serde(skip)]
+    pub collection: Option<String>,
+    #[structopt(long, help = "the number of samples", default_value = "1")]
+    pub size: usize,
+    #[structopt(
+        long,
+        help = "The URI into which data will be generated. Can be a file-based URI scheme to output data to the filesystem or stdout ('json:', 'jsonl:' and 'csv:' allow outputting JSON, JSON Lines and CSV data respectively) or can be a database URI to write data directly to some database (supports Postgres, MongoDB, and MySQL). Defaults to writing JSON data to stdout. [example: jsonl:/tmp/generation_output]",
+        default_value = "json:"
+    )]
+    #[serde(skip)]
+    pub to: String,
+    #[structopt(
+        long,
+        help = "an unsigned 64 bit integer seed to be used as a seed for generation"
+    )]
+    pub seed: Option<u64>,
+    #[structopt(
+        long,
+        help = "generation will use a random seed - this cannot be used with --seed"
+    )]
+    pub random: bool,
+    #[structopt(
+        long,
+        help = "(Postgres only) Specify the schema into which to generate. Defaults to 'public'."
+    )]
+    #[serde(skip)]
+    pub schema: Option<String>,
+}
+
+#[derive(StructOpt, Serialize)]
+pub struct ImportCommand {
+    #[structopt(
+        help = "The namespace directory into which to save imported schema files",
+        parse(from_os_str)
+    )]
+    #[serde(skip)]
+    pub namespace: PathBuf,
+    #[structopt(
+        long,
+        help = "The name of a collection into which the data will be imported"
+    )]
+    #[serde(skip)]
+    pub collection: Option<String>,
+    #[structopt(
+        long,
+        help = "The source URI from which to import data. Can be a file-based URI scheme to read data from a file or stdin ('json:', 'jsonl:' and 'csv:' allow reading JSON, JSON Lines and CSV data respectively) or can be a database URI to read data directly from some database (supports Postgres, MongoDB, and MySQL). Defaults to reading JSON data from stdin. [example: jsonl:/tmp/test_data_input]",
+        default_value = "json:"
+    )]
+    #[serde(skip)]
+    pub from: String,
+    #[structopt(
+        long,
+        help = "(Postgres only) Specify the schema from which to import. Defaults to 'public'."
+    )]
+    #[serde(skip)]
+    pub schema: Option<String>,
 }
 
 #[cfg(feature = "telemetry")]

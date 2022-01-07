@@ -1,9 +1,9 @@
 use anyhow::Result;
-use synth::cli;
+use synth::cli::{self, GenerateCommand};
 
 /// Helper to capture and return any output for generate on a namespace
 pub async fn generate(namespace: &str) -> Result<String> {
-    run(cli::Args::Generate {
+    run(cli::Args::Generate(GenerateCommand {
         namespace: namespace.into(),
         collection: None,
         random: false,
@@ -11,7 +11,7 @@ pub async fn generate(namespace: &str) -> Result<String> {
         seed: Some(5),
         size: 10,
         to: "json:".to_string(),
-    })
+    }))
     .await
 }
 

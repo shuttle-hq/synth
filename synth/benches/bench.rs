@@ -3,7 +3,7 @@
 
 use std::io;
 
-use synth::cli::{Args, Cli};
+use synth::cli::{Args, Cli, GenerateCommand};
 
 fn bench_generate_1_to_stdout() {
     bench_generate_n_to_stdout(1);
@@ -20,7 +20,7 @@ fn bench_generate_10000_to_stdout() {
 fn bench_generate_n_to_stdout(size: usize) {
     async_std::task::block_on(async {
         let namespace = std::path::PathBuf::from("testing_harness/postgres/hospital_master");
-        let args = Args::Generate {
+        let args = Args::Generate(GenerateCommand {
             namespace,
             collection: None,
             size,
@@ -28,7 +28,7 @@ fn bench_generate_n_to_stdout(size: usize) {
             seed: Some(0),
             random: false,
             schema: None,
-        };
+        });
         let output = io::stdout();
         Cli::new().unwrap().run(args, output).await.unwrap()
     });
