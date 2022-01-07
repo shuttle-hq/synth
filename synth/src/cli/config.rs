@@ -81,6 +81,7 @@ impl Config {
         let mut config_file_path = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(Self::file_path()?)?;
 
         serde_json::to_writer_pretty(&mut config_file_path, &self)?;
