@@ -1,5 +1,8 @@
 use anyhow::Result;
 
+// Skipping fmt is needed until this fix is released
+// https://github.com/rust-lang/rustfmt/pull/5142
+#[rustfmt::skip]
 mod helpers;
 
 use helpers::generate;
