@@ -183,6 +183,7 @@ impl<'w> Cli {
 
         let builder = builder.set_writer(writer);
 
+        // `mut` is only used by the "telemetry" feature
         #[allow(unused_mut)]
         let mut export_strategy = builder.build()?;
 
