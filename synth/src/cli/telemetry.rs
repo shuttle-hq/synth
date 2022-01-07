@@ -92,24 +92,28 @@ fn send_panic_report(synth_command: &str, telemetry_client: &TelemetryClient) {
 pub(crate) fn enable() -> Result<()> {
     // Initialise the `uuid` if it hasn't been initialised yet.
     let _ = get_or_initialise_uuid();
-    config::set_telemetry_enabled(true);
-    Ok(())
+    config::set_telemetry_enabled(true)
 }
 
 pub(crate) fn disable() -> Result<()> {
-    config::set_telemetry_enabled(false);
-    Ok(())
+    config::set_telemetry_enabled(false)
 }
 
 pub(crate) fn is_enabled() -> bool {
     config::get_telemetry_enabled().unwrap_or(false)
 }
 
-fn get_or_initialise_uuid() -> String {
-    if config::get_uuid().is_none() {
-        config::set_uuid(Uuid::new_v4().to_hyphenated().to_string());
+fn get_or_initialise_uuid() -> Result<String> {
+    // Return uuid id if it is already set
+    if let Some(uuid) = config::get_uuid() {
+        return Ok(uuid);
     }
-    config::get_uuid().expect("is ok here as was set earlier")
+
+    // Make new uuid
+    let uuid = Uuid::new_v4().to_hyphenated().to_string();
+    config::set_uuid(uuid.clone())?;
+
+    Ok(uuid)
 }
 
 #[derive(Clone)]
@@ -391,7 +395,11 @@ impl TelemetryClient {
 
         Self {
             ph_client: posthog_rs::client(API_KEY),
-            uuid: get_or_initialise_uuid(),
+            uuid: get_or_initialise_uuid().unwrap_or_else(|error| {
+                error
+                    .context("failed to get uuid for telemetry")
+                    .to_string()
+            }),
             synth_version,
             os,
         }
