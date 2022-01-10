@@ -1,15 +1,12 @@
 use crate::datasource::relational_datasource::{
-    insert_relational_data, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
+    insert_relational_data, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
 use async_std::task;
 use async_trait::async_trait;
-use rust_decimal::prelude::ToPrimitive;
-use rust_decimal::Decimal;
-use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlRow};
-use sqlx::{Column, MySql, Pool, Row, TypeInfo};
-use std::collections::BTreeMap;
+use sqlx::mysql::{MySqlPoolOptions, MySqlRow};
+use sqlx::{MySql, Pool, Row};
 use std::convert::TryFrom;
 use std::prelude::rust_2015::Result::Ok;
 use synth_core::schema::number_content::{F64, I64, U64};
@@ -17,7 +14,6 @@ use synth_core::schema::{
     ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent,
 };
 use synth_core::{Content, Value};
-use synth_gen::prelude::*;
 
 /// TODO
 /// Known issues:
@@ -193,66 +189,4 @@ impl TryFrom<MySqlRow> for ForeignKey {
             to_column: row.try_get(3)?,
         })
     }
-}
-
-impl TryFrom<MySqlRow> for ValueWrapper {
-    type Error = anyhow::Error;
-
-    fn try_from(row: MySqlRow) -> Result<Self, Self::Error> {
-        let mut kv = BTreeMap::new();
-
-        for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
-            kv.insert(column.name().to_string(), value);
-        }
-
-        Ok(ValueWrapper(Value::Object(kv)))
-    }
-}
-
-fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
-    let value = match column.type_info().name().to_lowercase().as_str() {
-        "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
-            Value::String(row.try_get::<String, &str>(column.name())?)
-        }
-        "tinyint" => Value::Number(Number::from(row.try_get::<i8, &str>(column.name())?)),
-        "smallint" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
-        "mediumint" | "int" | "integer" => {
-            Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?))
-        }
-        "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
-        "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
-        "float" => Value::Number(Number::from(row.try_get::<f32, &str>(column.name())? as f64)),
-        "double" => Value::Number(Number::from(row.try_get::<f64, &str>(column.name())?)),
-        "numeric" | "decimal" => {
-            let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
-
-            if let Some(truncated) = as_decimal.to_f64() {
-                return Ok(Value::Number(Number::from(truncated)));
-            }
-
-            bail!("Failed to convert Mysql numeric data type to 64 bit float")
-        }
-        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "date" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveDate, &str>(column.name())?
-        )),
-        "datetime" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveDateTime, &str>(column.name())?
-        )),
-        "time" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveTime, &str>(column.name())?
-        )),
-        _ => {
-            bail!(
-                "Could not convert value. Converter not implemented for {}",
-                column.type_info().name()
-            );
-        }
-    };
-
-    Ok(value)
 }
