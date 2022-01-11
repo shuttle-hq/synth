@@ -26,10 +26,10 @@ macro_rules! config {
 
         $(
             #[allow(dead_code)]
-            pub fn $setter($val_name: $ty) {
+            pub fn $setter($val_name: $ty) -> Result<()> {
                 let mut config = CONFIG.lock().unwrap();
                 config.$val_name = Some($val_name);
-                config.save();
+                config.save()
             }
             #[allow(dead_code)]
             pub fn $getter() -> Option<$ty> {
@@ -70,19 +70,22 @@ impl Config {
         Ok(synth_config_dir.join("synth"))
     }
 
-    fn save(&self) {
-        // There are way too many unwraps here.
+    fn save(&self) -> Result<()> {
         // Create config dir if it doesn't exist
-        let config_dir = Self::synth_config_dir().unwrap();
+        let config_dir = Self::synth_config_dir()?;
         if !config_dir.exists() {
-            std::fs::create_dir_all(&config_dir).unwrap();
+            std::fs::create_dir_all(&config_dir)?;
         }
+
         // Save the config
         let mut config_file_path = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
-            .open(Self::file_path().unwrap())
-            .unwrap();
-        serde_json::to_writer_pretty(&mut config_file_path, &self).unwrap();
+            .truncate(true)
+            .open(Self::file_path()?)?;
+
+        serde_json::to_writer_pretty(&mut config_file_path, &self)?;
+
+        Ok(())
     }
 }
