@@ -1,6 +1,8 @@
 use super::prelude::*;
 use crate::{DataSourceParams, Value};
 use anyhow::Error;
+use async_std::task;
+use sqlx::postgres::PgPoolOptions;
 use std::path::PathBuf;
 use uriparse::URI;
 
@@ -9,6 +11,7 @@ pub struct DatasourceContent {
     pub path: String,
     #[serde(default)]
     pub cycle: bool,
+    pub query: Option<String>,
 }
 
 impl Compile for DatasourceContent {
@@ -17,19 +20,23 @@ impl Compile for DatasourceContent {
             uri: URI::try_from(self.path.as_str())?,
             schema: None,
         };
-        let iter = get_iter(params).map(|i| -> Box<dyn Iterator<Item = Value>> {
-            if !self.cycle {
-                Box::new(i)
-            } else {
-                Box::new(i.cycle())
-            }
-        })?;
+        let iter =
+            get_iter(params, self.query.clone()).map(|i| -> Box<dyn Iterator<Item = Value>> {
+                if !self.cycle {
+                    Box::new(i)
+                } else {
+                    Box::new(i.cycle())
+                }
+            })?;
 
         Ok(Graph::Iter(IterNode { iter }))
     }
 }
 
-fn get_iter(params: DataSourceParams) -> Result<impl Iterator<Item = Value> + Clone, Error> {
+fn get_iter(
+    params: DataSourceParams,
+    query: Option<String>,
+) -> Result<impl Iterator<Item = Value> + Clone, Error> {
     let scheme = params.uri.scheme().as_str().to_lowercase();
 
     let iter = match scheme.as_str() {
@@ -54,14 +61,34 @@ fn get_iter(params: DataSourceParams) -> Result<impl Iterator<Item = Value> + Cl
 
             arr.into_iter()
         }
+        "postgres" | "postgresql" => {
+            let uri = params.uri.to_string();
+            let rows = task::block_on(get_postgres_values(&uri, query))?;
+
+            rows.into_iter()
+        }
         _ => {
             return Err(anyhow!(
-                "Datasource path scheme not recognised. Was expecting 'json'."
+                "Datasource path scheme not recognised. Was expecting 'json' or 'postgres'."
             ));
         }
     };
 
     Ok(iter)
+}
+
+async fn get_postgres_values(uri: &str, query: Option<String>) -> Result<Vec<Value>> {
+    if let Some(query) = query {
+        let pool = PgPoolOptions::new().connect(uri).await?;
+
+        let rows = sqlx::query_as::<_, Value>(&query).fetch_all(&pool).await?;
+
+        Ok(rows)
+    } else {
+        Err(anyhow!(
+            "`datasource` with a database URI is missing a query"
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -82,6 +109,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
+            query: None,
         };
 
         let content = Content::Datasource(content);
@@ -100,6 +128,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
+            query: None,
         };
 
         let content = Content::Datasource(content);
@@ -132,6 +161,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: true,
+            query: None,
         };
 
         let content = Content::Datasource(content);
@@ -155,6 +185,7 @@ mod tests {
         let content = DatasourceContent {
             path: "mysql:".to_string(),
             cycle: false,
+            query: None,
         };
 
         let content = Content::Datasource(content);
@@ -168,6 +199,7 @@ mod tests {
         let content = DatasourceContent {
             path: "json:missing.json".to_string(),
             cycle: false,
+            query: None,
         };
 
         let content = Content::Datasource(content);
@@ -187,6 +219,21 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
+            query: None,
+        };
+
+        let content = Content::Datasource(content);
+        let compiler = NamespaceCompiler::new_flat(&content);
+        compiler.compile().unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "`datasource` with a database URI is missing a query")]
+    fn compile_postgres_missing_query() {
+        let content = DatasourceContent {
+            path: "postgres://postgres:password@localhost:5432".to_string(),
+            cycle: false,
+            query: None,
         };
 
         let content = Content::Datasource(content);
