@@ -9,7 +9,7 @@ use rust_decimal::Decimal;
 use sqlx::mysql::{MySqlColumn, MySqlRow, MySqlTypeInfo};
 use sqlx::postgres::{PgArgumentBuffer, PgColumn, PgRow, PgTypeInfo, PgTypeKind};
 use sqlx::{encode::IsNull, Encode, Type};
-use sqlx::{Column, FromRow, MySql, Postgres, Row, TypeInfo};
+use sqlx::{Column, Database, FromRow, MySql, Postgres, Row, TypeInfo};
 
 use synth_gen::prelude::*;
 use synth_gen::value::{Token, Tokenizer};
@@ -453,12 +453,24 @@ impl Value {
     }
 }
 
-impl<'r> FromRow<'r, MySqlRow> for Value {
-    fn from_row(row: &'r MySqlRow) -> Result<Self, sqlx::Error> {
+pub trait TryValue<R>
+where
+    Self: Sized,
+    R: Row,
+{
+    fn try_match_value(row: &R, column: &<R::Database as Database>::Column) -> Result<Self>;
+}
+
+impl<'r, R> FromRow<'r, R> for Value
+where
+    R: Row,
+    Value: TryValue<R>,
+{
+    fn from_row(row: &'r R) -> Result<Self, sqlx::Error> {
         let mut kv = BTreeMap::new();
 
         for column in row.columns() {
-            let value = try_match_value_mysql(row, column).unwrap_or(Value::Null(()));
+            let value = Self::try_match_value(row, column).unwrap_or(Value::Null(()));
             kv.insert(column.name().to_string(), value);
         }
 
@@ -466,214 +478,204 @@ impl<'r> FromRow<'r, MySqlRow> for Value {
     }
 }
 
-fn try_match_value_mysql(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
-    let value = match column.type_info().name().to_lowercase().as_str() {
-        "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
-            Value::String(row.try_get::<String, &str>(column.name())?)
+impl TryValue<PgRow> for Value {
+    fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Self> {
+        if let PgTypeKind::Enum(_) = column.type_info().kind() {
+            let s = row.try_get::<EnumType, &str>(column.name())?;
+            return Ok(Value::String(s.into()));
         }
-        "tinyint" => Value::Number(Number::from(row.try_get::<i8, &str>(column.name())?)),
-        "smallint" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
-        "mediumint" | "int" | "integer" => {
-            Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?))
-        }
-        "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
-        "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
-        "float" => Value::Number(Number::from(row.try_get::<f32, &str>(column.name())? as f64)),
-        "double" => Value::Number(Number::from(row.try_get::<f64, &str>(column.name())?)),
-        "numeric" | "decimal" => {
-            let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
-            if let Some(truncated) = as_decimal.to_f64() {
-                return Ok(Value::Number(Number::from(truncated)));
+        let value = match column.type_info().name().to_lowercase().as_str() {
+            "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
+            "oid" => {
+                bail!("OID data type not supported for Postgresql")
             }
-
-            bail!("Failed to convert Mysql numeric data type to 64 bit float")
-        }
-        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "date" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveDate, &str>(column.name())?
-        )),
-        "datetime" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveDateTime, &str>(column.name())?
-        )),
-        "time" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveTime, &str>(column.name())?
-        )),
-        _ => {
-            bail!(
-                "Could not convert value. Converter not implemented for {}",
-                column.type_info().name()
-            );
-        }
-    };
-
-    Ok(value)
-}
-
-impl<'r> FromRow<'r, PgRow> for Value {
-    fn from_row(row: &'r PgRow) -> Result<Self, sqlx::Error> {
-        let mut kv = BTreeMap::new();
-
-        for column in row.columns() {
-            let value = try_match_value_postgres(row, column).unwrap_or(Value::Null(()));
-            kv.insert(column.name().to_string(), value);
-        }
-
-        Ok(Value::Object(kv))
-    }
-}
-
-fn try_match_value_postgres(row: &PgRow, column: &PgColumn) -> Result<Value> {
-    if let PgTypeKind::Enum(_) = column.type_info().kind() {
-        let s = row.try_get::<EnumType, &str>(column.name())?;
-        return Ok(Value::String(s.into()));
-    }
-
-    let value = match column.type_info().name().to_lowercase().as_str() {
-        "bool" => Value::Bool(row.try_get::<bool, &str>(column.name())?),
-        "oid" => {
-            bail!("OID data type not supported for Postgresql")
-        }
-        "char" | "varchar" | "text" | "citext" | "bpchar" | "name" | "unknown" => {
-            Value::String(row.try_get::<String, &str>(column.name())?)
-        }
-        "int2" => Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
-        "int4" => Value::Number(row.try_get::<i32, &str>(column.name())?.into()),
-        "int8" => Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
-        "float4" => Value::Number(row.try_get::<f32, &str>(column.name())?.into()),
-        "float8" => Value::Number(row.try_get::<f64, &str>(column.name())?.into()),
-        "numeric" => {
-            let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
-
-            if let Some(truncated) = as_decimal.to_f64() {
-                return Ok(Value::Number(truncated.into()));
+            "char" | "varchar" | "text" | "citext" | "bpchar" | "name" | "unknown" => {
+                Value::String(row.try_get::<String, &str>(column.name())?)
             }
+            "int2" => Value::Number(row.try_get::<i16, &str>(column.name())?.into()),
+            "int4" => Value::Number(row.try_get::<i32, &str>(column.name())?.into()),
+            "int8" => Value::Number(row.try_get::<i64, &str>(column.name())?.into()),
+            "float4" => Value::Number(row.try_get::<f32, &str>(column.name())?.into()),
+            "float8" => Value::Number(row.try_get::<f64, &str>(column.name())?.into()),
+            "numeric" => {
+                let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
 
-            bail!("Failed to convert Postgresql numeric data type to 64 bit float")
-        }
-        "timestampz" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
-        "date" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveDate, &str>(column.name())?
-        )),
-        "time" => Value::String(format!(
-            "{}",
-            row.try_get::<chrono::NaiveTime, &str>(column.name())?
-        )),
-        "json" | "jsonb" => {
-            let serde_value = row.try_get::<serde_json::Value, &str>(column.name())?;
-            serde_json::from_value(serde_value)?
-        }
-        "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]" | "unknown[]" => {
-            Value::Array(
+                if let Some(truncated) = as_decimal.to_f64() {
+                    return Ok(Value::Number(truncated.into()));
+                }
+
+                bail!("Failed to convert Postgresql numeric data type to 64 bit float")
+            }
+            "timestampz" => Value::String(row.try_get::<String, &str>(column.name())?),
+            "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
+            "date" => Value::String(format!(
+                "{}",
+                row.try_get::<chrono::NaiveDate, &str>(column.name())?
+            )),
+            "time" => Value::String(format!(
+                "{}",
+                row.try_get::<chrono::NaiveTime, &str>(column.name())?
+            )),
+            "json" | "jsonb" => {
+                let serde_value = row.try_get::<serde_json::Value, &str>(column.name())?;
+                serde_json::from_value(serde_value)?
+            }
+            "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]"
+            | "unknown[]" => Value::Array(
                 row.try_get::<Vec<String>, &str>(column.name())
                     .map(|vec| vec.iter().map(|s| Value::String(s.to_string())).collect())?,
-            )
-        }
-        "bool[]" => Value::Array(
-            row.try_get::<Vec<bool>, &str>(column.name())
-                .map(|vec| vec.into_iter().map(Value::Bool).collect())?,
-        ),
-        "int2[]" => Value::Array(
-            row.try_get::<Vec<i16>, &str>(column.name())
-                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
-        ),
-        "int4[]" => Value::Array(
-            row.try_get::<Vec<i32>, &str>(column.name())
-                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
-        ),
-        "int8[]" => Value::Array(
-            row.try_get::<Vec<i64>, &str>(column.name())
-                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
-        ),
-        "float4[]" => Value::Array(
-            row.try_get::<Vec<f32>, &str>(column.name())
-                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
-        ),
-        "float8[]" => Value::Array(
-            row.try_get::<Vec<f64>, &str>(column.name())
-                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
-        ),
-        "numeric[]" => {
-            let vec = row.try_get::<Vec<Decimal>, &str>(column.name())?;
-            let result: Result<Vec<Value>, _> = vec
-                .into_iter()
-                .map(|d| {
-                    if let Some(truncated) = d.to_f64() {
-                        return Ok(Value::Number(truncated.into()));
-                    }
+            ),
+            "bool[]" => Value::Array(
+                row.try_get::<Vec<bool>, &str>(column.name())
+                    .map(|vec| vec.into_iter().map(Value::Bool).collect())?,
+            ),
+            "int2[]" => Value::Array(
+                row.try_get::<Vec<i16>, &str>(column.name())
+                    .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+            ),
+            "int4[]" => Value::Array(
+                row.try_get::<Vec<i32>, &str>(column.name())
+                    .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+            ),
+            "int8[]" => Value::Array(
+                row.try_get::<Vec<i64>, &str>(column.name())
+                    .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+            ),
+            "float4[]" => Value::Array(
+                row.try_get::<Vec<f32>, &str>(column.name())
+                    .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+            ),
+            "float8[]" => Value::Array(
+                row.try_get::<Vec<f64>, &str>(column.name())
+                    .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+            ),
+            "numeric[]" => {
+                let vec = row.try_get::<Vec<Decimal>, &str>(column.name())?;
+                let result: Result<Vec<Value>, _> = vec
+                    .into_iter()
+                    .map(|d| {
+                        if let Some(truncated) = d.to_f64() {
+                            return Ok(Value::Number(truncated.into()));
+                        }
 
-                    bail!("Failed to convert Postgresql numeric data type to 64 bit float")
-                })
-                .collect();
+                        bail!("Failed to convert Postgresql numeric data type to 64 bit float")
+                    })
+                    .collect();
 
-            Value::Array(result?)
-        }
-        "timestamp[]" => Value::Array(
-            row.try_get::<Vec<chrono::NaiveDateTime>, &str>(column.name())
-                .map(|vec| {
-                    vec.into_iter()
-                        .map(|d| {
-                            Value::DateTime(ChronoValueAndFormat {
-                                format: Arc::from("%Y-%m-%dT%H:%M:%S".to_owned()),
-                                value: ChronoValue::NaiveDateTime(d),
+                Value::Array(result?)
+            }
+            "timestamp[]" => Value::Array(
+                row.try_get::<Vec<chrono::NaiveDateTime>, &str>(column.name())
+                    .map(|vec| {
+                        vec.into_iter()
+                            .map(|d| {
+                                Value::DateTime(ChronoValueAndFormat {
+                                    format: Arc::from("%Y-%m-%dT%H:%M:%S".to_owned()),
+                                    value: ChronoValue::NaiveDateTime(d),
+                                })
                             })
-                        })
-                        .collect()
-                })?,
-        ),
-        "timestamptz[]" => Value::Array(
-            row.try_get::<Vec<chrono::DateTime<chrono::FixedOffset>>, &str>(column.name())
-                .map(|vec| {
-                    vec.into_iter()
-                        .map(|d| {
-                            Value::DateTime(ChronoValueAndFormat {
-                                format: Arc::from("%Y-%m-%dT%H:%M:%S%z".to_owned()),
-                                value: ChronoValue::DateTime(d),
+                            .collect()
+                    })?,
+            ),
+            "timestamptz[]" => Value::Array(
+                row.try_get::<Vec<chrono::DateTime<chrono::FixedOffset>>, &str>(column.name())
+                    .map(|vec| {
+                        vec.into_iter()
+                            .map(|d| {
+                                Value::DateTime(ChronoValueAndFormat {
+                                    format: Arc::from("%Y-%m-%dT%H:%M:%S%z".to_owned()),
+                                    value: ChronoValue::DateTime(d),
+                                })
                             })
-                        })
-                        .collect()
-                })?,
-        ),
-        "date[]" => Value::Array(
-            row.try_get::<Vec<chrono::NaiveDate>, &str>(column.name())
-                .map(|vec| {
-                    vec.into_iter()
-                        .map(|d| {
-                            Value::DateTime(ChronoValueAndFormat {
-                                format: Arc::from("%Y-%m-%d".to_owned()),
-                                value: ChronoValue::NaiveDate(d),
+                            .collect()
+                    })?,
+            ),
+            "date[]" => Value::Array(
+                row.try_get::<Vec<chrono::NaiveDate>, &str>(column.name())
+                    .map(|vec| {
+                        vec.into_iter()
+                            .map(|d| {
+                                Value::DateTime(ChronoValueAndFormat {
+                                    format: Arc::from("%Y-%m-%d".to_owned()),
+                                    value: ChronoValue::NaiveDate(d),
+                                })
                             })
-                        })
-                        .collect()
-                })?,
-        ),
-        "time[]" => Value::Array(
-            row.try_get::<Vec<chrono::NaiveTime>, &str>(column.name())
-                .map(|vec| {
-                    vec.into_iter()
-                        .map(|t| {
-                            Value::DateTime(ChronoValueAndFormat {
-                                format: Arc::from("%H:%M:%S".to_owned()),
-                                value: ChronoValue::NaiveTime(t),
+                            .collect()
+                    })?,
+            ),
+            "time[]" => Value::Array(
+                row.try_get::<Vec<chrono::NaiveTime>, &str>(column.name())
+                    .map(|vec| {
+                        vec.into_iter()
+                            .map(|t| {
+                                Value::DateTime(ChronoValueAndFormat {
+                                    format: Arc::from("%H:%M:%S".to_owned()),
+                                    value: ChronoValue::NaiveTime(t),
+                                })
                             })
-                        })
-                        .collect()
-                })?,
-        ),
-        _ => {
-            bail!(
-                "Could not convert value. Converter not implemented for {}",
-                column.type_info().name()
-            );
-        }
-    };
+                            .collect()
+                    })?,
+            ),
+            _ => {
+                bail!(
+                    "Could not convert value. Converter not implemented for {}",
+                    column.type_info().name()
+                );
+            }
+        };
 
-    Ok(value)
+        Ok(value)
+    }
+}
+
+impl TryValue<MySqlRow> for Value {
+    fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Self> {
+        let value = match column.type_info().name().to_lowercase().as_str() {
+            "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {
+                Value::String(row.try_get::<String, &str>(column.name())?)
+            }
+            "tinyint" => Value::Number(Number::from(row.try_get::<i8, &str>(column.name())?)),
+            "smallint" => Value::Number(Number::from(row.try_get::<i16, &str>(column.name())?)),
+            "mediumint" | "int" | "integer" => {
+                Value::Number(Number::from(row.try_get::<i32, &str>(column.name())?))
+            }
+            "bigint" => Value::Number(Number::from(row.try_get::<i64, &str>(column.name())?)),
+            "serial" => Value::Number(Number::from(row.try_get::<u64, &str>(column.name())?)),
+            "float" => Value::Number(Number::from(row.try_get::<f32, &str>(column.name())? as f64)),
+            "double" => Value::Number(Number::from(row.try_get::<f64, &str>(column.name())?)),
+            "numeric" | "decimal" => {
+                let as_decimal = row.try_get::<Decimal, &str>(column.name())?;
+
+                if let Some(truncated) = as_decimal.to_f64() {
+                    return Ok(Value::Number(Number::from(truncated)));
+                }
+
+                bail!("Failed to convert MySql numeric data type to 64 bit float")
+            }
+            "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
+            "date" => Value::String(format!(
+                "{}",
+                row.try_get::<chrono::NaiveDate, &str>(column.name())?
+            )),
+            "datetime" => Value::String(format!(
+                "{}",
+                row.try_get::<chrono::NaiveDateTime, &str>(column.name())?
+            )),
+            "time" => Value::String(format!(
+                "{}",
+                row.try_get::<chrono::NaiveTime, &str>(column.name())?
+            )),
+            _ => {
+                bail!(
+                    "Could not convert value. Converter not implemented for {}",
+                    column.type_info().name()
+                );
+            }
+        };
+
+        Ok(value)
+    }
 }
 
 /// Special type for importing enums
