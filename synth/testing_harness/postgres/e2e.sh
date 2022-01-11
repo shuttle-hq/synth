@@ -25,6 +25,7 @@ commands:
   load-schema [--no-data]|Fills DB with test schema - defaults to loading data too
   test-generate|Test generating data to postgres
   test-import|Test importing from postgres data
+  test-complete|Test generating and importing all types to/from postgres
   test-warning|Test integer warnings
   test-local|Run all test on a local machine using the container from 'up' (no need to call 'up' first)
   up|Starts a local Docker instance for testing
@@ -55,6 +56,23 @@ function test-import() {
   diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || { echo -e "${ERROR}Import namespaces do not match${NC}"; return 1; }
 }
 
+function test-complete() {
+  rm -Rf complete_import
+
+  echo -e "${INFO}Test complete${NC}"
+  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/postgres -c "DROP DATABASE IF EXISTS complete" || { echo -e "${ERROR}Failed to drop complete database${NC}"; return 1; }
+  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/postgres -c "CREATE DATABASE complete" || { echo -e "${ERROR}Failed to create complete database${NC}"; return 1; }
+  docker exec -i $NAME psql -q postgres://postgres:$PASSWORD@localhost:5432/complete < 0_complete_schema.sql || { echo -e "${ERROR}Failed to load complete schema${NC}"; return 1; }
+  $SYNTH generate complete_master --to postgres://postgres:$PASSWORD@localhost:$PORT/complete || return 1
+
+  sum_rows_query="SELECT (SELECT count(*) FROM types)"
+  sum=`docker exec -i $NAME psql -tA postgres://postgres:$PASSWORD@localhost:5432/complete -c "$sum_rows_query"`
+  [ "$sum" -eq "10" ] || { echo -e "${ERROR}Generation did not create 10 records${NC}"; return 1; }
+
+  $SYNTH import --from postgres://postgres:${PASSWORD}@localhost:${PORT}/complete complete_import || { echo -e "${ERROR}Importing complete failed${NC}"; return 1; }
+  diff <(jq --sort-keys . complete_import/*) <(jq --sort-keys . complete_import_master/*) || { echo -e "${ERROR}Import complete namespaces do not match${NC}"; return 1; }
+}
+
 function test-warning() {
   echo -e "${INFO}Testing warnings${NC}"
   docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:5432/postgres < warnings/0_warnings.sql
@@ -79,6 +97,7 @@ function test-local() {
   result=0
   test-generate || result=$?
   test-import || result=$?
+  test-complete || result=$?
   test-warning || result=$?
 
   down
@@ -114,6 +133,7 @@ function down() {
 function cleanup() {
   echo -e "${DEBUG}Cleaning up local files${NC}"
   rm -Rf hospital_import
+  rm -Rf complete_import
   rm -Rf .synth
 }
 
@@ -126,6 +146,9 @@ case "${1-*}" in
     ;;
   test-import)
     test-import || exit 1
+    ;;
+  test-complete)
+    test-complete || exit 1
     ;;
   test-warning)
     test-warning || exit 1
