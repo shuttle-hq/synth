@@ -19,6 +19,7 @@ with pkgs; mkShell {
     yarn
     beekeeper-studio
     mongodb-compass
+    postgresql
   ];
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
