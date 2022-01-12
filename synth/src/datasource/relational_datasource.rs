@@ -77,6 +77,10 @@ pub trait RelationalDataSource: DataSource {
                         "Trying to put an unsigned u32 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
+                    (Value::Number(Number::I32(_)), "int2" | "int8") => warn!(
+                        "Trying to put an signed i32 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    ),
                     //TODO: More variants
                     _ => {}
                 }
