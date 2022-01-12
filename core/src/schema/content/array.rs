@@ -102,10 +102,10 @@ impl<'de> Deserialize<'de> for ArrayContent {
                         ).map_err(A::Error::custom)?
                     },
                     Content::SameAs(_) => {},
-                    Content::Null(_) => return Err(de::Error::custom("array length is missing. Try adding '\"length\": 5' to the array type")),
+                    Content::Null(_) => return Err(de::Error::custom("array length is missing. Try adding '\"length\": [number]' to the array type where '[number]' is a positive integer")),
                     Content::Empty(_) => return Err(de::Error::custom("array length is not a constant or number type. Try replacing the '\"length\": {}' with '\"length\": [number]' where '[number]' is a positive integer")),
                     Content::OneOf(ref one) => if one.variants.iter().any(|variant| variant == &*NULL_VARIANT) {
-                        return Err(de::Error::custom("cannot use '\"optional\": true' in array length"));
+                        return Err(de::Error::custom("cannot use 'one_of' with a 'null' variant nor '\"optional\": true' in array length"));
                     },
                     _ => {
                         return Err(de::Error::custom(
@@ -443,7 +443,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "cannot use '\\\"optional\\\": true' in array length")]
+    #[should_panic(
+        expected = "cannot use 'one_of' with a 'null' variant nor '\\\"optional\\\": true' in array length"
+    )]
     fn optional_array_length() {
         let _schema: Content = schema!({
             "type": "array",
@@ -451,6 +453,31 @@ mod tests {
                 "type": "number",
                 "constant": 5,
                 "optional": true
+            },
+            "content": {
+                "type": "object"
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "cannot use 'one_of' with a 'null' variant nor '\\\"optional\\\": true' in array length"
+    )]
+    fn one_of_null_array_length() {
+        let _schema: Content = schema!({
+            "type": "array",
+            "length": {
+                "type": "one_of",
+                "variants": [
+                    {
+                        "type": "null",
+                    },
+                    {
+                        "type": "number",
+                        "constant": 5
+                    }
+                ]
             },
             "content": {
                 "type": "object"
