@@ -1,0 +1,24 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "int64": {
+            "type": "number",
+            "subtype": "u64",
+            "range": {
+                "low": 0,
+                "high": 32767,
+                "step": 1
+            }
+        }
+    },
+    "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 10,
+          "step": 1
+        },
+        "subtype": "u64"
+    }
+}

@@ -10,15 +10,6 @@
                 "high": 32767,
                 "step": 1
             }
-        },
-        "int64": {
-            "type": "number",
-            "subtype": "u64",
-            "range": {
-                "low": 0,
-                "high": 32767,
-                "step": 1
-            }
         }
     },
     "length": {

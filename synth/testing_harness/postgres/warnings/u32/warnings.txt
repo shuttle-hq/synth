@@ -1,0 +1,1 @@
+Trying to put an unsigned u32 into a int4 typed column u32.int32
