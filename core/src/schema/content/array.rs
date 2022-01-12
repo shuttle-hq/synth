@@ -129,7 +129,7 @@ impl<'de> Deserialize<'de> for ArrayContent {
         }
 
         const FIELDS: &[&str] = &["length", "content"];
-        deserializer.deserialize_struct("ArrayConten", FIELDS, ArrayVisitor)
+        deserializer.deserialize_struct("ArrayContent", FIELDS, ArrayVisitor)
     }
 }
 
