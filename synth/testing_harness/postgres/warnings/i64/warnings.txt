@@ -1,0 +1,5 @@
+Trying to put an signed i64 into a int2 typed column i64.int2
+Trying to put an signed i64 into a int4 typed column i64.int4
+Trying to put an signed i64 into a int2 typed column i64.smallint
+Trying to put an signed i64 into a int4 typed column i64.int
+Trying to put an signed i64 into a int4 typed column i64.integer

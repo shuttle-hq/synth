@@ -1,0 +1,29 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "def": {
+            "type": "hidden",
+            "content": {
+                "type": "number",
+                "subtype": "i64",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "int2": "@i64.content.def",
+        "int4": "@i64.content.def",
+        "int8": "@i64.content.def",
+        "smallint": "@i64.content.def",
+        "int": "@i64.content.def",
+        "integer": "@i64.content.def",
+        "bigint": "@i64.content.def"
+    },
+    "length": {
+        "type": "number",
+        "constant": 1
+    }
+}
