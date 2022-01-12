@@ -10,4 +10,17 @@ with pkgs; mkShell {
     gdb
     valgrind
   ] ++ synth.buildInputs;
+
+  packages = with pkgs.synthPackages; [
+    rust-analyzer
+    cargo-watch
+    jq
+    tree
+    yarn
+    beekeeper-studio
+    mongodb-compass
+    postgresql
+  ];
+
+  RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 }
