@@ -73,10 +73,7 @@ pub trait RelationalDataSource: DataSource {
                         "Trying to put an unsigned u64 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
-                    (
-                        Value::Number(Number::U32(_)),
-                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
-                    ) => warn!(
+                    (Value::Number(Number::U32(_)), "int2" | "int4" | "int8") => warn!(
                         "Trying to put an unsigned u32 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
