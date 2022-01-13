@@ -112,12 +112,11 @@ impl NamespaceSampleStrategy {
             let next = model.complete(&mut rng)?;
             as_object(next)?
                 .into_iter()
-                .try_for_each(|(collection, value)| {
-                    as_array(&collection, value).map(|vec| {
-                        generated += vec.len();
-                        out.entry(collection).or_default().extend(vec);
-                    })
-                })?;
+                .for_each(|(collection, value)| {
+                    let vec = as_array(value);
+                    generated += vec.len();
+                    out.entry(collection).or_default().extend(vec);
+                });
             progress_bar.set_position(generated as u64);
             if round_start == generated {
                 warn!("could not generate {} values: try modifying the schema to generate more data instead of the --size flag", self.target);
@@ -167,11 +166,9 @@ impl CollectionSampleStrategy {
                     generated += vec.len();
                     out.extend(vec);
                 }
-                other => {
-                    return Err(anyhow!(
-                        "Was expecting the sampled collection to be an array. Instead found {}",
-                        other.type_()
-                    ))
+                non_array => {
+                    generated += 1;
+                    out.push(non_array);
                 }
             }
             progress_bar.set_position(generated as u64);
@@ -197,13 +194,9 @@ fn as_object(sample: Value) -> Result<BTreeMap<String, Value>> {
     }
 }
 
-fn as_array(name: &str, value: Value) -> Result<Vec<Value>> {
+fn as_array(value: Value) -> Vec<Value> {
     match value {
-        Value::Array(vec) => Ok(vec),
-        _ => {
-            return Err(
-                anyhow!("generated data for collection '{}' is not of JSON type 'array', it is of type '{}'", name, value.type_()),
-            );
-        }
+        Value::Array(vec) => vec,
+        non_array => vec![non_array],
     }
 }
