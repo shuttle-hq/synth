@@ -84,12 +84,12 @@ pub trait RelationalDataSource: DataSource {
                         column_info.data_type, collection_name, column_info.column_name
                     ),
                     (Value::Number(Number::I64(_)), "int2" | "int4" | "smallint" | "int") => warn!(
-                        "Trying to put an signed i64 into a {} typed column {}.{}",
+                        "Trying to put a signed i64 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
                     (Value::Number(Number::I32(_)), "int2" | "int8" | "smallint" | "bigint") => {
                         warn!(
-                            "Trying to put an signed i32 into a {} typed column {}.{}",
+                            "Trying to put a signed i32 into a {} typed column {}.{}",
                             column_info.data_type, collection_name, column_info.column_name
                         )
                     }
