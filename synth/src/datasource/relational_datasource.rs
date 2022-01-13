@@ -46,6 +46,8 @@ pub struct ValueWrapper(pub(crate) Value);
 pub trait RelationalDataSource: DataSource {
     type QueryResult: Send + Sync;
 
+    const IDENTIFIER_QUOTE: char;
+
     async fn insert_relational_data(
         &self,
         collection_name: &str,
@@ -101,7 +103,7 @@ pub trait RelationalDataSource: DataSource {
 
         let column_names = first_valueset
             .keys()
-            .map(|k| format!("`{}`", k))
+            .map(|k| format!("{}{}{}", Self::IDENTIFIER_QUOTE, k, Self::IDENTIFIER_QUOTE))
             .collect::<Vec<String>>()
             .join(",");
 

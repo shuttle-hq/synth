@@ -52,6 +52,7 @@ impl DataSource for MySqlDataSource {
 #[async_trait]
 impl RelationalDataSource for MySqlDataSource {
     type QueryResult = MySqlQueryResult;
+    const IDENTIFIER_QUOTE: char = '`';
 
     async fn execute_query(
         &self,
