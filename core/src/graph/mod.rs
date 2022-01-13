@@ -382,7 +382,7 @@ impl Encode<'_, Postgres> for Value {
                 }
                 Number::U8(i) => <i8 as Encode<'_, Postgres>>::encode_by_ref(&(i as i8), buf),
                 Number::U16(i) => <i16 as Encode<'_, Postgres>>::encode_by_ref(&(i as i16), buf),
-                Number::U32(i) => <u32 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                Number::U32(i) => <i32 as Encode<'_, Postgres>>::encode_by_ref(&(i as i32), buf),
                 Number::U64(i) => <i64 as Encode<'_, Postgres>>::encode_by_ref(&(i as i64), buf),
                 Number::U128(i) => {
                     <sqlx::types::Decimal as Encode<'_, Postgres>>::encode_by_ref(&i.into(), buf)
