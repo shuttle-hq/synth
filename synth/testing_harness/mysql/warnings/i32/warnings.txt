@@ -1,0 +1,2 @@
+Trying to put an signed i32 into a bigint typed column i32.bigint
+Trying to put an signed i32 into a smallint typed column i32.smallint

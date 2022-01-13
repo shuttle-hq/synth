@@ -1,0 +1,26 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "def": {
+            "type": "hidden",
+            "content": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "smallint": "@i32.content.def",
+        "int": "@i32.content.def",
+        "integer": "@i32.content.def",
+        "bigint": "@i32.content.def"
+    },
+    "length": {
+        "type": "number",
+        "constant": 1
+    }
+}
