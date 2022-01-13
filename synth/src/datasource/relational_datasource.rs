@@ -69,22 +69,30 @@ pub trait RelationalDataSource: DataSource {
         for column_info in column_infos {
             if let Some(value) = first_valueset.get(&column_info.column_name) {
                 match (value, &*column_info.data_type) {
-                    (Value::Number(Number::U64(_)), "int2" | "int4" | "int8") => warn!(
+                    (
+                        Value::Number(Number::U64(_)),
+                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
+                    ) => warn!(
                         "Trying to put an unsigned u64 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
-                    (Value::Number(Number::U32(_)), "int2" | "int4" | "int8") => warn!(
+                    (
+                        Value::Number(Number::U32(_)),
+                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
+                    ) => warn!(
                         "Trying to put an unsigned u32 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
-                    (Value::Number(Number::I64(_)), "int2" | "int4") => warn!(
+                    (Value::Number(Number::I64(_)), "int2" | "int4" | "smallint" | "int") => warn!(
                         "Trying to put an signed i64 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
-                    (Value::Number(Number::I32(_)), "int2" | "int8") => warn!(
-                        "Trying to put an signed i32 into a {} typed column {}.{}",
-                        column_info.data_type, collection_name, column_info.column_name
-                    ),
+                    (Value::Number(Number::I32(_)), "int2" | "int8" | "smallint" | "bigint") => {
+                        warn!(
+                            "Trying to put an signed i32 into a {} typed column {}.{}",
+                            column_info.data_type, collection_name, column_info.column_name
+                        )
+                    }
                     //TODO: More variants
                     _ => {}
                 }
