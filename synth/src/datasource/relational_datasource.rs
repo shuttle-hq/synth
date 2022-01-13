@@ -93,7 +93,7 @@ pub trait RelationalDataSource: DataSource {
 
         let column_names = first_valueset
             .keys()
-            .cloned()
+            .map(|k| format!("`{}`", k))
             .collect::<Vec<String>>()
             .join(",");
 
