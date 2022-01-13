@@ -1,4 +1,4 @@
-Trying to put an unsigned u32 into a bigint typed column u32.bigint
+Trying to put an unsigned u32 into a smallint typed column u32.smallint
 Trying to put an unsigned u32 into a int typed column u32.int
 Trying to put an unsigned u32 into a int typed column u32.integer
-Trying to put an unsigned u32 into a smallint typed column u32.smallint
+Trying to put an unsigned u32 into a bigint typed column u32.bigint
