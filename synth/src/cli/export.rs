@@ -105,11 +105,11 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
 
     match &values {
         SamplerOutput::Collection(name, collection) => {
-            insert_data(datasource, name.as_ref(), collection)
+            insert_data(datasource, name.as_ref(), &[collection.clone()])
         }
         SamplerOutput::Namespace(ref namespace) => {
             for (name, collection) in namespace {
-                insert_data(datasource, name, collection)?;
+                insert_data(datasource, name, &[collection.clone()])?; // TODO: Just wrapping in vec probably won't work
             }
             Ok(())
         }

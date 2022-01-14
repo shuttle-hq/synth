@@ -13,8 +13,8 @@ pub(crate) struct Sampler {
 
 #[derive(Clone)]
 pub(crate) enum SamplerOutput {
-    Namespace(Vec<(String, Vec<Value>)>),
-    Collection(String, Vec<Value>),
+    Namespace(Vec<(String, Value)>),
+    Collection(String, Value),
 }
 
 impl SamplerOutput {
@@ -23,11 +23,11 @@ impl SamplerOutput {
             Self::Namespace(key_values) => {
                 let object = key_values
                     .into_iter()
-                    .map(|(key, values)| (key, Value::Array(values)))
+                    .map(|(key, value)| (key, value))
                     .collect();
                 Value::Object(object)
             }
-            Self::Collection(_, values) => Value::Array(values),
+            Self::Collection(_, value) => value,
         };
         synth_val_to_json(as_synth)
     }
@@ -92,9 +92,9 @@ struct NamespaceSampleStrategy {
 }
 
 impl NamespaceSampleStrategy {
-    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Vec<(String, Vec<Value>)>> {
+    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Vec<(String, Value)>> {
         let mut generated = 0;
-        let mut out = BTreeMap::<String, Vec<Value>>::new();
+        let mut out = BTreeMap::<String, Value>::new();
         let progress_bar = sampler_progress_bar(self.target as u64);
 
         let ordered: Vec<_> = model
@@ -112,10 +112,23 @@ impl NamespaceSampleStrategy {
             let next = model.complete(&mut rng)?;
             as_object(next)?
                 .into_iter()
-                .for_each(|(collection, value)| {
-                    let vec = as_array(value);
-                    generated += vec.len();
-                    out.entry(collection).or_default().extend(vec);
+                .for_each(|(collection, value)| match value {
+                    Value::Array(elements) => {
+                        generated += elements.len();
+
+                        let entry = out
+                            .entry(collection)
+                            .or_insert_with(|| Value::Array(vec![]));
+
+                        if let Value::Array(to_extend) = entry {
+                            to_extend.extend(elements);
+                        }
+                    }
+                    non_array => {
+                        generated += 1;
+                        //out[&collection] = non_array;
+                        out.insert(collection, non_array);
+                    }
                 });
             progress_bar.set_position(generated as u64);
             if round_start == generated {
@@ -145,8 +158,8 @@ struct CollectionSampleStrategy {
 }
 
 impl CollectionSampleStrategy {
-    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Vec<Value>> {
-        let mut out = vec![];
+    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Value> {
+        let mut out = Value::Array(vec![]);
         let mut generated = 0;
         let progress_bar = sampler_progress_bar(self.target as u64);
 
@@ -164,11 +177,13 @@ impl CollectionSampleStrategy {
             match collection_value {
                 Value::Array(vec) => {
                     generated += vec.len();
-                    out.extend(vec);
+                    if let Value::Array(to_extend) = &mut out {
+                        to_extend.extend(vec);
+                    }
                 }
                 non_array => {
                     generated += 1;
-                    out.push(non_array);
+                    out = non_array;
                 }
             }
             progress_bar.set_position(generated as u64);
@@ -191,12 +206,5 @@ fn as_object(sample: Value) -> Result<BTreeMap<String, Value>> {
             "Was expecting the top-level sample to be an object. Instead found {}",
             other.type_()
         )),
-    }
-}
-
-fn as_array(value: Value) -> Vec<Value> {
-    match value {
-        Value::Array(vec) => vec,
-        non_array => vec![non_array],
     }
 }

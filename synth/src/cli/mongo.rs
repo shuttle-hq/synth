@@ -160,11 +160,11 @@ impl ExportStrategy for MongoExportStrategy {
 
         match &output {
             SamplerOutput::Collection(name, values) => {
-                self.insert_data(name.as_ref(), values, &mut client)
+                self.insert_data(name.as_ref(), &[values.clone()], &mut client)
             }
             SamplerOutput::Namespace(ref namespace) => {
                 for (name, values) in namespace {
-                    self.insert_data(name, values, &mut client)?;
+                    self.insert_data(name, &[values.clone()], &mut client)?;
                 }
                 Ok(())
             }

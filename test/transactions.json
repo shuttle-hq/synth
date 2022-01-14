@@ -1,0 +1,46 @@
+{
+    "type": "array",
+    "length": {
+        "type": "number",
+        "subtype": "u64",
+        "range": {
+            "low": 1,
+            "high": 6,
+            "step": 1
+        }
+    },
+    "content": {
+        "type": "object",
+        "amount": {
+            "optional": false,
+            "type": "number",
+            "subtype": "f64",
+            "range": {
+                "low": 274.4,
+                "high": 6597.5,
+                "step": 0.1
+            }
+        },
+        "id": {
+            "type": "number",
+            "subtype": "u64",
+            "id": {
+                "start_at": 1000
+            }
+        },
+        "timestamp": {
+            "type": "date_time",
+            "format": "%Y-%m-%dT%H:%M:%S%z",
+            "begin": "2000-01-01T00:00:00+0000",
+            "end": "2020-01-01T00:00:00+0000"
+        },
+        "currency": {
+            "type": "string",
+            "categorical": {
+                "USD": 8,
+                "GBP": 1,
+                "EUR": 1
+            }
+        }
+    }
+}
