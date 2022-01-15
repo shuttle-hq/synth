@@ -37,7 +37,7 @@ impl ExportStrategy for CsvFileExportStrategy {
                     std::fs::write(self.to_dir.join(name + ".csv"), csv)?;
                 }
             }
-            CsvOutput::SingleCollection(csv) => {
+            CsvOutput::Collection(csv) => {
                 std::fs::write(self.to_dir.join("collection.csv"), csv)?;
             }
         }
@@ -60,7 +60,7 @@ impl ExportStrategy for CsvStdoutExportStrategy {
                     println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)
                 }
             }
-            CsvOutput::SingleCollection(csv) => println!("{}", csv),
+            CsvOutput::Collection(csv) => println!("{}", csv),
         }
 
         Ok(output)
@@ -257,7 +257,7 @@ fn csv_str_to_value(s: &str) -> serde_json::Value {
 #[derive(Debug, PartialEq)]
 pub enum CsvOutput {
     Namespace(Vec<(String, String)>),
-    SingleCollection(String),
+    Collection(String),
 }
 
 fn csv_output_from_sampler_ouput(
@@ -277,7 +277,7 @@ fn csv_output_from_sampler_ouput(
                 .collect::<Result<Vec<(String, String)>>>()?,
         ),
         SamplerOutput::Collection(collection_name, value) => {
-            CsvOutput::SingleCollection(to_csv_string(collection_name, value, namespace)?)
+            CsvOutput::Collection(to_csv_string(collection_name, value, namespace)?)
         }
     })
 }
@@ -526,7 +526,7 @@ mod tests {
 
         assert_eq!(
             csv_output_from_sampler_ouput(output, &ns).unwrap(),
-            CsvOutput::SingleCollection(
+            CsvOutput::Collection(
                 concat!(
                     "a.b,a.c,a.d[0].e,a.d[0].f,a.d[1].e,a.d[1].f\n",
                     "hello world,hello world,true,false,true,false\n"
