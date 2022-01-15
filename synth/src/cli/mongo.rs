@@ -155,22 +155,22 @@ impl ExportStrategy for MongoExportStrategy {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let mut client = Client::with_uri_str(&self.uri_string)?;
         let sampler = Sampler::try_from(&params.namespace)?;
-        let output =
+        let sample =
             sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-        match &output {
-            SamplerOutput::Collection(name, values) => {
-                self.insert_data(name.as_ref(), &[values.clone()], &mut client)
+        match sample.clone() {
+            SamplerOutput::Collection(name, value) => {
+                self.insert_data(name.as_ref(), value, &mut client)
             }
-            SamplerOutput::Namespace(ref namespace) => {
-                for (name, values) in namespace {
-                    self.insert_data(name, &[values.clone()], &mut client)?;
+            SamplerOutput::Namespace(namespace) => {
+                for (name, value) in namespace {
+                    self.insert_data(name.as_ref(), value.clone(), &mut client)?;
                 }
                 Ok(())
             }
         }?;
 
-        Ok(output)
+        Ok(sample)
     }
 }
 
@@ -178,14 +178,19 @@ impl MongoExportStrategy {
     fn insert_data(
         &self,
         collection_name: &str,
-        collection: &[Value],
+        collection: Value,
         client: &mut Client,
     ) -> Result<()> {
         let db_name = parse_db_name(&self.uri_string)?;
 
         let mut docs = Vec::new();
 
-        for value in collection {
+        let values = match collection {
+            Value::Array(elems) => elems,
+            non_array => vec![non_array],
+        };
+
+        for value in values {
             docs.push(match value_to_bson(value.clone()) {
                 Bson::Document(doc) => doc,
                 _ => bail!("invalid bson document"),

@@ -100,21 +100,21 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
     datasource: &T,
 ) -> Result<SamplerOutput> {
     let sampler = Sampler::try_from(&params.namespace)?;
-    let values =
+    let sample =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-    match values.clone() {
-        SamplerOutput::Collection(name, collection) => {
-            insert_data(datasource, name.as_ref(), collection)?;
+    match sample.clone() {
+        SamplerOutput::Collection(name, value) => {
+            insert_data(datasource, name.as_ref(), value)?;
         }
         SamplerOutput::Namespace(namespace) => {
-            for (name, collection) in namespace.into_iter() {
-                insert_data(datasource, name.as_ref(), collection)?;
+            for (name, value) in namespace.into_iter() {
+                insert_data(datasource, name.as_ref(), value)?;
             }
         }
     };
 
-    Ok(values)
+    Ok(sample)
 }
 
 fn insert_data<T: DataSource>(
