@@ -289,7 +289,7 @@ fn to_csv_string(collection_name: String, value: Value, namespace: &Namespace) -
 
     match (collection, value) {
         (Content::Array(array_content), Value::Array(elements)) => {
-            let inner_content = &*array_content.content;
+            let inner_content: &Content = &array_content.content;
 
             writer.write_record(
                 &headers::CsvHeaders::from_content(inner_content, namespace)?.to_csv_record(),
