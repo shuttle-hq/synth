@@ -87,17 +87,20 @@ pub trait SqlxDataSource: DataSource {
     /// Decodes column to our Content
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 
+    /// Get the function arguments for datasource
+    fn get_function_argument_placeholder(_current: usize, _index: usize, _value: &Value) -> String {
+        "?".to_string()
+    }
+
     // Returns extended query string + current index
-    fn extend_parameterised_query(
-        query: &mut String,
-        _curr_index: usize,
-        query_params: Vec<Value>,
-    ) {
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>) {
         let extend = query_params.len();
 
         query.push('(');
-        for i in 0..extend {
-            query.push('?');
+        for (i, param) in query_params.iter().enumerate() {
+            query.push_str(&Self::get_function_argument_placeholder(
+                curr_index, i, param,
+            ));
             if i != extend - 1 {
                 query.push(',');
             }

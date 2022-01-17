@@ -249,30 +249,21 @@ impl SqlxDataSource for PostgresDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>) {
-        let extend = query_params.len();
-
-        query.push('(');
-        for (i, param) in query_params.iter().enumerate() {
-            let extra = if let Value::Array(_) = param {
-                let (typ, depth) = param.get_postgres_type();
-                if typ == "unknown" {
-                    "".to_string() // This is currently not supported
-                } else if typ == "jsonb" {
-                    "::jsonb".to_string() // Cannot have an array of jsonb - ie jsonb[]
-                } else {
-                    format!("::{}{}", typ, "[]".repeat(depth))
-                }
+    fn get_function_argument_placeholder(current: usize, index: usize, value: &Value) -> String {
+        let extra = if let Value::Array(_) = value {
+            let (typ, depth) = value.get_postgres_type();
+            if typ == "unknown" {
+                "".to_string() // This is currently not supported
+            } else if typ == "jsonb" {
+                "::jsonb".to_string() // Cannot have an array of jsonb - ie jsonb[]
             } else {
-                "".to_string()
-            };
-
-            query.push_str(&format!("${}{}", curr_index + i + 1, extra));
-            if i != extend - 1 {
-                query.push(',');
+                format!("::{}{}", typ, "[]".repeat(depth))
             }
-        }
-        query.push(')');
+        } else {
+            "".to_string()
+        };
+
+        format!("${}{}", current + index + 1, extra)
     }
 
     fn get_columns_info_query(&self) -> &str {
