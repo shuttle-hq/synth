@@ -14,8 +14,8 @@ use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I32, I64};
 use synth_core::schema::{
-    BoolContent, Categorical, ChronoValueType, DateTimeContent, NumberContent, RangeStep,
-    RegexContent, StringContent, Uuid,
+    ArrayContent, BoolContent, Categorical, ChronoValue, ChronoValueAndFormat, ChronoValueType,
+    DateTimeContent, NumberContent, ObjectContent, RangeStep, RegexContent, StringContent, Uuid,
 };
 use synth_core::{Content, Value};
 
@@ -120,7 +120,7 @@ impl RelationalDataSource for PostgresDataSource {
     async fn execute_query(
         &self,
         query: String,
-        query_params: Vec<&Value>,
+        query_params: Vec<Value>,
     ) -> Result<PgQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
@@ -255,20 +255,20 @@ impl RelationalDataSource for PostgresDataSource {
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
             }
-            "int2" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
+            "int2" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
             "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
             "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
             "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep::default()))),
             "float8" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
             "numeric" => Content::Number(NumberContent::F64(F64::Range(RangeStep::default()))),
             "timestamptz" => Content::DateTime(DateTimeContent {
-                format: "".to_string(), // todo
+                format: "%Y-%m-%dT%H:%M:%S%z".to_string(),
                 type_: ChronoValueType::DateTime,
                 begin: None,
                 end: None,
             }),
             "timestamp" => Content::DateTime(DateTimeContent {
-                format: "".to_string(), // todo
+                format: "%Y-%m-%dT%H:%M:%S".to_string(),
                 type_: ChronoValueType::NaiveDateTime,
                 begin: None,
                 end: None,
@@ -279,20 +279,56 @@ impl RelationalDataSource for PostgresDataSource {
                 begin: None,
                 end: None,
             }),
+            "time" => Content::DateTime(DateTimeContent {
+                format: "%H:%M:%S".to_string(),
+                type_: ChronoValueType::NaiveTime,
+                begin: None,
+                end: None,
+            }),
+            "json" | "jsonb" => Content::Object(ObjectContent {
+                skip_when_null: false,
+                fields: BTreeMap::new(),
+            }),
             "uuid" => Content::String(StringContent::Uuid(Uuid)),
-            _ => bail!(
-                "We haven't implemented a converter for {}",
-                column_info.data_type
-            ),
+            _ => {
+                if let Some(data_type) = column_info.data_type.strip_prefix('_') {
+                    let mut column_info = column_info.clone();
+                    column_info.data_type = data_type.to_string();
+
+                    Content::Array(ArrayContent::from_content_default_length(
+                        self.decode_to_content(&column_info)?,
+                    ))
+                } else {
+                    bail!(
+                        "We haven't implemented a converter for {}",
+                        column_info.data_type
+                    )
+                }
+            }
         };
 
         Ok(content)
     }
 
-    fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize) {
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>) {
+        let extend = query_params.len();
+
         query.push('(');
-        for i in 0..extend {
-            query.push_str(&format!("${}", curr_index + i + 1));
+        for (i, param) in query_params.iter().enumerate() {
+            let extra = if let Value::Array(_) = param {
+                let (typ, depth) = param.get_postgres_type();
+                if typ == "unknown" {
+                    "".to_string() // This is currently not supported
+                } else if typ == "jsonb" {
+                    "::jsonb".to_string() // Cannot have an array of jsonb - ie jsonb[]
+                } else {
+                    format!("::{}{}", typ, "[]".repeat(depth))
+                }
+            } else {
+                "".to_string()
+            };
+
+            query.push_str(&format!("${}{}", curr_index + i + 1, extra));
             if i != extend - 1 {
                 query.push(',');
             }
@@ -347,7 +383,10 @@ impl TryFrom<PgRow> for ValueWrapper {
         let mut kv = BTreeMap::new();
 
         for column in row.columns() {
-            let value = try_match_value(&row, column).unwrap_or(Value::Null(()));
+            let value = try_match_value(&row, column).unwrap_or_else(|err| {
+                debug!("try_match_value failed: {}", err);
+                Value::Null(())
+            });
             kv.insert(column.name().to_string(), value);
         }
 
@@ -389,6 +428,111 @@ fn try_match_value(row: &PgRow, column: &PgColumn) -> Result<Value> {
             "{}",
             row.try_get::<chrono::NaiveDate, &str>(column.name())?
         )),
+        "time" => Value::String(format!(
+            "{}",
+            row.try_get::<chrono::NaiveTime, &str>(column.name())?
+        )),
+        "json" | "jsonb" => {
+            let serde_value = row.try_get::<serde_json::Value, &str>(column.name())?;
+            serde_json::from_value(serde_value)?
+        }
+        "char[]" | "varchar[]" | "text[]" | "citext[]" | "bpchar[]" | "name[]" | "unknown[]" => {
+            Value::Array(
+                row.try_get::<Vec<String>, &str>(column.name())
+                    .map(|vec| vec.iter().map(|s| Value::String(s.to_string())).collect())?,
+            )
+        }
+        "bool[]" => Value::Array(
+            row.try_get::<Vec<bool>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(Value::Bool).collect())?,
+        ),
+        "int2[]" => Value::Array(
+            row.try_get::<Vec<i16>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "int4[]" => Value::Array(
+            row.try_get::<Vec<i32>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "int8[]" => Value::Array(
+            row.try_get::<Vec<i64>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "float4[]" => Value::Array(
+            row.try_get::<Vec<f32>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "float8[]" => Value::Array(
+            row.try_get::<Vec<f64>, &str>(column.name())
+                .map(|vec| vec.into_iter().map(|i| Value::Number(i.into())).collect())?,
+        ),
+        "numeric[]" => {
+            let vec = row.try_get::<Vec<Decimal>, &str>(column.name())?;
+            let result: Result<Vec<Value>, _> = vec
+                .into_iter()
+                .map(|d| {
+                    if let Some(truncated) = d.to_f64() {
+                        return Ok(Value::Number(truncated.into()));
+                    }
+
+                    bail!("Failed to convert Postgresql numeric data type to 64 bit float")
+                })
+                .collect();
+
+            Value::Array(result?)
+        }
+        "timestamp[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveDateTime>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%dT%H:%M:%S".to_owned()),
+                                value: ChronoValue::NaiveDateTime(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "timestamptz[]" => Value::Array(
+            row.try_get::<Vec<chrono::DateTime<chrono::FixedOffset>>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%dT%H:%M:%S%z".to_owned()),
+                                value: ChronoValue::DateTime(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "date[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveDate>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|d| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%Y-%m-%d".to_owned()),
+                                value: ChronoValue::NaiveDate(d),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
+        "time[]" => Value::Array(
+            row.try_get::<Vec<chrono::NaiveTime>, &str>(column.name())
+                .map(|vec| {
+                    vec.into_iter()
+                        .map(|t| {
+                            Value::DateTime(ChronoValueAndFormat {
+                                format: Arc::from("%H:%M:%S".to_owned()),
+                                value: ChronoValue::NaiveTime(t),
+                            })
+                        })
+                        .collect()
+                })?,
+        ),
         _ => {
             bail!(
                 "Could not convert value. Converter not implemented for {}",

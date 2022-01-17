@@ -92,7 +92,7 @@
         {
           "type": "date_time",
           "subtype": "date_time",
-          "format": "",
+          "format": "%Y-%m-%dT%H:%M:%S%z",
           "weight": 1
         },
         {
@@ -107,7 +107,7 @@
         {
           "type": "date_time",
           "subtype": "naive_date_time",
-          "format": "",
+          "format": "%Y-%m-%dT%H:%M:%S",
           "weight": 1
         },
         {

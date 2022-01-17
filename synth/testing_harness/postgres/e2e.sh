@@ -27,6 +27,7 @@ commands:
   test-import|Test importing from postgres data
   test-complete|Test generating and importing all types to/from postgres
   test-warning|Test integer warnings
+  test-arrays|Test encoding array values
   test-local|Run all test on a local machine using the container from 'up' (no need to call 'up' first)
   up|Starts a local Docker instance for testing
   down|Stops container started with 'up'
@@ -91,6 +92,23 @@ function test-warning() {
   fi
 }
 
+function test-arrays() {
+  echo -e "${INFO}Testing arrays to postgres${NC}"
+  psql -c "CREATE DATABASE arrays;" postgres://postgres:$PASSWORD@localhost:$PORT/postgres
+  psql -f arrays/0_arrays.sql postgres://postgres:$PASSWORD@localhost:$PORT/arrays
+  errors=$($SYNTH generate --to postgres://postgres:$PASSWORD@localhost:$PORT/arrays arrays 2>&1)
+  if [ ! -z "$errors" ]
+  then
+    echo -e "${ERROR}Did not expect errors:${NC}"
+    echo -e $errors
+    return 1
+  fi
+
+  echo -e "${INFO}Testing importing postgres arrays${NC}"
+  $SYNTH import --from postgres://postgres:${PASSWORD}@localhost:${PORT}/arrays arrays_import || { echo -e "${ERROR}Array import failed${NC}"; return 1; }
+  diff <(jq --sort-keys . arrays_import/*) <(jq --sort-keys . arrays_master/*) || { echo -e "${ERROR}Import arrays do not match${NC}"; return 1; }
+}
+
 function test-local() {
   up || return 1
 
@@ -99,6 +117,7 @@ function test-local() {
   test-import || result=$?
   test-complete || result=$?
   test-warning || result=$?
+  test-arrays || result=$?
 
   down
   cleanup
@@ -134,6 +153,7 @@ function cleanup() {
   echo -e "${DEBUG}Cleaning up local files${NC}"
   rm -Rf hospital_import
   rm -Rf complete_import
+  rm -Rf arrays_import
   rm -Rf .synth
 }
 
@@ -152,6 +172,9 @@ case "${1-*}" in
     ;;
   test-warning)
     test-warning || exit 1
+    ;;
+  test-arrays)
+    test-arrays || exit 1
     ;;
   test-local)
     test-local || exit 1

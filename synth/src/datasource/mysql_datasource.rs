@@ -56,7 +56,7 @@ impl RelationalDataSource for MySqlDataSource {
     async fn execute_query(
         &self,
         query: String,
-        query_params: Vec<&Value>,
+        query_params: Vec<Value>,
     ) -> Result<MySqlQueryResult> {
         let mut query = sqlx::query(query.as_str());
 
@@ -199,7 +199,13 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(query: &mut String, _curr_index: usize, extend: usize) {
+    fn extend_parameterised_query(
+        query: &mut String,
+        _curr_index: usize,
+        query_params: Vec<Value>,
+    ) {
+        let extend = query_params.len();
+
         query.push('(');
         for i in 0..extend {
             query.push('?');
@@ -299,7 +305,7 @@ fn try_match_value(row: &MySqlRow, column: &MySqlColumn) -> Result<Value> {
                 return Ok(Value::Number(Number::from(truncated)));
             }
 
-            bail!("Failed to convert Postgresql numeric data type to 64 bit float")
+            bail!("Failed to convert Mysql numeric data type to 64 bit float")
         }
         "timestamp" => Value::String(row.try_get::<String, &str>(column.name())?),
         "date" => Value::String(format!(
