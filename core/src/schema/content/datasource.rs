@@ -2,7 +2,7 @@ use super::prelude::*;
 use crate::{DataSourceParams, Value};
 use anyhow::Error;
 use async_std::task;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{postgres::PgPoolOptions, Executor};
 use std::path::PathBuf;
 use uriparse::URI;
 
@@ -11,6 +11,7 @@ pub struct DatasourceContent {
     pub path: String,
     #[serde(default)]
     pub cycle: bool,
+    pub schema: Option<String>,
     pub query: Option<String>,
 }
 
@@ -18,7 +19,7 @@ impl Compile for DatasourceContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut _compiler: C) -> Result<Graph> {
         let params = DataSourceParams {
             uri: URI::try_from(self.path.as_str())?,
-            schema: None,
+            schema: self.schema.clone(),
         };
         let iter =
             get_iter(params, self.query.clone()).map(|i| -> Box<dyn Iterator<Item = Value>> {
@@ -63,7 +64,7 @@ fn get_iter(
         }
         "postgres" | "postgresql" => {
             let uri = params.uri.to_string();
-            let rows = task::block_on(get_postgres_values(&uri, query))?;
+            let rows = task::block_on(get_postgres_values(&uri, params.schema, query))?;
 
             rows.into_iter()
         }
@@ -77,9 +78,24 @@ fn get_iter(
     Ok(iter)
 }
 
-async fn get_postgres_values(uri: &str, query: Option<String>) -> Result<Vec<Value>> {
+async fn get_postgres_values(
+    uri: &str,
+    schema: Option<String>,
+    query: Option<String>,
+) -> Result<Vec<Value>> {
     if let Some(query) = query {
-        let pool = PgPoolOptions::new().connect(uri).await?;
+        let schema = schema.unwrap_or_else(|| "public".to_string());
+        let pool = PgPoolOptions::new()
+            .after_connect(move |conn| {
+                let schema = schema.clone();
+                Box::pin(async move {
+                    conn.execute(&*format!("SET search_path = '{}';", schema))
+                        .await?;
+                    Ok(())
+                })
+            })
+            .connect(uri)
+            .await?;
 
         let rows = sqlx::query_as::<_, Value>(&query).fetch_all(&pool).await?;
 
@@ -109,6 +125,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
+            schema: None,
             query: None,
         };
 
@@ -128,6 +145,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
+            schema: None,
             query: None,
         };
 
@@ -161,6 +179,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: true,
+            schema: None,
             query: None,
         };
 
@@ -185,6 +204,7 @@ mod tests {
         let content = DatasourceContent {
             path: "mysql:".to_string(),
             cycle: false,
+            schema: None,
             query: None,
         };
 
@@ -199,6 +219,7 @@ mod tests {
         let content = DatasourceContent {
             path: "json:missing.json".to_string(),
             cycle: false,
+            schema: None,
             query: None,
         };
 
@@ -219,6 +240,7 @@ mod tests {
                 p.into_os_string().into_string().unwrap().replace('\\', "/")
             ),
             cycle: false,
+            schema: None,
             query: None,
         };
 
@@ -233,6 +255,7 @@ mod tests {
         let content = DatasourceContent {
             path: "postgres://postgres:password@localhost:5432".to_string(),
             cycle: false,
+            schema: None,
             query: None,
         };
 
