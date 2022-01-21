@@ -1,0 +1,26 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "def": {
+            "type": "hidden",
+            "content": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "smallint": "@u32.content.def",
+        "int": "@u32.content.def",
+        "integer": "@u32.content.def",
+        "bigint": "@u32.content.def"
+    },
+    "length": {
+        "type": "number",
+        "constant": 1
+    }
+}

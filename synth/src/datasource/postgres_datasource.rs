@@ -116,6 +116,7 @@ impl PostgresDataSource {
 #[async_trait]
 impl RelationalDataSource for PostgresDataSource {
     type QueryResult = PgQueryResult;
+    const IDENTIFIER_QUOTE: char = '\"';
 
     async fn execute_query(
         &self,

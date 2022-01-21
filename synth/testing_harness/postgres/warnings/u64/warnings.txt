@@ -1,0 +1,7 @@
+Trying to put an unsigned u64 into a int2 typed column u64.int2
+Trying to put an unsigned u64 into a int4 typed column u64.int4
+Trying to put an unsigned u64 into a int8 typed column u64.int8
+Trying to put an unsigned u64 into a int2 typed column u64.smallint
+Trying to put an unsigned u64 into a int4 typed column u64.int
+Trying to put an unsigned u64 into a int4 typed column u64.integer
+Trying to put an unsigned u64 into a int8 typed column u64.bigint

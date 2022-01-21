@@ -46,6 +46,8 @@ pub struct ValueWrapper(pub(crate) Value);
 pub trait RelationalDataSource: DataSource {
     type QueryResult: Send + Sync;
 
+    const IDENTIFIER_QUOTE: char;
+
     async fn insert_relational_data(
         &self,
         collection_name: &str,
@@ -71,18 +73,28 @@ pub trait RelationalDataSource: DataSource {
                 match (value, &*column_info.data_type) {
                     (
                         Value::Number(Number::U64(_)),
-                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
+                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
                     ) => warn!(
                         "Trying to put an unsigned u64 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
                     (
                         Value::Number(Number::U32(_)),
-                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
+                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
                     ) => warn!(
                         "Trying to put an unsigned u32 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
+                    (Value::Number(Number::I64(_)), "int2" | "int4" | "smallint" | "int") => warn!(
+                        "Trying to put a signed i64 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    ),
+                    (Value::Number(Number::I32(_)), "int2" | "int8" | "smallint" | "bigint") => {
+                        warn!(
+                            "Trying to put a signed i32 into a {} typed column {}.{}",
+                            column_info.data_type, collection_name, column_info.column_name
+                        )
+                    }
                     //TODO: More variants
                     _ => {}
                 }
@@ -91,7 +103,7 @@ pub trait RelationalDataSource: DataSource {
 
         let column_names = first_valueset
             .keys()
-            .cloned()
+            .map(|k| format!("{}{}{}", Self::IDENTIFIER_QUOTE, k, Self::IDENTIFIER_QUOTE))
             .collect::<Vec<String>>()
             .join(",");
 

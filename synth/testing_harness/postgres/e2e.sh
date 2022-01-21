@@ -26,7 +26,8 @@ commands:
   test-generate|Test generating data to postgres
   test-import|Test importing from postgres data
   test-complete|Test generating and importing all types to/from postgres
-  test-warning|Test integer warnings
+  test-warnings|Test all warnings
+  test-warning <warning>|Test a specific warning
   test-arrays|Test encoding array values
   test-local|Run all test on a local machine using the container from 'up' (no need to call 'up' first)
   up|Starts a local Docker instance for testing
@@ -74,22 +75,31 @@ function test-complete() {
   diff <(jq --sort-keys . complete_import/*) <(jq --sort-keys . complete_import_master/*) || { echo -e "${ERROR}Import complete namespaces do not match${NC}"; return 1; }
 }
 
+function test-warnings() {
+  result=0
+  for d in warnings/*/
+  do
+    test-warning $d || result=$?
+  done
+}
+
 function test-warning() {
-  echo -e "${INFO}Testing warnings${NC}"
-  docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:5432/postgres < warnings/0_warnings.sql
-  WARNINGS=$($SYNTH generate --size 10 --to postgres://postgres:$PASSWORD@localhost:$PORT/postgres warnings 2>&1)
-  if [[ "$WARNINGS" == *"warnings.int32"* && "$WARNINGS" == *"warnings.int64"* ]]
+  folder=$1
+
+  echo -e "${INFO}[$folder] Testing warning${NC}"
+
+  docker exec -i $NAME psql postgres://postgres:$PASSWORD@localhost:5432/postgres < "$folder/schema.sql"
+  output=$($SYNTH generate --size 10 --to postgres://postgres:$PASSWORD@localhost:$PORT/postgres "$folder" 2>&1)
+  warnings=$(echo "$output" | grep "WARN" | grep -Po "(?<=\]\s).*$")
+
+  if [ -z "$warnings" ]
   then
-    echo -e "${DEBUG}Expected warnings were emitted${NC}"
-  else
-    echo -e "${ERROR}Did not get expected warnings:${NC}"
-    echo "expected"
-    echo "[yyyy-mm-ddThh:MM:ssZ WARN synth::datasource::relational_datasource] Trying to put an unsigned u32 into a int4 typed column warnings.int32"
-    echo "[yyyy-mm-ddThh:MM:ssZ WARN synth::datasource::relational_datasource] Trying to put an unsigned u64 into a int8 typed column warnings.int64"
-    echo "got"
-    echo $WARNINGS
+    echo -e "${ERROR}[$folder] did not produce any warnings${NC}"
+    echo -e "${DEBUG}$output${NC}"
     return 1
   fi
+
+  diff <(echo "$warnings") "$folder/warnings.txt" || { echo -e "${ERROR}[$folder] warnings do not match${NC}"; return 1; }
 }
 
 function test-arrays() {
@@ -116,6 +126,7 @@ function test-local() {
   test-generate || result=$?
   test-import || result=$?
   test-complete || result=$?
+  test-warnings || result=$?
   test-warning || result=$?
   test-arrays || result=$?
 
@@ -170,8 +181,11 @@ case "${1-*}" in
   test-complete)
     test-complete || exit 1
     ;;
+  test-warnings)
+    test-warnings || exit 1
+    ;;
   test-warning)
-    test-warning || exit 1
+    test-warning "warnings/$2" || exit 1
     ;;
   test-arrays)
     test-arrays || exit 1

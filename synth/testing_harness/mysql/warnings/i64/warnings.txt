@@ -1,0 +1,3 @@
+Trying to put a signed i64 into a smallint typed column i64.smallint
+Trying to put a signed i64 into a int typed column i64.int
+Trying to put a signed i64 into a int typed column i64.integer

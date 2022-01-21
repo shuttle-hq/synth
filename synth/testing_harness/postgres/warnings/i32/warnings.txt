@@ -1,0 +1,4 @@
+Trying to put a signed i32 into a int2 typed column i32.int2
+Trying to put a signed i32 into a int8 typed column i32.int8
+Trying to put a signed i32 into a int2 typed column i32.smallint
+Trying to put a signed i32 into a int8 typed column i32.bigint
