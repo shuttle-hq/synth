@@ -1,0 +1,11 @@
+{
+    "type": "array",
+    "length": {
+        "type": "number",
+        "subtype": "u32"
+    },
+    "content": {
+        "type": "object"
+    }
+}
+

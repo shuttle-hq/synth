@@ -9,6 +9,7 @@ authors = [
 edition = "2021"
 homepage = "https://getsynth.com"
 license = "Apache-2.0"
+exclude = ["testing_harness/*"]
 
 [[bench]]
 name = "bench"
