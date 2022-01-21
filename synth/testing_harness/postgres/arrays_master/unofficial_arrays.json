@@ -1,0 +1,302 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "range": {
+      "low": 1,
+      "high": 10,
+      "step": 1
+    },
+    "subtype": "u64"
+  },
+  "content": {
+    "type": "object",
+    "bigint_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -32362,
+          "high": 31882
+        },
+        "subtype": "i64"
+      }
+    },
+    "bool_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "bool",
+        "frequency": 0.5
+      }
+    },
+    "character_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "string",
+        "pattern": "[a-zA-Z0-9]{0, 1}"
+      }
+    },
+    "character_varying_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 8,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "string",
+        "pattern": "[a-zA-Z0-9]{0, 1}"
+      }
+    },
+    "decimal_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -29508.77,
+          "high": 32595.16
+        },
+        "subtype": "f64"
+      }
+    },
+    "double_precision_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -32728.93,
+          "high": 30830.96
+        },
+        "subtype": "f64"
+      }
+    },
+    "int_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 8,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -31922,
+          "high": 32726
+        },
+        "subtype": "i32"
+      }
+    },
+    "integer_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -31954,
+          "high": 31577
+        },
+        "subtype": "i32"
+      }
+    },
+    "real_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -30618.009765625,
+          "high": 30062.16015625
+        },
+        "subtype": "f32"
+      }
+    },
+    "smallint_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": -31803,
+          "high": 31156
+        },
+        "subtype": "i32"
+      }
+    },
+    "timestamp_with_time_zone_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "date_time",
+        "format": "%Y-%m-%dT%H:%M:%S%z",
+        "subtype": "date_time",
+        "begin": "2015-01-18T10:24:22+0000",
+        "end": "2019-11-10T12:31:48+0000"
+      }
+    },
+    "ubigint_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": 934,
+          "high": 32630
+        },
+        "subtype": "i64"
+      }
+    },
+    "uint_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": 2034,
+          "high": 32596
+        },
+        "subtype": "i32"
+      }
+    },
+    "uinteger_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": 965,
+          "high": 32446
+        },
+        "subtype": "i32"
+      }
+    },
+    "usmallint_array": {
+      "type": "array",
+      "length": {
+        "type": "number",
+        "range": {
+          "low": 1,
+          "high": 9,
+          "step": 1
+        },
+        "subtype": "u64"
+      },
+      "content": {
+        "type": "number",
+        "range": {
+          "low": 531,
+          "high": 32717
+        },
+        "subtype": "i32"
+      }
+    }
+  }
+}

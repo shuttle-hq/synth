@@ -48,3 +48,5 @@ jobs:
         working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-warnings
         working-directory: synth/testing_harness/postgres
+      - run: ./e2e.sh test-arrays
+        working-directory: synth/testing_harness/postgres

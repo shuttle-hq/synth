@@ -102,13 +102,11 @@ Next let's create a `users` collection using Synth's configuration language, and
             }
         },
         "joined_on": {
-            "type": "string",
-            "date_time": {
-                "format": "%Y-%m-%d",
-                "subtype": "naive_date",
-                "begin": "2010-01-01",
-                "end": "2020-01-01"
-            }
+            "type": "date_time",
+            "format": "%Y-%m-%d",
+            "subtype": "naive_date",
+            "begin": "2010-01-01",
+            "end": "2020-01-01"
         }
     }
 }

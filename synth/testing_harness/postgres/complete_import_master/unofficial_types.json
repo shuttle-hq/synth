@@ -69,7 +69,7 @@
         {
           "type": "date_time",
           "subtype": "date_time",
-          "format": "",
+          "format": "%Y-%m-%dT%H:%M:%S%z",
           "weight": 1
         },
         {
@@ -80,7 +80,7 @@
     },
     "id_serial2": {
       "type": "number",
-      "subtype": "i64",
+      "subtype": "i32",
       "range": {
         "low": 1,
         "high": 10
@@ -88,7 +88,7 @@
     },
     "id_smallserial": {
       "type": "number",
-      "subtype": "i64",
+      "subtype": "i32",
       "range": {
         "low": 1,
         "high": 10
