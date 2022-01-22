@@ -6,6 +6,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -21,6 +22,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -36,6 +38,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -53,6 +56,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -70,6 +74,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -87,6 +92,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -104,6 +110,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -124,6 +131,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -144,6 +152,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -164,6 +173,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -184,6 +194,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -204,6 +215,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -224,6 +236,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -244,6 +257,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -264,6 +278,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -284,6 +299,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -304,17 +320,18 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 8,
                     "step": 1
-                },
-                "subtype": "u64"
+                }
             },
             "content": {
                 "type": "array",
                 "length": {
                     "type": "number",
+                    "subtype": "u64",
                     "constant": 8
                 },
                 "content": {
@@ -332,6 +349,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -350,6 +368,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -368,6 +387,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -386,6 +406,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -404,6 +425,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
@@ -437,6 +459,7 @@
             "type": "array",
             "length": {
                 "type": "number",
+                "subtype": "u64",
                 "range": {
                     "low": 1,
                     "high": 10,
