@@ -1,0 +1,7 @@
+Trying to put an unsigned u32 into a int2 typed column u32.int2
+Trying to put an unsigned u32 into a int4 typed column u32.int4
+Trying to put an unsigned u32 into a int8 typed column u32.int8
+Trying to put an unsigned u32 into a int2 typed column u32.smallint
+Trying to put an unsigned u32 into a int4 typed column u32.int
+Trying to put an unsigned u32 into a int4 typed column u32.integer
+Trying to put an unsigned u32 into a int8 typed column u32.bigint

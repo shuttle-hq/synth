@@ -1,6 +1,6 @@
 [package]
 name = "synth-core"
-version = "0.6.1"
+version = "0.6.3"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>",
@@ -37,3 +37,4 @@ bloomfilter = "1.0.5"
 dynfmt = { version = "0.1.5", features = [ "curly" ] }
 sqlx = { version = "0.5.7", features = [ "postgres", "mysql", "runtime-async-std-native-tls", "decimal", "chrono" ] }
 uriparse = "0.6.3"
+paste = "1.0"

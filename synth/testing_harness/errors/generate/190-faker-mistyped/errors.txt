@@ -1,0 +1,6 @@
+Error: Unable to open the namespace "generate/190-faker-mistyped"
+
+Caused by:
+    0: at file generate/190-faker-mistyped/schema.json
+    1: Failed to parse collection
+    2: `faker` is expected to have a `generator` field. Try '"faker": {"generator": "name"}' at line 11 column 1

@@ -1,0 +1,86 @@
+{
+  "type": "array",
+  "length": 10,
+  "content": {
+    "type": "object",
+    "id": {
+      "type": "number",
+      "subtype": "i32",
+      "id": {
+        "start_at": 0
+      }
+    },
+    "nully": {
+      "type": "null"
+    },
+    "bool": {
+      "type": "bool",
+      "frequency": 0.5
+    },
+    "string_char": {
+      "type": "string",
+      "pattern": "[a-z]"
+    },
+    "string_varchar": {
+      "type": "string",
+      "faker": {
+        "generator": "title"
+      }
+    },
+    "string_text": {
+      "type": "string",
+      "faker": {
+        "generator": "name"
+      }
+    },
+    "string_bpchar": {
+      "type": "string",
+      "faker": {
+        "generator": "suffix"
+      }
+    },
+    "string_name": {
+      "type": "string",
+      "faker": {
+        "generator": "name"
+      }
+    },
+    "i32_int4": {
+      "type": "number",
+      "subtype": "i32",
+      "constant": -1730162052
+    },
+    "i64_int8": {
+      "type": "number",
+      "subtype": "i64",
+      "constant": -9112054025815705000
+    },
+    "f32_float4": {
+      "type": "number",
+      "subtype": "f32",
+      "constant": 3.14159265358979323
+    },
+    "f64_float8": {
+      "type": "number",
+      "subtype": "f64",
+      "constant": 3.14159265358979323
+    },
+    "date_time_timestamptz": {
+      "type": "date_time",
+      "subtype": "date_time",
+      "format": ""
+    },
+    "naive_date_time_timestamp": {
+      "type": "date_time",
+      "subtype": "naive_date_time",
+      "format": ""
+    },
+    "naive_date_date": {
+      "type": "date_time",
+      "subtype": "naive_date",
+      "format": "%Y-%m-%d",
+      "begin": "2021-12-16",
+      "end": "2021-12-18"
+    }
+  }
+}
