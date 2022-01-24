@@ -18,7 +18,6 @@ import {
 } from "../lib/constants"
 
 import Navbar from "../components/Navbar"
-import CookieConsent from "../components/CookieConsent"
 import Footer from "../components/Footer"
 import AnnouncementBar from "../components/AnnouncementBar"
 
@@ -56,7 +55,6 @@ function GetSynthed({ Component, pageProps }: AppProps) {
         <Navbar />
         <Component {...pageProps} />
         <Footer />
-        <CookieConsent />
       </div>
     </>
   )
