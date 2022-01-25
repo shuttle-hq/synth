@@ -185,6 +185,12 @@ where
                         column_info.data_type, collection_name, column_info.column_name
                     )
                 }
+                (Value::Number(Number::F32(_)), "float8" | "double") => {
+                    warn!(
+                        "Trying to put a f32 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    )
+                }
                 //TODO: More variants
                 _ => {}
             }
