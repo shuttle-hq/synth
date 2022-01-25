@@ -1,0 +1,2 @@
+Trying to put a f64 into a float4 typed column f64.float4
+Trying to put a f64 into a float4 typed column f64.real
