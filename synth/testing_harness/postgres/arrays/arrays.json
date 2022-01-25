@@ -313,10 +313,7 @@
             },
             "content": {
                 "type": "array",
-                "length": {
-                    "type": "number",
-                    "constant": 8
-                },
+                "length": 8,
                 "content": {
                     "type": "number",
                     "subtype": "i32",
