@@ -265,8 +265,8 @@ impl SerdeDateTimeContent {
             .as_ref()
             .and_then(|begin| begin.common_variant(end.as_ref()?));
 
-        match common_variant {
-            Some(variant) if variant != type_ => Err(
+        match (common_variant, self.type_) {
+            (Some(variant), Some(_type)) if variant != type_ => Err(
                 failed!(target: Release, "content types of 'begin' and 'end' mismatch: begin is a {:?}, end is a {:?}; this is not allowed here. Try specifying the 'type' field.", begin, end)
             ),
             _ => Ok(DateTimeContent {
