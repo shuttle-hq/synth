@@ -164,36 +164,27 @@ impl<'a> ChronoValueFormatter<'a> {
             )
         })?;
 
-        if let Some(hint) = self.1 {
-            match hint {
-                ChronoValueType::DateTime => Ok(ChronoValue::DateTime(parsed.to_datetime()?)),
-                ChronoValueType::NaiveDateTime => Ok(ChronoValue::NaiveDateTime(
-                    parsed.to_naive_date()?.and_time(parsed.to_naive_time()?),
-                )),
-                ChronoValueType::NaiveDate => Ok(ChronoValue::NaiveDate(parsed.to_naive_date()?)),
-                ChronoValueType::NaiveTime => Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?)),
-            }
-        } else {
-            parsed
-                .to_datetime()
-                .map(ChronoValue::DateTime)
-                .or_else(|err| {
-                    debug!("a chrono content failed to parse as a datetime: {}", err);
-                    parsed
-                        .to_naive_date()
-                        .map(|date| match parsed.to_naive_time() {
-                            Ok(time) => ChronoValue::NaiveDateTime(date.and_time(time)),
-                            Err(_) => ChronoValue::NaiveDate(date),
-                        })
-                        .or_else(|err| {
-                            debug!(
-                                "a chrono content failed to parse as a naive datetime: {}",
-                                err
-                            );
-                            Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?))
-                        })
-                })
-        }
+        parsed
+            .to_datetime()
+            .map(ChronoValue::DateTime)
+            .or_else(|err| {
+                debug!("a chrono content failed to parse as a datetime: {}", err);
+
+                parsed
+                    .to_naive_date()
+                    .map(|date| match parsed.to_naive_time() {
+                        Ok(time) => ChronoValue::NaiveDateTime(date.and_time(time)),
+                        Err(_) => ChronoValue::NaiveDate(date),
+                    })
+                    .or_else(|err| {
+                        debug!(
+                            "a chrono content failed to parse as a naive datetime: {}",
+                            err
+                        );
+
+                        Ok(ChronoValue::NaiveTime(parsed.to_naive_time()?))
+                    })
+            })
     }
 
     #[allow(dead_code)]
@@ -251,31 +242,21 @@ impl SerdeDateTimeContent {
     fn into_datetime_content(self) -> Result<DateTimeContent> {
         debug!("interpreting a shadow datetime content {:?}", self);
 
-        let src = &self.format;
-        let fmt = ChronoValueFormatter::new_with(src, self.type_);
+        let fmt = ChronoValueFormatter::new_with(&self.format, self.type_);
 
-        let type_ = self.type_.unwrap_or_default();
         let begin = self
             .begin
             .map(|begin| fmt.parse(begin.as_str()))
             .transpose()?;
+
         let end = self.end.map(|end| fmt.parse(end.as_str())).transpose()?;
 
-        let common_variant = begin
-            .as_ref()
-            .and_then(|begin| begin.common_variant(end.as_ref()?));
-
-        match (common_variant, self.type_) {
-            (Some(variant), Some(_type)) if variant != type_ => Err(
-                failed!(target: Release, "content types of 'begin' and 'end' mismatch: begin is a {:?}, end is a {:?}; this is not allowed here. Try specifying the 'type' field.", begin, end)
-            ),
-            _ => Ok(DateTimeContent {
-                format: self.format,
-                type_,
-                begin,
-                end,
-            })
-        }
+        Ok(DateTimeContent {
+            format: self.format,
+            type_: infer_date_time_type(self.type_, &begin, &end)?,
+            begin,
+            end,
+        })
     }
 
     fn from_datetime_content(c: &DateTimeContent) -> Result<Self> {
@@ -337,6 +318,41 @@ impl Compile for DateTimeContent {
     }
 }
 
+fn infer_date_time_type(
+    specified_type: Option<ChronoValueType>,
+    begin: &Option<ChronoValue>,
+    end: &Option<ChronoValue>,
+) -> Result<ChronoValueType> {
+    let inferred_type = match (
+        begin.as_ref().map(ChronoValue::type_),
+        end.as_ref().map(ChronoValue::type_),
+    ) {
+        (Some(b), Some(e)) => {
+            if b == e {
+                Some(b)
+            } else {
+                return Err(anyhow!(
+                    "The date/time types of 'begin' and 'end' do not match"
+                ));
+            }
+        }
+        (Some(t), None) | (None, Some(t)) => Some(t),
+        (None, None) => None,
+    };
+
+    match (inferred_type, specified_type) {
+        (Some(inferred), Some(specified)) => {
+            if inferred == specified {
+                Ok(inferred)
+            } else {
+                Err(anyhow!("The date/time type specified with 'subtype' does align with the type inferred from 'begin'/'end'"))
+            }
+        }
+        (Some(t), None) | (None, Some(t)) => Ok(t),
+        (None, None) => Ok(ChronoValueType::default()),
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -389,5 +405,35 @@ pub mod tests {
 
         date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX_DATE)), None);
         date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN_DATE)));
+    }
+
+    #[test]
+    fn date_time_subtype_inference() {
+        let some_time = Some(ChronoValue::NaiveTime(NaiveTime::from_hms(1, 2, 3)));
+        let some_date = Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(2000, 1, 1)));
+
+        assert_eq!(
+            infer_date_time_type(Some(ChronoValueType::DateTime), &None, &None).unwrap(),
+            ChronoValueType::DateTime
+        );
+        assert_eq!(
+            infer_date_time_type(Some(ChronoValueType::NaiveTime), &some_time, &some_time).unwrap(),
+            ChronoValueType::NaiveTime
+        );
+        assert_eq!(
+            infer_date_time_type(Some(ChronoValueType::NaiveTime), &some_time, &None).unwrap(),
+            ChronoValueType::NaiveTime
+        );
+        assert_eq!(
+            infer_date_time_type(None, &some_time, &None).unwrap(),
+            ChronoValueType::NaiveTime
+        );
+        assert_eq!(
+            infer_date_time_type(None, &None, &None).unwrap(),
+            ChronoValueType::default()
+        );
+        assert!(infer_date_time_type(Some(ChronoValueType::NaiveDate), &None, &some_time).is_err());
+        assert!(infer_date_time_type(Some(ChronoValueType::NaiveTime), &None, &some_date).is_err());
+        assert!(infer_date_time_type(None, &some_time, &some_date).is_err());
     }
 }
