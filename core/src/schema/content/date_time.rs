@@ -64,14 +64,6 @@ impl std::fmt::Display for ChronoValueType {
 }
 
 impl ChronoValue {
-    pub fn common_variant(&self, other: &Self) -> Option<ChronoValueType> {
-        if self.type_() == other.type_() {
-            Some(self.type_())
-        } else {
-            None
-        }
-    }
-
     pub fn delta_to(&self, other: &Self) -> Option<StdDuration> {
         let res = match (self, other) {
             (Self::NaiveDate(left), Self::NaiveDate(right)) => Some(*right - *left),
@@ -135,15 +127,11 @@ pub struct DateTimeContent {
 }
 
 #[derive(Debug)]
-pub struct ChronoValueFormatter<'a>(&'a str, Option<ChronoValueType>);
+pub struct ChronoValueFormatter<'a>(&'a str);
 
 impl<'a> ChronoValueFormatter<'a> {
-    pub fn new_with(src: &'a str, hint: Option<ChronoValueType>) -> Self {
-        Self(src, hint)
-    }
-
     pub fn new(src: &'a str) -> Self {
-        Self::new_with(src, None)
+        Self(src)
     }
 
     pub fn parse(&self, content: &str) -> Result<ChronoValue> {
@@ -187,23 +175,6 @@ impl<'a> ChronoValueFormatter<'a> {
             })
     }
 
-    #[allow(dead_code)]
-    fn parse_or_default_of(
-        &self,
-        opt: Option<String>,
-        def: DateTime<FixedOffset>,
-        hint: ChronoValueType,
-    ) -> Result<ChronoValue> {
-        match opt.map(|inner| self.parse(&inner)).transpose()? {
-            Some(inner) => Ok(inner),
-            None => {
-                let default = ChronoValue::default_of(def, hint);
-                let fmt = ChronoValueFormatter::new_with(self.0, None);
-                fmt.parse(&fmt.format(&default)?)
-            }
-        }
-    }
-
     pub fn format(&self, c: &ChronoValue) -> Result<String, Error> {
         use std::fmt::Write;
         let mut buf = String::new();
@@ -242,7 +213,7 @@ impl SerdeDateTimeContent {
     fn into_datetime_content(self) -> Result<DateTimeContent> {
         debug!("interpreting a shadow datetime content {:?}", self);
 
-        let fmt = ChronoValueFormatter::new_with(&self.format, self.type_);
+        let fmt = ChronoValueFormatter::new(&self.format);
 
         let begin = self
             .begin
@@ -260,7 +231,7 @@ impl SerdeDateTimeContent {
     }
 
     fn from_datetime_content(c: &DateTimeContent) -> Result<Self> {
-        let fmt = ChronoValueFormatter::new_with(&c.format, None);
+        let fmt = ChronoValueFormatter::new(&c.format);
         Ok(Self {
             format: c.format.to_string(),
             type_: Some(c.type_),
@@ -306,7 +277,7 @@ impl Compile for DateTimeContent {
             .clone()
             .unwrap_or_else(|| ChronoValue::default_of(ChronoValue::now(), self.type_));
         if begin > end {
-            let fmt = ChronoValueFormatter::new_with(&self.format, Some(self.type_));
+            let fmt = ChronoValueFormatter::new(&self.format);
             return Err(anyhow!(
                 "begin is after end: begin={}, end={}",
                 fmt.format(&begin).unwrap(),

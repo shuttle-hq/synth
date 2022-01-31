@@ -186,7 +186,7 @@ impl MergeStrategy<ObjectContent, Map<String, Value>> for OptionalMergeStrategy 
 
 impl MergeStrategy<DateTimeContent, String> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut DateTimeContent, candidate: &String) -> Result<()> {
-        let fmt = ChronoValueFormatter::new_with(&master.format, Some(master.type_));
+        let fmt = ChronoValueFormatter::new(&master.format);
         let candidate = fmt.parse(candidate.as_str())?;
         if let Some(begin) = master.begin.as_mut() {
             if *begin > candidate {
