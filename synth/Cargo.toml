@@ -9,7 +9,7 @@ authors = [
 edition = "2021"
 homepage = "https://getsynth.com"
 license = "Apache-2.0"
-exclude = ["testing_harness/*"]
+exclude = ["testing_harness/*", "tmp"]
 
 [[bench]]
 name = "bench"
@@ -26,6 +26,7 @@ git2 = "0.13.20"
 lazy_static = "1.4.0"
 tempfile = "3.1.0"
 iai = "0.1"
+ignore = "0.4"
 
 [dependencies]
 lazy_static = "1.4.0"
