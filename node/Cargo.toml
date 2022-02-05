@@ -1,0 +1,18 @@
+[package]
+name = "node"
+version = "0.1.0"
+description = "Node.js wrapper around Synth, a declarative, synthetic data generator"
+license = "Apache-2.0"
+edition = "2018"
+exclude = ["index.node"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+synth-core = { path = "../core" }
+
+[dependencies.neon]
+version = "0.9"
+default-features = false
+features = ["napi-6"]
