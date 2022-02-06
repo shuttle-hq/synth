@@ -1,5 +1,5 @@
 {
-  "name": "node",
+  "name": "@getsynth/node",
   "version": "0.1.0",
   "description": "Node.js wrapper around Synth, a declarative, synthetic data generator",
   "main": "index.node",

@@ -1,0 +1,22 @@
+{
+  "name": "@getsynth/types",
+  "version": "0.1.0",
+  "description": "",
+  "main": "src/index.ts",
+  "dependencies": {
+    "strftime": "^0.10.0",
+    "typescript": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^16.4.9",
+    "ts-node": "^10.1.0"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "prepack": "tsc --project ./",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0"
+}
