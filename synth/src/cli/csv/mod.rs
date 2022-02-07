@@ -37,7 +37,7 @@ impl ExportStrategy for CsvFileExportStrategy {
                     std::fs::write(self.to_dir.join(name + ".csv"), csv)?;
                 }
             }
-            CsvOutput::SingleCollection(csv) => {
+            CsvOutput::Collection(csv) => {
                 std::fs::write(self.to_dir.join("collection.csv"), csv)?;
             }
         }
@@ -60,7 +60,7 @@ impl ExportStrategy for CsvStdoutExportStrategy {
                     println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)
                 }
             }
-            CsvOutput::SingleCollection(csv) => println!("{}", csv),
+            CsvOutput::Collection(csv) => println!("{}", csv),
         }
 
         Ok(output)
@@ -257,7 +257,7 @@ fn csv_str_to_value(s: &str) -> serde_json::Value {
 #[derive(Debug, PartialEq)]
 pub enum CsvOutput {
     Namespace(Vec<(String, String)>),
-    SingleCollection(String),
+    Collection(String),
 }
 
 fn csv_output_from_sampler_ouput(
@@ -268,44 +268,47 @@ fn csv_output_from_sampler_ouput(
         SamplerOutput::Namespace(key_values) => CsvOutput::Namespace(
             key_values
                 .into_iter()
-                .map(|(collection_name, values)| {
+                .map(|(collection_name, value)| {
                     Ok((
                         collection_name.clone(),
-                        to_csv_string(collection_name, values, namespace)?,
+                        to_csv_string(collection_name, value, namespace)?,
                     ))
                 })
                 .collect::<Result<Vec<(String, String)>>>()?,
         ),
-        SamplerOutput::Collection(collection_name, values) => {
-            CsvOutput::SingleCollection(to_csv_string(collection_name, values, namespace)?)
+        SamplerOutput::Collection(collection_name, value) => {
+            CsvOutput::Collection(to_csv_string(collection_name, value, namespace)?)
         }
     })
 }
 
-fn to_csv_string(
-    collection_name: String,
-    values: Vec<Value>,
-    namespace: &Namespace,
-) -> Result<String> {
-    match namespace.get_collection(&collection_name)? {
-        Content::Array(array_content) => {
-            let content = &*array_content.content;
+fn to_csv_string(collection_name: String, value: Value, namespace: &Namespace) -> Result<String> {
+    let mut writer = csv::Writer::from_writer(vec![]);
 
-            let mut writer = csv::Writer::from_writer(vec![]);
+    let collection = namespace.get_collection(&collection_name)?;
+
+    match (collection, value) {
+        (Content::Array(array_content), Value::Array(elements)) => {
+            let inner_content: &Content = &array_content.content;
 
             writer.write_record(
-                &headers::CsvHeaders::from_content(content, namespace)?.to_csv_record(),
+                &headers::CsvHeaders::from_content(inner_content, namespace)?.to_csv_record(),
             )?;
 
-            for val in values {
-                let record = synth_val_to_csv_record(val, content, namespace);
+            for val in elements {
+                let record = synth_val_to_csv_record(val, inner_content, namespace);
                 writer.write_record(record)?;
             }
-
-            Ok(String::from_utf8(writer.into_inner()?)?)
         }
-        _ => panic!("Outer-most `Content` of collection should be an array"),
+        (_, value) => {
+            writer.write_record(
+                &headers::CsvHeaders::from_content(collection, namespace)?.to_csv_record(),
+            )?;
+            writer.write_record(synth_val_to_csv_record(value, collection, namespace))?;
+        }
     }
+
+    Ok(String::from_utf8(writer.into_inner()?)?)
 }
 
 fn synth_val_to_csv_record(val: Value, content: &Content, namespace: &Namespace) -> Vec<String> {
@@ -523,7 +526,7 @@ mod tests {
 
         assert_eq!(
             csv_output_from_sampler_ouput(output, &ns).unwrap(),
-            CsvOutput::SingleCollection(
+            CsvOutput::Collection(
                 concat!(
                     "a.b,a.c,a.d[0].e,a.d[0].f,a.d[1].e,a.d[1].f\n",
                     "hello world,hello world,true,false,true,false\n"
