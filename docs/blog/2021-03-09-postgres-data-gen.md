@@ -207,7 +207,7 @@ Now we can do the same thing for the `contacts` table by create a file `my_app/c
             "type": "string",
             "faker": {
                 "generator": "phone_number",
-                "locales": ["en_GB"]
+                "locales": ["FR_FR"]
             }
         },
         "email": {
@@ -253,4 +253,4 @@ We explored 3 different ways to generate data.
 - [**Synth**](https://github.com/getsynth/synth): Synth has a small learning curve, but to create realistic testing data at scale it reduces most of the manual labour.
 
 
-In the next post we'll explore how to subset your existing database for testing purposes. And don't worry if you have sensitive / personal data - we'll cover that too. 
+In the next post we'll explore how to subset your existing database for testing purposes. And don't worry if you have sensitive / personal data - we'll cover that too.
