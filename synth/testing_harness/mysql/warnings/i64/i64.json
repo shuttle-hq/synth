@@ -19,8 +19,5 @@
         "integer": "@i64.content.def",
         "bigint": "@i64.content.def"
     },
-    "length": {
-        "type": "number",
-        "constant": 1
-    }
+    "length": 1
 }
