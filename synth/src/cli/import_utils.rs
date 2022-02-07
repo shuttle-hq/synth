@@ -1,9 +1,12 @@
-use crate::datasource::relational_datasource::{ColumnInfo, RelationalDataSource};
+use crate::datasource::relational_datasource::{
+    get_columns_info, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
+};
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
 use async_std::task;
 use log::debug;
 use serde_json::Value;
+use sqlx::{Executor, Row};
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
@@ -21,10 +24,21 @@ pub(crate) struct Collection {
 /// Wrapper around `FieldContent` since we cant' impl `TryFrom` on a struct in a non-owned crate
 struct FieldContentWrapper(Content);
 
-pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
+pub(crate) fn build_namespace_import<T: DataSource + SqlxDataSource>(
     datasource: &T,
-) -> Result<Namespace> {
-    let table_names = task::block_on(datasource.get_table_names())
+) -> Result<Namespace>
+where
+    T: Sync,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Decode<'d, T::DB> + sqlx::Encode<'d, T::DB>,
+    usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
+    PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let table_names = task::block_on(get_table_names(datasource))
         .with_context(|| "Failed to get table names".to_string())?;
 
     let mut namespace = Namespace::default();
@@ -44,15 +58,41 @@ pub(crate) fn build_namespace_import<T: DataSource + RelationalDataSource>(
     Ok(namespace)
 }
 
-fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
+async fn get_table_names<T: SqlxDataSource>(datasource: &T) -> Result<Vec<String>>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Decode<'d, T::DB>,
+    usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
+{
+    let query = datasource.get_table_names_query();
+    let pool = datasource.get_pool();
+
+    let rows = datasource.query(query).fetch_all(&pool).await?;
+
+    let table_names = rows
+        .into_iter()
+        .map(|row| row.get::<String, usize>(0))
+        .collect();
+
+    Ok(table_names)
+}
+
+fn populate_namespace_collections<T: SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
-) -> Result<()> {
+) -> Result<()>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
     for table_name in table_names.iter() {
         info!("Building {} collection...", table_name);
 
-        let column_infos = task::block_on(datasource.get_columns_infos(table_name))?;
+        let column_infos = task::block_on(get_columns_info(datasource, table_name.to_string()))?;
 
         namespace.put_collection(
             table_name.clone(),
@@ -63,13 +103,19 @@ fn populate_namespace_collections<T: DataSource + RelationalDataSource>(
     Ok(())
 }
 
-fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
+fn populate_namespace_primary_keys<T: SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
-) -> Result<()> {
+) -> Result<()>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
     for table_name in table_names.iter() {
-        let primary_keys = task::block_on(datasource.get_primary_keys(table_name))?;
+        let primary_keys = task::block_on(get_primary_keys(datasource, table_name.to_string()))?;
 
         if primary_keys.len() > 1 {
             bail!(
@@ -104,11 +150,38 @@ fn populate_namespace_primary_keys<T: DataSource + RelationalDataSource>(
     Ok(())
 }
 
-fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
+async fn get_primary_keys<T: SqlxDataSource>(
+    datasource: &T,
+    table_name: String,
+) -> Result<Vec<PrimaryKey>>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let query = datasource.get_primary_keys_query();
+    let pool = datasource.get_pool();
+
+    datasource
+        .query(query)
+        .bind(table_name)
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(PrimaryKey::try_from)
+        .collect()
+}
+
+fn populate_namespace_foreign_keys<T: SqlxDataSource>(
     namespace: &mut Namespace,
     datasource: &T,
-) -> Result<()> {
-    let foreign_keys = task::block_on(datasource.get_foreign_keys())?;
+) -> Result<()>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let foreign_keys = task::block_on(get_foreign_keys(datasource))?;
 
     debug!("{} foreign keys found.", foreign_keys.len());
 
@@ -122,15 +195,42 @@ fn populate_namespace_foreign_keys<T: DataSource + RelationalDataSource>(
     Ok(())
 }
 
-fn populate_namespace_values<T: DataSource + RelationalDataSource>(
+async fn get_foreign_keys<T: SqlxDataSource>(datasource: &T) -> Result<Vec<ForeignKey>>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let query = datasource.get_foreign_keys_query();
+    let pool = datasource.get_pool();
+
+    datasource
+        .query(query)
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(ForeignKey::try_from)
+        .collect()
+}
+
+fn populate_namespace_values<T: SqlxDataSource>(
     namespace: &mut Namespace,
     table_names: &[String],
     datasource: &T,
-) -> Result<()> {
+) -> Result<()>
+where
+    T: Sync,
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    String: sqlx::Type<T::DB>,
+    for<'d> String: sqlx::Encode<'d, T::DB>,
+    ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
     task::block_on(datasource.set_seed())?;
 
     for table_name in table_names {
-        let values = task::block_on(datasource.get_deterministic_samples(table_name))?;
+        let values = task::block_on(get_deterministic_samples(
+            datasource,
+            table_name.to_string(),
+        ))?;
         let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
         namespace.try_update(OptionalMergeStrategy, table_name, &Value::from(json_values))?;
     }
@@ -138,7 +238,34 @@ fn populate_namespace_values<T: DataSource + RelationalDataSource>(
     Ok(())
 }
 
-impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Collection {
+async fn get_deterministic_samples<T: SqlxDataSource>(
+    datasource: &T,
+    table: String,
+) -> Result<Vec<synth_core::Value>>
+where
+    for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
+    ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+{
+    let query = datasource.get_deterministic_samples_query(table);
+    let pool = datasource.get_pool();
+
+    datasource
+        .query(&query)
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(ValueWrapper::try_from)
+        .map(|v| match v {
+            Ok(wrapper) => Ok(wrapper.0),
+            Err(e) => bail!(
+                "Failed to convert to value wrapper from query results: {:?}",
+                e
+            ),
+        })
+        .collect()
+}
+
+impl<T: SqlxDataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Collection {
     type Error = anyhow::Error;
 
     fn try_from(columns_meta: (&T, Vec<ColumnInfo>)) -> Result<Self> {
@@ -163,7 +290,7 @@ impl<T: RelationalDataSource + DataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Co
     }
 }
 
-impl<T: RelationalDataSource + DataSource> TryFrom<(&T, &ColumnInfo)> for FieldContentWrapper {
+impl<T: SqlxDataSource> TryFrom<(&T, &ColumnInfo)> for FieldContentWrapper {
     type Error = anyhow::Error;
 
     fn try_from(column_meta: (&T, &ColumnInfo)) -> Result<Self> {
