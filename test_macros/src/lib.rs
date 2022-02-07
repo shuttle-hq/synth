@@ -142,10 +142,18 @@ impl Interpolate for File {
 /// * `filter_extension` - Filter results to only those with the given file extension
 ///
 /// # Examples
-/// The following line adds each static `png` file to a hash map
+/// The following creates a function for each toml file
 /// ```
-/// #[tmpl_ignore("static", exclude_dir = true, filter_extension = "png")]
-/// textures.insert(stringify!(PATH_IDENT), PATH);
+/// use test_macros::tmpl_ignore;
+///
+/// #[tmpl_ignore("./", exclude_dir = true, filter_extension = "toml")]
+/// fn PATH_IDENT() -> String {
+///     PATH.to_string()
+/// }
+///
+/// fn main() {
+///     assert_eq!(cargo_dot_toml(), "Cargo.toml");
+/// }
 /// ```
 #[proc_macro_attribute]
 pub fn tmpl_ignore(
