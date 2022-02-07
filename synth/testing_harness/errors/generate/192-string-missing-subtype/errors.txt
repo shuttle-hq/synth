@@ -1,0 +1,6 @@
+Error: Unable to open the namespace "generate/192-string-missing-subtype"
+
+Caused by:
+    0: at file generate/192-string-missing-subtype/schema.json
+    1: Failed to parse collection
+    2: `string` generator is missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `uuid`, `truncated`, or `format` at line 10 column 1

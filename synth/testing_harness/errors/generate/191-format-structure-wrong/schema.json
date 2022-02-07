@@ -1,0 +1,18 @@
+{
+    "type": "array",
+    "length": 1,
+    "content": {
+        "type": "object",
+        "s": {
+          "type": "string",
+          "format": "Hello {name}",
+          "arguments": {
+            "name": {
+              "type": "string",
+              "pattern": "synth"
+            }
+          }
+        }
+    }
+}
+

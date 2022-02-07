@@ -1,0 +1,292 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "bool_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "bool",
+                "frequency": 0.5
+            }
+        },
+        "character_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "pattern": "[a-z]"
+            }
+        },
+        "character_varying_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "faker": {
+                    "generator": "company_name"
+                }
+            }
+        },
+        "smallint_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "int_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "integer_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "bigint_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i64",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "usmallint_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "uint_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "uinteger_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "ubigint_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u64",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "real_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "double_precision_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "decimal_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "timestamp_with_time_zone_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "date_time",
+                "format": "%Y-%m-%dT%H:%M:%S%z",
+                "subtype": "date_time",
+                "begin": "2015-01-01T00:00:00+0000",
+                "end": "2020-01-01T12:00:00+0000"
+            }
+        }
+    },
+    "length": 10
+}

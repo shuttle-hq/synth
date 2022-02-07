@@ -1,6 +1,6 @@
 [package]
 name = "synth"
-version = "0.6.2"
+version = "0.6.4"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>",
@@ -9,6 +9,7 @@ authors = [
 edition = "2021"
 homepage = "https://getsynth.com"
 license = "Apache-2.0"
+exclude = ["testing_harness/*"]
 
 [[bench]]
 name = "bench"

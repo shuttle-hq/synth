@@ -1,0 +1,127 @@
+{
+  "type": "array",
+  "length": {
+    "type": "number",
+    "subtype": "u64",
+    "range": {
+      "low": 1,
+      "high": 10,
+      "step": 1
+    }
+  },
+  "content": {
+    "type": "object",
+    "id": {
+      "type": "number",
+      "subtype": "i32",
+      "id": {}
+    },
+    "nully": {
+      "type": "one_of",
+      "variants": [
+        {
+          "pattern": "[a-zA-Z0-9]{0, 1}",
+          "type": "string",
+          "weight": 1
+        },
+        {
+          "type": "null",
+          "weight": 1
+        }
+      ]
+    },
+    "bool": {
+      "type": "bool",
+      "frequency": 0.5
+    },
+    "string_char": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 1}"
+    },
+    "string_varchar": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 5}"
+    },
+    "string_text": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 1}"
+    },
+    "string_bpchar": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 6}"
+    },
+    "string_name": {
+      "type": "string",
+      "pattern": "[a-zA-Z0-9]{0, 1}"
+    },
+    "i32_int4": {
+      "type": "number",
+      "subtype": "i32",
+      "range": {
+        "low": -1730162052,
+        "high": -1730162052
+      }
+    },
+    "i64_int8": {
+      "type": "number",
+      "subtype": "i64",
+      "range": {
+        "low": -9112054025815705000,
+        "high": -9112054025815705000
+      }
+    },
+    "f32_float4": {
+      "type": "number",
+      "subtype": "f32",
+      "range": {
+        "low": 3.1415927410125732,
+        "high": 3.1415927410125732
+      }
+    },
+    "f64_float8": {
+      "type": "number",
+      "subtype": "f64",
+      "range": {
+        "low": 3.141592653589793,
+        "high": 3.141592653589793
+      }
+    },
+    "date_time_timestamptz": {
+      "type": "one_of",
+      "variants": [
+        {
+          "type": "date_time",
+          "subtype": "date_time",
+          "format": "%Y-%m-%dT%H:%M:%S%z",
+          "weight": 1
+        },
+        {
+          "type": "null",
+          "weight": 1
+        }
+      ]
+    },
+    "naive_date_time_timestamp": {
+      "type": "one_of",
+      "variants": [
+        {
+          "type": "date_time",
+          "subtype": "naive_date_time",
+          "format": "%Y-%m-%dT%H:%M:%S",
+          "weight": 1
+        },
+        {
+          "type": "null",
+          "weight": 1
+        }
+      ]
+    },
+    "naive_date_date": {
+      "type": "date_time",
+      "subtype": "naive_date",
+      "format": "%Y-%m-%d",
+      "begin": "2021-12-16",
+      "end": "2021-12-17"
+    }
+  }
+}

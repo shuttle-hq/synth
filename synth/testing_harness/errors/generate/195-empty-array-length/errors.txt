@@ -1,0 +1,6 @@
+Error: Unable to open the namespace "generate/195-empty-array-length"
+
+Caused by:
+    0: at file generate/195-empty-array-length/schema.json
+    1: Failed to parse collection
+    2: array length is not a constant or number type. Try replacing the '"length": {}' with '"length": [number]' where '[number]' is a positive integer at line 7 column 1

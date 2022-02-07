@@ -5,18 +5,20 @@ use reqwest::header::USER_AGENT;
 use semver::Version;
 use serde_json::map::Map;
 use serde_json::value::Value;
+use std::io::Write;
 use std::time::Duration;
 
 /// This is used when the user does `synth version`.
 /// It will always display a new version if it exists.
-pub fn print_version_message() {
+pub fn print_version_message<W: Write>(mut writer: W) {
     let current_version = version();
     let version_update_info = version_update_info()
         .map(|(info, _)| info)
         .unwrap_or_default()
         .map(|info| format!("\n{}", info))
         .unwrap_or_default();
-    println!("synth {}{}", current_version, version_update_info);
+    writeln!(writer, "synth {}{}", current_version, version_update_info)
+        .expect("failed to write version");
 }
 
 // This is used when the user runs any command (except for version)
@@ -34,7 +36,7 @@ pub fn notify_new_version_message() -> Result<Option<String>> {
 
     let (version_info, latest_version) = version_update_info()?;
     let mut ret = None;
-    config::set_version_check_delay(now + chrono::Duration::days(1));
+    config::set_version_check_delay(now + chrono::Duration::days(1))?;
 
     // if this is `Some`, our version is out of date.
     if let Some(version_info) = version_info {
@@ -73,10 +75,13 @@ fn has_notified_for_version(version: Version) -> bool {
     // If the set did not have this value present, true is returned.
     let has_notified = !seen_versions.insert(version_as_string);
 
-    // save seen versions
-    config::set_seen_versions(seen_versions);
+    // No further updating needed
+    if has_notified {
+        return true;
+    }
 
-    has_notified
+    // Save seen versions
+    config::set_seen_versions(seen_versions).is_err()
 }
 
 fn latest_version() -> Result<Version> {

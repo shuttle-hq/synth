@@ -367,7 +367,98 @@ impl Type<MySql> for Value {
     }
 }
 
+impl Value {
+    fn to_postgres_string(&self) -> String {
+        match self {
+            Self::Array(arr) => {
+                let (typ, _) = self.get_postgres_type();
+                let inner = arr
+                    .iter()
+                    .map(|v| v.to_postgres_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                if typ == "jsonb" {
+                    format!("[{}]", inner)
+                } else {
+                    format!("{{{}}}", inner)
+                }
+            }
+            Self::Null(_) => "NULL".to_string(),
+            Self::Bool(b) => b.to_string(),
+            Self::Number(num) => match num {
+                Number::F32(f32) => (*f32).to_string(),
+                Number::F64(f64) => (*f64).to_string(),
+                _ => num.to_string(),
+            },
+            Self::String(str) => format!("\"{}\"", str),
+            Self::DateTime(date) => date.format_to_string(),
+            Self::Object(_) => {
+                serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()
+            }
+        }
+    }
+
+    pub fn get_postgres_type(&self) -> (&'static str, usize) {
+        let mut depth = 0;
+        let mut typ = "";
+
+        let mut current = Some(self);
+
+        // Based on https://docs.rs/sqlx-core/0.5.9/sqlx_core/postgres/types/index.html
+        while let Some(c) = current {
+            let pair = match c {
+                Value::Null(_) => (None, "unknown"),
+                Value::Bool(_) => (None, "bool"),
+                Value::Number(num) => match *num {
+                    Number::I8(_) => (None, "char"),
+                    Number::I16(_) => (None, "int2"),
+                    Number::I32(_) => (None, "int4"),
+                    Number::I64(_) => (None, "int8"),
+                    Number::I128(_) => (None, "numeric"),
+                    Number::U8(_) => (None, "char"),
+                    Number::U16(_) => (None, "int2"),
+                    Number::U32(_) => (None, "int4"),
+                    Number::U64(_) => (None, "int8"),
+                    Number::U128(_) => (None, "numeric"),
+                    Number::F32(_) => (None, "float4"),
+                    Number::F64(_) => (None, "float8"),
+                },
+                Value::String(_) => (None, "text"),
+                Value::DateTime(ChronoValueAndFormat { value, .. }) => match value {
+                    ChronoValue::NaiveDate(_) => (None, "date"),
+                    ChronoValue::NaiveTime(_) => (None, "time"),
+                    ChronoValue::NaiveDateTime(_) => (None, "timestamp"),
+                    ChronoValue::DateTime(_) => (None, "timestamptz"),
+                },
+                Value::Object(_) => (None, "jsonb"),
+                Value::Array(arr) => {
+                    depth += 1;
+                    if arr.is_empty() {
+                        (None, "unknown")
+                    } else {
+                        (Some(&arr[0]), "")
+                    }
+                }
+            };
+
+            current = pair.0;
+            typ = pair.1;
+        }
+
+        (typ, depth)
+    }
+}
+
 impl Encode<'_, Postgres> for Value {
+    fn produces(&self) -> Option<PgTypeInfo> {
+        // Only arrays needs a special type
+        match self {
+            Value::Array(_) => Some(PgTypeInfo::with_name("text")),
+            _ => None,
+        }
+    }
+
     fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> IsNull {
         match self {
             Value::Null(_) => IsNull::Yes,
@@ -382,7 +473,7 @@ impl Encode<'_, Postgres> for Value {
                 }
                 Number::U8(i) => <i8 as Encode<'_, Postgres>>::encode_by_ref(&(i as i8), buf),
                 Number::U16(i) => <i16 as Encode<'_, Postgres>>::encode_by_ref(&(i as i16), buf),
-                Number::U32(i) => <u32 as Encode<'_, Postgres>>::encode_by_ref(&i, buf),
+                Number::U32(i) => <i32 as Encode<'_, Postgres>>::encode_by_ref(&(i as i32), buf),
                 Number::U64(i) => <i64 as Encode<'_, Postgres>>::encode_by_ref(&(i as i64), buf),
                 Number::U128(i) => {
                     <sqlx::types::Decimal as Encode<'_, Postgres>>::encode_by_ref(&i.into(), buf)
@@ -409,7 +500,10 @@ impl Encode<'_, Postgres> for Value {
                 json::synth_val_to_json(self.clone()),
                 buf,
             ),
-            Value::Array(arr) => arr.encode_by_ref(buf), //TODO special-case for BYTEA
+            Value::Array(_) => {
+                let s = self.to_postgres_string();
+                <String as Encode<'_, Postgres>>::encode_by_ref(&s, buf)
+            } //TODO special-case for BYTEA
         }
     }
 }

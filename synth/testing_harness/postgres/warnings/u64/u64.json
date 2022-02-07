@@ -1,0 +1,26 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "def": {
+            "type": "hidden",
+            "content": {
+                "type": "number",
+                "subtype": "u64",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "int2": "@u64.content.def",
+        "int4": "@u64.content.def",
+        "int8": "@u64.content.def",
+        "smallint": "@u64.content.def",
+        "int": "@u64.content.def",
+        "integer": "@u64.content.def",
+        "bigint": "@u64.content.def"
+    },
+    "length": 1
+}

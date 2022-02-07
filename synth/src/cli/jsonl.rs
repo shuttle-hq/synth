@@ -8,6 +8,7 @@ use synth_core::Content;
 
 use anyhow::{Context, Result};
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::io::{BufRead, Write};
@@ -35,11 +36,12 @@ impl ExportStrategy for JsonLinesFileExportStrategy {
 }
 
 #[derive(Clone, Debug)]
-pub struct JsonLinesStdoutExportStrategy {
+pub struct JsonLinesStdoutExportStrategy<W> {
     pub collection_field_name: String,
+    pub writer: RefCell<W>,
 }
 
-impl ExportStrategy for JsonLinesStdoutExportStrategy {
+impl<W: Write> ExportStrategy for JsonLinesStdoutExportStrategy<W> {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let generator = Sampler::try_from(&params.namespace)?;
         let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
@@ -47,7 +49,7 @@ impl ExportStrategy for JsonLinesStdoutExportStrategy {
         // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
 
         for line in json_lines_from_sampler_output(output.clone(), &self.collection_field_name) {
-            println!("{}", line);
+            writeln!(self.writer.borrow_mut(), "{}", line).expect("failed to write jsonl line");
         }
 
         Ok(output)

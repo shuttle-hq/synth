@@ -67,3 +67,5 @@ jobs:
         working-directory: synth/testing_harness/mysql
       - run: ./e2e.sh test-import
         working-directory: synth/testing_harness/mysql
+      - run: ./e2e.sh test-warnings
+        working-directory: synth/testing_harness/mysql

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -uo pipefail
 
@@ -11,7 +11,7 @@ then
 fi
 
 SYNTH="synth"
-[ "${CI-false}" == "true" ] || SYNTH="cargo run --bin synth"
+[ "${CI-false}" == "true" ] || SYNTH="cargo run --quiet --bin synth"
 
 ERROR='\033[0;31m'
 INFO='\033[0;36m'
@@ -25,6 +25,8 @@ commands:
   load-schema [--no-data]|Fills DB with test schema - defaults to loading data too
   test-generate|Test generating data to mysql
   test-import|Test importing from mysql data
+  test-warnings|Test all warnings
+  test-warning <warning>|Test a specific warning
   test-local|Run all test on a local machine using the container from 'up' (no need to call 'up' first)
   up|Starts a local Docker instance for testing
   down|Stops container started with 'up'
@@ -54,12 +56,40 @@ function test-import() {
   diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || { echo -e "${ERROR}Import namespaces do not match${NC}"; return 1; }
 }
 
+function test-warnings() {
+  result=0
+  for d in warnings/*/
+  do
+    test-warning $d || result=$?
+  done
+}
+
+function test-warning() {
+  folder=$1
+
+  echo -e "${INFO}[$folder] Testing warning${NC}"
+
+  docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P 3306 "test_db" < "$folder/schema.sql"
+  output=$($SYNTH generate --size 10 --to $SCHEME://root:${PASSWORD}@127.0.0.1:${PORT}/test_db "$folder" 2>&1)
+  warnings=$(echo "$output" | grep "WARN" | grep -Po "(?<=\]\s).*$")
+
+  if [ -z "$warnings" ]
+  then
+    echo -e "${ERROR}[$folder] did not produce any warnings${NC}"
+    echo -e "${DEBUG}$output${NC}"
+    return 1
+  fi
+
+  diff <(echo "$warnings") "$folder/warnings.txt" || { echo -e "${ERROR}[$folder] warnings do not match${NC}"; return 1; }
+}
+
 function test-local() {
   up || return 1
 
   result=0
   test-generate || result=$?
   test-import || result=$?
+  test-warnings || result=$?
 
   down
   cleanup
@@ -88,6 +118,7 @@ function up() {
 function down() {
   echo -e "${DEBUG}Stopping container${NC}"
   docker stop $NAME > /dev/null
+  docker rm $NAME > /dev/null
 }
 
 function cleanup() {
@@ -105,6 +136,12 @@ case "${1-*}" in
     ;;
   test-import)
     test-import || exit 1
+    ;;
+  test-warnings)
+    test-warnings || exit 1
+    ;;
+  test-warning)
+    test-warning "warnings/$2" || exit 1
     ;;
   test-local)
     test-local || exit 1

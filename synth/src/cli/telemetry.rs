@@ -14,8 +14,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use uuid::Uuid;
 
-use crate::cli::config;
 use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::{config, GenerateCommand, ImportCommand};
 use crate::sampler::SamplerOutput;
 use crate::utils::META_OS;
 use crate::version::version;
@@ -92,24 +92,28 @@ fn send_panic_report(synth_command: &str, telemetry_client: &TelemetryClient) {
 pub(crate) fn enable() -> Result<()> {
     // Initialise the `uuid` if it hasn't been initialised yet.
     let _ = get_or_initialise_uuid();
-    config::set_telemetry_enabled(true);
-    Ok(())
+    config::set_telemetry_enabled(true)
 }
 
 pub(crate) fn disable() -> Result<()> {
-    config::set_telemetry_enabled(false);
-    Ok(())
+    config::set_telemetry_enabled(false)
 }
 
 pub(crate) fn is_enabled() -> bool {
     config::get_telemetry_enabled().unwrap_or(false)
 }
 
-fn get_or_initialise_uuid() -> String {
-    if config::get_uuid().is_none() {
-        config::set_uuid(Uuid::new_v4().to_hyphenated().to_string());
+fn get_or_initialise_uuid() -> Result<String> {
+    // Return uuid id if it is already set
+    if let Some(uuid) = config::get_uuid() {
+        return Ok(uuid);
     }
-    config::get_uuid().expect("is ok here as was set earlier")
+
+    // Make new uuid
+    let uuid = Uuid::new_v4().to_hyphenated().to_string();
+    config::set_uuid(uuid.clone())?;
+
+    Ok(uuid)
 }
 
 #[derive(Clone)]
@@ -196,13 +200,16 @@ impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
     }
 }
 
-pub(super) struct TelemetryExportStrategy {
-    exporter: Box<dyn ExportStrategy>,
+pub(super) struct TelemetryExportStrategy<'w> {
+    exporter: Box<dyn ExportStrategy + 'w>,
     telemetry_context: Rc<RefCell<TelemetryContext>>,
 }
 
-impl TelemetryExportStrategy {
-    pub fn new(strategy: Box<dyn ExportStrategy>, context: Rc<RefCell<TelemetryContext>>) -> Self {
+impl<'w> TelemetryExportStrategy<'w> {
+    pub fn new(
+        strategy: Box<dyn ExportStrategy + 'w>,
+        context: Rc<RefCell<TelemetryContext>>,
+    ) -> Self {
         TelemetryExportStrategy {
             exporter: strategy,
             telemetry_context: context,
@@ -265,7 +272,7 @@ impl TelemetryExportStrategy {
     }
 }
 
-impl ExportStrategy for TelemetryExportStrategy {
+impl<'w> ExportStrategy for TelemetryExportStrategy<'w> {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         Self::fill_telemetry_pre(
             Rc::clone(&self.telemetry_context),
@@ -315,10 +322,10 @@ where
     };
 
     let integration = match &args {
-        Args::Generate { to: uri_string, .. }
-        | Args::Import {
+        Args::Generate(GenerateCommand { to: uri_string, .. })
+        | Args::Import(ImportCommand {
             from: uri_string, ..
-        } => uriparse::URI::try_from(uri_string.as_str())
+        }) => uriparse::URI::try_from(uri_string.as_str())
             .map(|uri| uri.scheme().to_string())
             .ok(),
         _ => None,
@@ -388,7 +395,11 @@ impl TelemetryClient {
 
         Self {
             ph_client: posthog_rs::client(API_KEY),
-            uuid: get_or_initialise_uuid(),
+            uuid: get_or_initialise_uuid().unwrap_or_else(|error| {
+                error
+                    .context("failed to get uuid for telemetry")
+                    .to_string()
+            }),
             synth_version,
             os,
         }

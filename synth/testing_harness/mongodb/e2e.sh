@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -uo pipefail
 
@@ -11,7 +11,7 @@ then
 fi
 
 SYNTH="synth"
-[ "${CI-false}" == "true" ] || SYNTH="cargo run --bin synth"
+[ "${CI-false}" == "true" ] || SYNTH="cargo run --quiet --bin synth"
 
 COLLECTIONS=(hospitals doctors patients)
 
@@ -109,6 +109,7 @@ function up() {
 function down() {
   echo -e "${DEBUG}Stopping container${NC}"
   docker stop $NAME > /dev/null
+  docker rm $NAME > /dev/null
 }
 
 function cleanup() {

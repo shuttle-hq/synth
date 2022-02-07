@@ -10,7 +10,7 @@ const DEFAULT_INSERT_BATCH_SIZE: usize = 1000;
 
 //TODO: Remove this once https://github.com/rust-lang/rust/issues/88900 gets fixed
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnInfo {
     pub(crate) column_name: String,
     pub(crate) ordinal_position: i32,
@@ -46,6 +46,8 @@ pub struct ValueWrapper(pub(crate) Value);
 pub trait RelationalDataSource: DataSource {
     type QueryResult: Send + Sync;
 
+    const IDENTIFIER_QUOTE: char;
+
     async fn insert_relational_data(
         &self,
         collection_name: &str,
@@ -71,18 +73,28 @@ pub trait RelationalDataSource: DataSource {
                 match (value, &*column_info.data_type) {
                     (
                         Value::Number(Number::U64(_)),
-                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
+                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
                     ) => warn!(
                         "Trying to put an unsigned u64 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
                     (
                         Value::Number(Number::U32(_)),
-                        "int2" | "int4" | "int8" | "int" | "integer" | "smallint" | "bigint",
+                        "int2" | "int4" | "int8" | "smallint" | "int" | "bigint",
                     ) => warn!(
                         "Trying to put an unsigned u32 into a {} typed column {}.{}",
                         column_info.data_type, collection_name, column_info.column_name
                     ),
+                    (Value::Number(Number::I64(_)), "int2" | "int4" | "smallint" | "int") => warn!(
+                        "Trying to put a signed i64 into a {} typed column {}.{}",
+                        column_info.data_type, collection_name, column_info.column_name
+                    ),
+                    (Value::Number(Number::I32(_)), "int2" | "int8" | "smallint" | "bigint") => {
+                        warn!(
+                            "Trying to put a signed i32 into a {} typed column {}.{}",
+                            column_info.data_type, collection_name, column_info.column_name
+                        )
+                    }
                     //TODO: More variants
                     _ => {}
                 }
@@ -91,7 +103,7 @@ pub trait RelationalDataSource: DataSource {
 
         let column_names = first_valueset
             .keys()
-            .cloned()
+            .map(|k| format!("{}{}{}", Self::IDENTIFIER_QUOTE, k, Self::IDENTIFIER_QUOTE))
             .collect::<Vec<String>>()
             .join(",");
 
@@ -111,10 +123,10 @@ pub trait RelationalDataSource: DataSource {
                     .as_object()
                     .expect("This is always an object (sampler contract)");
 
-                let extend = row_obj.values().len();
-                Self::extend_parameterised_query(&mut query, curr_index, extend);
-                curr_index += extend;
-                query_params.extend(row_obj.values());
+                let mut curr_query_params: Vec<Value> = row_obj.values().cloned().collect();
+                Self::extend_parameterised_query(&mut query, curr_index, curr_query_params.clone());
+                curr_index += curr_query_params.len();
+                query_params.append(&mut curr_query_params);
 
                 if i == rows.len() - 1 {
                     query.push_str(";\n");
@@ -139,7 +151,7 @@ pub trait RelationalDataSource: DataSource {
     async fn execute_query(
         &self,
         query: String,
-        query_params: Vec<&Value>,
+        query_params: Vec<Value>,
     ) -> Result<Self::QueryResult>;
 
     async fn get_table_names(&self) -> Result<Vec<String>>;
@@ -157,5 +169,5 @@ pub trait RelationalDataSource: DataSource {
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 
     // Returns extended query string + current index
-    fn extend_parameterised_query(query: &mut String, curr_index: usize, extend: usize);
+    fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>);
 }

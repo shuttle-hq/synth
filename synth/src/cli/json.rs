@@ -7,7 +7,9 @@ use synth_core::Content;
 
 use anyhow::{Context, Result};
 
+use std::cell::RefCell;
 use std::convert::TryFrom;
+use std::io::Write;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -27,14 +29,17 @@ impl ExportStrategy for JsonFileExportStrategy {
 }
 
 #[derive(Clone, Debug)]
-pub struct JsonStdoutExportStrategy;
+pub struct JsonStdoutExportStrategy<W> {
+    pub writer: RefCell<W>,
+}
 
-impl ExportStrategy for JsonStdoutExportStrategy {
+impl<W: Write> ExportStrategy for JsonStdoutExportStrategy<W> {
     fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
         let generator = Sampler::try_from(&params.namespace)?;
         let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
 
-        println!("{}", output.clone().into_json());
+        writeln!(self.writer.borrow_mut(), "{}", output.clone().into_json())
+            .expect("failed to write json output");
 
         Ok(output)
     }

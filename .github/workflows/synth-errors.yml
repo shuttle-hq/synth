@@ -1,16 +1,20 @@
-name: synth-test-examples
+name: synth-errors
 
 on:
+  push:
+    branches: [master]
+    paths: ["**/*.rs", "synth/testing_harness/errors/**"]
   pull_request:
-    branches:
-      - master
+    branches: [master]
+    paths: ["**/*.rs", "synth/testing_harness/errors/**"]
+
   workflow_dispatch:
 
 env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  test_examples:
+  e2e_tests_postgres:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,5 +22,5 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
-      - run: |
-          bash "${GITHUB_WORKSPACE}/.github/workflows/scripts/test_examples.sh" ${GITHUB_WORKSPACE}/examples/bank
+      - run: ./e2e.sh
+        working-directory: synth/testing_harness/errors

@@ -163,7 +163,7 @@ impl Serialize for FakerContentArgument {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Clone, PartialEq, Hash)]
 pub struct FakerContent {
     pub generator: String,
     /// deprecated: Use FakerArgs::locale instead
@@ -177,6 +177,72 @@ pub struct FakerContent {
 impl FakerContent {
     fn kind(&self) -> String {
         self.generator.to_string()
+    }
+}
+
+impl<'de> Deserialize<'de> for FakerContent {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Generator,
+            Locales,
+            #[serde(other)]
+            Unknown,
+        }
+        struct FakerVisitor;
+
+        impl<'de> Visitor<'de> for FakerVisitor {
+            type Value = FakerContent;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("'generator'")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut generator = None;
+                let mut args = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Generator => {
+                            if generator.is_some() {
+                                return Err(A::Error::duplicate_field("generator"));
+                            }
+                            generator = Some(map.next_value()?);
+                        }
+                        Field::Locales => {
+                            if args.is_some() {
+                                return Err(A::Error::duplicate_field("locales"));
+                            }
+                            args = Some(map.next_value()?);
+                        }
+                        Field::Unknown => {}
+                    }
+                }
+                let generator = generator.ok_or_else(|| A::Error::missing_field("generator"))?;
+                let args = args.unwrap_or_default();
+                Ok(FakerContent {
+                    generator,
+                    args,
+                    locales: Vec::new(),
+                })
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Err(E::custom(format!("`faker` is expected to have a `generator` field. Try '\"faker\": {{\"generator\": \"{}\"}}'", v)))
+            }
+        }
+
+        deserializer.deserialize_any(FakerVisitor)
     }
 }
 
@@ -288,5 +354,21 @@ impl Compile for StringContent {
             StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
         Ok(Graph::String(string_node))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::schema::content::Content;
+
+    #[test]
+    #[should_panic(
+        expected = "`faker` is expected to have a `generator` field. Try '\\\"faker\\\": {\\\"generator\\\": \\\"lastname\\\"}'"
+    )]
+    fn faker_missing_generator() {
+        let _schema: Content = schema!({
+            "type": "string",
+            "faker": "lastname"
+        });
     }
 }

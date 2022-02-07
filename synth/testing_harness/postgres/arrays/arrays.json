@@ -1,0 +1,468 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "boolean_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "bool",
+                "frequency": 0.5
+            }
+        },
+        "char_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "pattern": "[a-z]"
+            }
+        },
+        "varchar_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "faker": {
+                    "generator": "company_name"
+                }
+            }
+        },
+        "text_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "faker": {
+                    "generator": "name"
+                }
+            }
+        },
+        "bpchar_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "faker": {
+                    "generator": "title"
+                }
+            }
+        },
+        "name_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "string",
+                "faker": {
+                    "generator": "username"
+                }
+            }
+        },
+        "int2_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "int4_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "int8_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "i64",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "numeric_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "uint2_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "uint4_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u32",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "uint8_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "u64",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 1
+                }
+            }
+        },
+        "unumeric_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "low": 0,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "float4_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f32",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "float8_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "low": -32766,
+                    "high": 32767,
+                    "step": 0.01
+                }
+            }
+        },
+        "int_array_2d": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 8,
+                    "step": 1
+                },
+                "subtype": "u64"
+            },
+            "content": {
+                "type": "array",
+                "length": 8,
+                "content": {
+                    "type": "number",
+                    "subtype": "i32",
+                    "range": {
+                        "low": -32768,
+                        "high": 32767,
+                        "step": 1
+                    }
+                }
+            }
+        },
+        "timestamp_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "date_time",
+                "format": "%Y-%m-%dT%H:%M:%S",
+                "subtype": "naive_date_time",
+                "begin": "2015-01-01T00:00:00",
+                "end": "2020-01-01T12:00:00"
+            }
+        },
+        "timestamptz_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "date_time",
+                "format": "%Y-%m-%dT%H:%M:%S%z",
+                "subtype": "date_time",
+                "begin": "2015-01-01T00:00:00+0000",
+                "end": "2020-01-01T12:00:00+0000"
+            }
+        },
+        "date_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "date_time",
+                "format": "%Y-%m-%d",
+                "subtype": "naive_date",
+                "begin": "2015-01-01",
+                "end": "2020-01-01"
+            }
+        },
+        "time_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "date_time",
+                "format": "%H:%M:%S",
+                "subtype": "naive_time",
+                "begin": "00:00:00",
+                "end": "23:00:00"
+            }
+        },
+        "json_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "object",
+                "username": {
+                    "type": "string",
+                    "faker": {
+                        "generator": "username"
+                    }
+                },
+                "scores": {
+                    "type": "array",
+                    "length": 5,
+                    "content": {
+                        "type": "number",
+                        "subtype": "u32",
+                        "range": {
+                            "low": 0,
+                            "high": 100,
+                            "step": 1
+                        }
+                    }
+                }
+            }
+        },
+        "jsonb_array": {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "range": {
+                    "low": 1,
+                    "high": 10,
+                    "step": 1
+                }
+            },
+            "content": {
+                "type": "object",
+                "username": {
+                    "type": "string",
+                    "faker": {
+                        "generator": "username"
+                    }
+                },
+                "scores": {
+                    "type": "array",
+                    "length": 5,
+                    "content": {
+                        "type": "number",
+                        "subtype": "u32",
+                        "range": {
+                            "low": 0,
+                            "high": 100,
+                            "step": 1
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "length": 10
+}

@@ -8,7 +8,8 @@ create table hospitals
 (
     id            int primary key,
     hospital_name varchar(255),
-    address       varchar(255)
+    address       varchar(255),
+    specialities  varchar(255)[]
 );
 
 create table doctors
