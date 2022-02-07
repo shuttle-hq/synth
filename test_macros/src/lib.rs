@@ -54,6 +54,7 @@ impl IgnoreInput {
                     path_ident: path
                         .replace('.', "_dot_")
                         .replace('/', "_")
+                        .replace("\\", "_")
                         .replace('-', "_")
                         .to_lowercase(),
                 }
