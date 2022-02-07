@@ -169,5 +169,6 @@ pub trait RelationalDataSource: DataSource {
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content>;
 
     // Returns extended query string + current index
+    #[allow(clippy::ptr_arg)]
     fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>);
 }

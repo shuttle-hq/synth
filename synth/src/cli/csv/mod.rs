@@ -148,6 +148,7 @@ pub fn import_csv_collection(
         .map(|res| res.map(|record| csv_record_to_value(&record, &headers)))
         .collect::<csv::Result<Result<Vec<serde_json::Value>>>>()??;
 
+    #[allow(clippy::needless_borrow)]
     let mut content = Content::new_collection((&head).into());
 
     let mut values = vec![head];
