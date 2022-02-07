@@ -374,13 +374,6 @@ derive_hash!(i32, u32, i64, u64, f32, f64);
 
 number_content!(
     #[derive(PartialEq, Hash)]
-    u64[is_u64, default_u64_range] as U64 {
-        Range(RangeStep<u64>),
-        Categorical(Categorical<u64>),
-        Constant(u64),
-        Id(crate::schema::Id<u64>),
-    },
-    #[derive(PartialEq, Hash)]
     u32[is_u32, default_u32_range] as U32 {
         Range(RangeStep<u32>),
         Categorical(Categorical<u32>),
@@ -388,11 +381,11 @@ number_content!(
         Id(crate::schema::Id<u32>),
     },
     #[derive(PartialEq, Hash)]
-    i64[is_i64, default_i64_range] as I64 {
-        Range(RangeStep<i64>),
-        Categorical(Categorical<i64>),
-        Constant(i64),
-        Id(crate::schema::Id<i64>),
+    u64[is_u64, default_u64_range] as U64 {
+        Range(RangeStep<u64>),
+        Categorical(Categorical<u64>),
+        Constant(u64),
+        Id(crate::schema::Id<u64>),
     },
     #[derive(PartialEq, Hash)]
     i32[is_i32, default_i32_range] as I32 {
@@ -400,6 +393,13 @@ number_content!(
         Categorical(Categorical<i32>),
         Constant(i32),
         Id(crate::schema::Id<i32>),
+    },
+    #[derive(PartialEq, Hash)]
+    i64[is_i64, default_i64_range] as I64 {
+        Range(RangeStep<i64>),
+        Categorical(Categorical<i64>),
+        Constant(i64),
+        Id(crate::schema::Id<i64>),
     },
     f64[is_f64, default_f64_range] as F64 {
         Range(RangeStep<f64>),
