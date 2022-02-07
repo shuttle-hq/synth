@@ -167,7 +167,7 @@ impl<'w> Cli {
     }
 
     fn generate<W: Write + 'w>(&self, cmd: GenerateCommand, writer: W) -> Result<()> {
-        let namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
+        let namespace = self.store.read_ns(cmd.namespace.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
             cmd.namespace
                 .to_str()

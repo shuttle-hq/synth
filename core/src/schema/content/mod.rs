@@ -61,6 +61,9 @@ pub use unique::{UniqueAlgorithm, UniqueContent};
 pub mod hidden;
 pub use hidden::HiddenContent;
 
+pub mod datasource;
+pub use datasource::DatasourceContent;
+
 use prelude::*;
 
 use super::FieldRef;
