@@ -1,0 +1,23 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "def": {
+            "type": "hidden",
+            "content": {
+                "type": "number",
+                "subtype": "f64",
+                "range": {
+                    "low": 0.25,
+                    "high": 32767.325,
+                    "step": 0.05
+                }
+            }
+        },
+        "float4": "@f64.content.def",
+        "float8": "@f64.content.def",
+        "real": "@f64.content.def",
+        "double_precision": "@f64.content.def"
+    },
+    "length": 1
+}

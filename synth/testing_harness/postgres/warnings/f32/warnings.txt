@@ -1,0 +1,2 @@
+Trying to put a f32 into a float8 typed column f32.float8
+Trying to put a f32 into a float8 typed column f32.double_precision
