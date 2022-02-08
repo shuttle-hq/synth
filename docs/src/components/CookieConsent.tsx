@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getCookie, setCookie } from "../lib/helpers";
 
 const CookieConsent = () => {
@@ -29,16 +28,11 @@ const CookieConsent = () => {
               and for security and marketing. By visiting our website you agree
               to our use of cookies.{" "}
               <strong>
-                <a href="/privacy">
-                  *Read more about cookies*
-                </a>
+                <a href="/privacy">*Read more about cookies*</a>
               </strong>
             </div>
             <div className="cookie-consent-action">
-              <button
-                className="cookie-consent-button"
-                onClick={handleAccept}
-              >
+              <button className="cookie-consent-button" onClick={handleAccept}>
                 I Accept
               </button>
             </div>
