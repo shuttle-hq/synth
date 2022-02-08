@@ -7,7 +7,9 @@ use crate::cli::postgres::PostgresExportStrategy;
 
 use anyhow::{Context, Result};
 
+use std::cell::RefCell;
 use std::convert::TryFrom;
+use std::io::Write;
 use std::path::PathBuf;
 
 use crate::datasource::DataSource;
@@ -30,10 +32,38 @@ pub struct ExportParams {
     pub ns_path: PathBuf,
 }
 
-impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
+pub(crate) struct ExportStrategyBuilder<'a, W> {
+    params: DataSourceParams<'a>,
+    writer: W,
+}
+
+impl<'a> TryFrom<DataSourceParams<'a>> for ExportStrategyBuilder<'a, std::io::Stdout> {
     type Error = anyhow::Error;
 
-    fn try_from(params: DataSourceParams) -> Result<Self, Self::Error> {
+    fn try_from(params: DataSourceParams<'a>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            params,
+            writer: std::io::stdout(),
+        })
+    }
+}
+
+impl<'a, W> ExportStrategyBuilder<'a, W> {
+    pub fn set_writer<N>(self, writer: N) -> ExportStrategyBuilder<'a, N> {
+        ExportStrategyBuilder {
+            params: self.params,
+            writer,
+        }
+    }
+}
+
+impl<'a, 'w, W> ExportStrategyBuilder<'a, W>
+where
+    W: Write + 'w,
+{
+    pub fn build(self) -> Result<Box<dyn ExportStrategy + 'w>> {
+        let Self { params, writer } = self;
+
         // Due to all the schemes used, with the exception of 'mongodb', being non-standard (including 'postgres' and
         // 'mysql' suprisingly) it seems simpler to just match based on the scheme string instead of on enum variants.
         let scheme = params.uri.scheme().as_str().to_lowercase();
@@ -52,7 +82,9 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
             }),
             "json" => {
                 if params.uri.path() == "" {
-                    Box::new(JsonStdoutExportStrategy)
+                    Box::new(JsonStdoutExportStrategy {
+                        writer: RefCell::new(writer),
+                    })
                 } else {
                     Box::new(JsonFileExportStrategy {
                         from_file: PathBuf::from(params.uri.path().to_string()),
@@ -68,6 +100,7 @@ impl TryFrom<DataSourceParams<'_>> for Box<dyn ExportStrategy> {
                 if params.uri.path() == "" {
                     Box::new(JsonLinesStdoutExportStrategy {
                         collection_field_name,
+                        writer: RefCell::new(writer),
                     })
                 } else {
                     Box::new(JsonLinesFileExportStrategy {
@@ -100,29 +133,32 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
     datasource: &T,
 ) -> Result<SamplerOutput> {
     let sampler = Sampler::try_from(&params.namespace)?;
-    let values =
+    let sample =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-    match &values {
-        SamplerOutput::Collection(name, collection) => {
-            insert_data(datasource, name.as_ref(), collection)
+    match sample.clone() {
+        SamplerOutput::Collection(name, value) => {
+            insert_data(datasource, name.as_ref(), value)?;
         }
-        SamplerOutput::Namespace(ref namespace) => {
-            for (name, collection) in namespace {
-                insert_data(datasource, name, collection)?;
+        SamplerOutput::Namespace(namespace) => {
+            for (name, value) in namespace.into_iter() {
+                insert_data(datasource, name.as_ref(), value)?;
             }
-            Ok(())
         }
-    }?;
+    };
 
-    Ok(values)
+    Ok(sample)
 }
 
 fn insert_data<T: DataSource>(
     datasource: &T,
     collection_name: &str,
-    collection: &[Value],
+    collection: Value,
 ) -> Result<()> {
-    task::block_on(datasource.insert_data(collection_name, collection))
+    let to_insert = match collection {
+        Value::Array(elems) => elems,
+        non_array => vec![non_array],
+    };
+    task::block_on(datasource.insert_data(collection_name, &to_insert[..]))
         .with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }

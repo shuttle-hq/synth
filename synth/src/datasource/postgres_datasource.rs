@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, ValueWrapper,
+    insert_relational_data, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -8,7 +8,7 @@ use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::postgres::{PgColumn, PgPoolOptions, PgQueryResult, PgRow, PgTypeInfo, PgTypeKind};
+use sqlx::postgres::{PgColumn, PgPoolOptions, PgRow, PgTypeInfo, PgTypeKind};
 use sqlx::{Column, Executor, Pool, Postgres, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -82,8 +82,7 @@ impl DataSource for PostgresDataSource {
     }
 
     async fn insert_data(&self, collection_name: &str, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection)
-            .await
+        insert_relational_data(self, collection_name, collection).await
     }
 }
 
@@ -114,79 +113,42 @@ impl PostgresDataSource {
 }
 
 #[async_trait]
-impl RelationalDataSource for PostgresDataSource {
-    type QueryResult = PgQueryResult;
+impl SqlxDataSource for PostgresDataSource {
+    type DB = Postgres;
+    type Arguments = sqlx::postgres::PgArguments;
+    type Connection = sqlx::postgres::PgConnection;
+
     const IDENTIFIER_QUOTE: char = '\"';
 
-    async fn execute_query(
-        &self,
-        query: String,
-        query_params: Vec<Value>,
-    ) -> Result<PgQueryResult> {
-        let mut query = sqlx::query(query.as_str());
-
-        for param in query_params {
-            query = query.bind(param);
-        }
-
-        let result = query.execute(&self.pool).await?;
-
-        Ok(result)
+    fn get_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.single_thread_pool)
     }
 
-    async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query = r"SELECT table_name
+    fn get_multithread_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.pool)
+    }
+
+    fn query<'q>(&self, query: &'q str) -> sqlx::query::Query<'q, Self::DB, Self::Arguments> {
+        sqlx::query(query).bind(self.schema.clone())
+    }
+
+    fn get_table_names_query(&self) -> &str {
+        r"SELECT table_name
         FROM information_schema.tables
         WHERE table_catalog = current_catalog
         AND table_schema = $1
-        AND table_type = 'BASE TABLE'";
-
-        let tables = sqlx::query(query)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .iter()
-            .map(|row| row.try_get(0).map_err(|e| anyhow!("{:?}", e)))
-            .collect();
-
-        tables
+        AND table_type = 'BASE TABLE'"
     }
 
-    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query = r"SELECT column_name, ordinal_position, is_nullable, udt_name,
-        character_maximum_length, data_type
-        FROM information_schema.columns
-        WHERE table_name = $1
-        AND table_schema = $2
-        AND table_catalog = current_catalog";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ColumnInfo::try_from)
-            .collect()
-    }
-
-    async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        let query = r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+    fn get_primary_keys_query(&self) -> &str {
+        r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
         FROM pg_index i
         JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-        WHERE  i.indrelid = cast($1 as regclass) AND i.indisprimary";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(PrimaryKey::try_from)
-            .collect()
+        WHERE  i.indrelid = cast($2 as regclass) AND i.indisprimary"
     }
 
-    async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str = r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name,
+    fn get_foreign_keys_query(&self) -> &str {
+        r"SELECT tc.table_name, kcu.column_name, ccu.table_name AS foreign_table_name,
             ccu.column_name AS foreign_column_name
             FROM information_schema.table_constraints AS tc
             JOIN information_schema.key_column_usage AS kcu
@@ -195,15 +157,7 @@ impl RelationalDataSource for PostgresDataSource {
             ON ccu.constraint_name = tc.constraint_name
             WHERE constraint_type = 'FOREIGN KEY'
             and tc.table_schema = $1
-            and tc.table_catalog = current_catalog";
-
-        sqlx::query(query)
-            .bind(self.schema.clone())
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ForeignKey::try_from)
-            .collect()
+            and tc.table_catalog = current_catalog"
     }
 
     /// Must use the singled threaded pool when setting this in conjunction with random, called by
@@ -215,24 +169,8 @@ impl RelationalDataSource for PostgresDataSource {
         Ok(())
     }
 
-    /// Must use the singled threaded pool when setting this in conjunction with setseed, called by
-    /// [set_seed]. Otherwise, expect big regrets :(
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
-        let query: &str = &format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name);
-
-        sqlx::query(query)
-            .fetch_all(&self.single_thread_pool)
-            .await?
-            .into_iter()
-            .map(ValueWrapper::try_from)
-            .map(|v| match v {
-                Ok(wrapper) => Ok(wrapper.0),
-                Err(e) => bail!(
-                    "Failed to convert to value wrapper from query results: {:?}",
-                    e
-                ),
-            })
-            .collect()
+    fn get_deterministic_samples_query(&self, table_name: String) -> String {
+        format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name)
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
@@ -311,30 +249,30 @@ impl RelationalDataSource for PostgresDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(query: &mut String, curr_index: usize, query_params: Vec<Value>) {
-        let extend = query_params.len();
-
-        query.push('(');
-        for (i, param) in query_params.iter().enumerate() {
-            let extra = if let Value::Array(_) = param {
-                let (typ, depth) = param.get_postgres_type();
-                if typ == "unknown" {
-                    "".to_string() // This is currently not supported
-                } else if typ == "jsonb" {
-                    "::jsonb".to_string() // Cannot have an array of jsonb - ie jsonb[]
-                } else {
-                    format!("::{}{}", typ, "[]".repeat(depth))
-                }
+    fn get_function_argument_placeholder(current: usize, index: usize, value: &Value) -> String {
+        let extra = if let Value::Array(_) = value {
+            let (typ, depth) = value.get_postgres_type();
+            if typ == "unknown" {
+                "".to_string() // This is currently not supported
+            } else if typ == "jsonb" {
+                "::jsonb".to_string() // Cannot have an array of jsonb - ie jsonb[]
             } else {
-                "".to_string()
-            };
-
-            query.push_str(&format!("${}{}", curr_index + i + 1, extra));
-            if i != extend - 1 {
-                query.push(',');
+                format!("::{}{}", typ, "[]".repeat(depth))
             }
-        }
-        query.push(')');
+        } else {
+            "".to_string()
+        };
+
+        format!("${}{}", current + index + 1, extra)
+    }
+
+    fn get_columns_info_query(&self) -> &str {
+        r"SELECT column_name, ordinal_position, is_nullable, udt_name,
+        character_maximum_length, data_type
+        FROM information_schema.columns
+        WHERE table_name = $2
+        AND table_schema = $1
+        AND table_catalog = current_catalog"
     }
 }
 

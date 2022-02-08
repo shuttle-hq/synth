@@ -19,8 +19,5 @@
         "integer": "@u32.content.def",
         "bigint": "@u32.content.def"
     },
-    "length": {
-        "type": "number",
-        "constant": 1
-    }
+    "length": 1
 }
