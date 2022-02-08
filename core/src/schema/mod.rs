@@ -15,9 +15,6 @@ pub use inference::{MergeStrategy, OptionalMergeStrategy, ValueMergeStrategy};
 
 pub mod optionalise;
 
-pub mod namespace;
-pub use namespace::Namespace;
-
 pub mod content;
 pub use content::*;
 
@@ -447,11 +444,11 @@ pub mod tests {
     }
 
     lazy_static! {
-        pub static ref USER_NAMESPACE: Namespace = {
-            let mut n = Namespace::new();
-            n.put_collection("users".to_string(), USER_SCHEMA.clone())
+        pub static ref USER_NAMESPACE: Content = {
+            let mut c = Content::new_object();
+            c.put_collection("users".to_string(), USER_SCHEMA.clone())
                 .unwrap();
-            n
+            c
         };
     }
 }

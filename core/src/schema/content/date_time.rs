@@ -354,7 +354,7 @@ pub mod tests {
 
             let content = Content::DateTime(unspecified_begin_end);
 
-            let compiler = NamespaceCompiler::new_flat(&content);
+            let compiler = NamespaceCompiler::new(&content);
 
             assert!(compiler.compile().is_ok());
         };
@@ -371,7 +371,7 @@ pub mod tests {
 
             let content = Content::DateTime(unspecified_begin_end);
 
-            let compiler = NamespaceCompiler::new_flat(&content);
+            let compiler = NamespaceCompiler::new(&content);
 
             assert!(compiler.compile().is_err());
         };

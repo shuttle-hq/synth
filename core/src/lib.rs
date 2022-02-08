@@ -69,7 +69,7 @@ macro_rules! generator {
 #[macro_export]
 macro_rules! try_generator {
     { $($inner:tt)* } => {
-        crate::Graph::from_content(&schema!($($inner)*))
+        crate::Graph::try_from(&schema!($($inner)*))
     }
 }
 
@@ -97,7 +97,7 @@ pub use db_utils::DataSourceParams;
 
 #[macro_use]
 pub mod schema;
-pub use schema::{Content, Namespace};
+pub use schema::Content;
 
 pub mod graph;
 pub use graph::{Graph, Value};

@@ -13,7 +13,7 @@ use synth_gen::value::{Token, Tokenizer};
 
 use crate::compile::{Link, NamespaceCompiler};
 
-use crate::schema::{ChronoValueAndFormat, Namespace};
+use crate::schema::ChronoValueAndFormat;
 
 pub mod prelude;
 use prelude::*;
@@ -861,23 +861,21 @@ impl Graph {
         )
     }
 
-    pub fn from_namespace(ns: &Namespace) -> Result<Self> {
-        NamespaceCompiler::new(ns)
-            .compile()
-            .context("cannot compile the namespace")
-    }
-
-    pub fn from_content(content: &Content) -> Result<Self> {
-        NamespaceCompiler::new_flat(content)
-            .compile()
-            .context("cannot compile the schema")
-    }
-
     pub fn iter_ordered(&self) -> Option<impl Iterator<Item = &str>> {
         match self {
             Self::Link(box LinkNode(link, _)) => Some(link.iter_order()?),
             _ => None,
         }
+    }
+}
+
+impl TryFrom<&Content> for Graph {
+    type Error = anyhow::Error;
+
+    fn try_from(namespace: &Content) -> Result<Self> {
+        NamespaceCompiler::new(namespace)
+            .compile()
+            .context("failed to compile namespace")
     }
 }
 
@@ -894,7 +892,7 @@ pub mod tests {
 
     #[test]
     fn schema_to_generator() {
-        let schema: Namespace = schema!({
+        let schema = schema!({
             "type": "object",
             "users": {
                 "type": "array",
@@ -1050,13 +1048,11 @@ pub mod tests {
                     },
                 }
             }
-        })
-        .into_namespace()
-        .unwrap();
+        });
 
         let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
-        let mut model = Graph::from_namespace(&schema)
+        let mut model = Graph::try_from(&schema)
             .unwrap()
             .inspect(|yielded| {
                 println!("{:?}", yielded);
@@ -1167,7 +1163,9 @@ pub mod tests {
 
     #[test]
     fn test_schema_compiles_and_generates() {
-        let mut model = Graph::from_namespace(&USER_NAMESPACE).unwrap().aggregate();
+        let mut model = Graph::try_from(&USER_NAMESPACE.clone())
+            .unwrap()
+            .aggregate();
         let mut rng = rand::thread_rng();
         let ser = OwnedSerializable::new(model.try_next_yielded(&mut rng).unwrap());
         serde_json::to_string_pretty(&ser).unwrap();

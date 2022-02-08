@@ -11,10 +11,10 @@ use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
-    ArrayContent, FieldRef, NumberContent, ObjectContent, OptionalMergeStrategy, RangeStep,
-    SameAsContent, UniqueContent,
+    ArrayContent, FieldRef, MergeStrategy, NumberContent, ObjectContent, OptionalMergeStrategy,
+    RangeStep, SameAsContent, UniqueContent,
 };
-use synth_core::{Content, Namespace};
+use synth_core::Content;
 
 #[derive(Debug)]
 pub(crate) struct Collection {
@@ -26,7 +26,7 @@ struct FieldContentWrapper(Content);
 
 pub(crate) fn build_namespace_import<T: DataSource + SqlxDataSource>(
     datasource: &T,
-) -> Result<Namespace>
+) -> Result<Content>
 where
     T: Sync,
     for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
@@ -41,7 +41,7 @@ where
     let table_names = task::block_on(get_table_names(datasource))
         .with_context(|| "Failed to get table names".to_string())?;
 
-    let mut namespace = Namespace::default();
+    let mut namespace = Content::new_object();
 
     info!("Building namespace collections...");
     populate_namespace_collections(&mut namespace, &table_names, datasource)?;
@@ -79,7 +79,7 @@ where
 }
 
 fn populate_namespace_collections<T: SqlxDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     table_names: &[String],
     datasource: &T,
 ) -> Result<()>
@@ -104,7 +104,7 @@ where
 }
 
 fn populate_namespace_primary_keys<T: SqlxDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     table_names: &[String],
     datasource: &T,
 ) -> Result<()>
@@ -174,7 +174,7 @@ where
 }
 
 fn populate_namespace_foreign_keys<T: SqlxDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     datasource: &T,
 ) -> Result<()>
 where
@@ -213,7 +213,7 @@ where
 }
 
 fn populate_namespace_values<T: SqlxDataSource>(
-    namespace: &mut Namespace,
+    namespace: &mut Content,
     table_names: &[String],
     datasource: &T,
 ) -> Result<()>
@@ -232,7 +232,10 @@ where
             table_name.to_string(),
         ))?;
         let json_values: Vec<Value> = values.into_iter().map(synth_val_to_json).collect();
-        namespace.try_update(OptionalMergeStrategy, table_name, &Value::from(json_values))?;
+        OptionalMergeStrategy.try_merge(
+            namespace.get_collection_mut(table_name)?,
+            &Value::from(json_values),
+        )?;
     }
 
     Ok(())
