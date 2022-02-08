@@ -1,0 +1,1 @@
+Trying to put a f32 into a double typed column f32.double

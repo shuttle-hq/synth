@@ -133,29 +133,32 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
     datasource: &T,
 ) -> Result<SamplerOutput> {
     let sampler = Sampler::try_from(&params.namespace)?;
-    let values =
+    let sample =
         sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-    match &values {
-        SamplerOutput::Collection(name, collection) => {
-            insert_data(datasource, name.as_ref(), collection)
+    match sample.clone() {
+        SamplerOutput::Collection(name, value) => {
+            insert_data(datasource, name.as_ref(), value)?;
         }
-        SamplerOutput::Namespace(ref namespace) => {
-            for (name, collection) in namespace {
-                insert_data(datasource, name, collection)?;
+        SamplerOutput::Namespace(namespace) => {
+            for (name, value) in namespace.into_iter() {
+                insert_data(datasource, name.as_ref(), value)?;
             }
-            Ok(())
         }
-    }?;
+    };
 
-    Ok(values)
+    Ok(sample)
 }
 
 fn insert_data<T: DataSource>(
     datasource: &T,
     collection_name: &str,
-    collection: &[Value],
+    collection: Value,
 ) -> Result<()> {
-    task::block_on(datasource.insert_data(collection_name, collection))
+    let to_insert = match collection {
+        Value::Array(elems) => elems,
+        non_array => vec![non_array],
+    };
+    task::block_on(datasource.insert_data(collection_name, &to_insert[..]))
         .with_context(|| format!("Failed to insert data for collection {}", collection_name))
 }

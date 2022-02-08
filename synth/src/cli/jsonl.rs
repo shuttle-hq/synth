@@ -142,31 +142,33 @@ fn json_lines_from_sampler_output(
         SamplerOutput::Namespace(key_values) => {
             let mut jsonl = Vec::new();
 
-            for (collection, values) in key_values {
-                let lines = values.into_iter().map(|synth_val| {
+            for (collection, value) in key_values {
+                let json_values = synth_val_to_jsonl(value);
+
+                let lines = json_values.into_iter().map(|val| {
                     // When no specific collection to generate data with is specified with --collection,
                     // each output line is labelled to indicate which collection in the namespace it was
                     // generated from.
 
-                    match synth_val {
-                        Value::Object(mut obj_values) => {
+                    match val {
+                        serde_json::Value::Object(mut obj_values) => {
                             // If the collection generates an object, then the collection name is saved directly as
                             // a field of the object.
 
                             obj_values.insert(
                                 collection_field_name.to_string(),
-                                Value::String(collection.clone()),
+                                serde_json::Value::String(collection.clone()),
                             );
 
-                            synth_val_to_json(Value::Object(obj_values))
+                            serde_json::Value::Object(obj_values)
                         }
-                        non_obj_synth_val => {
+                        non_obj_val => {
                             // If the collection does not generate a object, then the output value is an object with
                             // the collection specified as a field, and the generated non-object data as another.
 
                             serde_json::json!({
                                 collection_field_name: collection,
-                                "data": synth_val_to_json(non_obj_synth_val)
+                                "data": non_obj_val
                             })
                         }
                     }
@@ -178,7 +180,14 @@ fn json_lines_from_sampler_output(
             jsonl
         }
 
-        SamplerOutput::Collection(_, values) => values.into_iter().map(synth_val_to_json).collect(),
+        SamplerOutput::Collection(_, value) => synth_val_to_jsonl(value),
+    }
+}
+
+fn synth_val_to_jsonl(val: Value) -> Vec<serde_json::Value> {
+    match val {
+        Value::Array(values) => values.into_iter().map(synth_val_to_json).collect(),
+        non_array => vec![synth_val_to_json(non_array)],
     }
 }
 

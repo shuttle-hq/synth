@@ -1,0 +1,21 @@
+{
+    "type": "array",
+    "content": {
+        "type": "object",
+        "def": {
+            "type": "hidden",
+            "content": {
+                "type": "number",
+                "subtype": "f32",
+                "range": {
+                    "low": 0.25,
+                    "high": 32767.325,
+                    "step": 0.05
+                }
+            }
+        },
+        "float": "@f32.content.def",
+        "double": "@f32.content.def"
+    },
+    "length": 1
+}

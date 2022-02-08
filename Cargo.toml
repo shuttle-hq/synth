@@ -4,7 +4,8 @@ members = [
   "core",
   "node",
   "synth",
-  "dist/playground"
+  "dist/playground",
+  "test_macros"
 ]
 
 # blocked by diesel error for now.

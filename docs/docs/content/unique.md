@@ -36,7 +36,7 @@ By default, the unique generator will give up if it sees the same value more tha
 
 Below is an example of a generator which will fail since the inner generator cannot generate 20 distinct values.
 
-```json synth
+```json synth[expect = "Could not generate enough unique values from generator"]
 {
     "type": "array",
     "length": {
