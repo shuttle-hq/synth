@@ -11,8 +11,15 @@ crate-type = ["cdylib"]
 
 [dependencies]
 synth-core = { path = "../core" }
+synth-gen = { path = "../gen" }
+serde = { version = "1.0", features = ["derive"] }
+rand = "0.8.3"
 
 [dependencies.neon]
 version = "0.9"
 default-features = false
 features = ["napi-6"]
+
+[dependencies.neon-serde]
+git = "https://github.com/brokad/neon-serde.git"
+branch = "refactor/update-neon-0.9"
