@@ -138,7 +138,7 @@ Now comes the fun part! Using Synth's configuration language we can specify how 
 
 To tell Synth that `companies` is a table (or collection in the Synth lingo) we'll create a new file `app/companies.json`.
 
-```json
+```json synth[companies.json]
 {
     "type": "array",
     "length": {
@@ -184,7 +184,7 @@ $ synth generate my_app/ --size 2
 Now we can do the same thing for the `contacts` table by create a file `my_app/contacts.json`. Here we have the added complexity of a foreign key constraints to the company table, but we can solve it easily using Synth's [`same_as`](/docs/content/same-as) generator.
 
 
-```json
+```json synth[contacts.json]
 {
     "type": "array",
     "length": {
@@ -207,7 +207,7 @@ Now we can do the same thing for the `contacts` table by create a file `my_app/c
             "type": "string",
             "faker": {
                 "generator": "phone_number",
-                "locales": ["en_GB"]
+                "locales": ["FR_FR"]
             }
         },
         "email": {
@@ -218,7 +218,7 @@ Now we can do the same thing for the `contacts` table by create a file `my_app/c
         }
     }
 }
-``` 
+```
 
 There is quite a bit going on here - to get an in-depth understanding of the synth configuration refer I'd recommend reading the comprehensive docs. There are tons of cool features which this schema can't really explore!
 
@@ -253,4 +253,4 @@ We explored 3 different ways to generate data.
 - [**Synth**](https://github.com/getsynth/synth): Synth has a small learning curve, but to create realistic testing data at scale it reduces most of the manual labour.
 
 
-In the next post we'll explore how to subset your existing database for testing purposes. And don't worry if you have sensitive / personal data - we'll cover that too. 
+In the next post we'll explore how to subset your existing database for testing purposes. And don't worry if you have sensitive / personal data - we'll cover that too.

@@ -572,7 +572,7 @@ OK, so we now know how to generate the `id` and the `email` properties of
 our [`User` model](#prisma-is-awesome). But we do not yet know how to put them
 together in one object. For that we need the [`object`][synth-object] type:
 
-```json synth
+```json synth[User.json]
 {
     "type": "object",
     "id": {
@@ -597,7 +597,7 @@ the `createdAt` and `nickname` fields.
 
 Here is the finished result for our `User.json` collection:
 
-```json synth
+```json synth[expect = "unknown variant `date_time`"]
 {
     "type": "array",
     "length": 3,
@@ -695,7 +695,7 @@ the `Post.json` collection.
 
 Here is the end result:
 
-```json
+```json synth[expect = "unknown variant `date_time`"]
 {
   "type": "array",
   "length": 5,
@@ -732,7 +732,7 @@ Here is the end result:
 It all looks pretty similar to the `User.json` collection, except for one
 important difference at the line
 
-```json
+```json synth
     "authorId": "@User.content.id"
 ```
 

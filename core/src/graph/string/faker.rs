@@ -32,7 +32,7 @@ impl Default for Locale {
 #[derive(Clone, Default, Deserialize, Debug, Serialize, PartialEq, Eq, Hash)]
 pub struct FakerArgs {
     #[serde(default)]
-    locales: Vec<Locale>,
+    pub(crate) locales: Vec<Locale>,
 }
 
 type FakerFunction = for<'r> fn(&'r mut dyn RngCore, &FakerArgs) -> String;

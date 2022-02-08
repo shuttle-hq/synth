@@ -106,7 +106,7 @@ Below is a tree representation of the schema Schema tree:
 
 The corresponding namespace can be broken into 2 collections. The first, `transactions`:
 
-```json
+```json synth[transactions.json]
 {
   "type": "array",
   "length": {
@@ -151,7 +151,7 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
     },
     "user_id": {
       "type": "same_as",
-      "ref": "users.Schema.user_id"
+      "ref": "users.content.user_id"
     }
   }
 }
@@ -159,7 +159,7 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
 
 And the second, the `users` collection:
 
-```json synth
+```json synth[users.json]
 {
     "type": "array",
     "length": {
@@ -183,7 +183,7 @@ And the second, the `users` collection:
         "user_email": {
             "type": "string",
             "faker": {
-                "generator": "email"
+                "generator": "safe_email"
             }
         }
     }

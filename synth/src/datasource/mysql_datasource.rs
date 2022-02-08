@@ -1,5 +1,5 @@
 use crate::datasource::relational_datasource::{
-    ColumnInfo, ForeignKey, PrimaryKey, RelationalDataSource, ValueWrapper,
+    insert_relational_data, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
@@ -7,7 +7,7 @@ use async_std::task;
 use async_trait::async_trait;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlQueryResult, MySqlRow};
+use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlRow};
 use sqlx::{Column, MySql, Pool, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -44,109 +44,44 @@ impl DataSource for MySqlDataSource {
     }
 
     async fn insert_data(&self, collection_name: &str, collection: &[Value]) -> Result<()> {
-        self.insert_relational_data(collection_name, collection)
-            .await
+        insert_relational_data(self, collection_name, collection).await
     }
 }
 
-#[async_trait]
-impl RelationalDataSource for MySqlDataSource {
-    type QueryResult = MySqlQueryResult;
+impl SqlxDataSource for MySqlDataSource {
+    type DB = MySql;
+    type Arguments = sqlx::mysql::MySqlArguments;
+    type Connection = sqlx::mysql::MySqlConnection;
+
     const IDENTIFIER_QUOTE: char = '`';
 
-    async fn execute_query(
-        &self,
-        query: String,
-        query_params: Vec<Value>,
-    ) -> Result<MySqlQueryResult> {
-        let mut query = sqlx::query(query.as_str());
-
-        for param in query_params {
-            query = query.bind(param);
-        }
-
-        let result = query.execute(&self.pool).await?;
-
-        Ok(result)
+    fn get_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.pool)
     }
 
-    async fn get_table_names(&self) -> Result<Vec<String>> {
-        let query = r"SELECT table_name FROM information_schema.tables
-            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'";
-
-        let table_names: Vec<String> = sqlx::query(query)
-            .fetch_all(&self.pool)
-            .await?
-            .iter()
-            .map(|row| row.get::<String, usize>(0))
-            .collect();
-
-        Ok(table_names)
+    fn get_multithread_pool(&self) -> Pool<Self::DB> {
+        Pool::clone(&self.pool)
     }
 
-    async fn get_columns_infos(&self, table_name: &str) -> Result<Vec<ColumnInfo>> {
-        let query = r"SELECT column_name, ordinal_position, is_nullable, data_type,
-            character_maximum_length
+    fn get_table_names_query(&self) -> &str {
+        r"SELECT table_name FROM information_schema.tables
+            WHERE table_schema = DATABASE() and table_type = 'BASE TABLE'"
+    }
+
+    fn get_primary_keys_query(&self) -> &str {
+        r"SELECT column_name, data_type
             FROM information_schema.columns
-            WHERE table_name = ? AND table_schema = DATABASE()";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(ColumnInfo::try_from)
-            .collect()
+            WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'"
     }
 
-    async fn get_primary_keys(&self, table_name: &str) -> Result<Vec<PrimaryKey>> {
-        let query: &str = r"SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_schema = DATABASE() AND table_name = ? AND column_key = 'PRI'";
-
-        sqlx::query(query)
-            .bind(table_name)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(PrimaryKey::try_from)
-            .collect()
-    }
-
-    async fn get_foreign_keys(&self) -> Result<Vec<ForeignKey>> {
-        let query: &str = r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
+    fn get_foreign_keys_query(&self) -> &str {
+        r"SELECT table_name, column_name, referenced_table_name, referenced_column_name
             FROM information_schema.key_column_usage
-            WHERE referenced_table_schema = DATABASE()";
-
-        sqlx::query(query)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(ForeignKey::try_from)
-            .collect()
+            WHERE referenced_table_schema = DATABASE()"
     }
 
-    async fn set_seed(&self) -> Result<()> {
-        // MySql doesn't set seed in a separate query
-        Ok(())
-    }
-
-    async fn get_deterministic_samples(&self, table_name: &str) -> Result<Vec<Value>> {
-        let query = format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name);
-
-        sqlx::query(&query)
-            .fetch_all(&self.pool)
-            .await?
-            .into_iter()
-            .map(ValueWrapper::try_from)
-            .map(|v| match v {
-                Ok(wrapper) => Ok(wrapper.0),
-                Err(e) => bail!(
-                    "Failed to convert to value wrapper from query results: {:?}",
-                    e
-                ),
-            })
-            .collect()
+    fn get_deterministic_samples_query(&self, table_name: String) -> String {
+        format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name)
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
@@ -200,21 +135,11 @@ impl RelationalDataSource for MySqlDataSource {
         Ok(content)
     }
 
-    fn extend_parameterised_query(
-        query: &mut String,
-        _curr_index: usize,
-        query_params: Vec<Value>,
-    ) {
-        let extend = query_params.len();
-
-        query.push('(');
-        for i in 0..extend {
-            query.push('?');
-            if i != extend - 1 {
-                query.push(',');
-            }
-        }
-        query.push(')');
+    fn get_columns_info_query(&self) -> &str {
+        r"SELECT column_name, ordinal_position, is_nullable, data_type,
+            character_maximum_length
+            FROM information_schema.columns
+            WHERE table_name = ? AND table_schema = DATABASE()"
     }
 }
 
