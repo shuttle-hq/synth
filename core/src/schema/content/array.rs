@@ -70,6 +70,8 @@ impl<'de> Deserialize<'de> for ArrayContent {
                 let content = content.ok_or_else(|| de::Error::missing_field("content"))?;
 
                 match length {
+                    // Default for positive constants
+                    Content::Number(NumberContent::U32(number_content::U32::Constant(_))) => { }
                     Content::Number(NumberContent::U64(number_content::U64::Range(r))) => {
                         if r.high.is_none() {
                             return Err(A::Error::custom(
@@ -218,6 +220,27 @@ mod tests {
                 "type": "object"
             }
         },
+        default_constant: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "constant": 8
+            },
+            "content": {
+                "type": "object"
+            }
+        },
+        u32_constant: {
+            "type": "array",
+            "length": {
+                "type": "number",
+                "subtype": "u32",
+                "constant": 8
+            },
+            "content": {
+                "type": "object"
+            }
+        },
         u64_constant: {
             "type": "array",
             "length": {
@@ -312,17 +335,6 @@ mod tests {
                 "type": "number",
                 "subtype": "i32",
                 "constant": 10
-            },
-            "content": {
-                "type": "object"
-            }
-        },
-        u32_constant: {
-            "type": "array",
-            "length": {
-                "type": "number",
-                "subtype": "u32",
-                "constant": 8
             },
             "content": {
                 "type": "object"

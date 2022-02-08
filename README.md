@@ -82,7 +82,7 @@ $ mkdir my_app
 
 Next let's create a `users` collection using Synth's configuration language, and put it into `my_app/users.json`:
 
-```json
+```json synth
 {
     "type": "array",
     "length": {

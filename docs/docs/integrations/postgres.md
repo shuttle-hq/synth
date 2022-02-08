@@ -94,7 +94,7 @@ create table doctors
 ```
 
 And the corresponding `synth` collection:
-```json
+```json synth[expect = "unknown field: hospitals"]
 {
   "type": "array",
   "length": {
@@ -139,7 +139,7 @@ And the corresponding `synth` collection:
       "pattern": "[a-zA-Z0-9]{0, 255}"
     }
   }
-
+}
 ```
 ### Example Import Command
 

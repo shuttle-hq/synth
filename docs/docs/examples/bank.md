@@ -224,7 +224,7 @@ As `synth` evolves, inference will get better - but for now, we need to tweak th
 To modify the schema, open the workspace in your favourite editor. Let's take a look at `bank_db/transactions.json`
 first.
 
-```json synth
+```json synth[users.json]
 {
   "type": "array",
   "length": {
@@ -278,7 +278,7 @@ first.
       "type": "string",
       "pattern": "[a-zA-Z0-9]*"
     },
-    description": {
+    "description": {
       "type": "string",
       "pattern": "[a-zA-Z0-9]*"
     }
@@ -345,7 +345,7 @@ it should be a [date_time](/content/date-time).
 The `user_id` field should point to a valid entry in the `users` collection, so let's use
 the [same_as](../content/same-as) content type to express this foreign key relationship.
 
-```json
+```json synth
 {
   "type": "same_as",
   "ref": "users.content.id"
@@ -373,7 +373,7 @@ generator, but don't want to put thousands of descriptive lines in our declarati
 external JSON [datasource](../content/datasource) to pull descriptions from. First copy the following JSON to
 a `descriptions.json` file in the workspace.
 
-```json
+```json[descriptions.json]
 [
   "Walmart Credit Purchase",
   "Amazon - Kindle reading tablet",
