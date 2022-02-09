@@ -1,7 +1,7 @@
 import { StringContent } from "./string"
 import { NumberContent } from "./number"
 import { BoolContent } from "./bool"
-import { ObjectContent } from "./object"
+import { ObjContent } from "./object"
 import { ArrayContent } from "./array"
 import { OneOfContent } from "./one_of"
 import { SameAsContent } from "./same_as"
@@ -10,7 +10,7 @@ type Content =
     StringContent
     | NumberContent
     | BoolContent
-    | ObjectContent
+    | ObjContent
     | ArrayContent
     | OneOfContent
     | SameAsContent;

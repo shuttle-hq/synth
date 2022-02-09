@@ -1,7 +1,7 @@
 import { Content } from "./content"
 import { StringContent, Format, Pattern, Faker, Categorical, String } from "./string"
 import { NumberContent, Constant, Range, Id, Number } from "./number"
-import { Object, ObjectContent } from "./object"
+import { Obj, ObjContent } from "./object"
 import { Array, ArrayContent } from "./array"
 import { OneOf, OneOfContent } from "./one_of"
 import { SameAs, SameAsContent } from "./same_as"
@@ -23,8 +23,8 @@ export {
     Constant,
     Id,
 
-    Object,
-    ObjectContent,
+    Obj,
+    ObjContent,
 
     Array,
     ArrayContent,

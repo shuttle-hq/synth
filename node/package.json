@@ -4,15 +4,18 @@
   "description": "Node.js wrapper around Synth, a declarative, synthetic data generator",
   "main": "index.js",
   "scripts": {
-    "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
+    "build": "tsc --build && cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
     "build-debug": "npm run build --",
     "build-release": "npm run build -- --release",
     "install": "npm run build-release",
+    "clean": "tsc --build --clean",
     "test": "cargo test"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "cargo-cp-artifact": "^0.1"
+    "@types/node": "^17.0.16",
+    "cargo-cp-artifact": "^0.1",
+    "typescript": "^4.5.5"
   }
 }

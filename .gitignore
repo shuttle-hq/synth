@@ -15,4 +15,5 @@
 
 # Node.js
 *.node
-node_modules
+node_modules/
+tsbuild/
