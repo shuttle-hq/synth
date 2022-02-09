@@ -4,11 +4,11 @@ interface ObjContent extends IContent {
     type: "object"
 }
 
-const Obj = function (content: Record<string, Content>): ObjContent {
+function obj(content: Record<string, Content>): ObjContent {
     return {
         type: "object",
         ...content
     }
 }
 
-export { Obj, ObjContent }
+export { obj, ObjContent }

@@ -1,11 +1,12 @@
 import { Content, IContent } from "./content"
 
 interface ArrayContent extends IContent {
+    type: "array",
     length: Content,
     content: Content
 }
 
-const Array = function (length: Content, content: Content): ArrayContent {
+function array(length: Content, content: Content): ArrayContent {
     return {
         type: "array",
         length,
@@ -13,5 +14,4 @@ const Array = function (length: Content, content: Content): ArrayContent {
     }
 }
 
-export { Array, ArrayContent }
-export default Array
+export { array, ArrayContent }

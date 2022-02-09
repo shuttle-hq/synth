@@ -1,42 +1,39 @@
 import { Content } from "./content"
-import { StringContent, Format, Pattern, Faker, Categorical, String } from "./string"
-import { NumberContent, Constant, Range, Id, Number } from "./number"
-import { Obj, ObjContent } from "./object"
-import { Array, ArrayContent } from "./array"
-import { OneOf, OneOfContent } from "./one_of"
-import { SameAs, SameAsContent } from "./same_as"
-import { BoolContent, RandomBool, ConstantBool, Bool } from "./bool"
+import { StringContent, formatString, patternString, fakerString, categoricalString } from "./string"
+import { NumberContent, constantNumber, rangeNumber, idNumber } from "./number"
+import { ObjContent, obj } from "./object"
+import { ArrayContent, array } from "./array"
+import { OneOfContent, oneOf } from "./one_of"
+import { SameAsContent, sameAs } from "./same_as"
+import { BoolContent, randomBool, constantBool } from "./bool"
 
 export {
     Content,
 
-    String,
+    formatString,
+    patternString,
+    fakerString,
+    categoricalString,
     StringContent,
-    Format,
-    Pattern,
-    Faker,
-    Categorical,
 
-    Number,
+    constantNumber,
+    rangeNumber,
+    idNumber,
     NumberContent,
-    Range,
-    Constant,
-    Id,
 
-    Obj,
+    obj,
     ObjContent,
 
-    Array,
+    array,
     ArrayContent,
 
-    OneOf,
+    oneOf,
     OneOfContent,
 
-    SameAs,
+    sameAs,
     SameAsContent,
 
-    Bool,
-    BoolContent,
-    RandomBool,
-    ConstantBool
+    randomBool,
+    constantBool,
+    BoolContent
 }

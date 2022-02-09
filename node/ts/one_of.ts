@@ -5,12 +5,11 @@ interface OneOfContent extends IContent {
     variants: Content[]
 }
 
-const OneOf = function (...variants: Content[]): OneOfContent {
+function oneOf(...variants: Content[]): OneOfContent {
     return {
         type: "one_of",
         variants
     }
 }
 
-export { OneOfContent, OneOf }
-export default OneOf
+export { OneOfContent, oneOf }

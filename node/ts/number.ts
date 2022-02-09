@@ -4,15 +4,19 @@ type NumberSubtype = "u64" | "i64" | "f64" | "u32" | "i32";
 
 type NumberContent = Constant | Range | Id;
 
-type Id = {
+interface Number extends IContent {
     type: "number",
+    subtype: NumberSubtype
+}
+
+interface Id extends Number {
     subtype: "u64",
     id: {
         start_at?: number
     }
 }
 
-const Id = function (start_at?: number): Id {
+function idNumber(start_at?: number): Id {
     return {
         type: "number",
         subtype: "u64",
@@ -35,12 +39,7 @@ function bestSubtype(...values: number[]): NumberSubtype {
     }
 }
 
-interface INumber extends IContent {
-    type: "number",
-    subtype: NumberSubtype
-}
-
-interface Range extends INumber {
+interface Range extends Number {
     range: {
         low: number,
         high: number,
@@ -48,7 +47,7 @@ interface Range extends INumber {
     }
 }
 
-const Range = function (low: number, high: number, step: number = 1): Range {
+function rangeNumber(low: number, high: number, step: number = 1): Range {
     return {
         type: "number",
         subtype: bestSubtype(low, high, step),
@@ -64,11 +63,11 @@ type Constant = QualifiedConstant | LiteralConstant;
 
 type LiteralConstant = number;
 
-interface QualifiedConstant extends INumber {
+interface QualifiedConstant extends Number {
     constant: number
 }
 
-const Constant = function (constant: number): QualifiedConstant {
+function constantNumber(constant: number): QualifiedConstant {
     return {
         type: "number",
         subtype: bestSubtype(constant),
@@ -76,11 +75,4 @@ const Constant = function (constant: number): QualifiedConstant {
     }
 }
 
-const NumberW = {
-    range: Range,
-    constant: Constant,
-    id: Id,
-}
-
-export { Constant, NumberContent, NumberW as Number, Range, Id }
-export default NumberW
+export { idNumber, rangeNumber, constantNumber, NumberContent }

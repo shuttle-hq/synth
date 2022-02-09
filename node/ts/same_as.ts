@@ -3,15 +3,15 @@ import { IContent } from "./content"
 type SameAsContent = string | QualifiedSameAs;
 
 interface QualifiedSameAs extends IContent {
+    type: "same_as",
     ref: string
 }
 
-const SameAs = function (ref: string): QualifiedSameAs {
+function sameAs(ref: string): QualifiedSameAs {
     return {
         type: "same_as",
         ref
     }
 }
 
-export { SameAs, SameAsContent, QualifiedSameAs }
-export default SameAs
+export { sameAs, SameAsContent }

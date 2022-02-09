@@ -4,32 +4,30 @@ type BoolContent = ConstantBool | RandomBool;
 
 type ConstantBool = boolean | QualifiedBool;
 
-interface QualifiedBool extends IContent {
+interface Bool extends IContent {
+    type: "bool"
+}
+
+interface QualifiedBool extends Bool {
     constant: boolean
 }
 
-const ConstantBool = function (constant: boolean): QualifiedBool {
+function constantBool(constant: boolean): QualifiedBool {
     return {
         type: "bool",
         constant
     }
 }
 
-interface RandomBool extends IContent {
+interface RandomBool extends Bool {
     frequency: number
 }
 
-const RandomBool = function (frequency: number): RandomBool {
+function randomBool(frequency: number): RandomBool {
     return {
         type: "bool",
         frequency
     }
 }
 
-const Bool = {
-    random: RandomBool,
-    constant: ConstantBool
-}
-
-export { BoolContent, Bool, ConstantBool, RandomBool }
-export default Bool
+export { BoolContent, constantBool, randomBool }

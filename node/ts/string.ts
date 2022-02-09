@@ -2,25 +2,31 @@ import { Content, IContent } from "./content"
 
 type StringContent = Format | Pattern | Faker | Categorical;
 
-interface Pattern extends IContent {
-    pattern: string // TODO: regex
+interface String extends IContent {
+    type: "string"
 }
 
-const Pattern = function (pattern: string): Pattern {
+interface Pattern extends String {
+    pattern: string
+}
+
+function patternString(pattern: string): Pattern {
+    new RegExp(pattern); // Will throw if the pattern is not a valid regular expression.
+
     return {
         type: "string",
         pattern
     }
 }
 
-interface Format extends IContent {
+interface Format extends String {
     format: {
         format: string,
         arguments: Record<string, Content>
     }
 }
 
-const Format = function (format: string, args: Record<string, Content>): Format {
+function formatString(format: string, args: Record<string, Content>): Format {
     return {
         type: "string",
         format: {
@@ -91,13 +97,13 @@ type FakerGenerator =
     | "ascii_safe_email"
     | "address"
 
-interface Faker extends IContent {
+interface Faker extends String {
     faker: {
         generator: FakerGenerator
     }
 }
 
-const Faker = function (generator: FakerGenerator): Faker {
+function fakerString(generator: FakerGenerator): Faker {
     return {
         type: "string",
         faker: {
@@ -106,23 +112,15 @@ const Faker = function (generator: FakerGenerator): Faker {
     }
 }
 
-interface Categorical extends IContent {
+interface Categorical extends String {
     categorical: Record<string, number>
 }
 
-const Categorical = function (categorical: Record<string, number>): Categorical {
+function categoricalString(categorical: Record<string, number>): Categorical {
     return {
         type: "string",
         categorical
     }
 }
 
-const String = {
-    format: Format,
-    pattern: Pattern,
-    faker: Faker,
-    categorical: Categorical
-}
-
-export { Pattern, Format, String, Faker, Categorical, StringContent }
-export default String;
+export { patternString, formatString, fakerString, categoricalString, StringContent }
