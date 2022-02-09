@@ -167,7 +167,7 @@ impl<'w> Cli {
     }
 
     fn generate<W: Write + 'w>(&self, cmd: GenerateCommand, writer: W) -> Result<()> {
-        let namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
+        let mut namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
             cmd.namespace
                 .to_str()
@@ -200,6 +200,13 @@ impl<'w> Cli {
         let seed = Self::derive_seed(cmd.random, cmd.seed)?;
         let sample =
             Sampler::try_from(&namespace)?.sample_seeded(cmd.collection.clone(), cmd.size, seed)?;
+
+        // Change namespace if scenario
+        if let Some(scenario) = cmd.scenario {
+            let scenario = self.store.get_scenario(namespace, &scenario)?;
+
+            namespace = scenario.build();
+        }
 
         export_strategy
             .export(namespace, sample)

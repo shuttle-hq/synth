@@ -21,6 +21,9 @@ pub use namespace::Namespace;
 pub mod content;
 pub use content::*;
 
+pub mod scenario;
+pub use scenario::Scenario;
+
 lazy_static! {
     pub static ref SLAT_REGEX: Regex = Regex::new("(?:^|\\.)(\"([^\"]+)\"|[^\"\\.]+)").unwrap();
 }

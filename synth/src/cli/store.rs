@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use lazy_static::lazy_static;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
-use synth_core::schema::{Content, Namespace};
+use synth_core::schema::{Content, Namespace, Scenario};
 
 lazy_static! {
     static ref UNDERLYING: Underlying = Underlying {
@@ -90,6 +90,25 @@ impl Store {
         Ok(ns)
     }
 
+    pub fn get_scenario(&self, namespace: Namespace, scenario: &str) -> Result<Scenario> {
+        let scenario_path = self
+            .path
+            .join("scenarios")
+            .join(scenario)
+            .with_extension("json");
+
+        if !scenario_path.exists() {
+            return Err(anyhow!(
+                "could not find scenario at {}",
+                scenario_path.display()
+            ));
+        }
+
+        let scenario = Scenario::new(namespace, scenario_path);
+
+        Ok(scenario)
+    }
+
     pub fn save_collection_path(
         &self,
         ns_path: &Path,
@@ -142,6 +161,9 @@ impl Store {
 
 #[cfg(test)]
 pub mod tests {
+    use std::fs::{self, File};
+    use std::io::Write;
+
     use super::*;
     use tempfile::tempdir;
 
@@ -155,6 +177,33 @@ pub mod tests {
 
         let saved_ns = store.get_ns(path.join("users"))?;
         assert_eq!(saved_ns, ns);
+        Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "could not find scenario")]
+    fn get_store_missing() {
+        let path: PathBuf = tempdir().unwrap().path().into();
+        let store = Store::with_dir(path);
+
+        store.get_scenario(Default::default(), "missing").unwrap();
+    }
+
+    #[test]
+    fn get_store_exist() -> Result<()> {
+        let path: PathBuf = tempdir()?.path().into();
+
+        let scenario_dir = path.join("scenarios");
+        fs::create_dir_all(&scenario_dir)?;
+
+        let scenario_path = scenario_dir.join("dummy").with_extension("json");
+        let mut file = File::create(scenario_path)?;
+        write!(file, r#"{{ "collection": {{}} }}"#)?;
+
+        let store = Store::with_dir(path);
+
+        store.get_scenario(Default::default(), "dummy").unwrap();
+
         Ok(())
     }
 }
