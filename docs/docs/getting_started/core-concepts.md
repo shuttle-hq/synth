@@ -65,7 +65,7 @@ refer to. A field address takes the
 form `<collection name>.<level_0>.<level_1>...`. For example, say we have a
 collection `users.json` containing the following schema:
 
-```json
+```json synth[users.json]
 {
   "type": "array",
   "length": {
@@ -104,16 +104,16 @@ A reference to the `username` field would have the
 address `users.content.username`. If we want to add a reference to this field
 from another collection we would simply add:
 
-```json
+```json synth
 {
-  ...
+  "type": "array",
+  "length": 1,
   "content": {
-    ...
+    "type": "object",
     "username": {
       "type": "same_as",
       "ref": "users.content.username"
-    },
-    ...
+    }
   }
 }
 ```

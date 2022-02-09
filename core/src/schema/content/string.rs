@@ -2,6 +2,7 @@ use std::hash::{Hash, Hasher};
 
 use super::prelude::*;
 use super::Categorical;
+use crate::graph::string::FakerArgs;
 use crate::graph::string::{Constant, Serialized, Sliced};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
@@ -207,7 +208,7 @@ impl<'de> Deserialize<'de> for FakerContent {
                 A: serde::de::MapAccess<'de>,
             {
                 let mut generator = None;
-                let mut args = None;
+                let mut locales = None;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Generator => {
@@ -217,19 +218,19 @@ impl<'de> Deserialize<'de> for FakerContent {
                             generator = Some(map.next_value()?);
                         }
                         Field::Locales => {
-                            if args.is_some() {
+                            if locales.is_some() {
                                 return Err(A::Error::duplicate_field("locales"));
                             }
-                            args = Some(map.next_value()?);
+                            locales = Some(map.next_value()?);
                         }
                         Field::Unknown => {}
                     }
                 }
                 let generator = generator.ok_or_else(|| A::Error::missing_field("generator"))?;
-                let args = args.unwrap_or_default();
+                let locales = locales.unwrap_or_default();
                 Ok(FakerContent {
                     generator,
-                    args,
+                    args: FakerArgs { locales },
                     locales: Vec::new(),
                 })
             }
