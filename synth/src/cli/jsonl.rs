@@ -1,4 +1,4 @@
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::cli::import::ImportStrategy;
 use crate::sampler::SamplerOutput;
 
@@ -20,7 +20,7 @@ pub struct JsonLinesFileExportStrategy {
 }
 
 impl ExportStrategy for JsonLinesFileExportStrategy {
-    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         let mut f = std::io::BufWriter::new(std::fs::File::create(&self.from_file)?);
 
         for val in json_lines_from_sampler_output(sample.clone(), &self.collection_field_name) {
@@ -38,7 +38,7 @@ pub struct JsonLinesStdoutExportStrategy<W> {
 }
 
 impl<W: Write> ExportStrategy for JsonLinesStdoutExportStrategy<W> {
-    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
         for line in json_lines_from_sampler_output(sample.clone(), &self.collection_field_name) {
             writeln!(self.writer.borrow_mut(), "{}", line).expect("failed to write jsonl line");

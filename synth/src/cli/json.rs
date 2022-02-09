@@ -1,4 +1,4 @@
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::cli::import::ImportStrategy;
 use crate::sampler::SamplerOutput;
 
@@ -17,7 +17,7 @@ pub struct JsonFileExportStrategy {
 }
 
 impl ExportStrategy for JsonFileExportStrategy {
-    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         std::fs::write(&self.from_file, sample.clone().into_json().to_string())?;
 
         Ok(sample)
@@ -30,7 +30,7 @@ pub struct JsonStdoutExportStrategy<W> {
 }
 
 impl<W: Write> ExportStrategy for JsonStdoutExportStrategy<W> {
-    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         writeln!(self.writer.borrow_mut(), "{}", sample.clone().into_json())
             .expect("failed to write json output");
 

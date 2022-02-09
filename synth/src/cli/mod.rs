@@ -9,7 +9,6 @@ mod mysql;
 mod postgres;
 mod store;
 
-use crate::cli::export::ExportParams;
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
 use crate::sampler::Sampler;
@@ -193,25 +192,17 @@ impl<'w> Cli {
             export_strategy = Box::new(TelemetryExportStrategy::new(
                 export_strategy,
                 Rc::clone(&self.telemetry_context),
+                cmd.collection.clone(),
+                cmd.namespace.clone(),
             ));
         }
 
         let seed = Self::derive_seed(cmd.random, cmd.seed)?;
-
-        let params = ExportParams {
-            namespace,
-            collection_name: cmd.collection,
-            target: cmd.size,
-            seed,
-            ns_path: cmd.namespace.clone(),
-        };
-
-        let sampler = Sampler::try_from(&params.namespace)?;
         let sample =
-            sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
+            Sampler::try_from(&namespace)?.sample_seeded(cmd.collection.clone(), cmd.size, seed)?;
 
         export_strategy
-            .export(params, sample)
+            .export(namespace, sample)
             .with_context(|| format!("At namespace {:?}", cmd.namespace))?;
 
         Ok(())

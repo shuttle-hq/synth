@@ -1,4 +1,4 @@
-use crate::cli::export::{create_and_insert_values, ExportParams, ExportStrategy};
+use crate::cli::export::{create_and_insert_values, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::import_utils::build_namespace_import;
 use crate::datasource::mysql_datasource::MySqlDataSource;
@@ -13,7 +13,7 @@ pub struct MySqlExportStrategy {
 }
 
 impl ExportStrategy for MySqlExportStrategy {
-    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         let datasource = MySqlDataSource::new(&self.uri_string)?;
 
         create_and_insert_values(sample, &datasource)

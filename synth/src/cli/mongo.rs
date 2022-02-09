@@ -1,4 +1,4 @@
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::cli::import::ImportStrategy;
 use crate::sampler::SamplerOutput;
 use anyhow::Result;
@@ -151,7 +151,7 @@ fn bson_to_content(bson: &Bson) -> Content {
 }
 
 impl ExportStrategy for MongoExportStrategy {
-    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         let mut client = Client::with_uri_str(&self.uri_string)?;
 
         match sample.clone() {

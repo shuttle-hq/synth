@@ -1,6 +1,6 @@
 mod headers;
 
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::sampler::SamplerOutput;
 
 use synth_core::schema::content::{number_content, ArrayContent, NumberContent};
@@ -20,14 +20,14 @@ pub struct CsvFileExportStrategy {
 }
 
 impl ExportStrategy for CsvFileExportStrategy {
-    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
         if self.to_dir.exists() {
             return Err(anyhow::anyhow!("Output directory already exists"));
         } else {
             std::fs::create_dir_all(&self.to_dir)?;
         }
 
-        match csv_output_from_sampler_ouput(sample.clone(), &params.namespace)? {
+        match csv_output_from_sampler_ouput(sample.clone(), &namespace)? {
             CsvOutput::Namespace(ns) => {
                 for (name, csv) in ns {
                     std::fs::write(self.to_dir.join(name + ".csv"), csv)?;
@@ -46,8 +46,8 @@ impl ExportStrategy for CsvFileExportStrategy {
 pub struct CsvStdoutExportStrategy;
 
 impl ExportStrategy for CsvStdoutExportStrategy {
-    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
-        match csv_output_from_sampler_ouput(sample.clone(), &params.namespace)? {
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+        match csv_output_from_sampler_ouput(sample.clone(), &namespace)? {
             CsvOutput::Namespace(ns) => {
                 for (name, csv) in ns {
                     println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)

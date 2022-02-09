@@ -20,16 +20,7 @@ use synth_core::{DataSourceParams, Namespace, Value};
 use super::map_from_uri_query;
 
 pub(crate) trait ExportStrategy {
-    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput>;
-}
-
-pub struct ExportParams {
-    pub namespace: Namespace,
-    /// The name of the single collection to generate from if one is specified (via --collection).
-    pub collection_name: Option<String>,
-    pub target: usize,
-    pub seed: u64,
-    pub ns_path: PathBuf,
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput>;
 }
 
 pub(crate) struct ExportStrategyBuilder<'a, W> {
