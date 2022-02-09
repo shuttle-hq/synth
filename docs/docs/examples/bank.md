@@ -34,7 +34,7 @@ application testing.
 ```json
 {
   "id": 1,
-  "amount": 5001.70,
+  "amount": 5001.7,
   "currency": "GIP",
   "timestamp": "2020-05-13T20:48:01+0000",
   "description": "Walmart Credit Purchase",
@@ -290,10 +290,10 @@ There is quite a bit going on here, so let's break it down. This file represents
 a [`collection`](../getting_started/core-concepts). Collections are [array](../content/array.md)s under the hood and so they
 have 2 fields.
 
-1) The `content` of an Array. This can be any valid JSON, but since `bank_db` originates from a SQL database with column
+1. The `content` of an Array. This can be any valid JSON, but since `bank_db` originates from a SQL database with column
    names and so on, it is a JSON object.
 
-2) The `length` of an Array. The length of an Array is actually also a Content node. This gives you flexibility - for
+2. The `length` of an Array. The length of an Array is actually also a Content node. This gives you flexibility - for
    example you can make the length of an array be a `number::range`
 
 For more information on how to compose schemas, see the [Schema](../getting_started/schema.md) page.
@@ -354,7 +354,7 @@ the [same_as](../content/same-as) content type to express this foreign key relat
 
 The `currency` field should reflect the real currencies that the bank supports. We could use
 the [string::faker](../content/string) support `currency_code` generator to do this, but the bank only supports `USD`
-, `GBP` and `EUR`. So she uses a [string::categorical](../content/string)  instead. Roughly 80% of transactions are
+, `GBP` and `EUR`. So she uses a [string::categorical](../content/string) instead. Roughly 80% of transactions are
 in `USD` so let's assign a higher probability to that variant.
 
 ```json synth
@@ -385,6 +385,7 @@ a `descriptions.json` file in the workspace.
 ```
 
 Next, edit the `description` field as follow:
+
 ```json synth
 {
   "type": "datasource",

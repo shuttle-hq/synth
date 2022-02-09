@@ -8,7 +8,6 @@ Synth's funcionality can be broken into 3 main parts:
 2. Schema (IR): The [Schema](schema.md) intermediate representation is a compact state representing the range of data generation
 3. Generator Network: Schemas are transpiled into a network of generators which actually generate the required data.
 
-Below is a high-level diagram illustrating the process: 
+Below is a high-level diagram illustrating the process:
 
- 
 ![How it works](img/how_it_works.png)

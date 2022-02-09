@@ -33,6 +33,7 @@ has value a [`number`](number) type and `"name"` has value a [`string`](string) 
 Values of objects can be made nullable by specifying the `"optional": true` attribute.
 
 #### Example
+
 ```json synth
 {
   "type": "object",
@@ -49,6 +50,7 @@ Values of objects can be made nullable by specifying the `"optional": true` attr
 By default, optional values that are generated as `null` will produce a key-value pair of the form `key: null`. This behavior can be controlled by specifying the `skip_when_null: true` attribute on the object generator.
 
 #### Example
+
 ```json synth
 {
   "type": "object",

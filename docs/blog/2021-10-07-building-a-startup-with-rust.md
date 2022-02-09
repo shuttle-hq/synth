@@ -47,8 +47,8 @@ these (at times cynical) thoughts.
 
 ## Development Velocity
 
-Rust has a *really* steep learning curve. Coming from an OO background it took
-me *months* to become productive in Rust. This was incredibly frustrating for me
+Rust has a _really_ steep learning curve. Coming from an OO background it took
+me _months_ to become productive in Rust. This was incredibly frustrating for me
 as I felt that my lack of productivity was impacting the team, which it was.
 Even when you eventually do become productive (and you will), Rust forces you to
 really think deeply about what you're doing and things inevitably take longer to
@@ -57,7 +57,7 @@ haunt you months later. What should be a simple change or refactor can end up
 resulting in complete tear down as you try to appease the borrow checker. This
 is deadly.
 
-The entire premise of a startup is that *you have to iterate rapidly*. Very few
+The entire premise of a startup is that _you have to iterate rapidly_. Very few
 companies know what they should be building from day one. It's an iterative
 process involving a feedback loop of talking to users and making changes to
 reflect the feedback. The faster you can make that feedback loop, the higher
@@ -99,16 +99,16 @@ than more conventional programming languages. Something spoke to these
 individuals when they picked up Rust, and it's hard to put your finger on it but
 it's that same quality that makes a great engineer. It's also been a pleasant
 surprise to find out that really good engineers will seek you out as an
-employer *because you use Rust*. They don't want to work in *script or Java or
+employer _because you use Rust_. They don't want to work in \*script or Java or
 C++. They want to work with Rust because it's great.
 
 ## Open Source
 
 At Synth, we've chosen to adopt an open-core business model. The idea behind an
 open-core business is you develop and open source product with a permissive
-license which solves a real *technical* problem. You work on building a user
+license which solves a real _technical_ problem. You work on building a user
 base, a community and a great product all out in the open. You then structure
-your business model around solving the corresponding *organisational* problem -
+your business model around solving the corresponding _organisational_ problem -
 and that's how you make money.
 
 We've been really lucky to have a really active set of contributors - giving
@@ -132,23 +132,23 @@ lack of canonical libraries for doing things outside the standard library. So
 you want a webserver, pick from one of the 100s available. You want a crate (
 Rust lingo for library) for working with JWT tokens? Here's 9, pick one. I mean,
 even something as fundamental as an asynchronous runtime is split
-between `tokio` and `async-std` and others. As a young rustacean this can 
+between `tokio` and `async-std` and others. As a young rustacean this can
 be overwhelming.
 
 What ends up happening over time is certain libraries become implicitly
 canonical as they receive overwhelming support and start becoming serious
-dependencies differentiating from their alternatives. Also in a project 
-update from  RustConf 2021 it [was mentioned](https://youtu.be/ylOpCXI2EMM?t=1048) that the idea of having 'recommended crates' may be visited in the 
-future. 
+dependencies differentiating from their alternatives. Also in a project
+update from RustConf 2021 it [was mentioned](https://youtu.be/ylOpCXI2EMM?t=1048) that the idea of having 'recommended crates' may be visited in the
+future.
 
 The lack of canonical non-standard libraries is an issue when you're getting
 started - but over time this diminishes as you get a better understanding of the
-ecosystem. What *has* been constantly detrimental to our development velocity
-has been the lack of *client* libraries for Rust. We've had to write a
-bunch of different integrations ourselves, but they're often clunky as we 
-don't  have the time to invest in making them really high quality. For 
-example most of Google's products have at best an unofficial code-generated 
-crate maintained by the community, and at worst absolutely nothing. You 
+ecosystem. What _has_ been constantly detrimental to our development velocity
+has been the lack of _client_ libraries for Rust. We've had to write a
+bunch of different integrations ourselves, but they're often clunky as we
+don't have the time to invest in making them really high quality. For
+example most of Google's products have at best an unofficial code-generated
+crate maintained by the community, and at worst absolutely nothing. You
 need to write it from scratch.
 
 ## Should you build your startup with Rust?
@@ -161,6 +161,6 @@ make rapid iterations is so important for an early stage startup that it
 outweighs a lot of the benefits that Rust brings to the table.
 
 If your company is later stage, and you now understand exactly what you should
-be building (assuming this is every the case) then I would say yes. The 
+be building (assuming this is every the case) then I would say yes. The
 'correctness' of Rust programs and the propensity of Rust to attract great
-engineers can help in building a great engineering culture and a great company. 
+engineers can help in building a great engineering culture and a great company.

@@ -1,7 +1,7 @@
 {
   "redirects": [
     {
-      "source":  "/blog/:match*",
+      "source": "/blog/:match*",
       "destination": "/docs/blog/:match*"
     }
   ],

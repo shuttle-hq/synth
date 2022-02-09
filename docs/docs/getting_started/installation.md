@@ -79,6 +79,7 @@ If compilation fails, it may be because some required dependencies are not insta
 ```
 sudo apt-get install libssl-dev libsqlite3-dev
 ```
+
 :::
 
 </TabItem>
