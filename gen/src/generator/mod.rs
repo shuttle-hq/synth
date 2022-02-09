@@ -230,7 +230,7 @@ pub trait GeneratorExt: Generator + Sized {
         }
     }
 
-    fn into_iterator<'r, R: Rng>(self, rng: &'r mut R) -> Iterable<'r, Self, R> {
+    fn into_iterator<R: Rng>(self, rng: R) -> Iterable<Self, R> {
         Iterable {
             inner: self,
             rng,
@@ -1090,17 +1090,17 @@ pub trait PeekableGenerator: Generator {
 /// `Yield::wrap(...).once()`
 pub type Just<C> = Once<Yield<C, Never>>;
 
-pub struct Iterable<'r, G, R>
+pub struct Iterable<G, R>
 where
     G: Generator,
     R: Rng,
 {
     inner: G,
-    rng: &'r mut R,
+    rng: R,
     output: Option<G::Return>,
 }
 
-impl<'r, G, R> Iterable<'r, G, R>
+impl<G, R> Iterable<G, R>
 where
     G: Generator,
     R: Rng,
@@ -1115,7 +1115,7 @@ where
     }
 }
 
-impl<'r, G, R> std::iter::Iterator for Iterable<'r, G, R>
+impl<G, R> std::iter::Iterator for Iterable<G, R>
 where
     G: Generator,
     R: Rng,
@@ -1124,7 +1124,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.output.is_none() {
-            match self.inner.next(self.rng) {
+            match self.inner.next(&mut self.rng) {
                 GeneratorState::Yielded(y) => Some(y),
                 GeneratorState::Complete(c) => {
                     self.output = Some(c);

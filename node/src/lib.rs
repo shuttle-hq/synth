@@ -1,90 +1,88 @@
+#![allow(clippy::new_ret_no_self)]
+
 use neon::prelude::*;
 use neon_serde::{from_value, to_value};
 
+use rand::SeedableRng;
 use synth_core::compile::NamespaceCompiler;
 use synth_core::{Content, Graph};
 
-use std::cell::RefCell;
-use std::sync::Arc;
+use synth_gen::prelude::*;
+
+use rand::rngs::StdRng;
+
+use std::ops::DerefMut;
+use std::sync::{Arc, Mutex};
 
 struct JsContent(Content);
 
 impl Finalize for JsContent {}
 
-fn new_content(mut cx: FunctionContext) -> JsResult<JsValue> {
-    let schema = cx.argument::<JsValue>(0)?;
+impl JsContent {
+    /*
+     * new_content(schema)
+     */
+    fn new(mut cx: FunctionContext) -> JsResult<JsValue> {
+        let schema = cx.argument::<JsValue>(0)?;
 
-    match from_value(&mut cx, schema) {
-        Ok(content) => {
-            let boxed = cx.boxed(JsContent(content));
-            Ok(boxed.upcast())
+        match from_value(&mut cx, schema) {
+            Ok(content) => {
+                let boxed = cx.boxed(JsContent(content));
+                Ok(boxed.upcast())
+            }
+            Err(e) => JsError::type_error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
         }
-        Err(e) => JsError::type_error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
     }
 }
 
-type SharedGraph = Arc<RefCell<Graph>>;
-
-struct JsGraph(SharedGraph);
-
-unsafe impl std::marker::Send for JsGraph {} // TODO
-
-impl Finalize for JsGraph {}
-
-fn new_graph(mut cx: FunctionContext) -> JsResult<JsValue> {
-    let js_content = cx.argument::<JsBox<JsContent>>(0)?;
-
-    match NamespaceCompiler::new_flat(&js_content.0).compile() {
-        Ok(graph) => {
-            let boxed = cx.boxed(JsGraph(Arc::new(RefCell::new(graph))));
-            Ok(boxed.upcast())
-        }
-        Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
-    }
-}
-
-struct JsSampler {
-    graph: SharedGraph,
-    seed: u64,
-}
-
-impl JsSampler {
-    fn next(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-        let this = cx
-            .this()
-            .downcast_or_throw::<JsBox<JsSampler>, _>(&mut cx)?;
-
-        Ok(cx.undefined())
-    }
-}
+struct JsSampler(Arc<Mutex<Iterable<Graph, StdRng>>>);
 
 unsafe impl std::marker::Send for JsSampler {} // TODO
 
 impl Finalize for JsSampler {}
 
-fn new_sampler(mut cx: FunctionContext) -> JsResult<JsValue> {
-    let js_graph = cx.argument::<JsBox<JsGraph>>(0)?;
-    let seed = {
-        if let Some(value) = cx.argument_opt(1) {
-            let number = *value.downcast_or_throw::<JsNumber, FunctionContext>(&mut cx)?;
-            number.value(&mut cx) as u64
-        } else {
-            0
-        }
-    };
+impl JsSampler {
+    /*
+     * new_sampler(content: Content, seed: number)
+     */
+    fn new(mut cx: FunctionContext) -> JsResult<JsValue> {
+        let js_content = cx.argument::<JsBox<JsContent>>(0)?;
+        let seed = cx.argument::<JsNumber>(1)?.value(&mut cx) as u64;
 
-    let boxed = cx.boxed(JsSampler {
-        graph: Arc::clone(&js_graph.0),
-        seed,
-    });
-    Ok(boxed.upcast())
+        match NamespaceCompiler::new_flat(&js_content.0).compile() {
+            Ok(graph) => {
+                let rng = StdRng::seed_from_u64(seed);
+                let synced = Arc::new(Mutex::new(graph.into_iterator(rng)));
+                let boxed = cx.boxed(JsSampler(synced));
+
+                Ok(boxed.upcast())
+            }
+            Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+        }
+    }
+
+    /*
+     * sampler_next(this: Sampler)
+     */
+    fn next(mut cx: FunctionContext) -> JsResult<JsValue> {
+        let this = cx.argument::<JsBox<JsSampler>>(0)?;
+
+        let mut iter_lock = this.0.lock().unwrap();
+
+        match to_value(&mut cx, &OwnedSerializable::new(iter_lock.deref_mut())) {
+            Ok(value) => match iter_lock.restart() {
+                Ok(_) => Ok(value),
+                Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+            },
+            Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+        }
+    }
 }
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    cx.export_function("new_content", new_content)?;
-    cx.export_function("new_graph", new_graph)?;
-    cx.export_function("new_sampler", new_sampler)?;
+    cx.export_function("new_content", JsContent::new)?;
+    cx.export_function("new_sampler", JsSampler::new)?;
     cx.export_function("sampler_next", JsSampler::next)?;
     Ok(())
 }
