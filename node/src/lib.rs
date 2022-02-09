@@ -1,5 +1,5 @@
 use neon::prelude::*;
-use neon_serde::from_value;
+use neon_serde::{from_value, to_value};
 
 use synth_core::compile::NamespaceCompiler;
 use synth_core::{Content, Graph};
@@ -48,7 +48,15 @@ struct JsSampler {
     seed: u64,
 }
 
-impl JsSampler {}
+impl JsSampler {
+    fn next(mut cx: FunctionContext) -> JsResult<JsUndefined> {
+        let this = cx
+            .this()
+            .downcast_or_throw::<JsBox<JsSampler>, _>(&mut cx)?;
+
+        Ok(cx.undefined())
+    }
+}
 
 unsafe impl std::marker::Send for JsSampler {} // TODO
 
@@ -74,8 +82,9 @@ fn new_sampler(mut cx: FunctionContext) -> JsResult<JsValue> {
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    cx.export_function("Content", new_content)?;
-    cx.export_function("Compile", new_graph)?;
-    cx.export_function("Sampler", new_sampler)?;
+    cx.export_function("new_content", new_content)?;
+    cx.export_function("new_graph", new_graph)?;
+    cx.export_function("new_sampler", new_sampler)?;
+    cx.export_function("sampler_next", JsSampler::next)?;
     Ok(())
 }

@@ -2,7 +2,7 @@
   "name": "@getsynth/node",
   "version": "0.1.0",
   "description": "Node.js wrapper around Synth, a declarative, synthetic data generator",
-  "main": "index.node",
+  "main": "index.js",
   "scripts": {
     "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
     "build-debug": "npm run build --",
