@@ -17,10 +17,10 @@ pub struct JsonFileExportStrategy {
 }
 
 impl ExportStrategy for JsonFileExportStrategy {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
-        std::fs::write(&self.from_file, sample.clone().into_json().to_string())?;
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
+        std::fs::write(&self.from_file, sample.into_json().to_string())?;
 
-        Ok(sample)
+        Ok(())
     }
 }
 
@@ -30,11 +30,11 @@ pub struct JsonStdoutExportStrategy<W> {
 }
 
 impl<W: Write> ExportStrategy for JsonStdoutExportStrategy<W> {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
-        writeln!(self.writer.borrow_mut(), "{}", sample.clone().into_json())
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
+        writeln!(self.writer.borrow_mut(), "{}", sample.into_json())
             .expect("failed to write json output");
 
-        Ok(sample)
+        Ok(())
     }
 }
 

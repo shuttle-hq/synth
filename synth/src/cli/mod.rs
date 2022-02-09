@@ -153,7 +153,7 @@ impl<'w> Cli {
             let ns = import_strategy.import()?;
 
             #[cfg(feature = "telemetry")]
-            TelemetryExportStrategy::fill_telemetry_pre(
+            TelemetryExportStrategy::fill_telemetry(
                 Rc::clone(&self.telemetry_context),
                 &ns,
                 cmd.collection,

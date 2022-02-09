@@ -20,14 +20,14 @@ pub struct JsonLinesFileExportStrategy {
 }
 
 impl ExportStrategy for JsonLinesFileExportStrategy {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let mut f = std::io::BufWriter::new(std::fs::File::create(&self.from_file)?);
 
-        for val in json_lines_from_sampler_output(sample.clone(), &self.collection_field_name) {
+        for val in json_lines_from_sampler_output(sample, &self.collection_field_name) {
             f.write_all((val.to_string() + "\n").as_bytes())?;
         }
 
-        Ok(sample)
+        Ok(())
     }
 }
 
@@ -38,13 +38,13 @@ pub struct JsonLinesStdoutExportStrategy<W> {
 }
 
 impl<W: Write> ExportStrategy for JsonLinesStdoutExportStrategy<W> {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
-        for line in json_lines_from_sampler_output(sample.clone(), &self.collection_field_name) {
+        for line in json_lines_from_sampler_output(sample, &self.collection_field_name) {
             writeln!(self.writer.borrow_mut(), "{}", line).expect("failed to write jsonl line");
         }
 
-        Ok(sample)
+        Ok(())
     }
 }
 

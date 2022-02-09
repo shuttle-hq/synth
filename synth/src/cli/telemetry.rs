@@ -225,7 +225,7 @@ impl<'w> TelemetryExportStrategy<'w> {
         }
     }
 
-    pub(super) fn fill_telemetry_pre(
+    pub(super) fn fill_telemetry(
         context: Rc<RefCell<TelemetryContext>>,
         namespace: &Namespace,
         collection: Option<String>,
@@ -271,7 +271,7 @@ impl<'w> TelemetryExportStrategy<'w> {
         Ok(())
     }
 
-    fn fill_telemetry_post(&self, output: SamplerOutput) -> Result<()> {
+    fn fill_telemetry_bytes(&self, output: SamplerOutput) -> Result<()> {
         let j = output.into_json();
         let s = serde_json::to_string(&j)?;
 
@@ -282,18 +282,17 @@ impl<'w> TelemetryExportStrategy<'w> {
 }
 
 impl<'w> ExportStrategy for TelemetryExportStrategy<'w> {
-    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
-        Self::fill_telemetry_pre(
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<()> {
+        Self::fill_telemetry(
             Rc::clone(&self.telemetry_context),
             &namespace,
             self.collection.clone(),
             self.ns_path.clone(),
         )?;
-        let output = self.exporter.export(namespace, sample)?;
 
-        self.fill_telemetry_post(output.clone())?;
+        self.fill_telemetry_bytes(sample.clone())?;
 
-        Ok(output)
+        self.exporter.export(namespace, sample)
     }
 }
 
@@ -550,8 +549,8 @@ pub mod tests {
     pub struct DummyExportStrategy {}
 
     impl ExportStrategy for DummyExportStrategy {
-        fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
-            Ok(sample)
+        fn export(&self, _namespace: Namespace, _sample: SamplerOutput) -> Result<()> {
+            Ok(())
         }
     }
 

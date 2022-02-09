@@ -13,7 +13,7 @@ pub struct MySqlExportStrategy {
 }
 
 impl ExportStrategy for MySqlExportStrategy {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let datasource = MySqlDataSource::new(&self.uri_string)?;
 
         create_and_insert_values(sample, &datasource)

@@ -20,14 +20,14 @@ pub struct CsvFileExportStrategy {
 }
 
 impl ExportStrategy for CsvFileExportStrategy {
-    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         if self.to_dir.exists() {
             return Err(anyhow::anyhow!("Output directory already exists"));
         } else {
             std::fs::create_dir_all(&self.to_dir)?;
         }
 
-        match csv_output_from_sampler_ouput(sample.clone(), &namespace)? {
+        match csv_output_from_sampler_ouput(sample, &namespace)? {
             CsvOutput::Namespace(ns) => {
                 for (name, csv) in ns {
                     std::fs::write(self.to_dir.join(name + ".csv"), csv)?;
@@ -38,7 +38,7 @@ impl ExportStrategy for CsvFileExportStrategy {
             }
         }
 
-        Ok(sample)
+        Ok(())
     }
 }
 
@@ -46,8 +46,8 @@ impl ExportStrategy for CsvFileExportStrategy {
 pub struct CsvStdoutExportStrategy;
 
 impl ExportStrategy for CsvStdoutExportStrategy {
-    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
-        match csv_output_from_sampler_ouput(sample.clone(), &namespace)? {
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<()> {
+        match csv_output_from_sampler_ouput(sample, &namespace)? {
             CsvOutput::Namespace(ns) => {
                 for (name, csv) in ns {
                     println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)
@@ -56,7 +56,7 @@ impl ExportStrategy for CsvStdoutExportStrategy {
             CsvOutput::Collection(csv) => println!("{}", csv),
         }
 
-        Ok(sample)
+        Ok(())
     }
 }
 

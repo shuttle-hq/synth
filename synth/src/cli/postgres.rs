@@ -14,7 +14,7 @@ pub struct PostgresExportStrategy {
 }
 
 impl ExportStrategy for PostgresExportStrategy {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let connect_params = PostgresConnectParams {
             uri: self.uri_string.clone(),
             schema: self.schema.clone(),

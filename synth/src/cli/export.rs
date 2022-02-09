@@ -20,7 +20,7 @@ use synth_core::{DataSourceParams, Namespace, Value};
 use super::map_from_uri_query;
 
 pub(crate) trait ExportStrategy {
-    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput>;
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<()>;
 }
 
 pub(crate) struct ExportStrategyBuilder<'a, W> {
@@ -122,8 +122,8 @@ where
 pub(crate) fn create_and_insert_values<T: DataSource>(
     sample: SamplerOutput,
     datasource: &T,
-) -> Result<SamplerOutput> {
-    match sample.clone() {
+) -> Result<()> {
+    match sample {
         SamplerOutput::Collection(name, value) => {
             insert_data(datasource, name.as_ref(), value)?;
         }
@@ -134,7 +134,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         }
     };
 
-    Ok(sample)
+    Ok(())
 }
 
 fn insert_data<T: DataSource>(

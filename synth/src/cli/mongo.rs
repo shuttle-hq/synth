@@ -151,10 +151,10 @@ fn bson_to_content(bson: &Bson) -> Content {
 }
 
 impl ExportStrategy for MongoExportStrategy {
-    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let mut client = Client::with_uri_str(&self.uri_string)?;
 
-        match sample.clone() {
+        match sample {
             SamplerOutput::Collection(name, value) => {
                 self.insert_data(name.as_ref(), value, &mut client)
             }
@@ -166,7 +166,7 @@ impl ExportStrategy for MongoExportStrategy {
             }
         }?;
 
-        Ok(sample)
+        Ok(())
     }
 }
 
