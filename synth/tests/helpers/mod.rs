@@ -6,6 +6,7 @@ pub async fn generate(namespace: &str) -> Result<String> {
     run(cli::Args::Generate(GenerateCommand {
         namespace: namespace.into(),
         collection: None,
+        scenario: None,
         random: false,
         schema: None,
         seed: Some(5),

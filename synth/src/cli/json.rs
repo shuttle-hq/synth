@@ -1,6 +1,6 @@
 use crate::cli::export::{ExportParams, ExportStrategy};
 use crate::cli::import::ImportStrategy;
-use crate::sampler::{Sampler, SamplerOutput};
+use crate::sampler::SamplerOutput;
 
 use synth_core::schema::{MergeStrategy, OptionalMergeStrategy};
 use synth_core::{Content, Namespace};
@@ -8,7 +8,6 @@ use synth_core::{Content, Namespace};
 use anyhow::{Context, Result};
 
 use std::cell::RefCell;
-use std::convert::TryFrom;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -18,13 +17,10 @@ pub struct JsonFileExportStrategy {
 }
 
 impl ExportStrategy for JsonFileExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let generator = Sampler::try_from(&params.namespace)?;
-        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
+    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+        std::fs::write(&self.from_file, sample.clone().into_json().to_string())?;
 
-        std::fs::write(&self.from_file, output.clone().into_json().to_string())?;
-
-        Ok(output)
+        Ok(sample)
     }
 }
 
@@ -34,14 +30,11 @@ pub struct JsonStdoutExportStrategy<W> {
 }
 
 impl<W: Write> ExportStrategy for JsonStdoutExportStrategy<W> {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let generator = Sampler::try_from(&params.namespace)?;
-        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
-        writeln!(self.writer.borrow_mut(), "{}", output.clone().into_json())
+    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+        writeln!(self.writer.borrow_mut(), "{}", sample.clone().into_json())
             .expect("failed to write json output");
 
-        Ok(output)
+        Ok(sample)
     }
 }
 

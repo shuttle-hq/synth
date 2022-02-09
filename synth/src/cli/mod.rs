@@ -12,6 +12,7 @@ mod store;
 use crate::cli::export::ExportParams;
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
+use crate::sampler::Sampler;
 use crate::version::print_version_message;
 
 use anyhow::{Context, Result};
@@ -205,8 +206,12 @@ impl<'w> Cli {
             ns_path: cmd.namespace.clone(),
         };
 
+        let sampler = Sampler::try_from(&params.namespace)?;
+        let sample =
+            sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
+
         export_strategy
-            .export(params)
+            .export(params, sample)
             .with_context(|| format!("At namespace {:?}", cmd.namespace))?;
 
         Ok(())
@@ -253,9 +258,18 @@ pub struct GenerateCommand {
     )]
     #[serde(skip)]
     pub namespace: PathBuf,
-    #[structopt(long, help = "The specific collection from which to generate")]
+    #[structopt(
+        long,
+        help = "The specific collection from which to generate. Cannot be used with --scenario"
+    )]
     #[serde(skip)]
     pub collection: Option<String>,
+    #[structopt(
+        long,
+        help = "The specific scenario to generate data for. Cannot be used with --collection"
+    )]
+    #[serde(skip)]
+    pub scenario: Option<String>,
     #[structopt(long, help = "the number of samples", default_value = "1")]
     pub size: usize,
     #[structopt(

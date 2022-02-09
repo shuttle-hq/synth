@@ -23,6 +23,7 @@ fn bench_generate_n_to_stdout(size: usize) {
         let args = Args::Generate(GenerateCommand {
             namespace,
             collection: None,
+            scenario: None,
             size,
             to: "json:".to_string(),
             seed: Some(0),

@@ -14,7 +14,7 @@ pub struct PostgresExportStrategy {
 }
 
 impl ExportStrategy for PostgresExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+    fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
         let connect_params = PostgresConnectParams {
             uri: self.uri_string.clone(),
             schema: self.schema.clone(),
@@ -22,7 +22,7 @@ impl ExportStrategy for PostgresExportStrategy {
 
         let datasource = PostgresDataSource::new(&connect_params)?;
 
-        create_and_insert_values(params, &datasource)
+        create_and_insert_values(sample, &datasource)
     }
 }
 

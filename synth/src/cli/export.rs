@@ -13,14 +13,14 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::datasource::DataSource;
-use crate::sampler::{Sampler, SamplerOutput};
+use crate::sampler::SamplerOutput;
 use async_std::task;
 use synth_core::{DataSourceParams, Namespace, Value};
 
 use super::map_from_uri_query;
 
 pub(crate) trait ExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
+    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput>;
 }
 
 pub struct ExportParams {
@@ -129,13 +129,9 @@ where
 }
 
 pub(crate) fn create_and_insert_values<T: DataSource>(
-    params: ExportParams,
+    sample: SamplerOutput,
     datasource: &T,
 ) -> Result<SamplerOutput> {
-    let sampler = Sampler::try_from(&params.namespace)?;
-    let sample =
-        sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
-
     match sample.clone() {
         SamplerOutput::Collection(name, value) => {
             insert_data(datasource, name.as_ref(), value)?;

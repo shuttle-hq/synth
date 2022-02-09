@@ -1,7 +1,7 @@
 mod headers;
 
 use crate::cli::export::{ExportParams, ExportStrategy};
-use crate::sampler::{Sampler, SamplerOutput};
+use crate::sampler::SamplerOutput;
 
 use synth_core::schema::content::{number_content, ArrayContent, NumberContent};
 use synth_core::schema::{MergeStrategy, OptionalMergeStrategy};
@@ -10,7 +10,6 @@ use synth_gen::value::Number;
 
 use anyhow::Result;
 
-use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use super::import::ImportStrategy;
@@ -21,17 +20,14 @@ pub struct CsvFileExportStrategy {
 }
 
 impl ExportStrategy for CsvFileExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let generator = Sampler::try_from(&params.namespace)?;
-        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
+    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
         if self.to_dir.exists() {
             return Err(anyhow::anyhow!("Output directory already exists"));
         } else {
             std::fs::create_dir_all(&self.to_dir)?;
         }
 
-        match csv_output_from_sampler_ouput(output.clone(), &params.namespace)? {
+        match csv_output_from_sampler_ouput(sample.clone(), &params.namespace)? {
             CsvOutput::Namespace(ns) => {
                 for (name, csv) in ns {
                     std::fs::write(self.to_dir.join(name + ".csv"), csv)?;
@@ -42,7 +38,7 @@ impl ExportStrategy for CsvFileExportStrategy {
             }
         }
 
-        Ok(output)
+        Ok(sample)
     }
 }
 
@@ -50,11 +46,8 @@ impl ExportStrategy for CsvFileExportStrategy {
 pub struct CsvStdoutExportStrategy;
 
 impl ExportStrategy for CsvStdoutExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let generator = Sampler::try_from(&params.namespace)?;
-        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
-        match csv_output_from_sampler_ouput(output.clone(), &params.namespace)? {
+    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+        match csv_output_from_sampler_ouput(sample.clone(), &params.namespace)? {
             CsvOutput::Namespace(ns) => {
                 for (name, csv) in ns {
                     println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)
@@ -63,7 +56,7 @@ impl ExportStrategy for CsvStdoutExportStrategy {
             CsvOutput::Collection(csv) => println!("{}", csv),
         }
 
-        Ok(output)
+        Ok(sample)
     }
 }
 
@@ -414,6 +407,8 @@ fn count_scalars_in_content(content: &Content, ns: &Namespace) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use crate::sampler::Sampler;
+
     use super::*;
     #[test]
     fn test_csv_record_to_value() {

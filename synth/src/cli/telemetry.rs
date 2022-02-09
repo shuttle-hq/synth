@@ -276,14 +276,14 @@ impl<'w> TelemetryExportStrategy<'w> {
 }
 
 impl<'w> ExportStrategy for TelemetryExportStrategy<'w> {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+    fn export(&self, params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
         Self::fill_telemetry_pre(
             Rc::clone(&self.telemetry_context),
             &params.namespace,
             params.collection_name.clone(),
             params.ns_path.clone(),
         )?;
-        let output = self.exporter.export(params)?;
+        let output = self.exporter.export(params, sample)?;
 
         self.fill_telemetry_post(output.clone())?;
 
@@ -544,12 +544,8 @@ pub mod tests {
     pub struct DummyExportStrategy {}
 
     impl ExportStrategy for DummyExportStrategy {
-        fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-            let generator = Sampler::try_from(&params.namespace)?;
-            let output =
-                generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
-            Ok(output)
+        fn export(&self, _params: ExportParams, sample: SamplerOutput) -> Result<SamplerOutput> {
+            Ok(sample)
         }
     }
 
@@ -601,15 +597,20 @@ pub mod tests {
         let export_strategy =
             TelemetryExportStrategy::new(Box::new(DummyExportStrategy {}), Rc::clone(&context));
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: None,
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/path"),
-            })
+        let params = ExportParams {
+            namespace: schema,
+            collection_name: None,
+            target: 1,
+            seed: 500,
+            ns_path: PathBuf::from("/dummy/path"),
+        };
+
+        let sample = Sampler::try_from(&params.namespace)
+            .unwrap()
+            .sample_seeded(params.collection_name.clone(), params.target, params.seed)
             .unwrap();
+
+        export_strategy.export(params, sample).unwrap();
 
         assert_eq!(
             context.take(),
@@ -690,15 +691,20 @@ pub mod tests {
         .into_namespace()
         .unwrap();
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: None,
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/path"),
-            })
+        let params = ExportParams {
+            namespace: schema,
+            collection_name: None,
+            target: 1,
+            seed: 500,
+            ns_path: PathBuf::from("/dummy/path"),
+        };
+
+        let sample = Sampler::try_from(&params.namespace)
+            .unwrap()
+            .sample_seeded(params.collection_name.clone(), params.target, params.seed)
             .unwrap();
+
+        export_strategy.export(params, sample).unwrap();
 
         assert_eq!(
             context.take(),
@@ -767,15 +773,20 @@ pub mod tests {
         .into_namespace()
         .unwrap();
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: None,
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/path"),
-            })
+        let params = ExportParams {
+            namespace: schema,
+            collection_name: None,
+            target: 1,
+            seed: 500,
+            ns_path: PathBuf::from("/dummy/path"),
+        };
+
+        let sample = Sampler::try_from(&params.namespace)
+            .unwrap()
+            .sample_seeded(params.collection_name.clone(), params.target, params.seed)
             .unwrap();
+
+        export_strategy.export(params, sample).unwrap();
 
         assert_eq!(
             context.take(),
@@ -844,15 +855,20 @@ pub mod tests {
         .into_namespace()
         .unwrap();
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: "collection-2".parse().ok(),
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/namespace"),
-            })
+        let params = ExportParams {
+            namespace: schema,
+            collection_name: "collection-2".parse().ok(),
+            target: 1,
+            seed: 500,
+            ns_path: PathBuf::from("/dummy/namespace"),
+        };
+
+        let sample = Sampler::try_from(&params.namespace)
+            .unwrap()
+            .sample_seeded(params.collection_name.clone(), params.target, params.seed)
             .unwrap();
+
+        export_strategy.export(params, sample).unwrap();
 
         assert_eq!(
             context.take(),
