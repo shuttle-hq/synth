@@ -1,8 +1,10 @@
-use anyhow::{Context, Result};
-use lazy_static::lazy_static;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
-use synth_core::schema::{Content, Namespace};
+
+use synth_core::Content;
+
+use anyhow::{Context, Result};
+use lazy_static::lazy_static;
 
 lazy_static! {
     static ref UNDERLYING: Underlying = Underlying {
@@ -67,9 +69,9 @@ impl Store {
         self.collection_path(namespace, collection).exists()
     }
 
-    /// Get a namespace given it's directory path
-    pub fn get_ns(&self, ns_path: PathBuf) -> Result<Namespace> {
-        let mut ns = Namespace::default();
+    /// Get a namespace from the filesystem given it's directory path.
+    pub fn read_ns(&self, ns_path: PathBuf) -> Result<Content> {
+        let mut ns = Content::new_object();
 
         for entry in ns_path
             .read_dir()
@@ -107,10 +109,10 @@ impl Store {
     }
 
     /// Save a namespace given it's directory path
-    pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Namespace) -> Result<()> {
+    pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Content) -> Result<()> {
         let abs_ns_path = self.ns_path(&ns_path);
         std::fs::create_dir_all(&abs_ns_path)?;
-        for (name, content) in namespace {
+        for (name, content) in namespace.into_iter() {
             self.save_collection_path(&ns_path, name, content)?;
         }
         Ok(())
@@ -120,7 +122,7 @@ impl Store {
     /// Save a namespace given it's proper name.
     /// So will save to <store-dir>/<name>
     #[allow(unused)]
-    pub fn save_ns(&self, name: String, namespace: Namespace) -> Result<()> {
+    pub fn save_ns(&self, name: String, namespace: Content) -> Result<()> {
         let ns_path = self.path.join(name);
         self.save_ns_path(ns_path, namespace)
     }
@@ -149,11 +151,11 @@ pub mod tests {
     fn test_rw() -> Result<()> {
         let path: PathBuf = tempdir().unwrap().path().into();
         let store = Store::with_dir(path.clone());
-        let ns = Namespace::default();
+        let ns = Content::new_object();
         let name = "users".to_string();
         store.save_ns(name, ns.clone())?;
 
-        let saved_ns = store.get_ns(path.join("users"))?;
+        let saved_ns = store.read_ns(path.join("users"))?;
         assert_eq!(saved_ns, ns);
         Ok(())
     }

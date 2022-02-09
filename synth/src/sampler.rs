@@ -4,11 +4,36 @@ use rand::SeedableRng;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
-use synth_core::{Graph, Namespace, Value};
+use synth_core::{Content, Graph, Value};
 use synth_gen::prelude::*;
 
 pub(crate) struct Sampler {
     graph: Graph,
+}
+
+impl Sampler {
+    pub(crate) fn sample_seeded(
+        self,
+        collection_name: Option<String>,
+        target: usize,
+        seed: u64,
+    ) -> Result<SamplerOutput> {
+        let rng = rand::rngs::StdRng::seed_from_u64(seed);
+        let sample_strategy = SampleStrategy {
+            collection_name,
+            target,
+        };
+        sample_strategy.sample(self.graph, rng)
+    }
+}
+
+impl TryFrom<&Content> for Sampler {
+    type Error = anyhow::Error;
+    fn try_from(ns: &Content) -> Result<Self> {
+        Ok(Self {
+            graph: Graph::try_from(ns)?,
+        })
+    }
 }
 
 #[derive(Clone)]
@@ -41,58 +66,13 @@ fn sampler_progress_bar(target: u64) -> ProgressBar {
     bar
 }
 
-impl Sampler {
-    pub(crate) fn sample_seeded(
-        self,
-        collection_name: Option<String>,
-        target: usize,
-        seed: u64,
-    ) -> Result<SamplerOutput> {
-        let rng = rand::rngs::StdRng::seed_from_u64(seed);
-        let sample_strategy = SampleStrategy::new(collection_name, target);
-        sample_strategy.sample(self.graph, rng)
-    }
-}
-
-impl TryFrom<&Namespace> for Sampler {
-    type Error = anyhow::Error;
-    fn try_from(namespace: &Namespace) -> Result<Self> {
-        Ok(Self {
-            graph: Graph::from_namespace(namespace)?,
-        })
-    }
-}
-
-enum SampleStrategy {
-    Namespace(NamespaceSampleStrategy),
-    Collection(CollectionSampleStrategy),
+struct SampleStrategy {
+    target: usize,
+    collection_name: Option<String>,
 }
 
 impl SampleStrategy {
-    fn new(collection_name: Option<String>, target: usize) -> Self {
-        match collection_name {
-            None => SampleStrategy::Namespace(NamespaceSampleStrategy { target }),
-            Some(name) => SampleStrategy::Collection(CollectionSampleStrategy { name, target }),
-        }
-    }
-
-    fn sample<R: Rng>(self, model: Graph, rng: R) -> Result<SamplerOutput> {
-        match self {
-            SampleStrategy::Namespace(nss) => Ok(SamplerOutput::Namespace(nss.sample(model, rng)?)),
-            SampleStrategy::Collection(css) => Ok(SamplerOutput::Collection(
-                css.name.clone(),
-                css.sample(model, rng)?,
-            )),
-        }
-    }
-}
-
-struct NamespaceSampleStrategy {
-    target: usize,
-}
-
-impl NamespaceSampleStrategy {
-    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Vec<(String, Value)>> {
+    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<SamplerOutput> {
         let mut generated = 0;
         let mut out = BTreeMap::<String, Value>::new();
         let progress_bar = sampler_progress_bar(self.target as u64);
@@ -131,71 +111,34 @@ impl NamespaceSampleStrategy {
                     }
                 });
             progress_bar.set_position(generated as u64);
+
             if round_start == generated {
-                warn!("could not generate {} values: try modifying the schema to generate more data instead of the --size flag", self.target);
+                warn!("could not generate {} values: try modifying the schema to generate more data instead of using the --size flag", self.target);
                 break;
             }
         }
 
         progress_bar.finish_and_clear();
 
-        let mut ordered_out = Vec::new();
-
-        for name in ordered {
-            let value = out.remove(&name).unwrap();
-            ordered_out.push((name, value));
-        }
-
-        ordered_out.extend(out.into_iter());
-
-        Ok(ordered_out)
-    }
-}
-
-struct CollectionSampleStrategy {
-    name: String,
-    target: usize,
-}
-
-impl CollectionSampleStrategy {
-    fn sample<R: Rng>(self, model: Graph, mut rng: R) -> Result<Value> {
-        let mut out = Value::Array(vec![]);
-        let mut generated = 0;
-        let progress_bar = sampler_progress_bar(self.target as u64);
-
-        let mut model = model.aggregate();
-
-        while generated < self.target {
-            let round_start = generated;
-            let next = model.complete(&mut rng)?;
-            let collection_value = as_object(next)?.remove(&self.name).ok_or_else(|| {
-                anyhow!(
-                    "generated namespace does not have a collection '{}'",
-                    self.name
-                )
-            })?;
-            match collection_value {
-                Value::Array(vec) => {
-                    generated += vec.len();
-                    if let Value::Array(to_extend) = &mut out {
-                        to_extend.extend(vec);
-                    }
-                }
-                non_array => {
-                    generated += 1;
-                    out = non_array;
-                }
+        let sampler_output = match self.collection_name {
+            Some(collection_name) => {
+                let val = out.remove(&collection_name).unwrap(); //TODO
+                SamplerOutput::Collection(collection_name, val)
             }
-            progress_bar.set_position(generated as u64);
-            if round_start == generated {
-                warn!("could not generate {} values for collection {}: try modifying the schema to generate more instead of using the --size flag", self.target, self.name);
-                break;
+            None => {
+                let mut ordered_out = Vec::new();
+
+                for name in ordered {
+                    let value = out.remove(&name).unwrap();
+                    ordered_out.push((name, value));
+                }
+
+                ordered_out.extend(out.into_iter());
+                SamplerOutput::Namespace(ordered_out)
             }
-        }
+        };
 
-        progress_bar.finish_and_clear();
-
-        Ok(out)
+        Ok(sampler_output)
     }
 }
 

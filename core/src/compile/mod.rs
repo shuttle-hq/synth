@@ -16,9 +16,7 @@
 //! All [`Content`](crate::schema::Content) nodes implement [`Compile`](Compile) and get visited by
 //! [`Compiler`](Compiler)s.
 //!
-//! The main structure of this module is [`NamespaceCompiler`](NamespaceCompiler), which can be used
-//! to compile both [`Namespace`](crate::schema::Namespace) and [`Content`](crate::schema::Content)
-//! into [`Graph`](crate::graph::Graph).
+//! The main structure of this module is [`NamespaceCompiler`](NamespaceCompiler).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::iter::IntoIterator;
@@ -26,8 +24,8 @@ use std::iter::IntoIterator;
 use anyhow::{Context, Result};
 
 mod state;
+pub use state::CompilerState;
 use state::{Artifact, OutputState, Symbols};
-pub use state::{CompilerState, Source};
 
 pub mod address;
 pub use address::Address;
@@ -37,7 +35,7 @@ pub use link::{FromLink, Link};
 use link::{GeneratorRecorder, GeneratorSliceRef, Ordered, Recorder};
 
 use crate::graph::Graph;
-use crate::schema::{Content, Namespace};
+use crate::schema::Content;
 
 /// A trait for visitors of the [`Content`](crate::schema::Content) tree.
 ///
@@ -67,13 +65,8 @@ impl<'a> NamespaceCompiler<'a> {
         Self { state, vtable }
     }
 
-    pub fn new(namespace: &'a Namespace) -> Self {
-        let state = CompilerState::namespace(namespace);
-        Self::new_at(state)
-    }
-
-    pub fn new_flat(content: &'a Content) -> Self {
-        let state = CompilerState::content(content);
+    pub fn new(namespace: &'a Content) -> Self {
+        let state = CompilerState::new(namespace);
         Self::new_at(state)
     }
 
@@ -182,14 +175,14 @@ impl<'a> NamespaceCompiler<'a> {
             let state = self.state.project_mut(address.clone())?;
             let vtable = &mut self.vtable;
             let mut children = BTreeMap::new();
-            let content_compiler = ContentCompiler {
+            let collection_compiler = CollectionCompiler {
                 scope: address.clone(),
                 state,
                 children: &mut children,
                 vtable,
             };
 
-            let mut node = content_compiler
+            let mut node = collection_compiler
                 .compile()
                 .with_context(|| format!("while trying to build `{}`", &address))?;
 
@@ -233,23 +226,20 @@ impl<'a> NamespaceCompiler<'a> {
     }
 }
 
-pub struct ContentCompiler<'c, 'a: 'c> {
+struct CollectionCompiler<'c, 'a: 'c> {
     scope: Address,
     state: &'c mut CompilerState<'a, Graph>,
     children: &'c mut BTreeMap<String, (GeneratorRecorder<Graph>, GeneratorSliceRef<Graph>)>,
     vtable: &'c mut Symbols,
 }
 
-impl<'c, 'a: 'c> ContentCompiler<'c, 'a> {
+impl<'c, 'a: 'c> CollectionCompiler<'c, 'a> {
     fn compile(self) -> Result<Graph> {
-        match self.state.source() {
-            Source::Namespace(namespace) => namespace.compile(self),
-            Source::Content(content) => content.compile(self),
-        }
+        self.state.source().compile(self)
     }
 }
 
-impl<'c, 'a: 'c> Compiler<'a> for ContentCompiler<'c, 'a> {
+impl<'c, 'a: 'c> Compiler<'a> for CollectionCompiler<'c, 'a> {
     fn build(&mut self, field: &str, _: &'a Content) -> Result<Graph> {
         let mut child = self
             .state
@@ -301,10 +291,7 @@ impl<'t, 'a: 't> Crawler<'t, 'a> {
     }
 
     fn compile(self) -> Result<()> {
-        match self.state.source() {
-            Source::Namespace(namespace) => namespace.compile(self)?,
-            Source::Content(content) => content.compile(self)?,
-        };
+        self.state.source().compile(self)?;
         Ok(())
     }
 }

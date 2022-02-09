@@ -30,7 +30,7 @@ impl Default for State {
 impl State {
     fn compile_and_generate(&self, body: Content, size: Option<u64>) -> Result<impl Serialize> {
         // Build the generator graph
-        let mut graph = NamespaceCompiler::new_flat(&body).compile()?;
+        let mut graph = NamespaceCompiler::new(&body).compile()?;
         if let Some(size) = size {
             let size = Graph::Number(RandomU64::constant(size).into()).into_size();
             graph = Graph::Array(ArrayNode::new_with(size, graph));

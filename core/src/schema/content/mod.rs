@@ -43,9 +43,6 @@ pub use array::ArrayContent;
 mod object;
 pub use object::ObjectContent;
 
-mod datasource;
-pub use datasource::DatasourceContent;
-
 mod one_of;
 pub use one_of::{OneOfContent, VariantContent};
 
@@ -64,9 +61,12 @@ pub use unique::{UniqueAlgorithm, UniqueContent};
 pub mod hidden;
 pub use hidden::HiddenContent;
 
+pub mod datasource;
+pub use datasource::DatasourceContent;
+
 use prelude::*;
 
-use super::{FieldRef, Namespace};
+use super::FieldRef;
 
 pub trait Find<C> {
     fn find<I, R>(&self, reference: I) -> Result<&C>
@@ -321,10 +321,15 @@ content! {
 }
 
 impl Content {
-    pub fn from_value_wrapped_in_array(value: &Value) -> Self {
+    pub fn new_object() -> Self {
+        Content::Object(ObjectContent::default())
+    }
+
+    /// Wrap a parsed schema inside a [`Content::Array`] of length 1.
+    pub fn new_collection(content: Content) -> Self {
         Content::Array(ArrayContent {
             length: Box::new(Content::from(&Value::from(1))),
-            content: Box::new(value.into()),
+            content: Box::new(content),
         })
     }
 
@@ -375,7 +380,7 @@ impl Content {
         matches!(self, Self::Unique(_))
     }
 
-    pub fn is_scalar(&self, ns: &Namespace) -> Result<bool> {
+    pub fn is_scalar(&self, ns: &Content) -> Result<bool> {
         match self {
             Self::Array(_) | Self::Object(_) => Ok(false),
             Self::SameAs(same_as) => ns.get_s_node(&same_as.ref_)?.is_scalar(ns),
@@ -401,21 +406,6 @@ impl Content {
             })
         } else {
             self
-        }
-    }
-
-    pub fn into_namespace(self) -> Result<Namespace> {
-        match self {
-            Content::Object(ObjectContent { fields, .. }) => {
-                let mut namespace = Namespace::new();
-                for (key, content) in fields.into_iter() {
-                    namespace.put_collection(key, content)?;
-                }
-                Ok(namespace)
-            }
-            _ => Err(anyhow!(
-                "cannot convert a non-object content to a namespace"
-            )),
         }
     }
 
@@ -513,6 +503,72 @@ impl Content {
             Content::Empty(_) => "empty".to_string(),
         }
     }
+
+    pub fn get_s_node(&self, reference: &FieldRef) -> Result<&Content> {
+        self.find(reference.iter().peekable())
+    }
+
+    pub fn get_s_node_mut(&mut self, reference: &FieldRef) -> Result<&mut Content> {
+        self.find_mut(reference.iter().peekable())
+    }
+
+    pub fn get_collection(&self, key: &str) -> Result<&Content> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            let suggestion = suggest_closest(fields.keys(), key).unwrap_or_default();
+            return fields
+                .get(key)
+                .context(format!("no such collection: '{}'{}", key, suggestion));
+        } else {
+            Err(anyhow!("cannot fetch a collection from a non-object"))
+        }
+    }
+
+    pub fn get_collection_mut(&mut self, key: &str) -> Result<&mut Content> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            let suggestion = suggest_closest(fields.keys(), key).unwrap_or_default();
+            return fields
+                .get_mut(key)
+                .context(format!("no such collection: '{}'{}", key, suggestion));
+        } else {
+            Err(anyhow!("cannot fetch a collection from a non-object"))
+        }
+    }
+
+    pub fn put_collection(&mut self, key: String, value: Content) -> Result<()> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            super::check_collection_name_is_valid(&key)?;
+
+            if fields.insert(key.clone(), value).is_some() {
+                Err(anyhow!("collection already exists: {}", key))
+            } else {
+                Ok(())
+            }
+        } else {
+            Err(anyhow!("cannot insert collection into a non-object"))
+        }
+    }
+
+    pub fn put_collection_from_json(&mut self, key: String, value: &Value) -> Result<()> {
+        self.put_collection(key, Content::new_collection(value.into()))
+    }
+
+    pub fn remove_collection(&mut self, key: &str) -> Result<Content> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            fields
+                .remove(key)
+                .ok_or_else(|| anyhow!("no such collection: '{}'", key))
+        } else {
+            Err(anyhow!("cannot remove collection from a non-object"))
+        }
+    }
+
+    pub fn count_collections(&self) -> Result<usize> {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            Ok(fields.len())
+        } else {
+            Err(anyhow!("cannot count collections in a non-object"))
+        }
+    }
 }
 
 impl Default for Content {
@@ -579,6 +635,29 @@ impl<'r> From<&'r Value> for Content {
                 };
                 Content::Number(number_content)
             }
+        }
+    }
+}
+
+impl FromIterator<(String, Content)> for Content {
+    fn from_iter<I: IntoIterator<Item = (String, Content)>>(iter: I) -> Content {
+        let mut ns = Content::new_object();
+        for (key, value) in iter {
+            let _ = ns.put_collection(key, value);
+        }
+        ns
+    }
+}
+
+impl IntoIterator for Content {
+    type Item = (String, Content);
+    type IntoIter = std::collections::btree_map::IntoIter<String, Content>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        if let Content::Object(ObjectContent { fields, .. }) = self {
+            fields.into_iter()
+        } else {
+            panic!("can only turn `Content::Object` into iterator")
         }
     }
 }

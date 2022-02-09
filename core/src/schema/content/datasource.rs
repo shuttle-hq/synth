@@ -85,7 +85,7 @@ mod tests {
         };
 
         let content = Content::Datasource(content);
-        let compiler = NamespaceCompiler::new_flat(&content);
+        let compiler = NamespaceCompiler::new(&content);
         compiler.compile().unwrap();
     }
 
@@ -103,7 +103,7 @@ mod tests {
         };
 
         let content = Content::Datasource(content);
-        let compiler = NamespaceCompiler::new_flat(&content);
+        let compiler = NamespaceCompiler::new(&content);
         let mut graph = compiler.compile().unwrap();
 
         let mut seed = rand::rngs::StdRng::seed_from_u64(5);
@@ -135,7 +135,7 @@ mod tests {
         };
 
         let content = Content::Datasource(content);
-        let compiler = NamespaceCompiler::new_flat(&content);
+        let compiler = NamespaceCompiler::new(&content);
         let mut graph = compiler.compile().unwrap();
 
         let mut seed = rand::rngs::StdRng::seed_from_u64(5);
@@ -158,7 +158,7 @@ mod tests {
         };
 
         let content = Content::Datasource(content);
-        let compiler = NamespaceCompiler::new_flat(&content);
+        let compiler = NamespaceCompiler::new(&content);
         compiler.compile().unwrap();
     }
 
@@ -171,7 +171,7 @@ mod tests {
         };
 
         let content = Content::Datasource(content);
-        let compiler = NamespaceCompiler::new_flat(&content);
+        let compiler = NamespaceCompiler::new(&content);
         compiler.compile().unwrap();
     }
 
@@ -190,7 +190,7 @@ mod tests {
         };
 
         let content = Content::Datasource(content);
-        let compiler = NamespaceCompiler::new_flat(&content);
+        let compiler = NamespaceCompiler::new(&content);
         compiler.compile().unwrap();
     }
 }

@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use crate::datasource::DataSource;
 use crate::sampler::{Sampler, SamplerOutput};
 use async_std::task;
-use synth_core::{DataSourceParams, Namespace, Value};
+use synth_core::{Content, DataSourceParams, Value};
 
 use super::map_from_uri_query;
 
@@ -24,7 +24,7 @@ pub(crate) trait ExportStrategy {
 }
 
 pub struct ExportParams {
-    pub namespace: Namespace,
+    pub namespace: Content,
     /// The name of the single collection to generate from if one is specified (via --collection).
     pub collection_name: Option<String>,
     pub target: usize,

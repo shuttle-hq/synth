@@ -2,7 +2,6 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::{ArrayContent, Content, FieldRef, OneOfContent};
-use crate::Namespace;
 
 /// Trait can mutate field into an optional field or can
 /// make optional field non-optional
@@ -16,7 +15,7 @@ pub struct Optionalise {
     optional: bool,
 }
 
-impl OptionaliseApi for Namespace {
+impl OptionaliseApi for Content {
     fn optionalise(&mut self, optionalise: Optionalise) -> Result<()> {
         let target = optionalise.at;
         match target.parent() {
