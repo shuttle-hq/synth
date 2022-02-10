@@ -16,16 +16,6 @@ interface Id extends Number {
     }
 }
 
-function idNumber(start_at?: number): Id {
-    return {
-        type: "number",
-        subtype: "u64",
-        id: {
-            start_at
-        }
-    }
-}
-
 function bestSubtype(...values: number[]): NumberSubtype {
     if (values.length < 2) {
         const n = values[0];
@@ -47,18 +37,6 @@ interface Range extends Number {
     }
 }
 
-function rangeNumber(low: number, high: number, step: number = 1): Range {
-    return {
-        type: "number",
-        subtype: bestSubtype(low, high, step),
-        range: {
-            low,
-            high,
-            step
-        }
-    }
-}
-
 type Constant = QualifiedConstant | LiteralConstant;
 
 type LiteralConstant = number;
@@ -67,12 +45,36 @@ interface QualifiedConstant extends Number {
     constant: number
 }
 
-function constantNumber(constant: number): QualifiedConstant {
-    return {
-        type: "number",
-        subtype: bestSubtype(constant),
-        constant
-    }
-}
+const number = {
+    id: function (start_at?: number): Id {
+        return {
+            type: "number",
+            subtype: "u64",
+            id: {
+                start_at
+            }
+        }
+    },
+    constant: function (constant: number): QualifiedConstant {
+        return {
+            type: "number",
+            subtype: bestSubtype(constant),
+            constant
+        }
+    },
 
-export { idNumber, rangeNumber, constantNumber, NumberContent }
+    range: function (low: number, high: number, step: number = 1): Range {
+        return {
+            type: "number",
+            subtype: bestSubtype(low, high, step),
+            range: {
+                low,
+                high,
+                step
+            }
+        }
+    }
+};
+
+
+export { number, NumberContent }

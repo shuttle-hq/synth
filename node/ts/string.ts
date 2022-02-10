@@ -10,29 +10,10 @@ interface Pattern extends String {
     pattern: string
 }
 
-function patternString(pattern: string): Pattern {
-    new RegExp(pattern); // Will throw if the pattern is not a valid regular expression.
-
-    return {
-        type: "string",
-        pattern
-    }
-}
-
 interface Format extends String {
     format: {
         format: string,
         arguments: Record<string, Content>
-    }
-}
-
-function formatString(format: string, args: Record<string, Content>): Format {
-    return {
-        type: "string",
-        format: {
-            format,
-            arguments: args
-        }
     }
 }
 
@@ -103,24 +84,45 @@ interface Faker extends String {
     }
 }
 
-function fakerString(generator: FakerGenerator): Faker {
-    return {
-        type: "string",
-        faker: {
-            generator
-        }
-    }
-}
-
 interface Categorical extends String {
     categorical: Record<string, number>
 }
 
-function categoricalString(categorical: Record<string, number>): Categorical {
-    return {
-        type: "string",
-        categorical
-    }
-}
+const str = {
+    pattern: function (pattern: string): Pattern {
+        new RegExp(pattern); // Will throw if the pattern is not a valid regular expression.
 
-export { patternString, formatString, fakerString, categoricalString, StringContent }
+        return {
+            type: "string",
+            pattern
+        }
+    },
+
+    format: function (format: string, args: Record<string, Content>): Format {
+        return {
+            type: "string",
+            format: {
+                format,
+                arguments: args
+            }
+        }
+    },
+
+    faker: function (generator: FakerGenerator): Faker {
+        return {
+            type: "string",
+            faker: {
+                generator
+            }
+        }
+    },
+
+    categorical: function (categorical: Record<string, number>): Categorical {
+        return {
+            type: "string",
+            categorical
+        }
+    }
+};
+
+export { str, StringContent }
