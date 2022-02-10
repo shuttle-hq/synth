@@ -266,7 +266,8 @@ pub struct GenerateCommand {
     pub collection: Option<String>,
     #[structopt(
         long,
-        help = "The specific scenario to generate data for. Cannot be used with --collection"
+        help = "The specific scenario to generate data for. Cannot be used with --collection",
+        conflicts_with("collection")
     )]
     #[serde(skip)]
     pub scenario: Option<String>,
