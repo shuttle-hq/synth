@@ -11,6 +11,7 @@ use synth_gen::prelude::*;
 
 use rand::rngs::StdRng;
 
+use std::fmt::Display;
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 
@@ -30,7 +31,7 @@ impl JsContent {
                 let boxed = cx.boxed(JsContent(content));
                 Ok(boxed.upcast())
             }
-            Err(e) => JsError::type_error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+            Err(e) => to_upcasted_type_error(cx, e),
         }
     }
 }
@@ -57,7 +58,7 @@ impl JsSampler {
 
                 Ok(boxed.upcast())
             }
-            Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+            Err(e) => to_upcasted_type_error(cx, e),
         }
     }
 
@@ -72,11 +73,15 @@ impl JsSampler {
         match to_value(&mut cx, &OwnedSerializable::new(iter_lock.deref_mut())) {
             Ok(value) => match iter_lock.restart() {
                 Ok(_) => Ok(value),
-                Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+                Err(e) => to_upcasted_type_error(cx, e),
             },
-            Err(e) => JsError::error(&mut cx, e.to_string()).map(|handle| handle.upcast()),
+            Err(e) => to_upcasted_type_error(cx, e),
         }
     }
+}
+
+fn to_upcasted_type_error<'a>(mut cx: impl Context<'a>, e: impl Display) -> JsResult<'a, JsValue> {
+    JsError::type_error(&mut cx, e.to_string()).map(|handle| handle.upcast())
 }
 
 #[neon::main]
