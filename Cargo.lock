@@ -3284,6 +3284,7 @@ dependencies = [
  "log",
  "mongodb",
  "num_cpus",
+ "paste",
  "posthog-rs",
  "querystring",
  "rand 0.8.4",

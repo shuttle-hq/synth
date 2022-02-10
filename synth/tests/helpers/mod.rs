@@ -3,10 +3,14 @@ use synth::cli::{self, GenerateCommand};
 
 /// Helper to capture and return any output for generate on a namespace
 pub async fn generate(namespace: &str) -> Result<String> {
+    generate_scenario(namespace, None).await
+}
+
+pub async fn generate_scenario(namespace: &str, scenario: Option<String>) -> Result<String> {
     run(cli::Args::Generate(GenerateCommand {
         namespace: namespace.into(),
         collection: None,
-        scenario: None,
+        scenario,
         random: false,
         schema: None,
         seed: Some(5),
