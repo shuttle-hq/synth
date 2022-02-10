@@ -32,8 +32,41 @@ impl Scenario {
         })
     }
 
-    pub fn build(self) -> Namespace {
-        self.namespace
+    pub fn build(mut self) -> Result<Namespace> {
+        let collections: Vec<_> = self
+            .namespace
+            .keys()
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        let scenario_collections: Vec<_> = self.scenario.keys().map(ToOwned::to_owned).collect();
+
+        let extra_collections: Vec<_> = scenario_collections
+            .iter()
+            .filter(|c| !collections.contains(c))
+            .collect();
+
+        if !extra_collections.is_empty() {
+            let extra_collections = extra_collections
+                .into_iter()
+                .map(|e| format!("- {}", e))
+                .collect::<Vec<String>>()
+                .join("\n");
+
+            return Err(anyhow!(
+                "the namespace does not contain the following collections:\n{}",
+                extra_collections
+            ));
+        }
+
+        let trim_collections = collections
+            .into_iter()
+            .filter(|c| !scenario_collections.contains(c));
+
+        for trim_collection in trim_collections {
+            self.namespace.remove_collection(&trim_collection);
+        }
+
+        Ok(self.namespace)
     }
 }
 
@@ -84,5 +117,29 @@ mod tests {
         assert_eq!(scenario.scenario, expected);
 
         Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "the namespace does not contain the following collections:\n- extra")]
+    fn build_extra_collection() {
+        let scenario = Scenario {
+            namespace: Default::default(),
+            scenario: scenario!({"extra": {}}),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_filter_collections() {
+        let scenario = Scenario {
+            namespace: scenario!({"collection1": {}, "collection2": {}}),
+            scenario: scenario!({"collection1": {}}),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = scenario!({"collection1": {}});
+
+        assert_eq!(actual, expected);
     }
 }

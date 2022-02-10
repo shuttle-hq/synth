@@ -205,7 +205,7 @@ impl<'w> Cli {
         if let Some(scenario) = cmd.scenario {
             let scenario = self.store.get_scenario(namespace, &scenario)?;
 
-            namespace = scenario.build();
+            namespace = scenario.build()?;
         }
 
         export_strategy
