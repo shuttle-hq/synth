@@ -6,6 +6,7 @@ use crate::Namespace;
 pub struct Scenario {
     namespace: Namespace,
     scenario: Namespace,
+    name: String,
 }
 
 impl Scenario {
@@ -22,18 +23,22 @@ impl Scenario {
             ));
         }
 
-        let scenario_content = std::fs::read_to_string(scenario_path)?;
-        let scenario =
-            serde_json::from_str(&scenario_content).context("Failed to parse collection")?;
+        let scenario_content = std::fs::read_to_string(scenario_path.clone())?;
+        let scenario_namespace = serde_json::from_str(&scenario_content).context(anyhow!(
+            "Failed to parse scenario '{}'",
+            scenario_path.display()
+        ))?;
 
         Ok(Self {
             namespace,
-            scenario,
+            scenario: scenario_namespace,
+            name: scenario.to_string(),
         })
     }
 
     pub fn build(mut self) -> Result<Namespace> {
-        self.has_extra_collections()?;
+        self.has_extra_collections()
+            .context(anyhow!("failed to build scenario '{}'", self.name))?;
         self.trim_namespace_collections();
 
         Ok(self.namespace)
@@ -55,7 +60,7 @@ impl Scenario {
                 .join("\n");
 
             return Err(anyhow!(
-                "the namespace does not contain the following collections:\n{}",
+                "the namespace does not contain the following collection(s):\n{}",
                 extra_collections
             ));
         }
@@ -127,11 +132,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "the namespace does not contain the following collections:\n- extra")]
+    #[should_panic(
+        expected = "the namespace does not contain the following collection(s):\n    - extra"
+    )]
     fn build_extra_collection() {
         let scenario = Scenario {
             namespace: Default::default(),
             scenario: scenario!({"extra": {}}),
+            name: "test".to_string(),
         };
 
         scenario.build().unwrap();
@@ -142,6 +150,7 @@ mod tests {
         let scenario = Scenario {
             namespace: scenario!({"collection1": {}, "collection2": {}}),
             scenario: scenario!({"collection1": {}}),
+            name: "test".to_string(),
         };
 
         let actual = scenario.build().unwrap();
