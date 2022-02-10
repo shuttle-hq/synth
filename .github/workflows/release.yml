@@ -73,7 +73,7 @@ jobs:
       - id: install-wix
         run: nuget install WiX -Version 3.11.2
       - id: install-cargo-wix
-        run: cargo +nightly install cargo-wix
+        run: cargo +nightly install cargo-wix --version 0.3.1
       - id: copy-target
         name: Move synth.exe into wix friendly directory
         run: |
