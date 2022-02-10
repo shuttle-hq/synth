@@ -52,7 +52,8 @@ If there is a misconfiguration in your schema (for example referring to a field 
 
 #### Options
 
-- `--collection <collection>` - Specify a specific collection in a namespace if you don't want to generate data from all collections.
+- `--collection <collection>` - Specify a specific collection in a namespace if you don't want to generate data from all collections. This option cannot be used with `--scenario`.
+- `--scenario <scenario>` - Specify a specific scenario if you don't want to generate data from all collections. This option cannot be used with `--collection`.
 - `--size <size>` - The number of elements which should be generated per collection. This number is not guaranteed, it serves as a lower bound.
 - `--to <uri>` - The generation destination specified using a URI (see `import --from` explanation above). If unspecified, generation defaults to stdout using JSON.
 - `--seed <seed>` - An unsigned 64 bit integer seed to be used as a seed for generation. Defaults to 0 if unspecified.
