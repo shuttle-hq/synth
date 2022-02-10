@@ -90,8 +90,13 @@ impl Store {
         Ok(ns)
     }
 
-    pub fn get_scenario(&self, namespace: Namespace, scenario: &str) -> Result<Scenario> {
-        Scenario::new(namespace, self.path.clone(), scenario)
+    pub fn get_scenario(
+        &self,
+        namespace: Namespace,
+        namespace_path: PathBuf,
+        scenario: &str,
+    ) -> Result<Scenario> {
+        Scenario::new(namespace, self.path.join(namespace_path), scenario)
     }
 
     pub fn save_collection_path(

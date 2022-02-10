@@ -197,16 +197,18 @@ impl<'w> Cli {
             ));
         }
 
-        let seed = Self::derive_seed(cmd.random, cmd.seed)?;
-        let sample =
-            Sampler::try_from(&namespace)?.sample_seeded(cmd.collection.clone(), cmd.size, seed)?;
-
         // Change namespace if scenario
         if let Some(scenario) = cmd.scenario {
-            let scenario = self.store.get_scenario(namespace, &scenario)?;
+            let scenario = self
+                .store
+                .get_scenario(namespace, cmd.namespace.clone(), &scenario)?;
 
             namespace = scenario.build()?;
         }
+
+        let seed = Self::derive_seed(cmd.random, cmd.seed)?;
+        let sample =
+            Sampler::try_from(&namespace)?.sample_seeded(cmd.collection.clone(), cmd.size, seed)?;
 
         export_strategy
             .export(namespace, sample)
