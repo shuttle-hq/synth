@@ -33,15 +33,17 @@ impl Scenario {
     }
 
     pub fn build(mut self) -> Result<Namespace> {
-        let collections: Vec<_> = self
-            .namespace
-            .keys()
-            .map(ToOwned::to_owned)
-            .collect::<Vec<_>>();
-        let scenario_collections: Vec<_> = self.scenario.keys().map(ToOwned::to_owned).collect();
+        self.has_extra_collections()?;
+        self.trim_namespace_collections();
+
+        Ok(self.namespace)
+    }
+
+    fn has_extra_collections(&self) -> Result<()> {
+        let collections: Vec<_> = self.namespace.keys().collect();
+        let scenario_collections = self.scenario.keys();
 
         let extra_collections: Vec<_> = scenario_collections
-            .iter()
             .filter(|c| !collections.contains(c))
             .collect();
 
@@ -58,15 +60,20 @@ impl Scenario {
             ));
         }
 
+        Ok(())
+    }
+
+    fn trim_namespace_collections(&mut self) {
+        let collections: Vec<_> = self.namespace.keys().map(ToOwned::to_owned).collect();
+        let scenario_collections: Vec<_> = self.scenario.keys().collect();
+
         let trim_collections = collections
             .into_iter()
-            .filter(|c| !scenario_collections.contains(c));
+            .filter(|c| !scenario_collections.contains(&c.as_str()));
 
         for trim_collection in trim_collections {
             self.namespace.remove_collection(&trim_collection);
         }
-
-        Ok(self.namespace)
     }
 }
 
