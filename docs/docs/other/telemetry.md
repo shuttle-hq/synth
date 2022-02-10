@@ -26,8 +26,8 @@ public releases.
 
 Below are a set of principles that guide the telemetry decisions made in Synth:
 
-1. It is made *completely transparent* that telemetry is going to be installed
-2. It is made *completely transparent* as to what data we collect
+1. It is made _completely transparent_ that telemetry is going to be installed
+2. It is made _completely transparent_ as to what data we collect
 3. No personally identifiable information is collected. (IP addresses are
    discarded at the sink)
 4. Nothing is collected unless it is explicitly and clearly documented here.
@@ -84,29 +84,29 @@ activity:
 {
   "type": "object",
   "distinct_id": {
-      "type": "string",
-      "uuid": {}
+    "type": "string",
+    "uuid": {}
   },
   "command": {
-      "type": "string",
-      "categorical": {
-          "import": 1,
-          "generate": 10,
-          "telemetry::enabled": 10,
-          "telemetry::disabled": 1
-      }
+    "type": "string",
+    "categorical": {
+      "import": 1,
+      "generate": 10,
+      "telemetry::enabled": 10,
+      "telemetry::disabled": 1
+    }
   },
   "version": {
-      "type": "string",
-      "pattern": "v0\\.4\\.3"
+    "type": "string",
+    "pattern": "v0\\.4\\.3"
   },
   "os": {
-      "type": "string",
-      "categorical": {
-          "linux": 10,
-          "macos": 10,
-          "windows": 10
-      }
+    "type": "string",
+    "categorical": {
+      "linux": 10,
+      "macos": 10,
+      "windows": 10
+    }
   },
   "timestamp": {
     "type": "date_time",

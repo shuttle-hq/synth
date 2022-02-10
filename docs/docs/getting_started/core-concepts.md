@@ -18,8 +18,8 @@ structure:
 ```
 └── blog/
     ├── users.json
-    └── posts.json 
-``` 
+    └── posts.json
+```
 
 Any file whose extension is `.json` in a namespace directory will be opened by
 the [`synth generate`][synth-generate] subcommand and considered part of the
@@ -32,7 +32,7 @@ their name and correspond to [tables][sql-tables] in the world of relational
 databases. Strictly speaking, collections are a super-set of tables as they are
 in fact arbitrarily deep JSON document trees.
 
-Collections are represented in a namespace directory as JSON files. The *name*
+Collections are represented in a namespace directory as JSON files. The _name_
 of a collection (the way it is referred to by [`synth`][synth]) is its filename
 without the extension. For example the file `bank/transactions.json` defines a
 collection named `transactions` in a namespace `bank`.
@@ -44,7 +44,7 @@ structure then looks like this:
 ```
 └── bank/
     ├── transactions.json
-    └── users.json 
+    └── users.json
 ```
 
 Collections must be valid instances of the [`synth` schema][schema] that
@@ -145,21 +145,12 @@ This behavior can be tuned (and the seed be changed, or randomized) using
 the `--seed` or `--random` flag.
 
 [synth]: cli.md
-
 [sql-schemas]: https://www.postgresql.org/docs/9.1/ddl-schemas.html
-
 [sql-tables]: https://www.postgresql.org/docs/9.1/sql-createtable.html
-
 [same-as]: ../content/same-as
-
 [schema]: schema.md
-
 [array-generators]: ../content/array
-
 [same-as]: ../content/same-as
-
 [synth-import]: cli.md#command-import
-
 [synth-generate]: cli.md#command-generate
-
 [seedable-rng]: https://docs.rs/rand/0.8.4/rand/trait.SeedableRng.html#method.seed_from_u64

@@ -22,8 +22,7 @@ generated value being `true`.
 
 ```json synth
 {
-    "type": "bool",
-    "frequency": 0.5
+  "type": "bool",
+  "frequency": 0.5
 }
 ```
-

@@ -65,14 +65,14 @@ div.footer {
 
 div[class^='announcementBar_'] {
   --site-announcement-bar-stripe-color1: hsl(
-          var(--site-primary-hue-saturation),
-          85%
+    var(--site-primary-hue-saturation),
+    85%
   );
   --site-announcement-bar-stripe-color2: hsl(
-          var(--site-primary-hue-saturation),
-          95%
+    var(--site-primary-hue-saturation),
+    95%
   );
-  background-color: #20BEB6;
+  background-color: #20beb6;
   color: rgb(253, 253, 253);
   font-weight: bold;
 }
@@ -87,5 +87,4 @@ a[class^='footerLogoLink'] {
 }
 
 .navbar {
-
 }

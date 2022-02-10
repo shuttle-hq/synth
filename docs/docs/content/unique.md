@@ -8,25 +8,25 @@ Synth's `unique` generator type generates values which are guaranteed to be uniq
 
 ```json synth
 {
-    "type": "array",
-    "length": {
+  "type": "array",
+  "length": {
+    "type": "number",
+    "constant": 10
+  },
+  "content": {
+    "type": "object",
+    "ticker": {
+      "type": "unique",
+      "content": {
         "type": "number",
-        "constant": 10
-    },
-    "content": {
-        "type": "object",
-        "ticker": {
-            "type": "unique",
-            "content": {
-                "type": "number",
-                "range": {
-                    "low": 0,
-                    "high": 10,
-                    "step": 1
-                }
-            }
+        "range": {
+          "low": 0,
+          "high": 10,
+          "step": 1
         }
+      }
     }
+  }
 }
 ```
 
@@ -38,24 +38,24 @@ Below is an example of a generator which will fail since the inner generator can
 
 ```json synth[expect = "Could not generate enough unique values from generator"]
 {
-    "type": "array",
-    "length": {
+  "type": "array",
+  "length": {
+    "type": "number",
+    "constant": 20
+  },
+  "content": {
+    "type": "object",
+    "ticker": {
+      "type": "unique",
+      "content": {
         "type": "number",
-        "constant": 20
-    },
-    "content": {
-        "type": "object",
-        "ticker": {
-            "type": "unique",
-            "content": {
-                "type": "number",
-                "range": {
-                    "low": 0,
-                    "high": 10,
-                    "step": 1
-                }
-            }
+        "range": {
+          "low": 0,
+          "high": 10,
+          "step": 1
         }
+      }
     }
+  }
 }
 ```

@@ -106,7 +106,7 @@ Below is a tree representation of the schema Schema tree:
 
 The corresponding namespace can be broken into 2 collections. The first, `transactions`:
 
-```json synth[transactions.json]
+```json
 {
   "type": "array",
   "length": {
@@ -151,7 +151,7 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
     },
     "user_id": {
       "type": "same_as",
-      "ref": "users.content.user_id"
+      "ref": "users.Schema.user_id"
     }
   }
 }
@@ -159,34 +159,34 @@ The corresponding namespace can be broken into 2 collections. The first, `transa
 
 And the second, the `users` collection:
 
-```json synth[users.json]
+```json synth
 {
-    "type": "array",
-    "length": {
-        "type": "number",
-        "subtype": "u64",
-        "range": {
-            "low": 1,
-            "high": 6,
-            "step": 1
-        }
-    },
-    "content": {
-        "type": "object",
-        "user_id": {
-            "type": "number",
-            "subtype": "u64",
-            "id": {
-                "start_at": 0
-            }
-        },
-        "user_email": {
-            "type": "string",
-            "faker": {
-                "generator": "safe_email"
-            }
-        }
+  "type": "array",
+  "length": {
+    "type": "number",
+    "subtype": "u64",
+    "range": {
+      "low": 1,
+      "high": 6,
+      "step": 1
     }
+  },
+  "content": {
+    "type": "object",
+    "user_id": {
+      "type": "number",
+      "subtype": "u64",
+      "id": {
+        "start_at": 0
+      }
+    },
+    "user_email": {
+      "type": "string",
+      "faker": {
+        "generator": "email"
+      }
+    }
+  }
 }
 ```
 

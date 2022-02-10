@@ -3,7 +3,19 @@ title: Seeding test databases in 2021 - best practices
 author_url: https://github.com/brokad/
 author: Damien B. (@brokad)
 author_image_url: https://avatars.githubusercontent.com/u/13315034?v=4
-tags: [postgres, test data, data generation, tutorial, beginners guide, seeding, prisma, schema, data model, orm]
+tags:
+  [
+    postgres,
+    test data,
+    data generation,
+    tutorial,
+    beginners guide,
+    seeding,
+    prisma,
+    schema,
+    data model,
+    orm,
+  ]
 description: In this tutorial, we'll learn how to design a Prisma data model for a basic message board and how to seed test databases with mock data using open-source tools.
 image: https://storage.googleapis.com/getsynth-public/media/orm_small.jpg
 hide_table_of_contents: false
@@ -34,7 +46,7 @@ The crux of the problem of data modeling is to summarize and write down what
 constitutes useful entities and how they relate to one another in a graph of
 connections.
 
-You may wonder what constitutes a *useful* entity. It is indeed the toughest
+You may wonder what constitutes a _useful_ entity. It is indeed the toughest
 question to answer. It is very difficult to tackle it without a good combined
 idea of what you are building, the database you are building on top of and what
 the most common queries, operations and aggregate statistics are. There
@@ -55,7 +67,7 @@ on top of data models really enjoyable. One of them is Prisma.
 
 ### Prisma is awesome
 
-[Prisma][prisma] is an ORM, an *object relational mapping*. It is a powerful
+[Prisma][prisma] is an ORM, an _object relational mapping_. It is a powerful
 framework that lets you specify your data model using a database agnostic domain
 specific language (called the [Prisma schema][prisma-schema]). It
 uses [pluggable generators][prisma-generate] to build a nice javascript API and
@@ -66,8 +78,8 @@ addition to a powerful query engine.
 Let's walk through a example. We want to get a sense for what it'll take to
 design the data model for a simple message board a little like [Reddit][reddit]
 or [YCombinator's Hacker News][hacker-news]. At the very minimum, we want to
-have a concept of *users*: people should be able to register for an account.
-Beyond that, we need a concept of *posts*: some structure, attached to users,
+have a concept of _users_: people should be able to register for an account.
+Beyond that, we need a concept of _posts_: some structure, attached to users,
 that holds the content they publish.
 
 Using the [Prisma schema][prisma-schema] language, which is very expressive even
@@ -117,7 +129,7 @@ one-to-many relationship between users and posts.
 
 You may have noticed that the `User` and `Post` models have an attribute which
 we haven't mentioned. The `objectId` property is
-an [internal unique identifier][mongodb-objectid] used by [mongoDB][mongodb] 
+an [internal unique identifier][mongodb-objectid] used by [mongoDB][mongodb]
 (the database we're choosing to implement our data model on in this tutorial).
 
 :::
@@ -171,27 +183,27 @@ This creates a `tsconfig.json` file which configures the behavior of the
 typescript compiler. Create a directory `src/` and add the following `index.ts`:
 
 ```javascript
-import {PrismaClient} from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 const main = async () => {
-    const user = await prisma.user.findFirst()
-    if (user === null) {
-        throw Error("No user data.")
-    }
-    console.log(`found username: ${user.nickname}`)
-    process.exit(0)
-}
+  const user = await prisma.user.findFirst();
+  if (user === null) {
+    throw Error('No user data.');
+  }
+  console.log(`found username: ${user.nickname}`);
+  process.exit(0);
+};
 
 main().catch((e) => {
-    console.error(e)
-    process.exit(1)
-})
+  console.error(e);
+  process.exit(1);
+});
 ```
 
 Then create a `prisma/` directory and add a `schema.prisma` file containing
-the Prisma code for the two entities `User` and `Post`. 
+the Prisma code for the two entities `User` and `Post`.
 
 Finally, to our `schema.prisma` file, we need to add configuration for our local
 dev database and the generation of the client:
@@ -225,7 +237,7 @@ script with:
 {
   ...
   "test": "tsc --project ./ && node ."
-  ... 
+  ...
 }
 ```
 
@@ -284,7 +296,7 @@ possible? The faster the cycle is, the better your productivity becomes.
 One of the keys to shortening a development cycle is making testing easy. When
 playing with databases and data models, it is something that is often hacky. In
 fact there are very few tools that let you iterate quickly on data models, much
-less *developer-friendly* tools.
+less _developer-friendly_ tools.
 
 The core issue at hand is that between iterations on ideas and features, we will
 need to make small and quick changes to our data model. What happens to our
@@ -359,7 +371,7 @@ schema files.
 ├── prisma/
 ├── synth/
 └── src/
-``` 
+```
 
 Each file we will put in the `synth/` directory that ends in `.json` will be
 opened by [`synth`][synth-cli], parsed and interpreted as part of our data
@@ -480,7 +492,7 @@ is `Int`:
 
 ```graphql
   id        Int      @unique @default(autoincrement())
-``` 
+```
 
 and the attribute indicates that the field is meant to increment sequentially,
 going through values 0, 1, 2 etc.
@@ -499,12 +511,12 @@ For example, a [`range`][synth-range] variant would look like
 
 ```json synth
 {
-	"type": "number",
-	"range": {
-	    "low": 5,
-	    "high": 10,
-	    "step": 1
-	}
+  "type": "number",
+  "range": {
+    "low": 5,
+    "high": 10,
+    "step": 1
+  }
 }
 ```
 
@@ -512,8 +524,8 @@ whereas a [`constant`][synth-constant] variant would look like
 
 ```json synth
 {
-    "type": "number",
-    "constant": 42
+  "type": "number",
+  "constant": 42
 }
 ```
 
@@ -523,12 +535,12 @@ can see it behaves as expected:
 
 ```json synth
 {
-    "type": "array",
-    "length": 10,
-    "content": {
-        "type": "number",
-        "id": {}
-    }
+  "type": "array",
+  "length": 10,
+  "content": {
+    "type": "number",
+    "id": {}
+  }
 }
 ```
 
@@ -559,10 +571,10 @@ generators for common properties like usernames, addresses and emails:
 
 ```json synth
 {
-    "type": "string",
-    "faker": {
-        "generator": "safe_email"
-    }
+  "type": "string",
+  "faker": {
+    "generator": "safe_email"
+  }
 }
 ```
 
@@ -574,17 +586,17 @@ together in one object. For that we need the [`object`][synth-object] type:
 
 ```json synth[User.json]
 {
-    "type": "object",
-    "id": {
-        "type": "number",
-        "id": {}
-    },
-    "email": {
-        "type": "string",
-        "faker": {
-            "generator": "safe_email"
-        }
+  "type": "object",
+  "id": {
+    "type": "number",
+    "id": {}
+  },
+  "email": {
+    "type": "string",
+    "faker": {
+      "generator": "safe_email"
     }
+  }
 }
 ```
 
@@ -599,34 +611,34 @@ Here is the finished result for our `User.json` collection:
 
 ```json synth[expect = "unknown variant `date_time`"]
 {
-    "type": "array",
-    "length": 3,
-    "content": {
-        "type": "object",
-        "id": {
-            "type": "number",
-            "id": {}
-        },
-        "createdAt": {
-            "type": "string",
-            "date_time": {
-                "format": "%Y-%m-%d %H:%M:%S",
-                "begin": "2020-01-01 12:00:00"
-            }
-        },
-        "email": {
-            "type": "string",
-            "faker": {
-                "generator": "safe_email"
-            }
-        },
-        "nickname": {
-            "type": "string",
-            "faker": {
-                "generator": "username"
-            }
-        }
+  "type": "array",
+  "length": 3,
+  "content": {
+    "type": "object",
+    "id": {
+      "type": "number",
+      "id": {}
+    },
+    "createdAt": {
+      "type": "string",
+      "date_time": {
+        "format": "%Y-%m-%d %H:%M:%S",
+        "begin": "2020-01-01 12:00:00"
+      }
+    },
+    "email": {
+      "type": "string",
+      "faker": {
+        "generator": "safe_email"
+      }
+    },
+    "nickname": {
+      "type": "string",
+      "faker": {
+        "generator": "username"
+      }
     }
+  }
 }
 ```
 
@@ -663,9 +675,9 @@ randomly generate something or nothing:
 
 ```json synth
 {
-    "type": "number",
-    "optional": true,
-    "constant": 42
+  "type": "number",
+  "optional": true,
+  "constant": 42
 }
 ```
 
@@ -676,11 +688,11 @@ modifier to the `email` field:
 
 ```json synth
 {
-    "type": "string",
-    "unique": true,
-    "faker": {
-        "generator": "safe_email"
-    }
+  "type": "string",
+  "unique": true,
+  "faker": {
+    "generator": "safe_email"
+  }
 }
 ```
 
@@ -779,109 +791,56 @@ also have a very [active Discord server][discord] where many members of the
 community would be happy to help if you encounter an issue!
 
 [binary]: https://en.wikipedia.org/wiki/Executable
-
 [set-theory]: https://en.wikipedia.org/wiki/Set_theory
-
 [prisma]: https://www.prisma.io/
-
 [prisma-generate]: https://www.prisma.io/docs/concepts/components/prisma-schema/generators
-
 [prisma-schema]: https://www.prisma.io/docs/concepts/components/prisma-schema
-
 [typescript]: https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html
-
 [getsynth]: https://getsynth.com
-
-[JSON]: https://www.json.org/json-en.html
-
+[json]: https://www.json.org/json-en.html
 [synth-repo]: https://github.com/getsynth/synth
-
 [installation]: /docs/getting_started/installation
-
 [development-cycle]: https://en.wikipedia.org/wiki/Systems_development_life_cycle
-
 [agile-framework]: https://en.wikipedia.org/wiki/Agile_software_development#Iterative,_incremental,_and_evolutionary
-
 [postgres]: https://www.postgresql.org/
-
 [mongodb]: https://www.mongodb.com/
-
 [mongodb-objectid]: https://docs.mongodb.com/manual/reference/method/ObjectId/
-
 [mongo-collection]: https://docs.mongodb.com/manual/core/databases-and-collections/
-
 [reddit]: https://www.reddit.com/
-
 [hacker-news]: https://news.ycombinator.com/
-
 [data-modeling-101]: https://www.prisma.io/dataguide/
-
 [foreign-key]: https://en.wikipedia.org/wiki/Foreign_key
-
 [primary-key]: https://en.wikipedia.org/wiki/Primary_key
-
 [prisma-client]: https://www.prisma.io/docs/concepts/components/prisma-client
-
 [prisma-one-to-many]: https://www.prisma.io/docs/concepts/components/prisma-schema/relations/one-to-one-relations
-
 [table]: https://en.wikipedia.org/wiki/Table_(information)
-
 [synth-array]: /docs/content/array
-
 [prng]: https://en.wikipedia.org/wiki/Pseudorandom_number_generator
-
 [synth-schema]: /docs/getting_started/schema
-
 [synth-generators]: /docs/content/null
-
 [synth-number]: /docs/content/number
-
 [synth-id]: /docs/content/number#id
-
 [synth-constant]: /docs/content/number#constant
-
 [synth-range]: /docs/content/number#range
-
 [synth-string]: /docs/content/string
-
 [synth-faker]: /docs/content/string#faker
-
 [synth-object]: /docs/content/object
-
 [synth-modifiers]: /docs/content/modifiers
-
 [synth-datetime]: /docs/content/date-time
-
 [synth-optional]: /docs/content/modifiers#optional
-
 [synth-unique]: /docs/content/modifiers#unique
-
 [synth-same-as]: /docs/content/same-as
-
 [n-to-1]: https://www.prisma.io/docs/concepts/components/prisma-schema/relations/one-to-many-relations
-
 [discord]: https://discord.com/invite/H33rRDTm3p
-
 [synth-contributors]: https://github.com/getsynth/synth#contributors-
-
 [synth-twitter]: https://twitter.com/getsynth
-
 [synth-cli]: /docs/getting_started/command-line
-
 [docker-mongo]: https://hub.docker.com/_/mongo
-
 [docker-mysql]: https://hub.docker.com/_/mysql
-
 [docker-postgres]: https://hub.docker.com/_/postgres
-
 [repo-users-json]: https://github.com/getsynth/synth/tree/master/examples/message_board/synth/User.json
-
 [repo-posts-json]: https://github.com/getsynth/synth/tree/master/examples/message_board/synth/Post.json
-
 [repo-schema]: https://github.com/getsynth/synth/tree/master/examples/message_board/prisma/schema.prisma
-
 [repo-complete]: https://github.com/getsynth/synth/tree/master/examples/message_board
-
 [npm-script]: https://github.com/brokad/synth/tree/master/examples/message_board/helpers/db.js
-
 [prisma-relation-mongo]: https://www.prisma.io/docs/concepts/components/prisma-schema/relations/one-to-many-relations

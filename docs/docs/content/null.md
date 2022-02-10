@@ -4,6 +4,6 @@ The `null` generator type simply evaluates to the JSON [`null`](https://www.json
 
 ```json synth
 {
-   "type": "null"
+  "type": "null"
 }
 ```

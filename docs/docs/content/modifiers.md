@@ -6,7 +6,7 @@ Modifiers are attributes that can be added to any [generator](index) to modify t
 
 ## `optional`
 
-The `optional` modifier makes a generator nullable. It accepts a single boolean value (true or false). 
+The `optional` modifier makes a generator nullable. It accepts a single boolean value (true or false).
 
 ```json synth
 {
@@ -18,7 +18,7 @@ The `optional` modifier makes a generator nullable. It accepts a single boolean 
 
 ## `unique`
 
-The `unique` modifiers ensures a generator only outputs non-repeating values. It accepts a single boolean value (true or false). 
+The `unique` modifiers ensures a generator only outputs non-repeating values. It accepts a single boolean value (true or false).
 
 ```json synth
 {

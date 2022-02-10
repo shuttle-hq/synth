@@ -1,8 +1,9 @@
 ---
 title: one_of
 ---
+
 Synth's `one_of` generator is a compound operator, i.e. a way to compose other generator types together. It lets you
-define a new generator that samples randomly from a specified list of dependent generators (called *variants*). In that
+define a new generator that samples randomly from a specified list of dependent generators (called _variants_). In that
 way, `one_of` is similar to [categorical `string`s](string#categorical). However, the variants of
 a `one_of` generator are allowed to be generated from any other Synth generator.
 
@@ -12,14 +13,17 @@ generators.
 ```json synth
 {
   "type": "one_of",
-  "variants": [ {
-    "weight": 0.5,
-    "type": "string",
-    "pattern": "M|F"
-  }, {
-    "weight": 0.5,
-    "type": "null"
-  } ]
+  "variants": [
+    {
+      "weight": 0.5,
+      "type": "string",
+      "pattern": "M|F"
+    },
+    {
+      "weight": 0.5,
+      "type": "null"
+    }
+  ]
 }
 ```
 
@@ -32,15 +36,17 @@ definition.
 ```json synth
 {
   "type": "one_of",
-  "variants": [ {
-    "weight": 9.5,
-    "type": "string",
-    "faker": {
-      "generator": "address"
-    }
-  }, {
-    "weight" : 0.5,
-    "type": "object",
+  "variants": [
+    {
+      "weight": 9.5,
+      "type": "string",
+      "faker": {
+        "generator": "address"
+      }
+    },
+    {
+      "weight": 0.5,
+      "type": "object",
       "postcode": {
         "type": "string",
         "faker": {
@@ -56,6 +62,7 @@ definition.
           "step": 2
         }
       }
-  } ]
+    }
+  ]
 }
 ```

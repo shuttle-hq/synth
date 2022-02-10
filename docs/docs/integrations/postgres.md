@@ -44,7 +44,7 @@ more realistic data model by automatically inferring bounds on types.
 
 `synth` has its own internal data model, and so does Postgres, therefore a
 conversion occurs between `synth` types and Postgres types. The inferred type
-can be seen below. The synth types link to default generator *variant*
+can be seen below. The synth types link to default generator _variant_
 generated during the `import` process for that PostgreSQL type.
 
 Note, not all PostgreSQL types have been covered yet. If there is a type you
@@ -70,9 +70,9 @@ table formatter: https://codebeautify.org/markdown-formatter
 | float4          | [f32](../content/number#range)                          |
 | float8          | [f64](../content/number#range)                          |
 | numeric         | [f64](../content/number#range)                          |
-| timestamptz     | [date_time](../content/date-time)                |
-| timestamp       | [naive_date_time](../content/date-time)          |
-| date            | [naive_date](../content/date-time)               |
+| timestamptz     | [date_time](../content/date-time)                       |
+| timestamp       | [naive_date_time](../content/date-time)                 |
+| date            | [naive_date](../content/date-time)                      |
 | uuid            | [string](../content/string#uuid)                        |
 
 ### Example Import
@@ -80,6 +80,7 @@ table formatter: https://codebeautify.org/markdown-formatter
 Below is an example import for a single table.
 
 Postgres table definition:
+
 ```sql
 create table doctors
 (
@@ -94,7 +95,8 @@ create table doctors
 ```
 
 And the corresponding `synth` collection:
-```json synth[expect = "unknown field: hospitals"]
+
+```json
 {
   "type": "array",
   "length": {
@@ -139,8 +141,9 @@ And the corresponding `synth` collection:
       "pattern": "[a-zA-Z0-9]{0, 255}"
     }
   }
-}
+
 ```
+
 ### Example Import Command
 
 ```bash

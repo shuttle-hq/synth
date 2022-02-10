@@ -6,7 +6,7 @@ Synth is a tool for generating realistic data using a declarative data model. Sy
 
 ## Why Synth
 
-Synth answers a simple question. There are so many ways to consume data, why are there no frameworks for *generating* data?
+Synth answers a simple question. There are so many ways to consume data, why are there no frameworks for _generating_ data?
 
 Synth provides a robust, declarative framework for specifying constraint based data generation, solving the following problems developers face on the regular:
 

@@ -1,11 +1,11 @@
 ---
-title: So you want to mock an API 
-author: Christos Hadjiaslanis 
-author_title: Founder 
+title: So you want to mock an API
+author: Christos Hadjiaslanis
+author_title: Founder
 author_url: https://github.com/getsynth
 author_image_url: https://avatars.githubusercontent.com/u/14791384?s=460&v=4
 tags: [synth, prisma, testing, mocking, story]
-description: This blog post is an overview of a 5 day prototyping journey building a mock API 
+description: This blog post is an overview of a 5 day prototyping journey building a mock API
 image: https://storage.googleapis.com/getsynth-public/media/api.jpg
 hide_table_of_contents: false
 ---
@@ -57,8 +57,8 @@ Lo and behold! the internet responded. A bunch of people responded and primarily
 complained about payment processors (except for Stripe which was explicitly
 praised yet again!). A few products and companies came up repeatedly as being
 difficult to test against. We qualitatively evaluated the internet's feedback
-and reviewed documentation from the different APIs mentioned to understand 
-the implementation complexity. After all we had 3.5 days left, so we couldn't 
+and reviewed documentation from the different APIs mentioned to understand
+the implementation complexity. After all we had 3.5 days left, so we couldn't
 pick anything too complex. In the end we decided to go with the [Shopify API](https://shopify.dev/api/)!
 
 Just as a disclaimer we have absolutely no issues with Shopify, it just so
@@ -78,26 +78,26 @@ Event can be seen below:
 
 ```json
 {
-    // Refers to a certain event and its resources.
-    "arguments": "Ipod Nano - 8GB",
-    // A text field containing information about the event.
-    "body": null,
-    // The date and time (ISO 8601 format) when the event was created.
-    "created_at": "2015-04-20T08:33:57-11:00",
-    // The ID of the event.
-    "id": 164748010,
-    // A human readable description of the event.
-    "desciption": "Received a new order",
-    // A relative URL to the resource the event is for, if applicable.
-    "path": "/admin/orders/406514653/transactions/#1145",
-    // A human readable description of the event. Can contain some HTML formatting.
-    "message": "Received a new order",
-    // The ID of the resource that generated the event.
-    "subject_id": 406514653,
-    // The type of the resource that generated the event.
-    "subject_type": "Order",
-    // The type of event that occurred. 
-    "verb": "confirmed"
+  // Refers to a certain event and its resources.
+  "arguments": "Ipod Nano - 8GB",
+  // A text field containing information about the event.
+  "body": null,
+  // The date and time (ISO 8601 format) when the event was created.
+  "created_at": "2015-04-20T08:33:57-11:00",
+  // The ID of the event.
+  "id": 164748010,
+  // A human readable description of the event.
+  "desciption": "Received a new order",
+  // A relative URL to the resource the event is for, if applicable.
+  "path": "/admin/orders/406514653/transactions/#1145",
+  // A human readable description of the event. Can contain some HTML formatting.
+  "message": "Received a new order",
+  // The ID of the resource that generated the event.
+  "subject_id": 406514653,
+  // The type of the resource that generated the event.
+  "subject_type": "Order",
+  // The type of event that occurred.
+  "verb": "confirmed"
 }
 ```
 
@@ -108,24 +108,24 @@ good news - it means we can showcase some complex data generation logic that's
 built into [synth](https://github.com/getsynth/synth).
 
 Since we don't have access to the code that runs the Shopify API, we have to
-simulate the behaviour of the Event data model. There are varying degrees of 
+simulate the behaviour of the Event data model. There are varying degrees of
 depth into which one can go, and we broke it into 4 levels:
 
 1. Level 1 - **Stub**: Level 1 is just about exposing an endpoint where the data
-   on a *per element* basis 'looks' right. You have the correct types, but you
+   on a _per element_ basis 'looks' right. You have the correct types, but you
    don't really care about correctness across elements. For example, you care
    that `path` has the correct `subject_id` in the URI, but you don't care that
    a given Order goes from `placed` to `closed` to `re_opened`etc...
 2. Level 2 - **Mock**: Level 2 involves maintaining the semantics of the Events
-   *collection* as a whole. For example `created_at` should always increase
+   _collection_ as a whole. For example `created_at` should always increase
    as `id` increases
    (a larger `id` means an event was generated at a later date).
    `verb`s should follow proper causality (as per the order example above). etc.
-3. Level 3 - **Emulate**: Level 3 is about maintaining semantics *across
-   endpoints*. For example creating an order in a different Shopify API endpoint
+3. Level 3 - **Emulate**: Level 3 is about maintaining semantics _across
+   endpoints_. For example creating an order in a different Shopify API endpoint
    should create an `order_placed` event in the Event API.
 4. Level 4 - **Simulate**: Here you are basically reverse engineering all the
-   business logic of the API. It should be *indistinguishable* from the real
+   business logic of the API. It should be _indistinguishable_ from the real
    thing.
 
 Really these levels can be seen as increasing in scope as you simulate
@@ -163,7 +163,7 @@ fields to return for a given event. Again should be easy enough.
 
 We decided not to touch authentication for now as the scope would blow up for a
 5-day POC. Interestingly we got a bunch of feedback that mocking OAuth flows or
-similar would be *really* useful, regardless of any specific API. We may come 
+similar would be _really_ useful, regardless of any specific API. We may come
 back to this at a future date.
 
 ## Day 3: Evaluating Implementation Alternatives
@@ -174,7 +174,7 @@ faithfully represent the implementation.
 
 As any self-respecting engineer would do, we decided to scour the internet for
 off-the-shelf solutions to automate as much of the grunt work as possible. Some
-naive Googling brought up a mock server called 
+naive Googling brought up a mock server called
 [JSON server](https://github.com/typicode/json-server) - an API
 automation solution which spins up a REST API for you given a data definition.
 Excited by this we quickly wrote up 2 fake Event API events, and
@@ -213,11 +213,11 @@ We decided to reproduce the API at level 1-2 since we didn't really have any
 other endpoints. We used [synth](https://github.com/getsynth/synth) to quickly
 whip up
 a [data model](https://github.com/getsynth/model-repository/blob/main/shopify/shopify/events.json.json)
-that generates data that looks like responses from the Event API. I won't go 
+that generates data that looks like responses from the Event API. I won't go
 into depth on
 how this works here as it's been covered
-in [other posts](2021-08-31-seeding-databases-tutorial.md). In about 15 
-minutes of tweaking the `synth` schema, we generated ~10 Mb data that looks 
+in [other posts](2021-08-31-seeding-databases-tutorial.md). In about 15
+minutes of tweaking the `synth` schema, we generated ~10 Mb data that looks
 like this:
 
 ```json
@@ -290,7 +290,7 @@ source [here](https://github.com/getsynth/model-repository/blob/main/shopify/src
 The data is ready, the API is ready, time to package this thing up and give it
 to people to actually use. Let's see if our experiment was a success.
 
-While strategising about distributing our API, we were optimising for two 
+While strategising about distributing our API, we were optimising for two
 things:
 
 1. Ease of use - how simple it is for someone to download this thing and get
@@ -303,7 +303,7 @@ We needed to pack the data, database and a node runtime to actually run the
 server. Our initial idea was to use `docker-compose` with 2 services, the
 database and web-server, and then the network plumbing to get it to work. After
 discussing this for a few minutes, we decided that `docker-compose` may be an
-off-ramp for some users as they don't have it installed or are not familiar 
+off-ramp for some users as they don't have it installed or are not familiar
 with how it works. This went against our first tenet which is 'ease of use'.
 
 So we decided to take the slightly harder and hackier route of packaging the
@@ -328,17 +328,17 @@ agnostic one liner.
 ## Was it a success?
 
 An important aspect of this experiment was to see if we could conceive,
-research, design and implement a PoC in a week (as a side project, we were 
-working on `synth` at the same time). I can safely say this was a 
-success! We got it done to spec. 
+research, design and implement a PoC in a week (as a side project, we were
+working on `synth` at the same time). I can safely say this was a
+success! We got it done to spec.
 
-An interesting thing to note is that **60%** of the time was spent on 
+An interesting thing to note is that **60%** of the time was spent on
 ideating, researching and planning - and only 40% of the time on the actual
-implementation. However, spending all that time planning before writing code 
-definitely saved us a bunch of time, and if we didn't plan so much the project would have 
+implementation. However, spending all that time planning before writing code
+definitely saved us a bunch of time, and if we didn't plan so much the project would have
 overshot or failed.
 
-Now if the PoC itself was a success is a different question. This is where *you*
+Now if the PoC itself was a success is a different question. This is where _you_
 come in. If you're using the Event API, build the image and play around with it.
 
 You can get started by quickly cloning
@@ -357,5 +357,5 @@ curl "localhost:3000/admin/api/2021-07/events.json"
 We'd like to keep iterating on the Shopify API and improve it. If there is
 interest we'll add more endpoints and improve the existing Event data model.
 
-If you'd like to contribute, or are interested mocks for other APIs other than 
+If you'd like to contribute, or are interested mocks for other APIs other than
 Shopify, feel free to open an issue on GitHub!

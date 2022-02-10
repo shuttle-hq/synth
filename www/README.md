@@ -44,6 +44,3 @@ $ vercel --prod
 ```
 
 will deploy to production and override the current `getsynth.com` page.
-
-## Testing
-All Synth code block examples should be marked as 'json synth' to automatically run them on the CI.

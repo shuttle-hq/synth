@@ -80,661 +80,606 @@ the `generator` key.
 
 #### first_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "first_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "first_name"
+  }
 }
 ```
 
 #### last_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "last_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "last_name"
+  }
 }
 ```
 
 #### title
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "title"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "title"
+  }
 }
 ```
 
 #### suffix
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "suffix"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "suffix"
+  }
 }
 ```
 
 #### name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "name"
+  }
 }
 ```
 
 #### name_with_title
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "name_with_title"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "name_with_title"
+  }
 }
 ```
 
 #### credit_card
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "credit_card"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "credit_card"
+  }
 }
 ```
 
 #### free_email_provider
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "free_email_provider"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "free_email_provider"
+  }
 }
 ```
 
 #### domain_suffix
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "domain_suffix"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "domain_suffix"
+  }
 }
 ```
 
 #### free_email
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "free_email"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "free_email"
+  }
 }
 ```
 
 #### safe_email
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "safe_email"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "safe_email"
+  }
 }
 ```
 
 #### username
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "username"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "username"
+  }
 }
 ```
 
 #### ipv4
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "ipv4"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "ipv4"
+  }
 }
 ```
 
 #### ipv6
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "ipv6"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "ipv6"
+  }
 }
 ```
 
 #### ip
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "ip"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "ip"
+  }
 }
 ```
 
 #### mac_address
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "mac_address"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "mac_address"
+  }
 }
 ```
 
 #### color
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "color"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "color"
+  }
 }
 ```
 
 #### user_agent
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "user_agent"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "user_agent"
+  }
 }
 ```
 
 #### rfc_status_code
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "rfc_status_code"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "rfc_status_code"
+  }
 }
 ```
 
 #### valid_status_code
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "valid_status_code"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "valid_status_code"
+  }
 }
 ```
 
 #### company_suffix
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "company_suffix"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "company_suffix"
+  }
 }
 ```
 
 #### company_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "company_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "company_name"
+  }
 }
 ```
 
 #### buzzword
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "buzzword"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "buzzword"
+  }
 }
 ```
 
 #### buzzword_muddle
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "buzzword_muddle"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "buzzword_muddle"
+  }
 }
 ```
 
 #### buzzword_tail
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "buzzword_tail"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "buzzword_tail"
+  }
 }
 ```
 
 #### catch_phrase
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "catch_phrase"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "catch_phrase"
+  }
 }
 ```
 
 #### bs_verb
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "bs_verb"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "bs_verb"
+  }
 }
 ```
 
 #### bs_adj
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "bs_adj"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "bs_adj"
+  }
 }
 ```
 
 #### bs_noun
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "bs_noun"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "bs_noun"
+  }
 }
 ```
 
 #### bs
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "bs"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "bs"
+  }
 }
 ```
 
 #### profession
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "profession"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "profession"
+  }
 }
 ```
 
 #### industry
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "industry"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "industry"
+  }
 }
 ```
 
 #### city_prefix
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "city_prefix"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "city_prefix"
+  }
 }
 ```
 
 #### city_suffix
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "city_suffix"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "city_suffix"
+  }
 }
 ```
 
 #### city_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "city_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "city_name"
+  }
 }
 ```
 
 #### country_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "country_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "country_name"
+  }
 }
 ```
 
 #### country_code
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "country_code"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "country_code"
+  }
 }
 ```
 
 #### street_suffix
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "street_suffix"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "street_suffix"
+  }
 }
 ```
 
 #### street_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "street_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "street_name"
+  }
 }
 ```
 
 #### time_zone
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "time_zone"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "time_zone"
+  }
 }
 ```
 
 #### state_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "state_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "state_name"
+  }
 }
 ```
 
 #### state_abbr
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "state_abbr"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "state_abbr"
+  }
 }
 ```
 
 #### secondary_address_type
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "secondary_address_type"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "secondary_address_type"
+  }
 }
 ```
 
 #### secondary_address
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "secondary_address"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "secondary_address"
+  }
 }
 ```
 
 #### zip_code
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "zip_code"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "zip_code"
+  }
 }
 ```
 
 #### post_code
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "post_code"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "post_code"
+  }
 }
 ```
 
 #### building_number
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "building_number"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "building_number"
+  }
 }
 ```
 
 #### latitude
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "latitude"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "latitude"
+  }
 }
 ```
 
 #### longitude
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "longitude"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "longitude"
+  }
 }
 ```
 
 #### phone_number
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "phone_number"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "phone_number"
+  }
 }
 ```
 
 #### cell_number
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "cell_number"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "cell_number"
+  }
 }
 ```
 
 #### file_path
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "file_path"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "file_path"
+  }
 }
 ```
 
 #### file_name
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "file_name"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "file_name"
+  }
 }
 ```
 
 #### file_extension
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "file_extension"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "file_extension"
+  }
 }
 ```
 
 #### dir_path
 
-
 ```json synth
 {
-	"type": "string",
-	"faker": {
-		"generator": "dir_path"
-	}
+  "type": "string",
+  "faker": {
+    "generator": "dir_path"
+  }
 }
 ```
 
@@ -743,28 +688,27 @@ the `generator` key.
 `serialized` is a variant of the `string` generator type which serializes the output of a child generator into a string.
 
 `serialized` has 2 fields,
+
 - `serializer`: The serializer to be used (currently only `json`)
 - `content`: The content to be serialized. This can be any valid Synth generator
-
-
 
 #### Example
 
 ```json synth
 {
-    "type": "string",
-    "serialized": {
-        "serializer": "json",
-        "content": {
-            "type": "object",
-            "username": {
-                "type": "string",
-                "faker": {
-                    "generator": "name"
-                }
-            }
+  "type": "string",
+  "serialized": {
+    "serializer": "json",
+    "content": {
+      "type": "object",
+      "username": {
+        "type": "string",
+        "faker": {
+          "generator": "name"
         }
+      }
     }
+  }
 }
 ```
 
@@ -775,6 +719,7 @@ The `truncated` generator truncates the output of it's inner generator to a fixe
 If the output of its inner generator is less than or equal to the length, it is left untouched.
 
 `truncated` has 2 fields,
+
 - `length`: The number of characters to truncate to. This can be any Synth generator that yields a non-negative Number.
 - `content`: The content to be truncated. This can be any Synth generator that yields a String.
 
@@ -795,11 +740,12 @@ If the output of its inner generator is less than or equal to the length, it is 
 
 ## sliced
 
-The `sliced` generator takes a character slice of a string. 
+The `sliced` generator takes a character slice of a string.
 
 The slice format is `[start]:[finish]` and if it fails to parse the original string will be returned.
 
 `sliced` has 2 fields,
+
 - `slice`: A string with a optional start and optional end separated by `:`
 - `content`: The content to be sliced. This can be any Synth generator that yields a String.
 
@@ -839,8 +785,6 @@ Or shorthand notation if you are declaring an object field:
 }
 ```
 
-
-
 ## categorical
 
 A `categorical` is a variant of the `string` generator type that generates values from a finite set of user-defined
@@ -868,4 +812,3 @@ The value of the `"categorical"` key must be an object whose:
 - values are non-negative integers defining the relative weight of the corresponding variant (e.g. `8`, `2`, etc.).
 
 [faker]: https://github.com/cksac/fake-rs
-

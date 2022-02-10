@@ -1,8 +1,9 @@
-Synth's `number` type allows for generating fixed-width numbers. 
+Synth's `number` type allows for generating fixed-width numbers.
 
-### Parameters 
+### Parameters
 
 #### `subtype`
+
 All the variants of `number` accept an optional `"subtype"` field to specify
 the width and primitive kind of the values generated. The value of `"subtype"`,
 if specified, must be one of `u64`, `i64`, `f64`, `u32`, `i32`, `f32`.
@@ -32,6 +33,7 @@ will have different default behavior based on the value of `"subtype"`.
 - For float subtypes (`f32`, `f64`): `number` will default to generating from the semi-open interval `[0, 1)`.
 
 #### Example
+
 ```json synth
 {
   "type": "number",
@@ -40,6 +42,7 @@ will have different default behavior based on the value of `"subtype"`.
 ```
 
 #### Example
+
 ```json synth
 {
   "type": "number",
@@ -70,9 +73,9 @@ This generates one of the integers `0, 3, 6, 9`.
 {
   "type": "number",
   "range": {
-      "low": 0,
-      "high": 10,
-      "step": 3
+    "low": 0,
+    "high": 10,
+    "step": 3
   }
 }
 ```
@@ -85,8 +88,8 @@ This generates one integer between `0` (included) and `122` (included).
 {
   "type": "number",
   "range": {
-      "high": 122,         // the age of the oldest recorded person
-      "include_high": true      
+    "high": 122, // the age of the oldest recorded person
+    "include_high": true
   }
 }
 ```
@@ -100,9 +103,9 @@ and `15000000.0` (excluded) with an approximate alignment to the second decimal.
 {
   "type": "number",
   "range": {
-      "high": 15000000.0, // temperature at sun's core in Celcius
-      "low": -273.15,     // 0 Kelvin
-      "step": 0.01
+    "high": 15000000.0, // temperature at sun's core in Celcius
+    "low": -273.15, // 0 Kelvin
+    "step": 0.01
   }
 }
 ```
@@ -146,7 +149,7 @@ A constant number type. This will always evaluate to the same number.
 ```json synth
 {
   "type": "number",
-  "constant": 3.14159  // pi
+  "constant": 3.14159 // pi
 }
 ```
 

@@ -23,7 +23,7 @@ The example below generates arrays of credit card numbers with `3` to `10` eleme
   "content": {
     "type": "string",
     "faker": {
-        "generator": "credit_card"
+      "generator": "credit_card"
     }
   }
 }

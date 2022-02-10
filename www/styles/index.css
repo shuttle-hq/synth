@@ -4,24 +4,23 @@
 @tailwind components;
 @tailwind utilities;
 
-pre[class*="language-"] {
-    margin: 0;
-    overflow: unset;
-    word-wrap: normal;
-    white-space: pre;
+pre[class*='language-'] {
+  margin: 0;
+  overflow: unset;
+  word-wrap: normal;
+  white-space: pre;
 }
 
-pre[class*="language-markup"] {
-    background-color: unset;
-    color: unset;
+pre[class*='language-markup'] {
+  background-color: unset;
+  color: unset;
 }
 
-code[class*="language-markup"] {
-    background-color: unset;
-    color: unset;
+code[class*='language-markup'] {
+  background-color: unset;
+  color: unset;
 }
 
 .dark {
-    background-color: #313131;
+  background-color: #313131;
 }
-

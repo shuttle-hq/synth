@@ -2,7 +2,7 @@
 title: Hello world
 ---
 
-After installing [`synth`][synth], the next step is to create a **namespace**. 
+After installing [`synth`][synth], the next step is to create a **namespace**.
 
 Namespaces are directories in your filesystem that [`synth`][synth] uses to read your schemas from. Currently [`synth`][synth] reads schemas written in a specialized JSON data model. You can find out everything there is to know about [`synth`][synth] schemas in the [Generators][generators] section or in the [Schema][schema] section. In this section we will show you how to set up a simple "hello world" data generator.
 
@@ -22,16 +22,16 @@ at `hello_synth/say_hello.json`:
 
 ```json synth
 {
-    "type": "array",
-    "length": {
-        "type": "number",
-        "subtype": "u64",
-        "constant": 1
-    },
-   "content": {
-        "type": "string",
-        "pattern": "Hello world!"
-    }
+  "type": "array",
+  "length": {
+    "type": "number",
+    "subtype": "u64",
+    "constant": 1
+  },
+  "content": {
+    "type": "string",
+    "pattern": "Hello world!"
+  }
 }
 ```
 
@@ -50,9 +50,10 @@ synth generate hello_synth
 and you should see an output very close to the output of the snippet.
 
 ## Where to go from here
-* Take a look at the exhaustive [generators reference][generators].
-* Go deeper into how [`synth`][synth] works by looking at the [core concepts][core-concepts] and the specifications of the [schema][schema].
-* For more complex real life examples, see the [examples][examples] section.
+
+- Take a look at the exhaustive [generators reference][generators].
+- Go deeper into how [`synth`][synth] works by looking at the [core concepts][core-concepts] and the specifications of the [schema][schema].
+- For more complex real life examples, see the [examples][examples] section.
 
 [synth]: cli.md
 [schema]: schema.md
