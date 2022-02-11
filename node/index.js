@@ -44,6 +44,6 @@ class Sampler {
     }
 }
 
-module.exports.schema = require("./tsbuild");
+module.exports = require("./tsbuild");
 module.exports.Content = Content;
 module.exports.Sampler = Sampler;
