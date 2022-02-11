@@ -24,6 +24,7 @@ impl Scenario {
         }
 
         let scenario_content = std::fs::read_to_string(scenario_path.clone())?;
+        debug!("found scenario:\n{}", scenario);
         let scenario_namespace = serde_json::from_str(&scenario_content).context(anyhow!(
             "Failed to parse scenario '{}'",
             scenario_path.display()
@@ -81,6 +82,7 @@ impl Scenario {
             .collect();
 
         for trim_collection in trim_collections {
+            debug!("removing collection '{}'", trim_collection);
             self.namespace.remove_collection(&trim_collection);
         }
     }
