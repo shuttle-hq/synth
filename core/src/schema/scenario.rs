@@ -56,6 +56,7 @@ impl Scenario {
         self.has_extra_collections()
             .context(anyhow!("failed to build scenario '{}'", self.name))?;
         self.trim_namespace_collections();
+        self.trim_fields()?;
 
         Ok(self.namespace)
     }
@@ -100,6 +101,41 @@ impl Scenario {
         for trim_collection in trim_collections {
             debug!("removing collection '{}'", trim_collection);
             self.namespace.remove_collection(&trim_collection);
+        }
+    }
+
+    fn trim_fields(&mut self) -> Result<()> {
+        for (name, collection) in self.scenario.collections.iter() {
+            // Nothing to trim
+            if collection.fields.is_empty() {
+                continue;
+            }
+
+            let namespace_collection = self.namespace.get_collection_mut(name)?;
+
+            Self::trim_collection_fields(namespace_collection, &collection.fields);
+        }
+
+        Ok(())
+    }
+
+    fn trim_collection_fields(collection: &mut Content, fields: &BTreeMap<String, Content>) {
+        match collection {
+            Content::Object(map) => {
+                let trim_fields: Vec<_> = map
+                    .fields
+                    .keys()
+                    .into_iter()
+                    .filter(|c| !fields.contains_key(c.as_str()))
+                    .map(ToOwned::to_owned)
+                    .collect();
+
+                for trim_field in trim_fields {
+                    debug!("removing field '{}'", trim_field);
+                    map.fields.remove(trim_field.as_str());
+                }
+            }
+            _ => todo!(),
         }
     }
 }
@@ -186,6 +222,32 @@ mod tests {
 
         let actual = scenario.build().unwrap();
         let expected = namespace!({"collection1": {}});
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn build_filter_fields() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection1": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                    "stringy": {"type": "string", "pattern": "test"}
+                },
+                "collection2": {}
+            }),
+            scenario: scenario!({"collection1": {"nully": {}}}),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection1": {
+                "type": "object",
+                "nully": {"type": "null"}
+            }
+        });
 
         assert_eq!(actual, expected);
     }
