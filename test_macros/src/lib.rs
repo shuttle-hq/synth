@@ -1,5 +1,6 @@
 extern crate proc_macro;
-use std::{collections::HashMap, ffi::OsStr};
+use quote::quote;
+use std::{collections::HashMap, ffi::OsStr, path::Path};
 
 use ignore::{DirEntry, WalkBuilder};
 use proc_macro2::{Ident, Span, TokenStream};
@@ -164,6 +165,66 @@ pub fn tmpl_ignore(
     let input = parse_macro_input!(tokens as IgnoreInput);
 
     input.interpolate(template.into()).into()
+}
+
+/// Gets the parent of a path string
+/// # Examples
+/// ```
+/// use test_macros::parent;
+///
+/// fn main() {
+///     assert_eq!(parent!("some/nested/path"), "some/nested");
+/// }
+/// ```
+#[proc_macro]
+pub fn parent(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let path_str = parse_macro_input!(path as LitStr).value();
+
+    let path = Path::new(&path_str);
+    let parent = path.parent().unwrap();
+    let parent_str = LitStr::new(&parent.display().to_string(), Span::call_site());
+
+    quote! {#parent_str}.into()
+}
+
+/// Gets the parent of the parent of a path string - ie the parent 2 levels up
+/// # Examples
+/// ```
+/// use test_macros::parent2;
+///
+/// fn main() {
+///     assert_eq!(parent2!("some/deeply/nested/path"), "some/deeply");
+/// }
+/// ```
+#[proc_macro]
+pub fn parent2(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let path_str = parse_macro_input!(path as LitStr).value();
+
+    let path = Path::new(&path_str);
+    let parent = path.parent().unwrap().parent().unwrap();
+    let parent_str = LitStr::new(&parent.display().to_string(), Span::call_site());
+
+    quote! {#parent_str}.into()
+}
+
+/// Gets the file stem of a parent string
+/// # Examples
+/// ```
+/// use test_macros::file_stem;
+///
+/// fn main() {
+///     assert_eq!(file_stem!("path/to/file.json"), "file");
+/// }
+/// ```
+#[proc_macro]
+pub fn file_stem(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let path_str = parse_macro_input!(path as LitStr).value();
+
+    let path = Path::new(&path_str);
+    let parent = path.file_stem().unwrap().to_str().unwrap();
+    let parent_str = LitStr::new(parent, Span::call_site());
+
+    quote! {#parent_str}.into()
 }
 
 #[cfg(test)]
