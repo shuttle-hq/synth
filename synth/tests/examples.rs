@@ -21,7 +21,7 @@ macro_rules! test_examples {
             ))
             .await?;
 
-            let expected = include_str!(concat!("examples/", stringify!($name), "/output.json"))
+            let expected = include_str!(concat!("examples/", stringify!($name), "/", stringify!($ns), "/output.json"))
                 .replace("\r\n", "\n");
 
             assert_eq!(actual, expected);
