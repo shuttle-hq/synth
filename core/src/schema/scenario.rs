@@ -113,13 +113,17 @@ impl Scenario {
 
             let namespace_collection = self.namespace.get_collection_mut(name)?;
 
-            Self::trim_collection_fields(namespace_collection, &collection.fields);
+            Self::trim_collection_fields(namespace_collection, &collection.fields)
+                .context(anyhow!("failed to trim collection '{}'", name))?;
         }
 
         Ok(())
     }
 
-    fn trim_collection_fields(collection: &mut Content, fields: &BTreeMap<String, Content>) {
+    fn trim_collection_fields(
+        collection: &mut Content,
+        fields: &BTreeMap<String, Content>,
+    ) -> Result<()> {
         match collection {
             Content::Object(map) => {
                 let trim_fields: Vec<_> = map
@@ -135,8 +139,10 @@ impl Scenario {
                     map.fields.remove(trim_field.as_str());
                 }
             }
-            _ => todo!(),
-        }
+            _ => return Err(anyhow!("cannot select fields to include from a non-object")),
+        };
+
+        Ok(())
     }
 }
 
@@ -250,5 +256,21 @@ mod tests {
         });
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot select fields to include from a non-object")]
+    fn build_filter_field_scalar() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection1": {
+                    "type": "null"
+                },
+            }),
+            scenario: scenario!({"collection1": {"nully": {}}}),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
     }
 }
