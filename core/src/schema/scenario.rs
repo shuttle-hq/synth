@@ -1,12 +1,27 @@
 use anyhow::{Context, Result};
-use std::path::PathBuf;
+use serde::Deserialize;
+use std::{collections::BTreeMap, path::PathBuf};
 
-use crate::Namespace;
+use crate::{Content, Namespace};
 
 pub struct Scenario {
     namespace: Namespace,
-    scenario: Namespace,
+    scenario: ScenarioNamespace,
     name: String,
+}
+
+#[derive(Deserialize)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
+struct ScenarioNamespace {
+    #[serde(flatten)]
+    collections: BTreeMap<String, ScenarioCollection>,
+}
+
+#[derive(Deserialize)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
+struct ScenarioCollection {
+    #[serde(flatten)]
+    fields: BTreeMap<String, Content>,
 }
 
 impl Scenario {
@@ -50,8 +65,9 @@ impl Scenario {
 
         let extra_collections: Vec<_> = self
             .scenario
+            .collections
             .keys()
-            .filter(|c| !collections.contains(c))
+            .filter(|c| !collections.contains(&c.as_str()))
             .collect();
 
         if !extra_collections.is_empty() {
@@ -71,14 +87,14 @@ impl Scenario {
     }
 
     fn trim_namespace_collections(&mut self) {
-        let scenario_collections: Vec<_> = self.scenario.keys().collect();
+        let scenario_collections: Vec<_> = self.scenario.collections.keys().collect();
 
         let trim_collections: Vec<_> = self
             .namespace
             .keys()
             .map(ToOwned::to_owned)
             .into_iter()
-            .filter(|c| !scenario_collections.contains(&c.as_str()))
+            .filter(|c| !scenario_collections.contains(&c))
             .collect();
 
         for trim_collection in trim_collections {
@@ -101,12 +117,21 @@ mod tests {
 
     use super::Scenario;
 
-    macro_rules! scenario {
+    macro_rules! namespace {
         {
             $($inner:tt)*
         } => {
             serde_json::from_value::<crate::Namespace>(serde_json::json!($($inner)*))
-                .expect("could not deserialize scenario into a namespace")
+                .expect("could not deserialize into a namespace")
+        }
+    }
+
+    macro_rules! scenario {
+        {
+            $($inner:tt)*
+        } => {
+            serde_json::from_value::<super::ScenarioNamespace>(serde_json::json!($($inner)*))
+                .expect("could not deserialize into a scenario namespace")
         }
     }
 
@@ -154,13 +179,13 @@ mod tests {
     #[test]
     fn build_filter_collections() {
         let scenario = Scenario {
-            namespace: scenario!({"collection1": {}, "collection2": {}}),
+            namespace: namespace!({"collection1": {}, "collection2": {}}),
             scenario: scenario!({"collection1": {}}),
             name: "test".to_string(),
         };
 
         let actual = scenario.build().unwrap();
-        let expected = scenario!({"collection1": {}});
+        let expected = namespace!({"collection1": {}});
 
         assert_eq!(actual, expected);
     }
