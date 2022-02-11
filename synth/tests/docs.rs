@@ -161,6 +161,7 @@ lazy_static! {
     /// ```json synth[custom.json]                          (synth= synth)(file=custom.json)
     /// ```json synth[expect = "error"]                     (synth= synth)(expect=error)
     /// ```json[data.json]                                  (file=data.json)
+    /// ```json synth-scenario[name.json]                   (scenario= synth-scenario)(file=name.json)
      static ref BLOCK_IDENTIFIER: Regex =Regex::new(
         r#"^```json(?P<synth> synth)?(?P<scenario> synth\-scenario)?(?:\[(?P<file>.*\.json)\])?(?:\[expect\s=\s"(?P<expect>.*)"\])?$"#,
     ).unwrap();
