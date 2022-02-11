@@ -48,4 +48,3 @@ class Sampler {
 
 module.exports = require("./tsbuild");
 module.exports.Content = Content;
-module.exports.Sampler = Sampler;
