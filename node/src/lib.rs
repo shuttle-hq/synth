@@ -23,7 +23,7 @@ impl JsContent {
     /*
      * new_content(schema)
      */
-    fn new(mut cx: FunctionContext) -> JsResult<JsValue> {
+    fn js_new(mut cx: FunctionContext) -> JsResult<JsValue> {
         let schema = cx.argument::<JsValue>(0)?;
 
         match from_value(&mut cx, schema) {
@@ -43,29 +43,43 @@ unsafe impl std::marker::Send for JsSampler {} // TODO
 impl Finalize for JsSampler {}
 
 impl JsSampler {
+    fn new(content: &Content, seed: u64) -> anyhow::Result<Self> {
+        let graph = NamespaceCompiler::new_flat(content).compile()?;
+        let rng = StdRng::seed_from_u64(seed);
+        let synced = Arc::new(Mutex::new(graph.into_iterator(rng)));
+
+        Ok(JsSampler(synced))
+    }
+
+    fn new_js_result<'a>(
+        mut cx: impl Context<'a>,
+        content: &Content,
+        seed: u64,
+    ) -> JsResult<'a, JsValue> {
+        JsSampler::new(content, seed)
+            .map(|sampler| cx.boxed(sampler).upcast())
+            .or_else(|e| to_upcasted_type_error(cx, e))
+    }
+
     /*
      * new_sampler(content: Content, seed: number)
      */
-    fn new(mut cx: FunctionContext) -> JsResult<JsValue> {
+    fn js_new(mut cx: FunctionContext) -> JsResult<JsValue> {
         let js_content = cx.argument::<JsBox<JsContent>>(0)?;
         let seed = cx.argument::<JsNumber>(1)?.value(&mut cx) as u64;
+        JsSampler::new_js_result(cx, &js_content.0, seed)
+    }
 
-        match NamespaceCompiler::new_flat(&js_content.0).compile() {
-            Ok(graph) => {
-                let rng = StdRng::seed_from_u64(seed);
-                let synced = Arc::new(Mutex::new(graph.into_iterator(rng)));
-                let boxed = cx.boxed(JsSampler(synced));
-
-                Ok(boxed.upcast())
-            }
-            Err(e) => to_upcasted_type_error(cx, e),
-        }
+    fn js_new_random_seed(mut cx: FunctionContext) -> JsResult<JsValue> {
+        let js_content = cx.argument::<JsBox<JsContent>>(0)?;
+        let seed: u64 = rand::thread_rng().gen();
+        JsSampler::new_js_result(cx, &js_content.0, seed)
     }
 
     /*
      * sampler_next(this: Sampler)
      */
-    fn next(mut cx: FunctionContext) -> JsResult<JsValue> {
+    fn js_next(mut cx: FunctionContext) -> JsResult<JsValue> {
         let this = cx.argument::<JsBox<JsSampler>>(0)?;
 
         let mut iter_lock = this.0.lock().unwrap();
@@ -86,8 +100,9 @@ fn to_upcasted_type_error<'a>(mut cx: impl Context<'a>, e: impl Display) -> JsRe
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    cx.export_function("new_content", JsContent::new)?;
-    cx.export_function("new_sampler", JsSampler::new)?;
-    cx.export_function("sampler_next", JsSampler::next)?;
+    cx.export_function("new_content", JsContent::js_new)?;
+    cx.export_function("new_sampler", JsSampler::js_new)?;
+    cx.export_function("new_sampler_random_seed", JsSampler::js_new_random_seed)?;
+    cx.export_function("sampler_next", JsSampler::js_next)?;
     Ok(())
 }

@@ -16,18 +16,20 @@ class Content {
      * @param seed The RNG seed to use when sampling.
      */
     sample(seed = 0) {
-        return new Sampler(this._content, seed);
+        return new Sampler(neon.new_sampler(this._content, seed));
+    }
+
+    /**
+     * Create a new sampler with a random RNG seed.
+     */
+    sampleRandomSeed() {
+        return new Sampler(neon.new_sampler_random_seed(this._content));
     }
 }
 
 class Sampler {
-    /**
-     * Construct a Synth sampler to generate values based on some schema.
-     * @param content The compiled schema from which to sample.
-     * @param seed The RNG seed to use when sampling.
-     */
-    constructor(content, seed = 0) {
-        this._sampler = neon.new_sampler(content, seed);
+    constructor(internal) {
+        this._sampler = internal;
     }
 
     /*

@@ -2058,6 +2058,7 @@ dependencies = [
 name = "node"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "neon",
  "neon-serde",
  "rand 0.8.4",
