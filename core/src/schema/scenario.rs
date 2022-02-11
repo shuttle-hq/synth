@@ -126,9 +126,17 @@ impl Scenario {
     ) -> Result<()> {
         match collection {
             Content::Object(map) => {
-                let trim_fields: Vec<_> = map
-                    .fields
-                    .keys()
+                let map_keys: Vec<_> = map.fields.keys().collect();
+
+                for field in fields.keys() {
+                    if !map_keys.contains(&field) {
+                        return Err(anyhow!(
+                            "'{}' is not a field on the object, therefore it cannot be included",
+                            field
+                        ));
+                    }
+                }
+                let trim_fields: Vec<_> = map_keys
                     .into_iter()
                     .filter(|c| !fields.contains_key(c.as_str()))
                     .map(ToOwned::to_owned)
@@ -293,6 +301,25 @@ mod tests {
         });
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "'null' is not a field on the object")]
+    fn build_filter_extra_field() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection1": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                    "stringy": {"type": "string", "pattern": "test"}
+                },
+                "collection2": {}
+            }),
+            scenario: scenario!({"collection1": {"null": {}}}),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
     }
 
     #[test]
