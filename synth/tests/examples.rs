@@ -1,5 +1,5 @@
 use anyhow::Result;
-use paste::paste;
+use test_macros::{file_stem, parent, parent2, tmpl_ignore};
 
 // Skipping fmt is needed until this fix is released
 // https://github.com/rust-lang/rustfmt/pull/5142
@@ -38,30 +38,29 @@ test_examples!(
     random_variants / random,
 );
 
-macro_rules! test_scenarios {
-    ($($name:ident / $ns:ident,)*) => {
-        $(
-        paste!{
-        #[async_std::test]
-        async fn [<$name _scenario>]() -> Result<()> {
-            let actual = generate_scenario(concat!(
-                "../examples/",
-                stringify!($name),
-                "/",
-                stringify!($ns)
-            ), Some("users".to_string()))
-            .await?;
+#[tmpl_ignore(
+    "examples/bank/bank_db/scenarios",
+    exclude_dir = true,
+    filter_extension = "json"
+)]
+#[async_std::test]
+async fn PATH_IDENT() -> Result<()> {
+    let actual = generate_scenario(
+        concat!("../", parent2!(PATH)),
+        Some(file_stem!(PATH).to_string()),
+    )
+    .await;
 
-            let expected = include_str!(concat!("examples/", stringify!($name), "/scenarios/users.json"))
-                .replace("\r\n", "\n");
+    assert!(
+        actual.is_ok(),
+        "did not expect error: {}",
+        actual.unwrap_err()
+    );
 
-            assert_eq!(actual, expected);
+    let expected =
+        include_str!(concat!(parent!(PATH), "/", file_stem!(PATH), ".json")).replace("\r\n", "\n");
 
-            Ok(())
-        }
-        }
-        )*
-    };
+    assert_eq!(actual.unwrap(), expected);
+
+    Ok(())
 }
-
-test_scenarios!(bank / bank_db,);
