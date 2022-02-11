@@ -46,9 +46,10 @@ impl Scenario {
 
     fn has_extra_collections(&self) -> Result<()> {
         let collections: Vec<_> = self.namespace.keys().collect();
-        let scenario_collections = self.scenario.keys();
 
-        let extra_collections: Vec<_> = scenario_collections
+        let extra_collections: Vec<_> = self
+            .scenario
+            .keys()
             .filter(|c| !collections.contains(c))
             .collect();
 
@@ -69,12 +70,15 @@ impl Scenario {
     }
 
     fn trim_namespace_collections(&mut self) {
-        let collections: Vec<_> = self.namespace.keys().map(ToOwned::to_owned).collect();
         let scenario_collections: Vec<_> = self.scenario.keys().collect();
 
-        let trim_collections = collections
+        let trim_collections: Vec<_> = self
+            .namespace
+            .keys()
+            .map(ToOwned::to_owned)
             .into_iter()
-            .filter(|c| !scenario_collections.contains(&c.as_str()));
+            .filter(|c| !scenario_collections.contains(&c.as_str()))
+            .collect();
 
         for trim_collection in trim_collections {
             self.namespace.remove_collection(&trim_collection);
