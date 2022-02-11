@@ -139,6 +139,9 @@ impl Scenario {
                     map.fields.remove(trim_field.as_str());
                 }
             }
+            Content::Array(arr) => {
+                Self::trim_collection_fields(&mut arr.content, fields)?;
+            }
             _ => return Err(anyhow!("cannot select fields to include from a non-object")),
         };
 
@@ -252,6 +255,40 @@ mod tests {
             "collection1": {
                 "type": "object",
                 "nully": {"type": "null"}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn build_filter_fields_array() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection1": {
+                    "type": "array",
+                    "length": 5,
+                    "content": {
+                        "type": "object",
+                        "nully": {"type": "null"},
+                        "stringy": {"type": "string", "pattern": "test"}
+                    }
+                },
+                "collection2": {}
+            }),
+            scenario: scenario!({"collection1": {"nully": {}}}),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection1": {
+                "type": "array",
+                "length": 5,
+                "content": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                }
             }
         });
 
