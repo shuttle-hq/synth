@@ -182,7 +182,9 @@ impl Scenario {
             (Content::Number(orig), Content::Number(over)) if orig == over => {
                 return Self::same_err()
             }
-            (Content::String(_), Content::String(_)) => todo!(),
+            (Content::String(orig), Content::String(over)) if orig == over => {
+                return Self::same_err()
+            }
             _ => *original = overwrite.clone(),
         }
 
@@ -568,6 +570,76 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "same": {"type": "number", "constant": 2}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_string() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "string_pattern": {"type": "string", "pattern": "(m|f)"},
+                    "string_format": {"type": "string", "format": {"format": "the lucky number is {number}", "arguments": {"number": 5}}},
+                    "string_faker": {"type": "string", "faker": {"generator": "address"}},
+                    "string_serialized": {"type": "string", "serialized": {"serializer": "json", "content": 3}},
+                    "string_truncated": {"type": "string", "truncated": {"length": 4, "content": {"type": "string", "pattern": "[a-z]{30}"}}},
+                    "string_sliced": {"type": "string", "sliced": {"slice": "4:8", "content": {"type": "string", "pattern": "[a-z]{30}"}}},
+                    "string_constant": {"type": "string", "constant": "hello world"},
+                    "string_categorical": {"type": "string", "categorical": {"hello": 4, "world": 3}},
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "string_pattern": {"type": "string", "pattern": "(male|female)"},
+                    "string_format": {"type": "string", "format": {"format": "{number} was guessed", "arguments": {"number": 2}}},
+                    "string_faker": {"type": "string", "faker": {"generator": "first_name"}},
+                    "string_serialized": {"type": "string", "serialized": {"serializer": "json", "content": 7}},
+                    "string_truncated": {"type": "string", "truncated": {"length": 8, "content": {"type": "string", "pattern": "[A-Z]{35}"}}},
+                    "string_sliced": {"type": "string", "sliced": {"slice": "25:30", "content": {"type": "string", "pattern": "[A-Z]{63}"}}},
+                    "string_constant": {"type": "string", "constant": "bye world"},
+                    "string_categorical": {"type": "string", "categorical": {"bye": 8, "world": 6}},
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "string_pattern": {"type": "string", "pattern": "(male|female)"},
+                "string_format": {"type": "string", "format": {"format": "{number} was guessed", "arguments": {"number": 2}}},
+                "string_faker": {"type": "string", "faker": {"generator": "first_name"}},
+                "string_serialized": {"type": "string", "serialized": {"serializer": "json", "content": 7}},
+                "string_truncated": {"type": "string", "truncated": {"length": 8, "content": {"type": "string", "pattern": "[A-Z]{35}"}}},
+                "string_sliced": {"type": "string", "sliced": {"slice": "25:30", "content": {"type": "string", "pattern": "[A-Z]{63}"}}},
+                "string_constant": {"type": "string", "constant": "bye world"},
+                "string_categorical": {"type": "string", "categorical": {"bye": 8, "world": 6}},
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_string_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "string_uuid": {"type": "string", "uuid": {}},
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "string_uuid": {"type": "string", "uuid": {}},
                 }
             }),
             name: "test".to_string(),
