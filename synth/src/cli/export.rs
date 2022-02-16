@@ -13,23 +13,14 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::datasource::DataSource;
-use crate::sampler::{Sampler, SamplerOutput};
+use crate::sampler::SamplerOutput;
 use async_std::task;
 use synth_core::{DataSourceParams, Namespace, Value};
 
 use super::map_from_uri_query;
 
 pub(crate) trait ExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput>;
-}
-
-pub struct ExportParams {
-    pub namespace: Namespace,
-    /// The name of the single collection to generate from if one is specified (via --collection).
-    pub collection_name: Option<String>,
-    pub target: usize,
-    pub seed: u64,
-    pub ns_path: PathBuf,
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<()>;
 }
 
 pub(crate) struct ExportStrategyBuilder<'a, W> {
@@ -129,14 +120,10 @@ where
 }
 
 pub(crate) fn create_and_insert_values<T: DataSource>(
-    params: ExportParams,
+    sample: SamplerOutput,
     datasource: &T,
-) -> Result<SamplerOutput> {
-    let sampler = Sampler::try_from(&params.namespace)?;
-    let sample =
-        sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
-
-    match sample.clone() {
+) -> Result<()> {
+    match sample {
         SamplerOutput::Collection(name, value) => {
             insert_data(datasource, name.as_ref(), value)?;
         }
@@ -147,7 +134,7 @@ pub(crate) fn create_and_insert_values<T: DataSource>(
         }
     };
 
-    Ok(sample)
+    Ok(())
 }
 
 fn insert_data<T: DataSource>(

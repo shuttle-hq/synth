@@ -1,13 +1,12 @@
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::cli::import::ImportStrategy;
-use crate::sampler::{Sampler, SamplerOutput};
+use crate::sampler::SamplerOutput;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use mongodb::bson::Bson;
 use mongodb::options::FindOptions;
 use mongodb::{bson::Document, options::ClientOptions, sync::Client};
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
 use synth_core::graph::prelude::content::number_content::U64;
 use synth_core::graph::prelude::number_content::I64;
 use synth_core::graph::prelude::{ChronoValue, Number, NumberContent, ObjectContent, RangeStep};
@@ -152,13 +151,10 @@ fn bson_to_content(bson: &Bson) -> Content {
 }
 
 impl ExportStrategy for MongoExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let mut client = Client::with_uri_str(&self.uri_string)?;
-        let sampler = Sampler::try_from(&params.namespace)?;
-        let sample =
-            sampler.sample_seeded(params.collection_name.clone(), params.target, params.seed)?;
 
-        match sample.clone() {
+        match sample {
             SamplerOutput::Collection(name, value) => {
                 self.insert_data(name.as_ref(), value, &mut client)
             }
@@ -170,7 +166,7 @@ impl ExportStrategy for MongoExportStrategy {
             }
         }?;
 
-        Ok(sample)
+        Ok(())
     }
 }
 

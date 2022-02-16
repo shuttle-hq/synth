@@ -14,7 +14,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use uuid::Uuid;
 
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::cli::{config, GenerateCommand, ImportCommand};
 use crate::sampler::SamplerOutput;
 use crate::utils::META_OS;
@@ -206,20 +206,26 @@ impl<'t, 'a: 't> Compiler<'a> for TelemetryCrawler<'t, 'a> {
 pub(super) struct TelemetryExportStrategy<'w> {
     exporter: Box<dyn ExportStrategy + 'w>,
     telemetry_context: Rc<RefCell<TelemetryContext>>,
+    collection: Option<String>,
+    ns_path: PathBuf,
 }
 
 impl<'w> TelemetryExportStrategy<'w> {
     pub fn new(
         strategy: Box<dyn ExportStrategy + 'w>,
         context: Rc<RefCell<TelemetryContext>>,
+        collection: Option<String>,
+        ns_path: PathBuf,
     ) -> Self {
         TelemetryExportStrategy {
             exporter: strategy,
             telemetry_context: context,
+            collection,
+            ns_path,
         }
     }
 
-    pub(super) fn fill_telemetry_pre(
+    pub(super) fn fill_telemetry(
         context: Rc<RefCell<TelemetryContext>>,
         namespace: &Namespace,
         collection: Option<String>,
@@ -265,7 +271,7 @@ impl<'w> TelemetryExportStrategy<'w> {
         Ok(())
     }
 
-    fn fill_telemetry_post(&self, output: SamplerOutput) -> Result<()> {
+    fn fill_telemetry_bytes(&self, output: SamplerOutput) -> Result<()> {
         let j = output.into_json();
         let s = serde_json::to_string(&j)?;
 
@@ -276,18 +282,17 @@ impl<'w> TelemetryExportStrategy<'w> {
 }
 
 impl<'w> ExportStrategy for TelemetryExportStrategy<'w> {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        Self::fill_telemetry_pre(
+    fn export(&self, namespace: Namespace, sample: SamplerOutput) -> Result<()> {
+        Self::fill_telemetry(
             Rc::clone(&self.telemetry_context),
-            &params.namespace,
-            params.collection_name.clone(),
-            params.ns_path.clone(),
+            &namespace,
+            self.collection.clone(),
+            self.ns_path.clone(),
         )?;
-        let output = self.exporter.export(params)?;
 
-        self.fill_telemetry_post(output.clone())?;
+        self.fill_telemetry_bytes(sample.clone())?;
 
-        Ok(output)
+        self.exporter.export(namespace, sample)
     }
 }
 
@@ -522,7 +527,7 @@ impl TelemetryClient {
 #[cfg(test)]
 pub mod tests {
     use super::{
-        ExportParams, ExportStrategy, Namespace, SamplerOutput, TelemetryClient, TelemetryContext,
+        ExportStrategy, Namespace, SamplerOutput, TelemetryClient, TelemetryContext,
         TelemetryExportStrategy,
     };
     use crate::sampler::Sampler;
@@ -544,12 +549,8 @@ pub mod tests {
     pub struct DummyExportStrategy {}
 
     impl ExportStrategy for DummyExportStrategy {
-        fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-            let generator = Sampler::try_from(&params.namespace)?;
-            let output =
-                generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
-            Ok(output)
+        fn export(&self, _namespace: Namespace, _sample: SamplerOutput) -> Result<()> {
+            Ok(())
         }
     }
 
@@ -598,18 +599,19 @@ pub mod tests {
         .unwrap();
 
         let context = Rc::new(RefCell::new(TelemetryContext::new()));
-        let export_strategy =
-            TelemetryExportStrategy::new(Box::new(DummyExportStrategy {}), Rc::clone(&context));
+        let export_strategy = TelemetryExportStrategy::new(
+            Box::new(DummyExportStrategy {}),
+            Rc::clone(&context),
+            None,
+            PathBuf::from("/dummy/path"),
+        );
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: None,
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/path"),
-            })
+        let sample = Sampler::try_from(&schema)
+            .unwrap()
+            .sample_seeded(None, 1, 500)
             .unwrap();
+
+        export_strategy.export(schema, sample).unwrap();
 
         assert_eq!(
             context.take(),
@@ -690,15 +692,12 @@ pub mod tests {
         .into_namespace()
         .unwrap();
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: None,
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/path"),
-            })
+        let sample = Sampler::try_from(&schema)
+            .unwrap()
+            .sample_seeded(None, 1, 500)
             .unwrap();
+
+        export_strategy.export(schema, sample).unwrap();
 
         assert_eq!(
             context.take(),
@@ -767,15 +766,12 @@ pub mod tests {
         .into_namespace()
         .unwrap();
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: None,
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/path"),
-            })
+        let sample = Sampler::try_from(&schema)
+            .unwrap()
+            .sample_seeded(None, 1, 500)
             .unwrap();
+
+        export_strategy.export(schema, sample).unwrap();
 
         assert_eq!(
             context.take(),
@@ -844,15 +840,12 @@ pub mod tests {
         .into_namespace()
         .unwrap();
 
-        export_strategy
-            .export(ExportParams {
-                namespace: schema,
-                collection_name: "collection-2".parse().ok(),
-                target: 1,
-                seed: 500,
-                ns_path: PathBuf::from("/dummy/namespace"),
-            })
+        let sample = Sampler::try_from(&schema)
+            .unwrap()
+            .sample_seeded(None, 1, 500)
             .unwrap();
+
+        export_strategy.export(schema, sample).unwrap();
 
         assert_eq!(
             context.take(),

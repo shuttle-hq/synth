@@ -15,7 +15,7 @@ use anyhow::Result;
 #[rustfmt::skip]
 mod helpers;
 
-use helpers::generate;
+use helpers::{generate, generate_scenario};
 use regex::Regex;
 
 #[tmpl_ignore("./", exclude_dir = true, filter_extension = "md")]
@@ -30,24 +30,30 @@ async fn PATH_IDENT() -> Result<()> {
     let path = Path::new("../").join(path);
 
     let ns = get_ns_dir(tmp, &path);
-    fs::create_dir_all(&ns)?;
+    fs::create_dir_all(&ns.join("scenarios"))?;
 
     let mut expects = HashSet::new();
+    let mut scenarios = HashSet::new();
 
     extract_code_blocks(&path)?
         .into_iter()
         .filter(is_json_block)
         .try_for_each(|block| -> Result<()> {
-            let expect = write_code_block(&path, block, tmp)?;
+            let (expect, scenario_name) = write_code_block(&path, block, tmp)?;
 
             if let Some(expect) = expect {
                 expects.insert(expect);
             }
 
+            if let Some(name) = scenario_name {
+                scenarios.insert(name);
+            }
+
             Ok(())
         })?;
 
-    let actual = generate(&get_ns(&path).unwrap()).await;
+    let ns = get_ns(&path).unwrap();
+    let actual = generate(&ns).await;
 
     // Did we expect any errors for this document
     if expects.is_empty() {
@@ -71,6 +77,17 @@ async fn PATH_IDENT() -> Result<()> {
             "{}\nshould contain one of the following errors: {:#?}",
             err,
             expects
+        );
+    }
+
+    for scenario in scenarios {
+        let actual = generate_scenario(&ns, Some(scenario.clone())).await;
+
+        assert!(
+            actual.is_ok(),
+            "'{}' scenario should not have error: {:?}\n",
+            scenario,
+            actual.unwrap_err()
         );
     }
 
@@ -144,36 +161,53 @@ lazy_static! {
     /// ```json synth[custom.json]                          (synth= synth)(file=custom.json)
     /// ```json synth[expect = "error"]                     (synth= synth)(expect=error)
     /// ```json[data.json]                                  (file=data.json)
+    /// ```json synth-scenario[name.json]                   (scenario= synth-scenario)(file=name.json)
      static ref BLOCK_IDENTIFIER: Regex =Regex::new(
-        r#"^```json(?P<synth> synth)?(?:\[(?P<file>.*\.json)\])?(?:\[expect\s=\s"(?P<expect>.*)"\])?$"#,
+        r#"^```json(?P<synth> synth)?(?P<scenario> synth\-scenario)?(?:\[(?P<file>.*\.json)\])?(?:\[expect\s=\s"(?P<expect>.*)"\])?$"#,
     ).unwrap();
 
     /// Regex to capture any comments at the end of a line
     static ref COMMENT: Regex = Regex::new("(?P<comment>//.*$)").unwrap();
 }
 
-fn write_code_block(ns: &Path, block: Vec<Line>, tmp: &Path) -> Result<Option<String>> {
-    let ns = get_ns_dir(tmp, ns);
+fn write_code_block(
+    ns: &Path,
+    block: Vec<Line>,
+    tmp: &Path,
+) -> Result<(Option<String>, Option<String>)> {
+    let mut ns = get_ns_dir(tmp, ns);
 
-    let (is_synth, file, expect) = BLOCK_IDENTIFIER
+    let (is_synth, is_scenario, file, expect) = BLOCK_IDENTIFIER
         .captures(&block[0].content)
         .map(|cap| {
             (
                 cap.name("synth").is_some(),
+                cap.name("scenario").is_some(),
                 cap.name("file").map(|file| file.as_str().to_string()),
                 cap.name("expect").map(|expect| expect.as_str().to_string()),
             )
         })
         .unwrap();
 
-    let file = match (is_synth, file) {
+    let scenario_name = if is_scenario {
+        if let Some(ref scenario_file) = file {
+            ns = ns.join("scenarios");
+            Some(scenario_file.trim_end_matches(".json").to_string())
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let file = match ((is_synth || is_scenario), file) {
         (false, None) => {
             println!(
                 "{}:{} has a JSON only code block that will be skipped",
                 ns.display(),
                 block[0].index
             );
-            return Ok(None);
+            return Ok((None, None));
         }
         (false, Some(file)) => {
             println!(
@@ -223,5 +257,5 @@ fn write_code_block(ns: &Path, block: Vec<Line>, tmp: &Path) -> Result<Option<St
         writeln!(file, "}}")?;
     }
 
-    Ok(expect)
+    Ok((expect, scenario_name))
 }

@@ -1,6 +1,6 @@
-use crate::cli::export::{ExportParams, ExportStrategy};
+use crate::cli::export::ExportStrategy;
 use crate::cli::import::ImportStrategy;
-use crate::sampler::{Sampler, SamplerOutput};
+use crate::sampler::SamplerOutput;
 
 use synth_core::graph::{json::synth_val_to_json, Value};
 use synth_core::schema::{MergeStrategy, OptionalMergeStrategy};
@@ -10,7 +10,6 @@ use anyhow::{Context, Result};
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::io::{BufRead, Write};
 use std::path::PathBuf;
 
@@ -21,17 +20,14 @@ pub struct JsonLinesFileExportStrategy {
 }
 
 impl ExportStrategy for JsonLinesFileExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let generator = Sampler::try_from(&params.namespace)?;
-        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let mut f = std::io::BufWriter::new(std::fs::File::create(&self.from_file)?);
 
-        for val in json_lines_from_sampler_output(output.clone(), &self.collection_field_name) {
+        for val in json_lines_from_sampler_output(sample, &self.collection_field_name) {
             f.write_all((val.to_string() + "\n").as_bytes())?;
         }
 
-        Ok(output)
+        Ok(())
     }
 }
 
@@ -42,17 +38,13 @@ pub struct JsonLinesStdoutExportStrategy<W> {
 }
 
 impl<W: Write> ExportStrategy for JsonLinesStdoutExportStrategy<W> {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
-        let generator = Sampler::try_from(&params.namespace)?;
-        let output = generator.sample_seeded(params.collection_name, params.target, params.seed)?;
-
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
-
-        for line in json_lines_from_sampler_output(output.clone(), &self.collection_field_name) {
+        for line in json_lines_from_sampler_output(sample, &self.collection_field_name) {
             writeln!(self.writer.borrow_mut(), "{}", line).expect("failed to write jsonl line");
         }
 
-        Ok(output)
+        Ok(())
     }
 }
 

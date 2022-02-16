@@ -9,9 +9,9 @@ mod mysql;
 mod postgres;
 mod store;
 
-use crate::cli::export::ExportParams;
 use crate::cli::import::ImportStrategy;
 use crate::cli::store::Store;
+use crate::sampler::Sampler;
 use crate::version::print_version_message;
 
 use anyhow::{Context, Result};
@@ -153,7 +153,7 @@ impl<'w> Cli {
             let ns = import_strategy.import()?;
 
             #[cfg(feature = "telemetry")]
-            TelemetryExportStrategy::fill_telemetry_pre(
+            TelemetryExportStrategy::fill_telemetry(
                 Rc::clone(&self.telemetry_context),
                 &ns,
                 cmd.collection,
@@ -167,7 +167,7 @@ impl<'w> Cli {
     }
 
     fn generate<W: Write + 'w>(&self, cmd: GenerateCommand, writer: W) -> Result<()> {
-        let namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
+        let mut namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
             cmd.namespace
                 .to_str()
@@ -192,21 +192,26 @@ impl<'w> Cli {
             export_strategy = Box::new(TelemetryExportStrategy::new(
                 export_strategy,
                 Rc::clone(&self.telemetry_context),
+                cmd.collection.clone(),
+                cmd.namespace.clone(),
             ));
         }
 
-        let seed = Self::derive_seed(cmd.random, cmd.seed)?;
+        // Change namespace if scenario
+        if let Some(scenario) = cmd.scenario {
+            let scenario = self
+                .store
+                .get_scenario(namespace, cmd.namespace.clone(), &scenario)?;
 
-        let params = ExportParams {
-            namespace,
-            collection_name: cmd.collection,
-            target: cmd.size,
-            seed,
-            ns_path: cmd.namespace.clone(),
-        };
+            namespace = scenario.build()?;
+        }
+
+        let seed = Self::derive_seed(cmd.random, cmd.seed)?;
+        let sample =
+            Sampler::try_from(&namespace)?.sample_seeded(cmd.collection.clone(), cmd.size, seed)?;
 
         export_strategy
-            .export(params)
+            .export(namespace, sample)
             .with_context(|| format!("At namespace {:?}", cmd.namespace))?;
 
         Ok(())
@@ -253,9 +258,19 @@ pub struct GenerateCommand {
     )]
     #[serde(skip)]
     pub namespace: PathBuf,
-    #[structopt(long, help = "The specific collection from which to generate")]
+    #[structopt(
+        long,
+        help = "The specific collection from which to generate. Cannot be used with --scenario"
+    )]
     #[serde(skip)]
     pub collection: Option<String>,
+    #[structopt(
+        long,
+        help = "The specific scenario to generate data for. Cannot be used with --collection",
+        conflicts_with("collection")
+    )]
+    #[serde(skip)]
+    pub scenario: Option<String>,
     #[structopt(long, help = "the number of samples", default_value = "1")]
     pub size: usize,
     #[structopt(

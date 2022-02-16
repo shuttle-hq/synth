@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use lazy_static::lazy_static;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
-use synth_core::schema::{Content, Namespace};
+use synth_core::schema::{Content, Namespace, Scenario};
 
 lazy_static! {
     static ref UNDERLYING: Underlying = Underlying {
@@ -88,6 +88,15 @@ impl Store {
         }
 
         Ok(ns)
+    }
+
+    pub fn get_scenario(
+        &self,
+        namespace: Namespace,
+        namespace_path: PathBuf,
+        scenario: &str,
+    ) -> Result<Scenario> {
+        Scenario::new(namespace, self.path.join(namespace_path), scenario)
     }
 
     pub fn save_collection_path(

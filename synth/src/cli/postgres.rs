@@ -1,4 +1,4 @@
-use crate::cli::export::{create_and_insert_values, ExportParams, ExportStrategy};
+use crate::cli::export::{create_and_insert_values, ExportStrategy};
 use crate::cli::import::ImportStrategy;
 use crate::cli::import_utils::build_namespace_import;
 use crate::datasource::postgres_datasource::{PostgresConnectParams, PostgresDataSource};
@@ -14,7 +14,7 @@ pub struct PostgresExportStrategy {
 }
 
 impl ExportStrategy for PostgresExportStrategy {
-    fn export(&self, params: ExportParams) -> Result<SamplerOutput> {
+    fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         let connect_params = PostgresConnectParams {
             uri: self.uri_string.clone(),
             schema: self.schema.clone(),
@@ -22,7 +22,7 @@ impl ExportStrategy for PostgresExportStrategy {
 
         let datasource = PostgresDataSource::new(&connect_params)?;
 
-        create_and_insert_values(params, &datasource)
+        create_and_insert_values(sample, &datasource)
     }
 }
 
