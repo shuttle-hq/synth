@@ -49,10 +49,10 @@ macro_rules! test_scenarios {
                 stringify!($name),
                 "/",
                 stringify!($ns)
-            ), Some("users".to_string()))
+            ), Some("users-only".to_string()))
             .await?;
 
-            let expected = include_str!(concat!("examples/", stringify!($name), "/scenarios/users.json"))
+            let expected = include_str!(concat!("examples/", stringify!($name), "/scenarios/users-only.json"))
                 .replace("\r\n", "\n");
 
             assert_eq!(actual, expected);
