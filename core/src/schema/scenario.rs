@@ -175,10 +175,13 @@ impl Scenario {
     }
 
     fn merge_field(original: &mut Content, overwrite: &Content) -> Result<()> {
-        // We check if types are the same first to merge them. Else it must be a type overwrite.
+        // We check if types are the same first to find redundant overwrites. Else it must be a type overwrite.
         match (&original, overwrite) {
             (Content::Null(orig), Content::Null(over)) if orig == over => return Self::same_err(),
             (Content::Bool(orig), Content::Bool(over)) if orig == over => return Self::same_err(),
+            (Content::Number(orig), Content::Number(over)) if orig == over => {
+                return Self::same_err()
+            }
             (Content::String(_), Content::String(_)) => todo!(),
             _ => *original = overwrite.clone(),
         }
@@ -471,6 +474,100 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "same": {"type": "bool", "constant": true}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_number() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "number_u32_constant": {"type": "number", "subtype": "u32", "constant": 2},
+                    "number_u32_range": {"type": "number", "subtype": "u32", "range": {"low": 0, "high": 5, "step": 1}},
+                    "number_u32_id": {"type": "number", "subtype": "u32", "id": {"start_at": 3}},
+                    "number_u64_constant": {"type": "number", "subtype": "u64", "constant": 2},
+                    "number_u64_range": {"type": "number", "subtype": "u64", "range": {"low": 0, "high": 5, "step": 1}},
+                    "number_u64_id": {"type": "number", "subtype": "u64", "id": {"start_at": 3}},
+                    "number_i32_constant": {"type": "number", "subtype": "i32", "constant": -2},
+                    "number_i32_range": {"type": "number", "subtype": "i32", "range": {"low": -3, "high": 5, "step": 1}},
+                    "number_i32_id": {"type": "number", "subtype": "i32", "id": {"start_at": -3}},
+                    "number_i64_constant": {"type": "number", "subtype": "i64", "constant": -2},
+                    "number_i64_range": {"type": "number", "subtype": "i64", "range": {"low": -3, "high": 5, "step": 1}},
+                    "number_i64_id": {"type": "number", "subtype": "i64", "id": {"start_at": -3}},
+                    "number_f32_constant": {"type": "number", "subtype": "f32", "constant": 3.2},
+                    "number_f32_range": {"type": "number", "subtype": "f32", "range": {"low": 3.1, "high": 5.3, "step": 0.1}},
+                    "number_f64_constant": {"type": "number", "subtype": "f64", "constant": 4.2},
+                    "number_f64_range": {"type": "number", "subtype": "f64", "range": {"low": 34.2, "high": 56.3, "step": 0.3}}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "number_u32_constant": {"type": "number", "subtype": "u32", "constant": 3},
+                    "number_u32_range": {"type": "number", "subtype": "u32", "range": {"low": 2, "high": 10, "step": 3}},
+                    "number_u32_id": {"type": "number", "subtype": "u32", "id": {"start_at": 7}},
+                    "number_u64_constant": {"type": "number", "subtype": "u64", "constant": 8},
+                    "number_u64_range": {"type": "number", "subtype": "u64", "range": {"low": 4, "high": 10, "step": 2}},
+                    "number_u64_id": {"type": "number", "subtype": "u64", "id": {"start_at": 1}},
+                    "number_i32_constant": {"type": "number", "subtype": "i32", "constant": -7},
+                    "number_i32_range": {"type": "number", "subtype": "i32", "range": {"low": -8, "high": 7, "step": 2}},
+                    "number_i32_id": {"type": "number", "subtype": "i32", "id": {"start_at": -2}},
+                    "number_i64_constant": {"type": "number", "subtype": "i64", "constant": -9},
+                    "number_i64_range": {"type": "number", "subtype": "i64", "range": {"low": -8, "high": 7, "step": 2}},
+                    "number_i64_id": {"type": "number", "subtype": "i64", "id": {"start_at": -6}},
+                    "number_f32_constant": {"type": "number", "subtype": "f32", "constant": 6.2},
+                    "number_f32_range": {"type": "number", "subtype": "f32", "range": {"low": 4.2, "high": 8.3, "step": 0.7}},
+                    "number_f64_constant": {"type": "number", "subtype": "f64", "constant": 6.3},
+                    "number_f64_range": {"type": "number", "subtype": "f64", "range": {"low": 3.2, "high": 5.3, "step": 0.04}}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "number_u32_constant": {"type": "number", "subtype": "u32", "constant": 3},
+                "number_u32_range": {"type": "number", "subtype": "u32", "range": {"low": 2, "high": 10, "step": 3}},
+                "number_u32_id": {"type": "number", "subtype": "u32", "id": {"start_at": 7}},
+                "number_u64_constant": {"type": "number", "subtype": "u64", "constant": 8},
+                "number_u64_range": {"type": "number", "subtype": "u64", "range": {"low": 4, "high": 10, "step": 2}},
+                "number_u64_id": {"type": "number", "subtype": "u64", "id": {"start_at": 1}},
+                "number_i32_constant": {"type": "number", "subtype": "i32", "constant": -7},
+                "number_i32_range": {"type": "number", "subtype": "i32", "range": {"low": -8, "high": 7, "step": 2}},
+                "number_i32_id": {"type": "number", "subtype": "i32", "id": {"start_at": -2}},
+                "number_i64_constant": {"type": "number", "subtype": "i64", "constant": -9},
+                "number_i64_range": {"type": "number", "subtype": "i64", "range": {"low": -8, "high": 7, "step": 2}},
+                "number_i64_id": {"type": "number", "subtype": "i64", "id": {"start_at": -6}},
+                "number_f32_constant": {"type": "number", "subtype": "f32", "constant": 6.2},
+                "number_f32_range": {"type": "number", "subtype": "f32", "range": {"low": 4.2, "high": 8.3, "step": 0.7}},
+                "number_f64_constant": {"type": "number", "subtype": "f64", "constant": 6.3},
+                "number_f64_range": {"type": "number", "subtype": "f64", "range": {"low": 3.2, "high": 5.3, "step": 0.04}}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_number_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "number", "constant": 2}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "number", "constant": 2}
                 }
             }),
             name: "test".to_string(),
