@@ -177,14 +177,17 @@ impl Scenario {
     fn merge_field(original: &mut Content, overwrite: &Content) -> Result<()> {
         // We check if types are the same first to merge them. Else it must be a type overwrite.
         match (&original, overwrite) {
-            (Content::Null(orig), Content::Null(over)) if orig == over => {
-                return Err(anyhow!("overwrite is same as original"))
-            }
+            (Content::Null(orig), Content::Null(over)) if orig == over => return Self::same_err(),
+            (Content::Bool(orig), Content::Bool(over)) if orig == over => return Self::same_err(),
             (Content::String(_), Content::String(_)) => todo!(),
             _ => *original = overwrite.clone(),
         }
 
         Ok(())
+    }
+
+    fn same_err() -> Result<()> {
+        Err(anyhow!("overwrite is same as original"))
     }
 }
 
@@ -418,14 +421,61 @@ mod tests {
             name: "test".to_string(),
         };
 
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_bool() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "bool_constant": {"type": "bool", "constant": true},
+                    "bool_frequency": {"type": "bool", "frequency": 0.5},
+                    "bool_subtype": {"type": "bool", "constant": true}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "bool_constant": {"type": "bool", "constant": false},
+                    "bool_frequency": {"type": "bool", "frequency": 0.3},
+                    "bool_subtype": {"type": "bool", "frequency": 0.8}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
         let actual = scenario.build().unwrap();
         let expected = namespace!({
             "collection": {
                 "type": "object",
-                "nully": {"type": "null"}
+                "bool_constant": {"type": "bool", "constant": false},
+                "bool_frequency": {"type": "bool", "frequency": 0.3},
+                "bool_subtype": {"type": "bool", "frequency": 0.8}
             }
         });
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_bool_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "bool", "constant": true}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "bool", "constant": true}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
     }
 }
