@@ -136,15 +136,32 @@ impl Scenario {
                         ));
                     }
                 }
-                let trim_fields: Vec<_> = map_keys
+                let (keep_fields, trim_fields): (Vec<_>, Vec<_>) = map_keys
                     .into_iter()
-                    .filter(|c| !fields.contains_key(c.as_str()))
-                    .map(ToOwned::to_owned)
-                    .collect();
+                    .partition(|c| fields.contains_key(c.as_str()));
+
+                let trim_fields: Vec<_> = trim_fields.into_iter().map(ToOwned::to_owned).collect();
+                let keep_fields: Vec<_> = keep_fields.into_iter().map(ToOwned::to_owned).collect();
 
                 for trim_field in trim_fields {
                     debug!("removing field '{}'", trim_field);
                     map.fields.remove(trim_field.as_str());
+                }
+
+                for keep_field in keep_fields {
+                    // Safe to unwrap since we already checked the existence of this field in the
+                    // partition step
+                    let overwrite = fields.get(&keep_field).unwrap();
+
+                    // If this just an include
+                    if let Content::Empty(_) = overwrite {
+                        continue;
+                    }
+                    debug!("merging field '{}'", keep_field);
+
+                    // Safe to unwrap since we got `keep_field` from `map.fields`
+                    let original = map.fields.get_mut(&keep_field).unwrap();
+                    Self::merge_field(original, overwrite);
                 }
             }
             Content::Array(arr) => {
@@ -154,6 +171,14 @@ impl Scenario {
         };
 
         Ok(())
+    }
+
+    fn merge_field(original: &mut Content, overwrite: &Content) {
+        // We check if types are the same first to merge them. Else it must be a type overwrite.
+        match (&original, overwrite) {
+            (Content::String(_), Content::String(_)) => todo!(),
+            _ => *original = overwrite.clone(),
+        }
     }
 }
 
@@ -336,5 +361,36 @@ mod tests {
         };
 
         scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_types() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection1": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                    "stringy": {"type": "string", "pattern": "test"}
+                }
+            }),
+            scenario: scenario!({
+                "collection1": {
+                    "nully": {"type": "string", "pattern": "test"},
+                    "stringy": {"type": "null"}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection1": {
+                "type": "object",
+                "nully": {"type": "string", "pattern": "test"},
+                "stringy": {"type": "null"}
+            }
+        });
+
+        assert_eq!(actual, expected);
     }
 }
