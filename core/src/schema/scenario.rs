@@ -161,7 +161,8 @@ impl Scenario {
 
                     // Safe to unwrap since we got `keep_field` from `map.fields`
                     let original = map.fields.get_mut(&keep_field).unwrap();
-                    Self::merge_field(original, overwrite);
+                    Self::merge_field(original, overwrite)
+                        .context(anyhow!("failed to overwrite field '{}'", keep_field))?;
                 }
             }
             Content::Array(arr) => {
@@ -173,12 +174,17 @@ impl Scenario {
         Ok(())
     }
 
-    fn merge_field(original: &mut Content, overwrite: &Content) {
+    fn merge_field(original: &mut Content, overwrite: &Content) -> Result<()> {
         // We check if types are the same first to merge them. Else it must be a type overwrite.
         match (&original, overwrite) {
+            (Content::Null(orig), Content::Null(over)) if orig == over => {
+                return Err(anyhow!("overwrite is same as original"))
+            }
             (Content::String(_), Content::String(_)) => todo!(),
             _ => *original = overwrite.clone(),
         }
+
+        Ok(())
     }
 }
 
@@ -367,14 +373,14 @@ mod tests {
     fn build_overwrite_types() {
         let scenario = Scenario {
             namespace: namespace!({
-                "collection1": {
+                "collection": {
                     "type": "object",
                     "nully": {"type": "null"},
                     "stringy": {"type": "string", "pattern": "test"}
                 }
             }),
             scenario: scenario!({
-                "collection1": {
+                "collection": {
                     "nully": {"type": "string", "pattern": "test"},
                     "stringy": {"type": "null"}
                 }
@@ -384,10 +390,39 @@ mod tests {
 
         let actual = scenario.build().unwrap();
         let expected = namespace!({
-            "collection1": {
+            "collection": {
                 "type": "object",
                 "nully": {"type": "string", "pattern": "test"},
                 "stringy": {"type": "null"}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_null() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "nully": {"type": "null"}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "nully": {"type": "null"}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "nully": {"type": "null"}
             }
         });
 
