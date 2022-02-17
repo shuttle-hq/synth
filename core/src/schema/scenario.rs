@@ -194,13 +194,16 @@ impl Scenario {
             (Content::SameAs(orig), Content::SameAs(over)) if orig == over => {
                 return Self::same_err()
             }
-            (Content::Unique(orig), Content::Unique(over)) if orig == over => {
-                return Self::same_err()
-            }
             (Content::Series(orig), Content::Series(over)) if orig == over => {
                 return Self::same_err()
             }
             (Content::Datasource(orig), Content::Datasource(over)) if orig == over => {
+                return Self::same_err()
+            }
+            (Content::Hidden(orig), Content::Hidden(over)) if orig == over => {
+                return Self::same_err()
+            }
+            (Content::Unique(orig), Content::Unique(over)) if orig == over => {
                 return Self::same_err()
             }
             _ => *original = overwrite.clone(),
@@ -970,6 +973,55 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "datasource": {"type": "datasource", "path": "json:users.json", "cycle": false}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_hidden() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "h": {"type": "hidden", "content": { "type": "null" }}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "h": {"type": "hidden", "content": { "type": "string", "pattern": "f|m" }}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "h": {"type": "hidden", "content": { "type": "string", "pattern": "f|m" }}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_hidden_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "hidden", "content": { "type": "null" }}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "null", "hidden": true}
                 }
             }),
             name: "test".to_string(),
