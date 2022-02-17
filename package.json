@@ -11,12 +11,24 @@
     "clean": "tsc --build --clean",
     "test": "cargo test"
   },
-  "files": ["synth/Cargo.toml", "synth/src/", "core/", "gen/", "node/"],
+  "files": [
+    "synth/Cargo.toml",
+    "synth/src/",
+    "core/",
+    "gen/",
+    "node/"
+  ],
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
     "@types/node": "^17.0.16",
     "cargo-cp-artifact": "^0.1",
     "typescript": "^4.5.5"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0"
   }
 }

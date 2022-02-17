@@ -1,34 +1,34 @@
-import { Content } from "./content"
-import { StringContent, str } from "./string"
-import { NumberContent, number } from "./number"
-import { ObjContent, obj } from "./object"
-import { ArrayContent, array } from "./array"
-import { OneOfContent, oneOf } from "./one_of"
-import { SameAsContent, sameAs } from "./same_as"
-import { BoolContent, randomBool, constantBool } from "./bool"
+import {Content} from './content';
+import {StringContent, str} from './string';
+import {NumberContent, number} from './number';
+import {ObjContent, obj} from './object';
+import {ArrayContent, array} from './array';
+import {OneOfContent, oneOf} from './one_of';
+import {SameAsContent, sameAs} from './same_as';
+import {BoolContent, randomBool, constantBool} from './bool';
 
 export {
-    Content,
+  Content,
 
-    StringContent,
-    str,
+  StringContent,
+  str,
 
-    NumberContent,
-    number,
+  NumberContent,
+  number,
 
-    obj,
-    ObjContent,
+  obj,
+  ObjContent,
 
-    array,
-    ArrayContent,
+  array,
+  ArrayContent,
 
-    oneOf,
-    OneOfContent,
+  oneOf,
+  OneOfContent,
 
-    sameAs,
-    SameAsContent,
+  sameAs,
+  SameAsContent,
 
-    randomBool,
-    constantBool,
-    BoolContent
-}
+  randomBool,
+  constantBool,
+  BoolContent,
+};
