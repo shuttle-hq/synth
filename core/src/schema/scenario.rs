@@ -200,6 +200,9 @@ impl Scenario {
             (Content::Series(orig), Content::Series(over)) if orig == over => {
                 return Self::same_err()
             }
+            (Content::Datasource(orig), Content::Datasource(over)) if orig == over => {
+                return Self::same_err()
+            }
             _ => *original = overwrite.clone(),
         }
 
@@ -918,6 +921,55 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "same": {"type": "series", "zip": {"series": [{"incrementing": {"start": "2022-03-29 3:34:00", "increment": "1m"}}, {"poisson": {"start": "2022-03-29 8:29:00", "rate": "1m"}}]}}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_datasource() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "datasource": {"type": "datasource", "path": "json:users.json", "cycle": false}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "datasource": {"type": "datasource", "path": "json:people.json", "cycle": true}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "datasource": {"type": "datasource", "path": "json:people.json", "cycle": true}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_datasource_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "datasource": {"type": "datasource", "path": "json:users.json", "cycle": false}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "datasource": {"type": "datasource", "path": "json:users.json", "cycle": false}
                 }
             }),
             name: "test".to_string(),
