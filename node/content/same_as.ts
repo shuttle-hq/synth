@@ -14,4 +14,4 @@ function sameAs(ref: string): QualifiedSameAs {
     }
 }
 
-export { sameAs, SameAsContent }
+export { SameAsContent, sameAs }

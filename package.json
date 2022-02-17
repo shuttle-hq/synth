@@ -2,7 +2,7 @@
   "name": "@wiredsound/node",
   "version": "0.1.0",
   "description": "Node.js wrapper around Synth, a declarative, synthetic data generator",
-  "main": "node/index.js",
+  "main": "node/tsbuild/index.js",
   "scripts": {
     "build": "cd node/ && tsc --build && cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
     "build-debug": "npm run build --",
@@ -11,6 +11,7 @@
     "clean": "tsc --build --clean",
     "test": "cargo test"
   },
+  "files": ["synth/Cargo.toml", "synth/src/", "core/", "gen/", "node/"],
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
