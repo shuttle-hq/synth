@@ -4,6 +4,8 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 use crate::{Content, Namespace};
 
+use super::content::ObjectContent;
+
 pub struct Scenario {
     namespace: Namespace,
     scenario: ScenarioNamespace,
@@ -62,13 +64,13 @@ impl Scenario {
     }
 
     fn has_extra_collections(&self) -> Result<()> {
-        let collections: Vec<_> = self.namespace.keys().collect();
+        let original_collections: Vec<_> = self.namespace.keys().collect();
 
         let extra_collections: Vec<_> = self
             .scenario
             .collections
             .keys()
-            .filter(|c| !collections.contains(&c.as_str()))
+            .filter(|c| !original_collections.contains(&c.as_str()))
             .collect();
 
         if !extra_collections.is_empty() {
@@ -88,14 +90,14 @@ impl Scenario {
     }
 
     fn trim_namespace_collections(&mut self) {
-        let scenario_collections: Vec<_> = self.scenario.collections.keys().collect();
+        let new_collections: Vec<_> = self.scenario.collections.keys().collect();
 
         let trim_collections: Vec<_> = self
             .namespace
             .keys()
             .map(ToOwned::to_owned)
             .into_iter()
-            .filter(|c| !scenario_collections.contains(&c))
+            .filter(|c| !new_collections.contains(&c))
             .collect();
 
         for trim_collection in trim_collections {
@@ -105,15 +107,15 @@ impl Scenario {
     }
 
     fn trim_fields(&mut self) -> Result<()> {
-        for (name, collection) in self.scenario.collections.iter() {
+        for (name, new_collection) in self.scenario.collections.iter() {
             // Nothing to trim
-            if collection.fields.is_empty() {
+            if new_collection.fields.is_empty() {
                 continue;
             }
 
-            let namespace_collection = self.namespace.get_collection_mut(name)?;
+            let original_collection = self.namespace.get_collection_mut(name)?;
 
-            Self::trim_collection_fields(namespace_collection, &collection.fields)
+            Self::trim_collection_fields(original_collection, &new_collection.fields)
                 .context(anyhow!("failed to trim collection '{}'", name))?;
         }
 
@@ -121,60 +123,13 @@ impl Scenario {
     }
 
     fn trim_collection_fields(
-        collection: &mut Content,
-        fields: &BTreeMap<String, Content>,
+        original: &mut Content,
+        overwrites: &BTreeMap<String, Content>,
     ) -> Result<()> {
-        match collection {
-            Content::Object(map) => {
-                let map_keys: Vec<_> = map.fields.keys().collect();
-                let map_len = map_keys.len();
-
-                for field in fields.keys() {
-                    if !map_keys.contains(&field) {
-                        return Err(anyhow!(
-                            "'{}' is not a field on the object, therefore it cannot be included",
-                            field
-                        ));
-                    }
-                }
-                let (keep_fields, trim_fields): (Vec<_>, Vec<_>) = map_keys
-                    .into_iter()
-                    .partition(|c| fields.contains_key(c.as_str()));
-
-                let trim_fields: Vec<_> = trim_fields.into_iter().map(ToOwned::to_owned).collect();
-                let keep_fields: Vec<_> = keep_fields.into_iter().map(ToOwned::to_owned).collect();
-
-                for trim_field in trim_fields {
-                    debug!("removing field '{}'", trim_field);
-                    map.fields.remove(trim_field.as_str());
-                }
-
-                let mut includes_count = 0;
-
-                for keep_field in keep_fields {
-                    // Safe to unwrap since we already checked the existence of this field in the
-                    // partition step
-                    let overwrite = fields.get(&keep_field).unwrap();
-
-                    // If this just an include
-                    if let Content::Empty(_) = overwrite {
-                        includes_count += 1;
-                        continue;
-                    }
-                    debug!("merging field '{}'", keep_field);
-
-                    // Safe to unwrap since we got `keep_field` from `map.fields`
-                    let original = map.fields.get_mut(&keep_field).unwrap();
-                    Self::merge_field(original, overwrite)
-                        .context(anyhow!("failed to overwrite field '{}'", keep_field))?;
-                }
-
-                if includes_count == map_len {
-                    return Err(anyhow!("all fields from object are included as is with no overwrites. Consider making the parent an include instead."));
-                }
-            }
+        match original {
+            Content::Object(map) => Self::merge_object_content(map, overwrites)?,
             Content::Array(arr) => {
-                Self::trim_collection_fields(&mut arr.content, fields)?;
+                Self::trim_collection_fields(&mut arr.content, overwrites)?;
             }
             _ => return Err(anyhow!("cannot select fields to include from a non-object")),
         };
@@ -218,9 +173,66 @@ impl Scenario {
                 return Self::same_err()
             }
             (Content::Object(_), Content::Object(over)) => {
-                Self::trim_collection_fields(original, &over.fields)?
+                // Needed since it is not possible to extract mutable version in match arm
+                if let Content::Object(object) = original {
+                    Self::merge_object_content(object, &over.fields)?
+                }
             }
             _ => *original = overwrite.clone(),
+        }
+
+        Ok(())
+    }
+
+    fn merge_object_content(
+        original: &mut ObjectContent,
+        overwrites: &BTreeMap<String, Content>,
+    ) -> Result<()> {
+        let original_keys: Vec<_> = original.fields.keys().collect();
+        let original_len = original_keys.len();
+
+        for overwrite in overwrites.keys() {
+            if !original_keys.contains(&overwrite) {
+                return Err(anyhow!(
+                    "'{}' is not a field on the object, therefore it cannot be included",
+                    overwrite
+                ));
+            }
+        }
+        let (keep_fields, trim_fields): (Vec<_>, Vec<_>) = original_keys
+            .into_iter()
+            .partition(|c| overwrites.contains_key(c.as_str()));
+
+        let trim_fields: Vec<_> = trim_fields.into_iter().map(ToOwned::to_owned).collect();
+        let keep_fields: Vec<_> = keep_fields.into_iter().map(ToOwned::to_owned).collect();
+
+        for trim_field in trim_fields {
+            debug!("removing field '{}'", trim_field);
+            original.fields.remove(trim_field.as_str());
+        }
+
+        let mut includes_count = 0;
+
+        for keep_field in keep_fields {
+            // Safe to unwrap since we already checked the existence of this field in the
+            // partition step
+            let overwrite = overwrites.get(&keep_field).unwrap();
+
+            // If this just an include
+            if let Content::Empty(_) = overwrite {
+                includes_count += 1;
+                continue;
+            }
+            debug!("merging field '{}'", keep_field);
+
+            // Safe to unwrap since we got `keep_field` from `map.fields`
+            let original = original.fields.get_mut(&keep_field).unwrap();
+            Self::merge_field(original, overwrite)
+                .context(anyhow!("failed to overwrite field '{}'", keep_field))?;
+        }
+
+        if includes_count == original_len {
+            return Err(anyhow!("all fields from object are included as is with no overwrites. Consider making the parent an include instead."));
         }
 
         Ok(())
