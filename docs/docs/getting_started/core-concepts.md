@@ -149,7 +149,7 @@ This creates a scenario called `search-by-name` by having a
 [namespace](#namespaces). The definition for this scenario will look as
 follow:
 
-```json synth-scenario[users-only.json]
+```json synth-scenario[search-by-name.json]
 {
   "users": {
     "username": {},
