@@ -188,23 +188,32 @@ impl Scenario {
         original: &mut ObjectContent,
         overwrites: &BTreeMap<String, Content>,
     ) -> Result<()> {
-        let original_keys: Vec<_> = original.fields.keys().collect();
+        let original_keys: Vec<String> = original
+            .fields
+            .keys()
+            .into_iter()
+            .map(ToOwned::to_owned)
+            .collect();
         let original_len = original_keys.len();
 
-        for overwrite in overwrites.keys() {
-            if !original_keys.contains(&overwrite) {
-                return Err(anyhow!(
-                    "'{}' is not a field on the object, therefore it cannot be included",
-                    overwrite
-                ));
+        for (overwrite_name, overwrite_content) in overwrites {
+            if !original_keys.contains(&overwrite_name) {
+                // Cannot add include only fields
+                if let Content::Empty(_) = overwrite_content {
+                    return Err(anyhow!(
+                        "'{}' is not a field on the object, therefore it cannot be included",
+                        overwrite_name
+                    ));
+                }
+
+                original
+                    .fields
+                    .insert(overwrite_name.to_string(), overwrite_content.clone());
             }
         }
         let (keep_fields, trim_fields): (Vec<_>, Vec<_>) = original_keys
             .into_iter()
             .partition(|c| overwrites.contains_key(c.as_str()));
-
-        let trim_fields: Vec<_> = trim_fields.into_iter().map(ToOwned::to_owned).collect();
-        let keep_fields: Vec<_> = keep_fields.into_iter().map(ToOwned::to_owned).collect();
 
         for trim_field in trim_fields {
             debug!("removing field '{}'", trim_field);
@@ -391,7 +400,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "'null' is not a field on the object")]
-    fn build_filter_extra_field() {
+    fn build_filter_extra_field_include() {
         let scenario = Scenario {
             namespace: namespace!({
                 "collection1": {
@@ -406,6 +415,35 @@ mod tests {
         };
 
         scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_filter_extra_field() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection1": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                    "stringy": {"type": "string", "pattern": "test"}
+                },
+                "collection2": {}
+            }),
+            scenario: scenario!({"collection1": {"number": {"type": "number", "constant": 4}}}),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection1": {
+                "type": "object",
+                "number": {
+                    "type": "number",
+                    "constant": 4
+                }
+            }
+        });
+
+        assert_eq!(actual, expected);
     }
 
     #[test]
