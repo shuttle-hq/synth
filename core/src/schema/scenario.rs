@@ -188,6 +188,9 @@ impl Scenario {
             (Content::DateTime(orig), Content::DateTime(over)) if orig == over => {
                 return Self::same_err()
             }
+            (Content::OneOf(orig), Content::OneOf(over)) if orig == over => {
+                return Self::same_err()
+            }
             _ => *original = overwrite.clone(),
         }
 
@@ -594,7 +597,7 @@ mod tests {
                     "string_truncated": {"type": "string", "truncated": {"length": 4, "content": {"type": "string", "pattern": "[a-z]{30}"}}},
                     "string_sliced": {"type": "string", "sliced": {"slice": "4:8", "content": {"type": "string", "pattern": "[a-z]{30}"}}},
                     "string_constant": {"type": "string", "constant": "hello world"},
-                    "string_categorical": {"type": "string", "categorical": {"hello": 4, "world": 3}},
+                    "string_categorical": {"type": "string", "categorical": {"hello": 4, "world": 3}}
                 }
             }),
             scenario: scenario!({
@@ -606,7 +609,7 @@ mod tests {
                     "string_truncated": {"type": "string", "truncated": {"length": 8, "content": {"type": "string", "pattern": "[A-Z]{35}"}}},
                     "string_sliced": {"type": "string", "sliced": {"slice": "25:30", "content": {"type": "string", "pattern": "[A-Z]{63}"}}},
                     "string_constant": {"type": "string", "constant": "bye world"},
-                    "string_categorical": {"type": "string", "categorical": {"bye": 8, "world": 6}},
+                    "string_categorical": {"type": "string", "categorical": {"bye": 8, "world": 6}}
                 }
             }),
             name: "test".to_string(),
@@ -623,7 +626,7 @@ mod tests {
                 "string_truncated": {"type": "string", "truncated": {"length": 8, "content": {"type": "string", "pattern": "[A-Z]{35}"}}},
                 "string_sliced": {"type": "string", "sliced": {"slice": "25:30", "content": {"type": "string", "pattern": "[A-Z]{63}"}}},
                 "string_constant": {"type": "string", "constant": "bye world"},
-                "string_categorical": {"type": "string", "categorical": {"bye": 8, "world": 6}},
+                "string_categorical": {"type": "string", "categorical": {"bye": 8, "world": 6}}
             }
         });
 
@@ -637,12 +640,12 @@ mod tests {
             namespace: namespace!({
                 "collection": {
                     "type": "object",
-                    "string_uuid": {"type": "string", "uuid": {}},
+                    "string_uuid": {"type": "string", "uuid": {}}
                 }
             }),
             scenario: scenario!({
                 "collection": {
-                    "string_uuid": {"type": "string", "uuid": {}},
+                    "string_uuid": {"type": "string", "uuid": {}}
                 }
             }),
             name: "test".to_string(),
@@ -660,7 +663,7 @@ mod tests {
                     "date_time_naive_date": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-02-15", "end": "2022-02-19"},
                     "date_time_naive_time": {"type": "date_time", "subtype": "naive_time", "format": "%H:%M:%S", "begin": "13:34:34", "end": "14:32:53"},
                     "date_time_naive_date_time": {"type": "date_time", "subtype": "naive_date_time", "format": "%Y-%m-%dT%H:%M:%S", "begin": "2022-03-23T13:34:34", "end": "2022-04-30T3:32:53"},
-                    "date_time_date_time": {"type": "date_time", "subtype": "date_time", "format": "%Y-%m-%dT%H:%M:%S%z", "begin": "2022-03-23T13:34:34+0100", "end": "2022-04-30T3:32:53+0100"},
+                    "date_time_date_time": {"type": "date_time", "subtype": "date_time", "format": "%Y-%m-%dT%H:%M:%S%z", "begin": "2022-03-23T13:34:34+0100", "end": "2022-04-30T3:32:53+0100"}
                 }
             }),
             scenario: scenario!({
@@ -668,7 +671,7 @@ mod tests {
                     "date_time_naive_date": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-01-31", "end": "2022-02-23"},
                     "date_time_naive_time": {"type": "date_time", "subtype": "naive_time", "format": "%H:%M:%S", "begin": "22:32:35", "end": "23:34:35"},
                     "date_time_naive_date_time": {"type": "date_time", "subtype": "naive_date_time", "format": "%Y-%m-%dT%H:%M:%S", "begin": "2022-02-25T11:49:39", "end": "2022-03-12T12:39:28"},
-                    "date_time_date_time": {"type": "date_time", "subtype": "date_time", "format": "%Y-%m-%dT%H:%M:%S%z", "begin": "2022-02-25T11:49:39+0000", "end": "2022-03-12T12:39:28+0000"},
+                    "date_time_date_time": {"type": "date_time", "subtype": "date_time", "format": "%Y-%m-%dT%H:%M:%S%z", "begin": "2022-02-25T11:49:39+0000", "end": "2022-03-12T12:39:28+0000"}
                 }
             }),
             name: "test".to_string(),
@@ -681,7 +684,7 @@ mod tests {
                 "date_time_naive_date": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-01-31", "end": "2022-02-23"},
                 "date_time_naive_time": {"type": "date_time", "subtype": "naive_time", "format": "%H:%M:%S", "begin": "22:32:35", "end": "23:34:35"},
                 "date_time_naive_date_time": {"type": "date_time", "subtype": "naive_date_time", "format": "%Y-%m-%dT%H:%M:%S", "begin": "2022-02-25T11:49:39", "end": "2022-03-12T12:39:28"},
-                "date_time_date_time": {"type": "date_time", "subtype": "date_time", "format": "%Y-%m-%dT%H:%M:%S%z", "begin": "2022-02-25T11:49:39+0000", "end": "2022-03-12T12:39:28+0000"},
+                "date_time_date_time": {"type": "date_time", "subtype": "date_time", "format": "%Y-%m-%dT%H:%M:%S%z", "begin": "2022-02-25T11:49:39+0000", "end": "2022-03-12T12:39:28+0000"}
             }
         });
 
@@ -695,12 +698,61 @@ mod tests {
             namespace: namespace!({
                 "collection": {
                     "type": "object",
-                    "same": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-02-15", "end": "2022-02-19"},
+                    "same": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-02-15", "end": "2022-02-19"}
                 }
             }),
             scenario: scenario!({
                 "collection": {
-                    "same": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-02-15", "end": "2022-02-19"},
+                    "same": {"type": "date_time", "subtype": "naive_date", "format": "%Y-%m-%d", "begin": "2022-02-15", "end": "2022-02-19"}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_one_of() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "one_of": {"type": "one_of", "variants": [{"weight": 0.5, "type": "string", "pattern": "m|f"}, {"weight": 0.5, "type": "null"}]}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "one_of": {"type": "one_of", "variants": [{"weight": 0.8, "type": "string", "pattern": "m|f"}, {"weight": 0.2, "type": "null"}]}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "one_of": {"type": "one_of", "variants": [{"weight": 0.8, "type": "string", "pattern": "m|f"}, {"weight": 0.2, "type": "null"}]}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_one_of_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "one_of", "variants": [{"weight": 0.5, "type": "string", "pattern": "m|f"}, {"weight": 0.5, "type": "null"}]}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "one_of", "variants": [{"weight": 0.5, "type": "null"}, {"weight": 0.5, "type": "string", "pattern": "m|f"}]}
                 }
             }),
             name: "test".to_string(),

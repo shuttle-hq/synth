@@ -42,13 +42,14 @@ pub struct VariantContent {
 
 impl PartialEq for VariantContent {
     fn eq(&self, other: &Self) -> bool {
-        self.content.eq(&other.content)
+        self.content.eq(&other.content) && self.weight.eq(&other.weight)
     }
 }
 
 impl Hash for VariantContent {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.content.hash(state)
+        self.content.hash(state);
+        self.weight.hash(state);
     }
 }
 

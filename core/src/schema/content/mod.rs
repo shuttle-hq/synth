@@ -666,6 +666,12 @@ where
 #[serde(try_from = "f64")]
 pub struct Weight(f64);
 
+impl PartialEq for Weight {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
+
 impl Hash for Weight {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.0.to_bits().hash(state);
