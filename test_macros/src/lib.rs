@@ -172,9 +172,7 @@ pub fn tmpl_ignore(
 /// ```
 /// use test_macros::parent;
 ///
-/// fn main() {
-///     assert_eq!(parent!("some/nested/path"), "some/nested");
-/// }
+/// assert_eq!(parent!("some/nested/path"), "some/nested");
 /// ```
 #[proc_macro]
 pub fn parent(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -192,9 +190,7 @@ pub fn parent(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// ```
 /// use test_macros::parent2;
 ///
-/// fn main() {
-///     assert_eq!(parent2!("some/deeply/nested/path"), "some/deeply");
-/// }
+/// assert_eq!(parent2!("some/deeply/nested/path"), "some/deeply");
 /// ```
 #[proc_macro]
 pub fn parent2(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -212,9 +208,7 @@ pub fn parent2(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// ```
 /// use test_macros::file_stem;
 ///
-/// fn main() {
-///     assert_eq!(file_stem!("path/to/file.json"), "file");
-/// }
+/// assert_eq!(file_stem!("path/to/file.json"), "file");
 /// ```
 #[proc_macro]
 pub fn file_stem(path: proc_macro::TokenStream) -> proc_macro::TokenStream {
