@@ -60,9 +60,16 @@ pub struct Cyclical {
     pub(crate) max_rate: std::time::Duration,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct Zip {
     series: Vec<SeriesVariant>,
+}
+
+impl PartialEq for Zip {
+    fn eq(&self, other: &Self) -> bool {
+        self.series.len() == other.series.len()
+            && self.series.iter().all(|s| other.series.contains(s))
+    }
 }
 
 impl Compile for SeriesContent {

@@ -194,6 +194,12 @@ impl Scenario {
             (Content::SameAs(orig), Content::SameAs(over)) if orig == over => {
                 return Self::same_err()
             }
+            (Content::Unique(orig), Content::Unique(over)) if orig == over => {
+                return Self::same_err()
+            }
+            (Content::Series(orig), Content::Series(over)) if orig == over => {
+                return Self::same_err()
+            }
             _ => *original = overwrite.clone(),
         }
 
@@ -805,6 +811,113 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "same": {"type": "same_as", "ref": "here.content.field"}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_unique() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "u": {"type": "unique", "content": { "type": "null" }}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "u": {"type": "unique", "content": { "type": "string", "pattern": "f|m" }}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "u": {"type": "unique", "content": { "type": "string", "pattern": "f|m" }}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_unique_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "unique", "content": { "type": "null" }}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "null", "unique": true}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_series() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "series_incrementing": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "incrementing": {"start": "2022-03-20 3:34:00", "increment": "1m"}},
+                    "series_poisson": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "poisson": {"start": "2022-03-18 8:29:00", "rate": "1m"}},
+                    "series_cyclical": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "cyclical": {"start": "2022-03-23 9:23:00", "period": "1d", "min_rate": "30m", "max_rate": "1m"}},
+                    "series_zip": {"type": "series", "zip": {"series": [{"poisson": {"start": "2022-03-18 8:29:00", "rate": "1m"}}, {"incrementing": {"start": "2022-03-20 3:34:00", "increment": "1m"}}]}}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "series_incrementing": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "incrementing": {"start": "2022-03-28 2:39:00", "increment": "5m"}},
+                    "series_poisson": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "poisson": {"start": "2022-03-29 23:28:00", "rate": "1m"}},
+                    "series_cyclical": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "cyclical": {"start": "2022-03-22 23:12:00", "period": "1d", "min_rate": "10m", "max_rate": "30s"}},
+                    "series_zip": {"type": "series", "zip": {"series": [{"poisson": {"start": "2022-03-29 8:29:00", "rate": "1m"}}, {"incrementing": {"start": "2022-03-29 3:34:00", "increment": "1m"}}]}}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "series_incrementing": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "incrementing": {"start": "2022-03-28 2:39:00", "increment": "5m"}},
+                "series_poisson": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "poisson": {"start": "2022-03-29 23:28:00", "rate": "1m"}},
+                "series_cyclical": {"type": "series", "format": "%Y-%m-%d %H:%M:%S", "cyclical": {"start": "2022-03-22 23:12:00", "period": "1d", "min_rate": "10m", "max_rate": "30s"}},
+                "series_zip": {"type": "series", "zip": {"series": [{"poisson": {"start": "2022-03-29 8:29:00", "rate": "1m"}}, {"incrementing": {"start": "2022-03-29 3:34:00", "increment": "1m"}}]}}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_series_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "series", "zip": {"series": [{"poisson": {"start": "2022-03-29 8:29:00", "rate": "1m"}}, {"incrementing": {"start": "2022-03-29 3:34:00", "increment": "1m"}}]}}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "series", "zip": {"series": [{"incrementing": {"start": "2022-03-29 3:34:00", "increment": "1m"}}, {"poisson": {"start": "2022-03-29 8:29:00", "rate": "1m"}}]}}
                 }
             }),
             name: "test".to_string(),
