@@ -127,6 +127,7 @@ impl Scenario {
         match collection {
             Content::Object(map) => {
                 let map_keys: Vec<_> = map.fields.keys().collect();
+                let map_len = map_keys.len();
 
                 for field in fields.keys() {
                     if !map_keys.contains(&field) {
@@ -148,6 +149,8 @@ impl Scenario {
                     map.fields.remove(trim_field.as_str());
                 }
 
+                let mut includes_count = 0;
+
                 for keep_field in keep_fields {
                     // Safe to unwrap since we already checked the existence of this field in the
                     // partition step
@@ -155,6 +158,7 @@ impl Scenario {
 
                     // If this just an include
                     if let Content::Empty(_) = overwrite {
+                        includes_count += 1;
                         continue;
                     }
                     debug!("merging field '{}'", keep_field);
@@ -163,6 +167,10 @@ impl Scenario {
                     let original = map.fields.get_mut(&keep_field).unwrap();
                     Self::merge_field(original, overwrite)
                         .context(anyhow!("failed to overwrite field '{}'", keep_field))?;
+                }
+
+                if includes_count == map_len {
+                    return Err(anyhow!("all fields from object are included as is with no overwrites. Consider making the parent an include instead."));
                 }
             }
             Content::Array(arr) => {
@@ -208,6 +216,9 @@ impl Scenario {
             }
             (Content::Array(orig), Content::Array(over)) if orig == over => {
                 return Self::same_err()
+            }
+            (Content::Object(_), Content::Object(over)) => {
+                Self::trim_collection_fields(original, &over.fields)?
             }
             _ => *original = overwrite.clone(),
         }
@@ -1074,6 +1085,76 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "array": {"type": "array", "length": 5, "content": {"type": "null"}}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_object() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "object": {"type": "object", "nully": {"type": "null"}, "other": 7}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "object": {"type": "object", "nully": {"type": "string", "constant": "hello"}, "other": {}}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "object": {"type": "object", "nully": {"type": "string", "constant": "hello"}, "other": 7}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_object_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "object": {"type": "object", "nully": {"type": "null"}, "other": 7}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "object": {"type": "object", "nully": {"type": "null"}, "other": 7}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "all fields from object are included as is")]
+    fn build_overwrite_object_same_includes_all() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "object": {"type": "object", "nully": {"type": "null"}, "other": 7}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "object": {"type": "object", "nully": {}, "other": {}}
                 }
             }),
             name: "test".to_string(),
