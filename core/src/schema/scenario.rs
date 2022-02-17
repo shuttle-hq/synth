@@ -206,6 +206,9 @@ impl Scenario {
             (Content::Unique(orig), Content::Unique(over)) if orig == over => {
                 return Self::same_err()
             }
+            (Content::Array(orig), Content::Array(over)) if orig == over => {
+                return Self::same_err()
+            }
             _ => *original = overwrite.clone(),
         }
 
@@ -1022,6 +1025,55 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "same": {"type": "null", "hidden": true}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_array() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "array": {"type": "array", "length": 5, "content": {"type": "null"}}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "array": {"type": "array", "length": 5, "content": {"type": "string", "constant": "hello"}}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "array": {"type": "array", "length": 5, "content": {"type": "string", "constant": "hello"}}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_array_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "array": {"type": "array", "length": 5, "content": {"type": "null"}}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "array": {"type": "array", "length": 5, "content": {"type": "null"}}
                 }
             }),
             name: "test".to_string(),
