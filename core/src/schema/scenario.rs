@@ -191,6 +191,9 @@ impl Scenario {
             (Content::OneOf(orig), Content::OneOf(over)) if orig == over => {
                 return Self::same_err()
             }
+            (Content::SameAs(orig), Content::SameAs(over)) if orig == over => {
+                return Self::same_err()
+            }
             _ => *original = overwrite.clone(),
         }
 
@@ -753,6 +756,55 @@ mod tests {
             scenario: scenario!({
                 "collection": {
                     "same": {"type": "one_of", "variants": [{"weight": 0.5, "type": "null"}, {"weight": 0.5, "type": "string", "pattern": "m|f"}]}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        scenario.build().unwrap();
+    }
+
+    #[test]
+    fn build_overwrite_same_as() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same_as": {"type": "same_as", "ref": "here.content.field"}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same_as": {"type": "same_as", "ref": "other.content.name"}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "same_as": {"type": "same_as", "ref": "other.content.name"}
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "overwrite is same as original")]
+    fn build_overwrite_same_as_same() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "same": {"type": "same_as", "ref": "here.content.field"}
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "same": {"type": "same_as", "ref": "here.content.field"}
                 }
             }),
             name: "test".to_string(),
