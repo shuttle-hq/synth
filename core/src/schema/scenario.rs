@@ -1212,4 +1212,57 @@ mod tests {
 
         scenario.build().unwrap();
     }
+
+    #[test]
+    fn build_complex() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "user": {
+                        "type": "object",
+                        "name": {"type": "string", "faker": {"generator": "first_name"}},
+                        "age": {"type": "number", "range": {"low": 20, "high": 60}},
+                        "contact": {
+                            "type": "object",
+                            "phone": {"type": "string", "faker": {"generator": "phone_number"}},
+                            "email": {"type": "string", "faker": {"generator": "safe_email"}}
+                        }
+                    }
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "user": {
+                        "type": "object",
+                        "name": {},
+                        "contact": {
+                            "type": "object",
+                            "email": {"type": "string", "faker": {"generator": "free_email"}}
+                        },
+                        "can_contact": {"type": "bool", "frequency": 0.8}
+                    }
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "user": {
+                    "type": "object",
+                    "name": {"type": "string", "faker": {"generator": "first_name"}},
+                    "contact": {
+                        "type": "object",
+                        "email": {"type": "string", "faker": {"generator": "free_email"}}
+                    },
+                    "can_contact": {"type": "bool", "frequency": 0.8}
+                }
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
 }
