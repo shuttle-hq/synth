@@ -153,13 +153,26 @@ follow:
 {
   "users": {
     "username": {},
-    "id": {}
+    "id": {
+      "type": "number",
+      "subtype": "u64",
+      "id": {
+        "start_at": 15
+      }
+    },
+    "has_credit_card": {
+      "type": "bool",
+      "frequency": 0.35
+    }
   }
 }
 ```
 
-This definition explicitly marks the `username` and `id` fields from the
-`users` collection for inclusion inside this scenario.
+This definition explicitly marks the `username` field from the
+`users` collection for inclusion inside this scenario. And it then provides
+an overwrite for the definition of the `id` field and adds a new field
+called `has_credit_card` (while the original definition had a `credit_card`
+field.
 
 ## Importing datasets
 

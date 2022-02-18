@@ -1,6 +1,11 @@
 {
   "users": {
-    "email": {},
+    "email": {
+        "type": "string",
+        "faker": {
+            "generator": "free_email"
+        }
+    },
     "id": {}
   }
 }
