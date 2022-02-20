@@ -89,13 +89,10 @@ interface Categorical extends String {
 }
 
 const str = {
-  pattern: function(pattern: string): Pattern {
-    // Will throw if the pattern is not a valid regular expression:
-    new RegExp(pattern);
-
+  pattern: function(pattern: RegExp): Pattern {
     return {
       type: 'string',
-      pattern,
+      pattern: pattern.source,
     };
   },
 
