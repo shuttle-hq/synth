@@ -12,7 +12,7 @@ interface Number extends IContent {
 interface Id extends Number {
     subtype: 'u64',
     id: {
-        start_at?: number
+        startAt?: number
     }
 }
 
