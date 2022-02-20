@@ -7,8 +7,7 @@ interface OneOfContent extends IContent {
 
 /**
  * Create a new 'one of' generator.
- * @param variants Weighted set of generators that may be choosen when
- * sampling.
+ * @param variants Set of generators that may be choosen when sampling.
  * @return {Content} A 'one of' content/schema node.
  */
 function oneOf(...variants: Content[]): OneOfContent {
