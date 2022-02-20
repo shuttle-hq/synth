@@ -5,6 +5,7 @@ import {ObjContent, obj} from './object';
 import {ArrayContent, array} from './array';
 import {OneOfContent, oneOf} from './one_of';
 import {SameAsContent, sameAs} from './same_as';
+import {DateTimeContent, dateTime} from './date_time';
 
 type Content =
     StringContent
@@ -13,17 +14,18 @@ type Content =
     | ObjContent
     | ArrayContent
     | OneOfContent
-    | SameAsContent;
+    | SameAsContent
+    | DateTimeContent;
 
 type ContentType =
     'string'
-    | 'date_time'
     | 'number'
     | 'object'
     | 'array'
     | 'bool'
     | 'one_of'
-    | 'same_as';
+    | 'same_as'
+    | 'date_time';
 
 interface IContent {
     type: ContentType
@@ -31,6 +33,6 @@ interface IContent {
 
 export {
   Content, IContent, str, number, constantBool, randomBool, obj, array, oneOf,
-  sameAs,
+  sameAs, dateTime,
 };
 export default Content;

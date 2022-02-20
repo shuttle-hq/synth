@@ -1,7 +1,7 @@
 const neon: any = require('../index.node');
 import {
   Content,
-  str, number, constantBool, randomBool, obj, array, oneOf, sameAs,
+  str, number, constantBool, randomBool, obj, array, oneOf, sameAs, dateTime,
 } from './content/content';
 
 class Compiled {
@@ -57,5 +57,5 @@ class Sampler {
 
 export {
   Compiled, Content,
-  str, number, constantBool, randomBool, obj, array, oneOf, sameAs,
+  str, number, constantBool, randomBool, obj, array, oneOf, sameAs, dateTime,
 };
