@@ -33,6 +33,7 @@
                 "requireReturn": false,
                 "requireParamType": false
             }
-        ]
+        ],
+	"camelcase": "off"
     }
 }

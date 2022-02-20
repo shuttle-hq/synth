@@ -12,7 +12,7 @@ interface Number extends IContent {
 interface Id extends Number {
     subtype: 'u64',
     id: {
-        startAt?: number
+        start_at?: number
     }
 }
 
@@ -53,12 +53,12 @@ interface QualifiedConstant extends Number {
 }
 
 const number = {
-  id: function(startAt?: number): Id {
+  id: function(start_at: number = 0): Id {
     return {
       type: 'number',
       subtype: 'u64',
       id: {
-        startAt,
+        start_at,
       },
     };
   },
