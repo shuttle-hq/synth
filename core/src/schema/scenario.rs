@@ -4,7 +4,7 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 use crate::{Content, Namespace};
 
-use super::content::ObjectContent;
+use super::content::{ArrayContent, ObjectContent};
 
 pub struct Scenario {
     namespace: Namespace,
@@ -24,6 +24,169 @@ struct ScenarioNamespace {
 struct ScenarioCollection {
     #[serde(flatten)]
     fields: BTreeMap<String, Content>,
+}
+
+#[derive(Clone)]
+enum ContentStatus {
+    Included(ContentWrapper),
+    Hidden(ContentWrapper),
+    Unknown(ContentWrapper),
+}
+
+#[derive(Clone)]
+enum ContentWrapper {
+    Scalar(Content),
+    Array {
+        length: Box<Content>,
+        content: Box<ContentWrapper>,
+    },
+    Object {
+        skip_when_null: bool,
+        fields: BTreeMap<String, ContentStatus>,
+    },
+}
+
+impl ContentStatus {
+    fn to_included(self) -> Self {
+        match self {
+            ContentStatus::Unknown(wrapped) => ContentStatus::Included(wrapped),
+            ContentStatus::Hidden(wrapped) => ContentStatus::Included(wrapped),
+            status => status,
+        }
+    }
+
+    fn get_wrapped(self) -> ContentWrapper {
+        match self {
+            ContentStatus::Included(wrapped)
+            | ContentStatus::Hidden(wrapped)
+            | ContentStatus::Unknown(wrapped) => wrapped,
+        }
+    }
+}
+
+// We default everything to `unknown` as collections and fields are processed the become `included`
+impl From<Content> for ContentStatus {
+    fn from(content: Content) -> Self {
+        Self::Unknown(content.into())
+    }
+}
+
+impl From<Content> for ContentWrapper {
+    fn from(content: Content) -> Self {
+        match content {
+            Content::Object(ObjectContent {
+                skip_when_null,
+                fields,
+            }) => Self::Object {
+                skip_when_null,
+                fields: {
+                    let iter = fields.into_iter().map(|(name, field)| (name, field.into()));
+
+                    BTreeMap::from_iter(iter)
+                },
+            },
+            Content::Array(ArrayContent { length, content }) => Self::Array {
+                length,
+                content: Box::new(Box::into_inner(content).into()),
+            },
+            scalar => Self::Scalar(scalar),
+        }
+    }
+}
+
+// Everything that is still unknown should not be in the output.
+impl From<ContentStatus> for Option<Content> {
+    fn from(status: ContentStatus) -> Self {
+        match status {
+            ContentStatus::Unknown(_) => None,
+            ContentStatus::Hidden(content) | ContentStatus::Included(content) => {
+                Some(content.into())
+            }
+        }
+    }
+}
+
+impl From<ContentWrapper> for Content {
+    fn from(wrapper: ContentWrapper) -> Self {
+        match wrapper {
+            ContentWrapper::Scalar(content) => content,
+            ContentWrapper::Array { length, content } => Content::Array(ArrayContent {
+                length,
+                content: Box::new(Box::into_inner(content).into()),
+            }),
+            ContentWrapper::Object {
+                skip_when_null,
+                fields,
+            } => Content::Object(ObjectContent {
+                skip_when_null,
+                fields: {
+                    let iter = fields.into_iter().filter_map(|(name, field)| {
+                        if let Some(content) = field.into() {
+                            Some((name, content))
+                        } else {
+                            None
+                        }
+                    });
+
+                    BTreeMap::from_iter(iter)
+                },
+            }),
+        }
+    }
+}
+
+impl PartialEq<Content> for ContentWrapper {
+    fn eq(&self, other: &Content) -> bool {
+        match (self, other) {
+            (ContentWrapper::Scalar(Content::Null(orig)), Content::Null(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::Bool(orig)), Content::Bool(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::Number(orig)), Content::Number(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::String(orig)), Content::String(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::DateTime(orig)), Content::DateTime(over)) => {
+                orig == over
+            }
+            (ContentWrapper::Scalar(Content::OneOf(orig)), Content::OneOf(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::SameAs(orig)), Content::SameAs(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::Series(orig)), Content::Series(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::Datasource(orig)), Content::Datasource(over)) => {
+                orig == over
+            }
+            (ContentWrapper::Scalar(Content::Hidden(orig)), Content::Hidden(over)) => orig == over,
+            (ContentWrapper::Scalar(Content::Unique(orig)), Content::Unique(over)) => orig == over,
+            (
+                ContentWrapper::Array { content, length },
+                Content::Array(ArrayContent {
+                    content: overwrite_content,
+                    length: overwrite_length,
+                }),
+            ) => length == overwrite_length && content.as_ref() == overwrite_content.as_ref(),
+            (
+                ContentWrapper::Object {
+                    skip_when_null,
+                    fields,
+                },
+                Content::Object(ObjectContent {
+                    fields: overwrite_fields,
+                    skip_when_null: overwrite_skip_when_null,
+                }),
+            ) => {
+                fields.len() == overwrite_fields.len()
+                    && skip_when_null == overwrite_skip_when_null
+                    && fields.iter().all(|(name, content)| {
+                        if let Some(over) = overwrite_fields.get(name) {
+                            if let ContentStatus::Unknown(orig) = content {
+                                orig == over
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    })
+            }
+            _ => false,
+        }
+    }
 }
 
 impl Scenario {
@@ -54,13 +217,26 @@ impl Scenario {
         })
     }
 
-    pub fn build(mut self) -> Result<Namespace> {
+    pub fn build(self) -> Result<Namespace> {
         self.has_extra_collections()
             .context(anyhow!("failed to build scenario '{}'", self.name))?;
-        self.trim_namespace_collections();
-        self.trim_fields()?;
+        let scenario = self.scenario;
+        let iter = self
+            .namespace
+            .into_iter()
+            .map(|(collection, fields)| (collection, fields.into()));
+        let mut original_collections: BTreeMap<String, ContentStatus> = BTreeMap::from_iter(iter);
 
-        Ok(self.namespace)
+        Self::trim_fields(&mut original_collections, scenario.collections)?;
+
+        let mut namespace = Namespace::new();
+        for (collection, fields) in original_collections {
+            if let Some(content) = fields.into() {
+                namespace.put_collection(collection, content)?;
+            }
+        }
+
+        Ok(namespace)
     }
 
     fn has_extra_collections(&self) -> Result<()> {
@@ -89,47 +265,42 @@ impl Scenario {
         Ok(())
     }
 
-    fn trim_namespace_collections(&mut self) {
-        let new_collections: Vec<_> = self.scenario.collections.keys().collect();
+    fn trim_fields(
+        original: &mut BTreeMap<String, ContentStatus>,
+        overwrite: BTreeMap<String, ScenarioCollection>,
+    ) -> Result<()> {
+        for (name, overwrite_collection) in overwrite {
+            // Safe to unwrap since we already confirmed it exists in `trim_namespace_collections`
+            let original_collection = original.remove(&name).unwrap();
 
-        let trim_collections: Vec<_> = self
-            .namespace
-            .keys()
-            .map(ToOwned::to_owned)
-            .into_iter()
-            .filter(|c| !new_collections.contains(&c))
-            .collect();
-
-        for trim_collection in trim_collections {
-            debug!("removing collection '{}'", trim_collection);
-            self.namespace.remove_collection(&trim_collection);
-        }
-    }
-
-    fn trim_fields(&mut self) -> Result<()> {
-        for (name, new_collection) in self.scenario.collections.iter() {
-            // Nothing to trim
-            if new_collection.fields.is_empty() {
+            if overwrite_collection.fields.is_empty() {
+                // This is an include only field
+                let original_collection = original_collection.to_included();
+                original.insert(name, original_collection);
                 continue;
             }
 
-            let original_collection = self.namespace.get_collection_mut(name)?;
+            let mut wrapped = original_collection.get_wrapped();
 
-            Self::trim_collection_fields(original_collection, &new_collection.fields)
+            Self::trim_collection_fields(&mut wrapped, &overwrite_collection.fields)
                 .context(anyhow!("failed to trim collection '{}'", name))?;
+
+            original.insert(name, ContentStatus::Included(wrapped));
         }
 
         Ok(())
     }
 
     fn trim_collection_fields(
-        original: &mut Content,
+        original: &mut ContentWrapper,
         overwrites: &BTreeMap<String, Content>,
     ) -> Result<()> {
         match original {
-            Content::Object(map) => Self::merge_object_content(map, overwrites)?,
-            Content::Array(arr) => {
-                Self::trim_collection_fields(&mut arr.content, overwrites)?;
+            ContentWrapper::Object { fields, .. } => {
+                Self::merge_object_content(fields, overwrites)?
+            }
+            ContentWrapper::Array { content, .. } => {
+                Self::trim_collection_fields(content.as_mut(), overwrites)?;
             }
             _ => return Err(anyhow!("cannot select fields to include from a non-object")),
         };
@@ -137,110 +308,80 @@ impl Scenario {
         Ok(())
     }
 
-    fn merge_field(original: &mut Content, overwrite: &Content) -> Result<()> {
-        // We check if types are the same first to find redundant overwrites. Else it must be a type overwrite.
-        match (&original, overwrite) {
-            (Content::Null(orig), Content::Null(over)) if orig == over => return Self::same_err(),
-            (Content::Bool(orig), Content::Bool(over)) if orig == over => return Self::same_err(),
-            (Content::Number(orig), Content::Number(over)) if orig == over => {
-                return Self::same_err()
+    fn merge_field(original: &mut ContentWrapper, overwrite: &Content) -> Result<()> {
+        // We check if types are the same first to find redundant overwrites
+        if original == overwrite {
+            return Self::same_err();
+        }
+
+        match (original, overwrite) {
+            (
+                ContentWrapper::Array { content, length },
+                Content::Array(ArrayContent {
+                    content: overwrite_content,
+                    length: overwrite_length,
+                }),
+            ) => {
+                *content = Box::new(overwrite_content.as_ref().clone().into());
+                *length = overwrite_length.clone();
             }
-            (Content::String(orig), Content::String(over)) if orig == over => {
-                return Self::same_err()
+            (
+                ContentWrapper::Object {
+                    skip_when_null,
+                    fields,
+                },
+                Content::Object(ObjectContent {
+                    fields: overwrite_fields,
+                    skip_when_null: overwrite_skip_when_null,
+                }),
+            ) => {
+                Self::merge_object_content(fields, overwrite_fields)?;
+                *skip_when_null = *overwrite_skip_when_null;
             }
-            (Content::DateTime(orig), Content::DateTime(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::OneOf(orig), Content::OneOf(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::SameAs(orig), Content::SameAs(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::Series(orig), Content::Series(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::Datasource(orig), Content::Datasource(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::Hidden(orig), Content::Hidden(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::Unique(orig), Content::Unique(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::Array(orig), Content::Array(over)) if orig == over => {
-                return Self::same_err()
-            }
-            (Content::Object(_), Content::Object(over)) => {
-                // Needed since it is not possible to extract mutable version in match arm
-                if let Content::Object(object) = original {
-                    Self::merge_object_content(object, &over.fields)?
-                }
-            }
-            _ => *original = overwrite.clone(),
+            (original, overwrite) => *original = overwrite.clone().into(),
         }
 
         Ok(())
     }
 
     fn merge_object_content(
-        original: &mut ObjectContent,
+        original: &mut BTreeMap<String, ContentStatus>,
         overwrites: &BTreeMap<String, Content>,
     ) -> Result<()> {
-        let original_keys: Vec<String> = original
-            .fields
-            .keys()
-            .into_iter()
-            .map(ToOwned::to_owned)
-            .collect();
-        let original_len = original_keys.len();
+        let mut originals_len = original.len();
 
-        for (overwrite_name, overwrite_content) in overwrites {
-            if !original_keys.contains(&overwrite_name) {
+        for (name, overwrite_content) in overwrites {
+            if let Some(original_field) = original.remove(name) {
+                // If this just an include
+                if let Content::Empty(_) = overwrite_content {
+                    let original_field = original_field.to_included();
+                    original.insert(name.to_string(), original_field);
+                    originals_len -= 1;
+                    continue;
+                }
+                debug!("merging field '{}'", name);
+
+                let mut wrapped = original_field.get_wrapped();
+                Self::merge_field(&mut wrapped, overwrite_content)
+                    .context(anyhow!("failed to overwrite field '{}'", name))?;
+                original.insert(name.to_string(), ContentStatus::Included(wrapped));
+            } else {
                 // Cannot add include only fields
                 if let Content::Empty(_) = overwrite_content {
                     return Err(anyhow!(
                         "'{}' is not a field on the object, therefore it cannot be included",
-                        overwrite_name
+                        name
                     ));
                 }
 
-                original
-                    .fields
-                    .insert(overwrite_name.to_string(), overwrite_content.clone());
+                original.insert(
+                    name.to_string(),
+                    ContentStatus::Included(overwrite_content.clone().into()),
+                );
             }
         }
-        let (keep_fields, trim_fields): (Vec<_>, Vec<_>) = original_keys
-            .into_iter()
-            .partition(|c| overwrites.contains_key(c.as_str()));
 
-        for trim_field in trim_fields {
-            debug!("removing field '{}'", trim_field);
-            original.fields.remove(trim_field.as_str());
-        }
-
-        let mut includes_count = 0;
-
-        for keep_field in keep_fields {
-            // Safe to unwrap since we already checked the existence of this field in the
-            // partition step
-            let overwrite = overwrites.get(&keep_field).unwrap();
-
-            // If this just an include
-            if let Content::Empty(_) = overwrite {
-                includes_count += 1;
-                continue;
-            }
-            debug!("merging field '{}'", keep_field);
-
-            // Safe to unwrap since we got `keep_field` from `map.fields`
-            let original = original.fields.get_mut(&keep_field).unwrap();
-            Self::merge_field(original, overwrite)
-                .context(anyhow!("failed to overwrite field '{}'", keep_field))?;
-        }
-
-        if includes_count == original_len {
+        if originals_len == 0 {
             return Err(anyhow!("all fields from object are included as is with no overwrites. Consider making the parent an include instead."));
         }
 

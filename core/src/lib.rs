@@ -1,4 +1,11 @@
-#![feature(async_closure, map_first_last, box_patterns, error_iter, try_blocks)]
+#![feature(
+    async_closure,
+    map_first_last,
+    box_patterns,
+    error_iter,
+    try_blocks,
+    box_into_inner
+)]
 #![allow(type_alias_bounds)]
 
 #[macro_export]
