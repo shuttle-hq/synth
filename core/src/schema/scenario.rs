@@ -4,7 +4,7 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 use crate::{Content, Namespace};
 
-use super::content::{ArrayContent, ObjectContent};
+use super::content::{ArrayContent, ObjectContent, SameAsContent};
 
 pub struct Scenario {
     namespace: Namespace,
@@ -99,9 +99,12 @@ impl From<ContentStatus> for Option<Content> {
     fn from(status: ContentStatus) -> Self {
         match status {
             ContentStatus::Unknown(_) => None,
-            ContentStatus::Hidden(content) | ContentStatus::Included(content) => {
-                Some(content.into())
+            ContentStatus::Hidden(content) => {
+                let content: Content = content.into();
+                let content = content.into_hidden();
+                Some(content)
             }
+            ContentStatus::Included(content) => Some(content.into()),
         }
     }
 }
@@ -229,6 +232,9 @@ impl Scenario {
 
         Self::trim_fields(&mut original_collections, scenario.collections)?;
 
+        let included_refs = Self::find_included_references(&original_collections);
+        Self::make_missing_references_hidden(&mut original_collections, included_refs);
+
         let mut namespace = Namespace::new();
         for (collection, fields) in original_collections {
             if let Some(content) = fields.into() {
@@ -237,6 +243,160 @@ impl Scenario {
         }
 
         Ok(namespace)
+    }
+
+    fn find_included_references(collections: &BTreeMap<String, ContentStatus>) -> Vec<Vec<String>> {
+        let mut refs = Vec::new();
+
+        for status in collections.values() {
+            match status {
+                ContentStatus::Included(wrapper) => {
+                    refs.append(&mut Self::find_included_references_wrapper(wrapper))
+                }
+                _ => continue,
+            }
+        }
+
+        refs
+    }
+
+    fn find_included_references_wrapper(wrapper: &ContentWrapper) -> Vec<Vec<String>> {
+        let mut refs = Vec::new();
+
+        match wrapper {
+            ContentWrapper::Scalar(Content::SameAs(SameAsContent { ref_ })) => {
+                let mut r#ref = vec![ref_.collection.clone()];
+                r#ref.append(&mut ref_.fields.clone());
+                refs.push(r#ref);
+            }
+            ContentWrapper::Array { content, .. } => {
+                refs.append(&mut Self::find_included_references_wrapper(content))
+            }
+            ContentWrapper::Object { fields, .. } => {
+                refs.append(&mut Self::find_included_references(fields))
+            }
+            _ => {}
+        }
+
+        refs
+    }
+
+    fn make_missing_references_hidden(
+        content: &mut BTreeMap<std::string::String, ContentStatus>,
+        refs: Vec<Vec<String>>,
+    ) {
+        let mut refs = refs;
+
+        while let Some(mut r#ref) = refs.pop() {
+            r#ref.reverse();
+            if let Some(extra) = Self::make_reference_hidden(content, r#ref) {
+                refs.push(extra);
+            }
+        }
+    }
+
+    fn make_reference_hidden(
+        content: &mut BTreeMap<std::string::String, ContentStatus>,
+        r#ref: Vec<String>,
+    ) -> Option<Vec<String>> {
+        let mut r#ref = r#ref;
+
+        if let Some(path) = r#ref.pop() {
+            if let Some(field) = content.remove(&path) {
+                let (field, extra) = match field {
+                    ContentStatus::Included(mut wrapped) => {
+                        let extra = Self::make_reference_hidden_wrapped(&mut wrapped, r#ref);
+                        (ContentStatus::Included(wrapped), extra)
+                    }
+                    ContentStatus::Unknown(mut wrapped) => {
+                        let extra = Self::make_reference_include_wrapped(&mut wrapped, r#ref);
+                        (ContentStatus::Hidden(wrapped), extra)
+                    }
+                    hidden => (hidden, None),
+                };
+
+                content.insert(path, field);
+
+                return extra;
+            }
+        }
+
+        None
+    }
+
+    fn make_reference_hidden_wrapped(
+        wrapped: &mut ContentWrapper,
+        r#ref: Vec<String>,
+    ) -> Option<Vec<String>> {
+        let mut r#ref = r#ref;
+        match wrapped {
+            ContentWrapper::Scalar(Content::SameAs(SameAsContent { ref_ })) => {
+                let mut extra = vec![ref_.collection.clone()];
+                extra.append(&mut ref_.fields.clone());
+                Some(extra)
+            }
+            ContentWrapper::Scalar(_) => None,
+            ContentWrapper::Array { content, .. } => {
+                if let Some(path) = r#ref.pop() {
+                    if path.as_str() == "content" {
+                        return Self::make_reference_hidden_wrapped(content, r#ref);
+                    }
+                }
+
+                None
+            }
+            ContentWrapper::Object { fields, .. } => Self::make_reference_hidden(fields, r#ref),
+        }
+    }
+
+    fn make_reference_include(
+        content: &mut BTreeMap<std::string::String, ContentStatus>,
+        r#ref: Vec<String>,
+    ) -> Option<Vec<String>> {
+        let mut r#ref = r#ref;
+
+        if let Some(path) = r#ref.pop() {
+            if let Some(field) = content.remove(&path) {
+                let (field, extra) = match field {
+                    ContentStatus::Unknown(mut wrapped) => {
+                        let extra = Self::make_reference_include_wrapped(&mut wrapped, r#ref);
+                        (ContentStatus::Included(wrapped), extra)
+                    }
+                    _ => unreachable!("the inside of an unknown is always unknown too"),
+                };
+
+                content.insert(path, field);
+
+                return extra;
+            }
+        }
+
+        None
+    }
+
+    fn make_reference_include_wrapped(
+        wrapped: &mut ContentWrapper,
+        r#ref: Vec<String>,
+    ) -> Option<Vec<String>> {
+        let mut r#ref = r#ref;
+        match wrapped {
+            ContentWrapper::Scalar(Content::SameAs(SameAsContent { ref_ })) => {
+                let mut extra = vec![ref_.collection.clone()];
+                extra.append(&mut ref_.fields.clone());
+                Some(extra)
+            }
+            ContentWrapper::Scalar(_) => None,
+            ContentWrapper::Array { content, .. } => {
+                if let Some(path) = r#ref.pop() {
+                    if path.as_str() == "content" {
+                        return Self::make_reference_include_wrapped(content, r#ref);
+                    }
+                }
+
+                None
+            }
+            ContentWrapper::Object { fields, .. } => Self::make_reference_include(fields, r#ref),
+        }
     }
 
     fn has_extra_collections(&self) -> Result<()> {
@@ -348,7 +508,7 @@ impl Scenario {
         original: &mut BTreeMap<String, ContentStatus>,
         overwrites: &BTreeMap<String, Content>,
     ) -> Result<()> {
-        let mut originals_len = original.len();
+        let mut originals_len = original.len() as isize;
 
         for (name, overwrite_content) in overwrites {
             if let Some(original_field) = original.remove(name) {
@@ -365,6 +525,7 @@ impl Scenario {
                 Self::merge_field(&mut wrapped, overwrite_content)
                     .context(anyhow!("failed to overwrite field '{}'", name))?;
                 original.insert(name.to_string(), ContentStatus::Included(wrapped));
+                originals_len = -1;
             } else {
                 // Cannot add include only fields
                 if let Content::Empty(_) = overwrite_content {
@@ -378,6 +539,7 @@ impl Scenario {
                     name.to_string(),
                     ContentStatus::Included(overwrite_content.clone().into()),
                 );
+                originals_len = -1;
             }
         }
 
@@ -1400,6 +1562,134 @@ mod tests {
                         "email": {"type": "string", "faker": {"generator": "free_email"}}
                     },
                     "can_contact": {"type": "bool", "frequency": 0.8}
+                }
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn build_missing_references() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                    "nully_ref": "@collection.nully",
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "nully_ref": {}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "nully": {"type": "null", "hidden": true},
+                "nully_ref": "@collection.nully",
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn build_missing_references_chain() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "nully_ref2": "@collection.nully_ref",
+                    "nully_ref": "@collection2.content.nully",
+                },
+                "collection2": {
+                    "type": "array",
+                    "length": 3,
+                    "content": {
+                        "type": "object",
+                        "nully": {"type": "null"},
+                    }
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "nully_ref2": {}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "nully_ref2": "@collection.nully_ref",
+                "nully_ref":{
+                    "type": "same_as",
+                    "ref": "collection2.content.nully",
+                    "hidden": true
+                },
+            },
+            "collection2": {
+                "type": "array",
+                "length": 3,
+                "hidden": true,
+                "content": {
+                    "type": "object",
+                    "nully": {"type": "null"},
+                }
+            }
+        });
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn build_missing_references_double() {
+        let scenario = Scenario {
+            namespace: namespace!({
+                "collection": {
+                    "type": "object",
+                    "nully_ref": "@collection2.content.nully",
+                },
+                "collection2": {
+                    "type": "array",
+                    "length": 3,
+                    "content": {
+                        "type": "object",
+                        "nully": {"type": "null"},
+                    }
+                }
+            }),
+            scenario: scenario!({
+                "collection": {
+                    "nully_ref2": "@collection2.content.nully",
+                    "nully_ref": {}
+                }
+            }),
+            name: "test".to_string(),
+        };
+
+        let actual = scenario.build().unwrap();
+        let expected = namespace!({
+            "collection": {
+                "type": "object",
+                "nully_ref2": "@collection2.content.nully",
+                "nully_ref": "@collection2.content.nully",
+            },
+            "collection2": {
+                "type": "array",
+                "length": 3,
+                "hidden": true,
+                "content": {
+                    "type": "object",
+                    "nully": {"type": "null"},
                 }
             }
         });
