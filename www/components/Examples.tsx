@@ -50,30 +50,6 @@ const relationalExample = {
     }
 };
 
-const eventsExample = {
-    "type": "object",
-    "sequence_number": {
-        "type": "number",
-        "subtype": "u64",
-        "id": {
-            "start_at": 1000
-        }
-    },
-    "timestamp": {
-        "type": "date_time",
-        "subtype": "naive_date_time",
-        "format": "%Y-%m-%dT%H:%M:%S",
-        "begin": "2020-06-07T12:00:00"
-        }
-    },
-    "ip_v4": {
-        "type": "string",
-        "faker": {
-            "generator": "ipv4"
-        }
-    }
-};
-
 const Examples = () => {
     return (
         <Section id="snippets" style="bg-gray-500" title="A versatile API" subtitle="for all types of data">
@@ -87,11 +63,6 @@ const Examples = () => {
                     title="Build a patients database for a hospital"
                     label="Relational data"
                     code={relationalExample}
-                />
-                <Snippet
-                    title="Replay user event streams"
-                    label="Event logs data"
-                    code={eventsExample}
                 />
             </Snippets>
         </Section>

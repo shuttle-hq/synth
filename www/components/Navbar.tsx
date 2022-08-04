@@ -37,10 +37,6 @@ const Navbar: FunctionComponent = ({children}: Props) => {
                         text="Blog"
                         link="/blog"
                     />
-                    <NavBarMenuItem
-                        text="Community"
-                        link="https://discord.gg/H33rRDTm3p"
-                    />
                 </NavBarMenu>
                 <ul className="ml-5 gap-8 lg:gap-10 pt-0.5 hidden md:inline-flex">
                     <li>

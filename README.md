@@ -10,9 +10,11 @@
   <a href="https://github.com/getsynth/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
   <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
   <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
-  <a href="https://discord.gg/H33rRDTm3p"><img alt="discord" src="https://img.shields.io/discord/803236282088161321?logo=discord"/></a>
       <img src="https://img.shields.io/github/all-contributors/getsynth/synth" alt="Synth open source contributors"/>
 </p>
+
+------
+**NOTE**: The Synth project is no longer being actively maintained. New issues and pull requests will likely not be addressed. If you're interested in taking over as a maintainer of the project reach out to `opensource@shuttle.rs`.
 
 ------
 
@@ -162,8 +164,6 @@ We decided to build Synth from the ground up in Rust. We love Rust, and given th
 If you would like to learn more, or you would like support for your use-case, feel free to open an issue on GitHub.
 
 If your query is more sensitive, you can email [opensource@getsynth.com](mailto:opensource@getsynth.com) and we'll happily chat about your usecase.
-
-If you intend on using Synth, we would recommend joining our growing [Discord](https://discord.gg/H33rRDTm3p) community. We uphold the [Synth Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## About Us
 
