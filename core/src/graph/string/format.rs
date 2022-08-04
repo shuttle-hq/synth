@@ -88,15 +88,42 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 pub mod tests {
     use super::*;
     use crate::graph::{
-        ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64,
-        RandomString, StringNode,
+        ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomF64,
+        RandomI64, RandomString, StringNode,
     };
     use chrono::naive::NaiveDate;
+    use synth_gen::value::OrderedFloat32;
 
     fn faker_graph(name: &str) -> Graph {
         Graph::String(StringNode::from(RandomString::from(
             RandFaker::new(name, Default::default()).unwrap(),
         )))
+    }
+
+    #[test]
+    fn format_with_float() {
+        let mut rng = rand::thread_rng();
+
+        let args = FormatArgs {
+            named: HashMap::from([(
+                "id".to_string(),
+                Graph::Number(NumberNode::from(RandomF64::constant(0.5))),
+            )]),
+            ..Default::default()
+        };
+        let formatted = Format::new("{id}_suffix", args);
+        let gen = formatted
+            .repeat(1024)
+            .complete(&mut rng)
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        let of = OrderedFloat32::from(0.1);
+
+        println!("{}", serde_json::to_string(&of).unwrap());
+
+        assert_eq!(gen[0], "42_suffix");
     }
 
     #[test]

@@ -23,15 +23,6 @@ const Footer = () => {
                                 <a target= "_blank" className = "pr-4" href="https://github.com/getsynth/synth">
                                     <FontAwesomeIcon className="h-8 hover:text-white transition" icon={faGithub}/>
                                 </a>
-                                <a target= "_blank" className = "pr-4" href="https://twitter.com/getsynth">
-                                    <FontAwesomeIcon className="h-8 hover:text-white transition" icon={faTwitter}/>
-                                </a>
-                                <a target= "_blank" className = "pr-4" href="https://discord.gg/H33rRDTm3p">
-                                    <FontAwesomeIcon className="h-8 hover:text-white transition" icon={faDiscord}/>
-                                </a>
-                                <a target= "_blank"  href="https://www.linkedin.com/company/getsynth/">
-                                    <FontAwesomeIcon className="h-8 hover:text-white transition" icon={faLinkedin}/>
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -78,9 +69,6 @@ const Footer = () => {
                             <div>
                                 <Link href="https://github.com/getsynth/synth">Github</Link>
                             </div>
-                            <div>
-                                <Link href="https://discord.gg/H33rRDTm3p">Discord</Link>
-                            </div>
                         </div>
                     </div>
                     <div>
@@ -105,20 +93,6 @@ const Footer = () => {
                     &copy; 2021 OpenQuery Inc.
                 </div>
             </div>
-            <ChatWidget
-                accountId="41ff5b3d-e2c2-42ed-bed3-ef7a6c0dde62"
-                title="Welcome to Synth"
-                subtitle="Ask us anything in the chat window below 😊"
-                primaryColor="#00dab8"
-                greeting=""
-                awayMessage=""
-                newMessagePlaceholder="Start typing..."
-                showAgentAvailability={false}
-                agentAvailableText="We're online right now!"
-                agentUnavailableText="We're away at the moment."
-                requireEmailUpfront={false}
-                iconVariant="outlined"
-            />
         </div>
     )
 }

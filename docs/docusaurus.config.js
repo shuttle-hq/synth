@@ -86,11 +86,6 @@ module.exports = {
                     position: 'right'
                 },
                 {
-                    href: 'https://discord.gg/H33rRDTm3p',
-                    label: 'Discord',
-                    position: 'right'
-                },
-                {
                     href: 'https://github.com/getsynth/synth',
                     label: 'GitHub',
                     position: 'right',
@@ -140,10 +135,6 @@ module.exports = {
                         {
                             href: 'https://github.com/getsynth/synth',
                             label: 'GitHub',
-                        },
-                        {
-                            href: 'https://discord.gg/H33rRDTm3p',
-                            label: 'Discord',
                         }
                     ],
                 }
