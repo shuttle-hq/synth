@@ -35,6 +35,30 @@ jobs:
         name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
         path: target/release/synth.tar.gz
 
+  build-arm64:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        target: aarch64-unknown-linux-musl
+        override: true
+   - id: tag
+     uses: dawidd6/action-get-tag@v1
+   - uses: actions-rs/cargo@v1
+     with:
+        use-cross: true
+        command: build
+        args: --release --features telemetry --bin synth --target aarch64-unknown-linux-musl
+   - working-directory: target/aarch64-unknown-linux-musl/release
+     run: tar -czf synth.tar.gz synth
+   - uses: actions/upload-artifact@v2
+     with:
+        name: synth-${{ steps.tag.outputs.tag }}-ubuntu-latest-arm64
+        path: target/release/synth.tar.gz
+
   build-osx:
     name: build
     runs-on: macos-latest
@@ -101,7 +125,7 @@ jobs:
 
   release:
     name: release
-    needs: [ build, build-osx, build-windows ]
+    needs: [ build, build-osx, build-windows, build-arm64 ]
     runs-on: ubuntu-latest
     steps:
     - id: tag
@@ -159,10 +183,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os:
-        - ubuntu-latest
-        - macos-latest
-        - ubuntu-18.04
+        include:
+          - build: arm64
+            os: ubuntu-latest
+          - build: x86_64
+            os: ubuntu-latest
+          - build: x86_64
+            os: macos-latest
+          - build: x86_64
+            os: ubuntu-18.04
     steps:
     - uses: actions/download-artifact@v2
       with:
@@ -174,7 +203,7 @@ jobs:
       uses: dawidd6/action-get-tag@v1
     - uses: actions/download-artifact@v2
       with:
-        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
+        name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-${{ matrix.build }}
         path: ./
     - run: ls
     - name: Upload Release Asset
@@ -185,7 +214,7 @@ jobs:
       with:
         upload_url: ${{ steps.release.outputs.upload_url }}
         asset_path: ./synth.tar.gz
-        asset_name: synth-${{ matrix.os }}-x86_64.tar.gz
+        asset_name: synth-${{ matrix.os }}-${{ matrix.build}}.tar.gz
         asset_content_type: application/octet-stream
 
   upload-windows:
