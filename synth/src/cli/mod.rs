@@ -81,7 +81,6 @@ impl<'w> Cli {
 
     pub async fn run<W: Write + 'w>(&self, args: Args, writer: W) -> Result<()> {
         match args {
-            Args::Init { .. } => Ok(()),
             Args::Generate(cmd) => self.generate(cmd, writer),
             Args::Import(cmd) => self.import(cmd),
             #[cfg(feature = "telemetry")]
@@ -228,11 +227,6 @@ impl<'w> Cli {
     no_version,
     global_settings = &[AppSettings::DisableVersion])]
 pub enum Args {
-    #[structopt(about = "(DEPRECATED). For backward compatibility and is a no-op.")]
-    Init {
-        #[serde(skip)]
-        init_path: Option<PathBuf>,
-    },
     #[structopt(about = "Generate data from a namespace", alias = "gen")]
     Generate(GenerateCommand),
     #[structopt(about = "Import data from an external source")]
