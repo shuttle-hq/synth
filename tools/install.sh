@@ -58,7 +58,7 @@ install_based_on_os() {
       "x86_64")
 	install_from_bin_package "synth-ubuntu-${os}-x86_64.tar.gz"
 	;;
-      "arm64")
+      "aarch64")
 	install_from_bin_package "synth-ubuntu-latest-arm64.tar.gz";;
       *)
 	die "Sorry, this installer does not support $(uname -m)"
