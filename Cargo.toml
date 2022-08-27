@@ -2,6 +2,7 @@
 members = [
   "gen",
   "core",
+  "node",
   "synth",
   "dist/playground",
   "test_macros"

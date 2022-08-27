@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: build 
+    name: build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -230,3 +230,20 @@ jobs:
           asset_path: ./synth-${{ steps.tag.outputs.tag }}-x86_64.msi
           asset_name: synth-windows-msi-latest-x86_64.msi
           asset_content_type: application/octet-stream
+
+  pubilsh-npm:
+    name: publish-npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 17
+      - run: npm install
+      - run: npm test
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}

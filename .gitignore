@@ -12,3 +12,8 @@
 
 # VS Code
 .vscode/
+
+# Node.js
+*.node
+node_modules/
+tsbuild/
