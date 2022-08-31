@@ -1,12 +1,12 @@
 use crate::datasource::relational_datasource::{
-    get_columns_info, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource, ValueWrapper,
+    get_columns_info, ColumnInfo, ForeignKey, PrimaryKey, SqlxDataSource,
 };
 use crate::datasource::DataSource;
 use anyhow::{Context, Result};
 use async_std::task;
 use log::debug;
 use serde_json::Value;
-use sqlx::{Executor, Row};
+use sqlx::{Database, Executor, FromRow, Row};
 use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
@@ -35,7 +35,7 @@ where
     usize: sqlx::ColumnIndex<<T::DB as sqlx::Database>::Row>,
     PrimaryKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
     ForeignKey: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
-    ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    for<'r> synth_core::Value: FromRow<'r, <T::DB as Database>::Row>,
     ColumnInfo: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
 {
     let table_names = task::block_on(get_table_names(datasource))
@@ -222,7 +222,7 @@ where
     for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
     String: sqlx::Type<T::DB>,
     for<'d> String: sqlx::Encode<'d, T::DB>,
-    ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    for<'r> synth_core::Value: FromRow<'r, <T::DB as Database>::Row>,
 {
     task::block_on(datasource.set_seed())?;
 
@@ -244,25 +244,14 @@ async fn get_deterministic_samples<T: SqlxDataSource>(
 ) -> Result<Vec<synth_core::Value>>
 where
     for<'c> &'c mut T::Connection: Executor<'c, Database = T::DB>,
-    ValueWrapper: TryFrom<<T::DB as sqlx::Database>::Row, Error = anyhow::Error>,
+    for<'r> synth_core::Value: FromRow<'r, <T::DB as Database>::Row>,
 {
     let query = datasource.get_deterministic_samples_query(table);
     let pool = datasource.get_pool();
 
-    datasource
-        .query(&query)
-        .fetch_all(&pool)
-        .await?
-        .into_iter()
-        .map(ValueWrapper::try_from)
-        .map(|v| match v {
-            Ok(wrapper) => Ok(wrapper.0),
-            Err(e) => bail!(
-                "Failed to convert to value wrapper from query results: {:?}",
-                e
-            ),
-        })
-        .collect()
+    let rows = datasource.query_as(&query).fetch_all(&pool).await?;
+
+    Ok(rows)
 }
 
 impl<T: SqlxDataSource> TryFrom<(&T, Vec<ColumnInfo>)> for Collection {

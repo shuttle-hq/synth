@@ -4,7 +4,8 @@ use async_trait::async_trait;
 use beau_collector::BeauCollector;
 use futures::future::join_all;
 use sqlx::{
-    query::Query, Arguments, Connection, Database, Encode, Executor, IntoArguments, Pool, Type,
+    query::{Query, QueryAs},
+    Arguments, Connection, Database, Encode, Executor, FromRow, IntoArguments, Pool, Type,
 };
 use std::convert::TryFrom;
 use synth_core::{Content, Value};
@@ -39,10 +40,6 @@ pub struct ForeignKey {
     pub(crate) to_column: String,
 }
 
-/// Wrapper around `Value` since we can't impl `TryFrom` on a struct in a non-owned crate
-#[derive(Debug)]
-pub struct ValueWrapper(pub(crate) Value);
-
 /// All sqlx databases should define this trait and implement database specific queries in
 /// their own implementations.
 #[async_trait]
@@ -62,6 +59,14 @@ pub trait SqlxDataSource: DataSource {
     /// Prepare a single query with data source specifics
     fn query<'q>(&self, query: &'q str) -> Query<'q, Self::DB, Self::Arguments> {
         sqlx::query(query)
+    }
+
+    /// Prepare a single query with data source specifics and convert each row using `FromRow`
+    fn query_as<'q, T>(&self, query: &'q str) -> QueryAs<'q, Self::DB, T, Self::Arguments>
+    where
+        for<'r> T: FromRow<'r, <Self::DB as Database>::Row>,
+    {
+        sqlx::query_as(query)
     }
 
     /// Get query for table names

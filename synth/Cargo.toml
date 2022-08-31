@@ -66,7 +66,6 @@ ctrlc = { version = "3.0", features = ["termination"] }
 synth-core = { path = "../core" }
 synth-gen = { path = "../gen" }
 
-rust_decimal = "1.10.3"
 indicatif = "0.15.0"
 
 dirs = "3.0.2"
