@@ -1,0 +1,12 @@
+[workspace]
+members = [
+  "gen",
+  "core",
+  "synth",
+  "dist/playground",
+  "test_macros"
+]
+
+# blocked by diesel error for now.
+#resolver = "2"
+
