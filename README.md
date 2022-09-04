@@ -14,7 +14,9 @@
 </p>
 
 ------
-**NOTE**: The Synth project is no longer being actively maintained. New issues and pull requests will likely not be addressed. If you're interested in taking over as a maintainer of the project reach out to `opensource@shuttle.rs`.
+**NOTE**: ~~The Synth project is no longer being actively maintained. New issues and pull requests will likely not be addressed. If you're interested in taking over as a maintainer of the project reach out to `opensource@shuttle.rs`.~~
+
+The project now has new maintainers and a fresh start. 
 
 ------
 
