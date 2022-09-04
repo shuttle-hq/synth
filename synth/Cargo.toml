@@ -21,6 +21,12 @@ telemetry = ["posthog-rs", "uuid", "backtrace", "console"]
 
 [build-dependencies]
 git2 = "0.13.20"
+#until https://github.com/rust-lang/git2-rs/issues/623 fixed
+[dependencies.openssl]
+version = "0.10.41"
+features = [
+    "vendored"
+]
 
 [dev-dependencies]
 lazy_static = "1.4.0"
@@ -76,7 +82,7 @@ sqlx = { version = "0.5.7", features = [ "postgres", "mysql", "runtime-async-std
 
 beau_collector = "0.2.1"
 
-reqwest = { version = "0.11", features = ["json", "blocking"] }
+reqwest = { version = "0.11", features = ["json", "blocking","rustls-tls"] }
 
 semver = "1.0.4"
 
