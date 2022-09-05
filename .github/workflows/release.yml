@@ -23,9 +23,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly-2022-08-01
     - id: tag
       uses: dawidd6/action-get-tag@v1
-    - run: cargo +nightly build --release --features telemetry --bin synth
+    - run: cargo build --release --features telemetry --bin synth
     - working-directory: target/release
       run: tar -czf synth.tar.gz synth
     - uses: actions/upload-artifact@v2
@@ -87,9 +89,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly-2022-08-01
     - id: tag
       uses: dawidd6/action-get-tag@v1
-    - run: cargo +nightly build --release --features telemetry --bin synth
+    - run: cargo build --release --features telemetry --bin synth
     - run: sudo /usr/sbin/purge
     - working-directory: target/release
       run: tar -czf synth.tar.gz synth
@@ -113,11 +117,11 @@ jobs:
         run: |
           VERSION=$(cargo metadata --format-version 1 | jq '.packages[] | select (.name == "synth") | .version' -r)
           echo "::set-output name=version::${VERSION}"
-      - run: cargo +nightly build --release --features telemetry --bin synth
+      - run: cargo build --release --features telemetry --bin synth
       - id: install-wix
         run: nuget install WiX -Version 3.11.2
       - id: install-cargo-wix
-        run: cargo +nightly install cargo-wix --version 0.3.1
+        run: cargo install cargo-wix --version 0.3.1
       - id: copy-target
         name: Move synth.exe into wix friendly directory
         run: |
