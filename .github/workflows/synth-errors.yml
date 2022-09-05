@@ -21,6 +21,6 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2022-08-01
-      - run: cargo +nightly-2022-08-01 install --debug --path=synth
+      - run: cargo +nightly-2022-08-01 install --locked --debug --path=synth
       - run: ./e2e.sh
         working-directory: synth/testing_harness/errors
