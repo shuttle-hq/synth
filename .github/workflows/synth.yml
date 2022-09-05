@@ -15,4 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-08-01
       - run: cargo test
