@@ -60,6 +60,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends jq
       - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-08-01
       - run: cargo install --locked --debug --path=synth
       - run: ./e2e.sh test-generate
         working-directory: synth/testing_harness/mysql
