@@ -35,6 +35,13 @@ jobs:
         name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
         path: target/release/synth.tar.gz
 
+  debug:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Debug
+      run: echo "Works. Tag is ${GITHUB_REF##*/}"
+
   build-arm64:
     name: build
     runs-on: ubuntu-latest
@@ -45,17 +52,17 @@ jobs:
         toolchain: nightly
         target: aarch64-unknown-linux-musl
         override: true
-   - id: tag
-     uses: dawidd6/action-get-tag@v1
-   - uses: actions-rs/cargo@v1
-     with:
+    - id: tag
+      uses: dawidd6/action-get-tag@v1
+    - uses: actions-rs/cargo@v1
+      with:
         use-cross: true
         command: build
         args: --release --features telemetry --bin synth --target aarch64-unknown-linux-musl
-   - working-directory: target/aarch64-unknown-linux-musl/release
-     run: tar -czf synth.tar.gz synth
-   - uses: actions/upload-artifact@v2
-     with:
+    - working-directory: target/aarch64-unknown-linux-musl/release
+      run: tar -czf synth.tar.gz synth
+    - uses: actions/upload-artifact@v2
+      with:
         name: synth-${{ steps.tag.outputs.tag }}-ubuntu-latest-arm64
         path: target/release/synth.tar.gz
 
