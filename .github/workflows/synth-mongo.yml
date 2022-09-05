@@ -23,8 +23,6 @@ jobs:
       - run: |
           docker run -p $PORT:27017 --name mongo-synth-harness -d mongo:latest
       - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
       - run: cargo +nightly install --debug --path=synth
       - run: ./e2e.sh test-generate
         working-directory: synth/testing_harness/mongodb
