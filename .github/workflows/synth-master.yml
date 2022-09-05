@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@main
         with:
           project_id: ${{ env.project_id }}
           service_account_key: ${{ secrets.OPENQUERY_CI_SERVICE_ACCOUNT_KEY }}
