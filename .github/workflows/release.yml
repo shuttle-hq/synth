@@ -35,13 +35,6 @@ jobs:
         name: synth-${{ steps.tag.outputs.tag }}-${{ matrix.os }}-x86_64
         path: target/release/synth.tar.gz
 
-  debug:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Debug
-      run: echo "Works. Tag is ${GITHUB_REF##*/}"
-
   build-arm64:
     name: build
     runs-on: ubuntu-latest
