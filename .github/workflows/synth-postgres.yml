@@ -39,7 +39,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2022-08-01
-      - run: cargo install --debug --path=synth
+      - run: cargo install --locked --debug --path=synth
       - run: ./e2e.sh test-generate
         working-directory: synth/testing_harness/postgres
       - run: ./e2e.sh test-import
