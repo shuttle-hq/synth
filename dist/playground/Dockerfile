@@ -6,7 +6,7 @@ COPY core/ core/
 COPY gen/ gen/
 COPY dist/playground dist/playground
 
-RUN cargo install --path dist/playground
+RUN cargo install --locked --path dist/playground
 
 ENV RUST_LOG="debug"
 
