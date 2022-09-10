@@ -1,3 +1,5 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::assertions_on_result_states)]
 mod headers;
 
 use crate::cli::export::ExportStrategy;
@@ -342,13 +344,13 @@ fn synth_val_to_csv_record(val: Value, content: &Content, namespace: &Namespace)
                 Content::Array(array_content) => {
                     let expected_scalar_count = count_scalars_in_content(content, namespace);
                     let scalar_count = elements.len()
-                        * count_scalars_in_content(&*array_content.content, namespace);
+                        * count_scalars_in_content(array_content.content, namespace);
 
                     let null_padding_iter = std::iter::repeat(Value::Null(()))
                         .take(expected_scalar_count - scalar_count);
 
                     let iter = elements.into_iter().chain(null_padding_iter).map(|elem| {
-                        synth_val_to_csv_record(elem, &*array_content.content, namespace)
+                        synth_val_to_csv_record(elem, array_content.content, namespace)
                     });
 
                     for itm in iter {
@@ -386,7 +388,7 @@ fn count_scalars_in_content(content: &Content, ns: &Namespace) -> usize {
     match content {
         Content::Array(array_content) => {
             determine_content_array_max_length(array_content)
-                * count_scalars_in_content(&*array_content.content, ns)
+                * count_scalars_in_content(array_content.content, ns)
         }
         Content::Object(obj_content) => obj_content
             .iter()
