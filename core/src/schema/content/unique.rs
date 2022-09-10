@@ -18,7 +18,8 @@ impl Default for UniqueAlgorithm {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[allow(derive_partial_eq_without_eq)]  
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct UniqueContent {
     #[serde(default)]

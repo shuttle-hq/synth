@@ -542,7 +542,7 @@ impl Id<i64> {
                         start_at: Some(start_at as u64),
                     })
                     .into())
-                };
+                }
             }
             NumberContentKind::I64 => Ok(number_content::I64::Id(self).into()),
             NumberContentKind::F64 => Err(failed!(target: Release, "cannot cast id f64")),
