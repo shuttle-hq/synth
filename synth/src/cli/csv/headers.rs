@@ -155,7 +155,7 @@ impl CsvHeader {
             components.insert(0, current);
             match current {
                 CsvHeader::ArrayElement { parent, .. }
-                | CsvHeader::ObjectProperty { parent, .. } => current = &*parent.as_ref().unwrap(),
+                | CsvHeader::ObjectProperty { parent, .. } => current = parent.as_ref().unwrap(),
             }
         }
         components.insert(0, current);
