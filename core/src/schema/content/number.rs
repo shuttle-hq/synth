@@ -1,3 +1,4 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
 use super::prelude::*;
 use std::hash::{Hash, Hasher};
 
