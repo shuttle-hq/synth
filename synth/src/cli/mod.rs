@@ -1,3 +1,4 @@
+#![allow(clippy::assertions_on_result_states)]
 mod csv;
 mod export;
 mod import;
