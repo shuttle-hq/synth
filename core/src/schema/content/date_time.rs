@@ -403,12 +403,8 @@ pub mod tests {
             infer_date_time_type(None, &None, &None).unwrap(),
             ChronoValueType::default()
         );
-        assert!(
-            infer_date_time_type(Some(ChronoValueType::NaiveDate), &None, &some_time).is_err()
-        );
-        assert!(
-            infer_date_time_type(Some(ChronoValueType::NaiveTime), &None, &some_date).is_err()
-        );
+        assert!(infer_date_time_type(Some(ChronoValueType::NaiveDate), &None, &some_time).is_err());
+        assert!(infer_date_time_type(Some(ChronoValueType::NaiveTime), &None, &some_date).is_err());
         assert!(infer_date_time_type(None, &some_time, &some_date).is_err());
     }
 }
