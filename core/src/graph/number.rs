@@ -493,6 +493,6 @@ pub mod test {
             assert_eq!(i, incrementing.next(&mut rng).into_yielded().unwrap())
         }
 
-        assert!(incrementing.next(&mut rng).into_complete().unwrap_err())
+        assert!(incrementing.next(&mut rng).into_complete().is_err())
     }
 }
