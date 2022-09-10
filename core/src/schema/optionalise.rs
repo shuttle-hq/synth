@@ -1,4 +1,4 @@
-#![allow(clippy::assertions_on_results_states)]
+#![allow(clippy::assertions_on_result_states)]
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 

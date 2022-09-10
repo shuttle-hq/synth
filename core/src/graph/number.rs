@@ -1,3 +1,4 @@
+#![allow(clippy::assertions_on_result_states)]
 use super::prelude::*;
 
 use rand::distributions::uniform::SampleRange;

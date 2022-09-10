@@ -1,3 +1,4 @@
+#![allow(clippy::assertions_on_result_states)]
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
@@ -1156,7 +1157,7 @@ pub mod tests {
                 );
                 *counts.entry(transaction.username.as_str()).or_insert(0) += 1;
 
-                assert!(serde_json::to_value(&transaction.serialized_nonce).unwrap());
+                assert!(serde_json::to_value(&transaction.serialized_nonce).is_ok());
             }
 
             for value in counts.values() {

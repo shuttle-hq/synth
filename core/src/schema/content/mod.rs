@@ -13,6 +13,7 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
+#![allow(clippy::assertions_on_result_states)]
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
@@ -803,7 +804,7 @@ pub mod tests {
     #[test]
     fn user_schema_accepts() {
         println!("{:#?}", *USER_SCHEMA);
-        assert!(USER_SCHEMA.accepts(&USER).unwrap());
+        assert!(USER_SCHEMA.accepts(&USER).is_ok());
     }
 
     #[test]
@@ -821,7 +822,7 @@ pub mod tests {
             "extra_field": "some val" // This field is not part of the schema
         });
 
-        assert!(USER_SCHEMA.accepts(&user).unwrap_err());
+        assert!(USER_SCHEMA.accepts(&user).is_err());
     }
 
     #[test]
@@ -838,7 +839,7 @@ pub mod tests {
             // missing field `friends`
         });
 
-        assert!(USER_SCHEMA.accepts(&user).unwrap_err());
+        assert!(USER_SCHEMA.accepts(&user).is_err());
     }
 
     #[test]
@@ -855,7 +856,7 @@ pub mod tests {
             "friends" : ["just", "kidding", 0.5, true] // schema does not support booleans
         });
 
-        assert!(USER_SCHEMA.accepts(&user).unwrap_err());
+        assert!(USER_SCHEMA.accepts(&user).is_err());
     }
 
     macro_rules! assert_idempotent {
