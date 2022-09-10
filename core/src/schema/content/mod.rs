@@ -13,6 +13,7 @@
 //! - Things that belong to those submodules that also need to be exposed
 //!   to other parts of `synth` should be re-exported here.
 
+#![allow(clippy::assertions_on_result_states)]
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
@@ -96,17 +97,17 @@ pub trait Find<C> {
         R: AsRef<str>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct SameAsContent {
     #[serde(rename = "ref")]
     pub ref_: FieldRef,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct NullContent;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct EmptyContent;
 
 #[derive(Serialize, Deserialize, Debug)]

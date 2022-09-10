@@ -1,3 +1,4 @@
+#![allow(clippy::assertions_on_result_states)]
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
@@ -812,17 +813,17 @@ impl Generator for Box<LinkNode> {
     type Return = Result<Value, Error>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        match std::mem::replace(&mut (*self).1, LinkNodeState::YieldFrom) {
+        match std::mem::replace(&mut (self).1, LinkNodeState::YieldFrom) {
             LinkNodeState::YieldFrom => match self.0.next(rng) {
                 GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
                 GeneratorState::Complete(Some(r)) => GeneratorState::Complete(r),
                 GeneratorState::Complete(None) => {
-                    (*self).1 = LinkNodeState::Yield(Token::Primitive(Primitive::Null(())));
+                    (self).1 = LinkNodeState::Yield(Token::Primitive(Primitive::Null(())));
                     self.next(rng)
                 }
             },
             LinkNodeState::Yield(token) => {
-                (*self).1 = LinkNodeState::Return(Value::Null(()));
+                (self).1 = LinkNodeState::Return(Value::Null(()));
                 GeneratorState::Yielded(token)
             }
             LinkNodeState::Return(value) => GeneratorState::Complete(Ok(value)),

@@ -1,3 +1,4 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
 use super::prelude::*;
 
 use chrono::format::{parse as strptime, StrftimeItems};
@@ -103,7 +104,7 @@ impl ChronoValue {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum ChronoValueType {
     NaiveDate,
