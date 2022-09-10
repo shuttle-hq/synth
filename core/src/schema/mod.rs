@@ -377,10 +377,10 @@ pub mod tests {
 
     #[test]
     fn test_format_validation() {
-        assert!("users.".parse::<FieldRef>().is_err());
-        assert!(".users.".parse::<FieldRef>().is_err());
-        assert!("users.some_field".parse::<FieldRef>().is_ok());
-        assert!("us@%ers.some_field".parse::<FieldRef>().is_err());
+        assert!("users.".parse::<FieldRef>().unwrap_err());
+        assert!(".users.".parse::<FieldRef>().unwrap_err());
+        assert!("users.some_field".parse::<FieldRef>().unwrap());
+        assert!("us@%ers.some_field".parse::<FieldRef>().unwrap_err());
     }
 
     #[test]
@@ -394,7 +394,7 @@ pub mod tests {
 
     #[test]
     fn test_empty_strings() {
-        assert!(FieldRef::from_str("users.\"\".postcode").is_err())
+        assert!(FieldRef::from_str("users.\"\".postcode").unwrap_err())
     }
 
     #[test]
@@ -423,16 +423,16 @@ pub mod tests {
 
     #[test]
     fn do_not_allow_empty_collection_names() {
-        assert!(FieldRef::from_str("").is_err());
+        assert!(FieldRef::from_str("").unwrap_err());
         println!("{:?}", FieldRef::from_str(".some_field"));
 
-        assert!(FieldRef::from_str(".some_field").is_err());
+        assert!(FieldRef::from_str(".some_field").unwrap_err());
     }
 
     #[test]
     fn do_not_allow_empty_field_ref_chunks() {
-        assert!(FieldRef::from_str("users..some_field").is_err());
-        assert!(FieldRef::from_str("users.some_field.").is_err());
+        assert!(FieldRef::from_str("users..some_field").unwrap_err());
+        assert!(FieldRef::from_str("users.some_field.").unwrap_err());
     }
 
     #[test]

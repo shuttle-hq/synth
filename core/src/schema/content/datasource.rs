@@ -4,7 +4,7 @@ use anyhow::Error;
 use std::path::PathBuf;
 use uriparse::URI;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct DatasourceContent {
     pub path: String,
     #[serde(default)]

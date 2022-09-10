@@ -5,7 +5,7 @@ pub trait CategoricalType: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
 
 impl<T> CategoricalType for T where T: Eq + Hash + Clone + FromStr + Ord + PartialOrd {}
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default, Hash)]
 #[serde(from = "CategoricalShadow<T>")]
 pub struct Categorical<T: CategoricalType> {
     #[serde(flatten)]
@@ -131,7 +131,7 @@ pub mod tests {
     #[test]
     fn test_categorical_empty_invariant() {
         let categorical_json = json!({});
-        assert!(serde_json::from_value::<Categorical<String>>(categorical_json).is_err())
+        assert!(serde_json::from_value::<Categorical<String>>(categorical_json).unwrap_err())
     }
 
     #[test]

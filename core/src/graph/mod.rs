@@ -812,17 +812,17 @@ impl Generator for Box<LinkNode> {
     type Return = Result<Value, Error>;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        match std::mem::replace(&mut (*self).1, LinkNodeState::YieldFrom) {
+        match std::mem::replace(&mut (self).1, LinkNodeState::YieldFrom) {
             LinkNodeState::YieldFrom => match self.0.next(rng) {
                 GeneratorState::Yielded(y) => GeneratorState::Yielded(y),
                 GeneratorState::Complete(Some(r)) => GeneratorState::Complete(r),
                 GeneratorState::Complete(None) => {
-                    (*self).1 = LinkNodeState::Yield(Token::Primitive(Primitive::Null(())));
+                    (self).1 = LinkNodeState::Yield(Token::Primitive(Primitive::Null(())));
                     self.next(rng)
                 }
             },
             LinkNodeState::Yield(token) => {
-                (*self).1 = LinkNodeState::Return(Value::Null(()));
+                (self).1 = LinkNodeState::Return(Value::Null(()));
                 GeneratorState::Yielded(token)
             }
             LinkNodeState::Return(value) => GeneratorState::Complete(Ok(value)),
@@ -1156,7 +1156,7 @@ pub mod tests {
                 );
                 *counts.entry(transaction.username.as_str()).or_insert(0) += 1;
 
-                assert!(serde_json::to_value(&transaction.serialized_nonce).is_ok());
+                assert!(serde_json::to_value(&transaction.serialized_nonce).unwrap());
             }
 
             for value in counts.values() {

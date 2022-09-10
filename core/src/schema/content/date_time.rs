@@ -103,7 +103,7 @@ impl ChronoValue {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum ChronoValueType {
     NaiveDate,
@@ -403,8 +403,8 @@ pub mod tests {
             infer_date_time_type(None, &None, &None).unwrap(),
             ChronoValueType::default()
         );
-        assert!(infer_date_time_type(Some(ChronoValueType::NaiveDate), &None, &some_time).is_err());
-        assert!(infer_date_time_type(Some(ChronoValueType::NaiveTime), &None, &some_date).is_err());
-        assert!(infer_date_time_type(None, &some_time, &some_date).is_err());
+        assert!(infer_date_time_type(Some(ChronoValueType::NaiveDate), &None, &some_time).unwrap_err());
+        assert!(infer_date_time_type(Some(ChronoValueType::NaiveTime), &None, &some_date).unwrap_err());
+        assert!(infer_date_time_type(None, &some_time, &some_date).unwrap_err());
     }
 }

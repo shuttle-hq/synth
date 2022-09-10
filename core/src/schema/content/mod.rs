@@ -96,17 +96,17 @@ pub trait Find<C> {
         R: AsRef<str>;
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct SameAsContent {
     #[serde(rename = "ref")]
     pub ref_: FieldRef,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct NullContent;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct EmptyContent;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -803,7 +803,7 @@ pub mod tests {
     #[test]
     fn user_schema_accepts() {
         println!("{:#?}", *USER_SCHEMA);
-        assert!(USER_SCHEMA.accepts(&USER).is_ok());
+        assert!(USER_SCHEMA.accepts(&USER).unwrap());
     }
 
     #[test]
@@ -821,7 +821,7 @@ pub mod tests {
             "extra_field": "some val" // This field is not part of the schema
         });
 
-        assert!(USER_SCHEMA.accepts(&user).is_err());
+        assert!(USER_SCHEMA.accepts(&user).unwrap_err());
     }
 
     #[test]
@@ -838,7 +838,7 @@ pub mod tests {
             // missing field `friends`
         });
 
-        assert!(USER_SCHEMA.accepts(&user).is_err());
+        assert!(USER_SCHEMA.accepts(&user).unwrap_err());
     }
 
     #[test]
@@ -855,7 +855,7 @@ pub mod tests {
             "friends" : ["just", "kidding", 0.5, true] // schema does not support booleans
         });
 
-        assert!(USER_SCHEMA.accepts(&user).is_err());
+        assert!(USER_SCHEMA.accepts(&user).unwrap_err());
     }
 
     macro_rules! assert_idempotent {
