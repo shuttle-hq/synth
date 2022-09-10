@@ -1,5 +1,6 @@
 //! # TODO
 //! - Put the numerical content upcast logic in the corresponding function-style macro
+#![allow(clippy::assertions_on_result_states)]
 use anyhow::Result;
 use serde_json::{Map, Number, Value};
 

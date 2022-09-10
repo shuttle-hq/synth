@@ -1,3 +1,4 @@
+#![allow(clippy::assertions_on_result_states)]
 mod csv;
 mod export;
 mod import;
@@ -130,10 +131,10 @@ impl<'w> Cli {
 
         if let Some(collection) = cmd.collection {
             if self.store.collection_exists(&cmd.namespace, &collection) {
-                return Err(anyhow!(
+                Err(anyhow!(
                     "The collection `{}` already exists. Will not import into an existing collection.",
                     Store::relative_collection_path(&cmd.namespace, &collection).display()
-                ));
+                ))
             } else {
                 let content = import_strategy.import_collection(&collection)?;
                 self.store

@@ -1,3 +1,4 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
 use super::prelude::*;
 use std::hash::{Hash, Hasher};
 
@@ -183,7 +184,7 @@ macro_rules! number_content {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct Id<N> {
     #[serde(default)]
@@ -232,7 +233,7 @@ impl NumberContent {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct RangeStep<N> {
@@ -532,7 +533,7 @@ impl Id<i64> {
         match to {
             NumberContentKind::U64 => {
                 let start_at = self.start_at.unwrap_or(1);
-                return if start_at < 0 {
+                if start_at < 0 {
                     Err(failed!(
                         target: Release,
                         "cannot cast id with negative start_at to u64"
@@ -542,7 +543,7 @@ impl Id<i64> {
                         start_at: Some(start_at as u64),
                     })
                     .into())
-                };
+                }
             }
             NumberContentKind::I64 => Ok(number_content::I64::Id(self).into()),
             NumberContentKind::F64 => Err(failed!(target: Release, "cannot cast id f64")),
