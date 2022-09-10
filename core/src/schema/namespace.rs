@@ -1,4 +1,4 @@
-![allow(clippy::assertions_on_result_states)]
+#![allow(clippy::assertions_on_result_states)]
 use super::inference::MergeStrategy;
 use super::{suggest_closest, Content, FieldRef, Find};
 use crate::compile::{Compile, Compiler};
