@@ -399,7 +399,7 @@ pub(crate) struct TelemetryClient {
 impl TelemetryClient {
     fn new() -> Self {
         let synth_version = version();
-        let os = META_OS.to_string();
+        let os = std::env::consts::OS.to_string();
 
         Self {
             ph_client: posthog_rs::client(API_KEY),
