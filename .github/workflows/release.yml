@@ -81,7 +81,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: synth-${{ steps.tag.outputs.tag }}-ubuntu-latest-arm64
-        path: target/release/synth.tar.gz
+        path: target/aarch64-unknown-linux-musl/release/synth.tar.gz
 
   build-osx:
     name: build
