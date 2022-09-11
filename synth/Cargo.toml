@@ -17,7 +17,7 @@ harness = false
 
 [features]
 default = []
-telemetry = ["posthog-rs", "uuid", "backtrace", "console"]
+telemetry = ["posthog-unofficial", "uuid", "backtrace", "console"]
 
 [dev-dependencies]
 lazy_static = "1.4.0"
@@ -33,7 +33,7 @@ serde_json = "1.0"
 
 # Telemetry related dependencies
 uuid = { version = "0.8.2", features = ["v4"], optional = true }
-posthog-rs = { version = "0.2.2", optional = true }
+posthog-unofficial = { version = "0.2.3", optional = true }
 backtrace = { version = "0.3", optional = true }
 console = { version = "0.14.1", default-features = false, optional = true }
 

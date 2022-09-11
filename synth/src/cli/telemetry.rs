@@ -389,7 +389,7 @@ impl ToString for CommandResult {
 }
 
 pub(crate) struct TelemetryClient {
-    ph_client: posthog_rs::Client,
+    ph_client: posthog_unofficial::Client,
     uuid: String,
     synth_version: String,
     os: String,
@@ -401,7 +401,7 @@ impl TelemetryClient {
         let os = std::env::consts::OS.to_string();
 
         Self {
-            ph_client: posthog_rs::client(API_KEY),
+            ph_client: posthog_unofficial::client(API_KEY),
             uuid: get_or_initialise_uuid().unwrap_or_else(|error| {
                 error
                     .context("failed to get uuid for telemetry")
@@ -412,8 +412,11 @@ impl TelemetryClient {
         }
     }
 
-    fn default_telemetry_event<S: Into<String>>(&self, event: S) -> Result<posthog_rs::Event> {
-        let mut event = posthog_rs::Event::new(event.into(), self.uuid.clone());
+    fn default_telemetry_event<S: Into<String>>(
+        &self,
+        event: S,
+    ) -> Result<posthog_unofficial::Event> {
+        let mut event = posthog_unofficial::Event::new(event.into(), self.uuid.clone());
 
         event.insert_prop("version", self.synth_version.clone())?;
         event.insert_prop("os", self.os.clone())?;
@@ -422,7 +425,7 @@ impl TelemetryClient {
     }
 
     fn add_telemetry_context(
-        event: &mut posthog_rs::Event,
+        event: &mut posthog_unofficial::Event,
         telemetry_context: TelemetryContext,
     ) -> Result<()> {
         if !telemetry_context.generators.is_empty() {
@@ -513,7 +516,7 @@ impl TelemetryClient {
         self.send(event)
     }
 
-    fn send(&self, event: posthog_rs::Event) -> Result<()> {
+    fn send(&self, event: posthog_unofficial::Event) -> Result<()> {
         if let Err(err) = self.ph_client.capture(event) {
             debug!("Failed to send message to PostHog. Error: {:?}", err);
             return Err(anyhow!("Failed to send message to PostHog."));
@@ -866,9 +869,9 @@ pub mod tests {
 
     #[test]
     fn add_telemetry_context() {
-        let mut event = posthog_rs::Event::new("dummy", "id");
+        let mut event = posthog_unofficial::Event::new("dummy", "id");
         let mut context = TelemetryContext::new();
-        let mut expected = posthog_rs::Event::new("dummy", "id");
+        let mut expected = posthog_unofficial::Event::new("dummy", "id");
 
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         assert_eq!(event, expected, "empty fields should not be added");
@@ -882,15 +885,15 @@ pub mod tests {
         assert_eq!(event, expected, "generators should be separated by commas");
         context.generators = Vec::new();
 
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.num_collections = Some(6);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         expected.insert_prop("num_collections", 6).unwrap();
         assert_eq!(event, expected, "include num_collections");
 
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.num_fields = Some(9);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         expected.insert_prop("num_collections", 6).unwrap();
@@ -901,24 +904,24 @@ pub mod tests {
         context.num_collections = None;
         context.num_fields = None;
 
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.namespace_sha = Some(50238);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         expected.insert_prop("namespace_sha", 50238).unwrap();
         assert_eq!(event, expected, "include namespace_sha");
         context.namespace_sha = None;
 
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.namespace_name_sha = Some(54321);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         expected.insert_prop("namespace_name_sha", 54321).unwrap();
         assert_eq!(event, expected, "include namespace_name_sha");
         context.namespace_name_sha = None;
 
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.bytes = Some(1024);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
         expected.insert_prop("bytes", 1024).unwrap();
@@ -926,8 +929,8 @@ pub mod tests {
         context.bytes = None;
 
         // Edge cases
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.num_collections = Some(0);
         context.num_fields = Some(15);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
@@ -936,8 +939,8 @@ pub mod tests {
             "don't include avg_fields_per_collection when collection is 0"
         );
 
-        event = posthog_rs::Event::new("dummy", "id");
-        expected = posthog_rs::Event::new("dummy", "id");
+        event = posthog_unofficial::Event::new("dummy", "id");
+        expected = posthog_unofficial::Event::new("dummy", "id");
         context.num_collections = None;
         context.num_fields = Some(4);
         TelemetryClient::add_telemetry_context(&mut event, context.clone()).unwrap();
