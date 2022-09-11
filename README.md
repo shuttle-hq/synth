@@ -10,6 +10,8 @@
   <a href="https://github.com/getsynth/synth/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache_2.0-green.svg"></a>
   <a href="https://github.com/getsynth/synth/search?l=rust"><img alt="language" src="https://img.shields.io/badge/language-Rust-orange.svg"></a>
   <a href="https://github.com/getsynth/synth/actions"><img alt="build status" src="https://img.shields.io/github/workflow/status/getsynth/synth/synth%20public%20cachix"/></a>
+  <a href="https://discord.gg/emmfrWQv">
+    <img alt="discord" src="https://img.shields.io/discord/1005909761235107961?logo=discord"/></a>
       <img src="https://img.shields.io/github/all-contributors/getsynth/synth" alt="Synth open source contributors"/>
 </p>
 

@@ -17,7 +17,6 @@ use uuid::Uuid;
 use crate::cli::export::ExportStrategy;
 use crate::cli::{config, GenerateCommand, ImportCommand};
 use crate::sampler::SamplerOutput;
-use crate::utils::META_OS;
 use crate::version::version;
 
 use synth_core::{
