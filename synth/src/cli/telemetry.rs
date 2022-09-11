@@ -412,7 +412,10 @@ impl TelemetryClient {
         }
     }
 
-    fn default_telemetry_event<S: Into<String>>(&self, event: S) -> Result<posthog_unofficial::Event> {
+    fn default_telemetry_event<S: Into<String>>(
+        &self,
+        event: S,
+    ) -> Result<posthog_unofficial::Event> {
         let mut event = posthog_unofficial::Event::new(event.into(), self.uuid.clone());
 
         event.insert_prop("version", self.synth_version.clone())?;
