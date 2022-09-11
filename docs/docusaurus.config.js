@@ -121,8 +121,12 @@ module.exports = {
                         },
                         {
                             to: '/docs/integrations/postgres',
-                            label: 'Integrations'
-                        }
+                            label: 'Postgres Integration'
+                        },
+			{
+			    to: '/docs/integrations/mysql',
+			    label: 'MySQL Integration'
+			}
                     ],
                 },
                 {
