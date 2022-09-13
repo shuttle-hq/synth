@@ -42,7 +42,7 @@ function load-schema() {
 function test-generate() {
   echo -e "${INFO}Test generate${NC}"
   load-schema --no-data || { echo -e "${ERROR}Failed to load schema${NC}"; return 1; }
-  $SYNTH generate hospital_master --to $SCHEME://root:${PASSWORD}@127.0.0.1:${PORT}/test_db --size 30 || return 1
+  $SYNTH generate hospital_master --to $SCHEME://root:${PASSWORD}@localhost:${PORT}/test_db --size 30 || return 1
 
   sum_rows_query="SELECT (SELECT count(*) FROM hospitals) +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
   sum=`docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P 3306 "test_db" -e "$sum_rows_query" | grep -o '[[:digit:]]*'`
@@ -52,7 +52,7 @@ function test-generate() {
 function test-import() {
   echo -e "${INFO}Testing import${NC}"
   load-schema --all || { echo -e "${ERROR}Failed to load schema${NC}"; return 1; }
-  $SYNTH import --from $SCHEME://root:${PASSWORD}@127.0.0.1:${PORT}/test_db hospital_import || { echo -e "${ERROR}Import failed${NC}"; return 1; }
+  $SYNTH import --from $SCHEME://root:${PASSWORD}@localhost:${PORT}/test_db hospital_import || { echo -e "${ERROR}Import failed${NC}"; return 1; }
   diff <(jq --sort-keys . hospital_import/*) <(jq --sort-keys . hospital_master/*) || { echo -e "${ERROR}Import namespaces do not match${NC}"; return 1; }
 }
 
@@ -70,7 +70,7 @@ function test-warning() {
   echo -e "${INFO}[$folder] Testing warning${NC}"
 
   docker exec -i $NAME mysql -h 127.0.0.1 -u root --password=$PASSWORD -P 3306 "test_db" < "$folder/schema.sql"
-  output=$($SYNTH generate --size 10 --to $SCHEME://root:${PASSWORD}@127.0.0.1:${PORT}/test_db "$folder" 2>&1)
+  output=$($SYNTH generate --size 10 --to $SCHEME://root:${PASSWORD}@localhost:${PORT}/test_db "$folder" 2>&1)
   warnings=$(echo "$output" | grep "WARN" | grep -Po "(?<=\]\s).*$")
 
   if [ -z "$warnings" ]

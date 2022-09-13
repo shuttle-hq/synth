@@ -25,6 +25,7 @@ impl SeriesContent {
     }
 }
 
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -35,21 +36,21 @@ pub enum SeriesVariant {
     Zip(Zip),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct Incrementing {
     pub(crate) start: String,
     #[serde(with = "humantime_serde")]
     pub(crate) increment: std::time::Duration,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct Poisson {
     pub(crate) start: String,
     #[serde(with = "humantime_serde")]
     pub(crate) rate: std::time::Duration,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct Cyclical {
     pub(crate) start: String,
     #[serde(with = "humantime_serde")]

@@ -4,8 +4,6 @@ use std::str::FromStr;
 
 use anyhow::Result;
 
-include!(concat!(env!("OUT_DIR"), "/meta.rs"));
-
 pub struct DataDirectoryPath(PathBuf);
 
 impl Default for DataDirectoryPath {
@@ -37,13 +35,10 @@ pub mod splash {
     use colored::Colorize;
     use sysinfo::{System, SystemExt};
 
-    use super::*;
     use crate::version::version;
 
     pub struct Splash {
         synth_ver: String,
-        synth_ref: String,
-        synth_rev: String,
         path: String,
         os: String,
         arch: String,
@@ -56,18 +51,14 @@ pub mod splash {
 
             let synth_ver = version();
 
-            let synth_ref = META_SHORTNAME.to_string();
-            let synth_rev = META_OID.to_string();
-            let os = META_OS.to_string();
-            let arch = META_ARCH.to_string();
+            let os = std::env::consts::OS.to_string();
+            let arch = std::env::consts::ARCH.to_string();
 
             let system = System::new_all();
             let mem = system.get_total_memory();
 
             Ok(Self {
                 synth_ver,
-                synth_ref,
-                synth_rev,
                 path,
                 os,
                 arch,
@@ -83,8 +74,6 @@ pub mod splash {
                 "
 
 version     = {synth_ver}
-ref         = {synth_ref}
-rev         = {synth_rev}
 PATH        = {path}
 target      = {os}
 arch        = {arch}
@@ -92,8 +81,6 @@ threads     = {cpu}
 mem         = {mem}
 ",
                 synth_ver = self.synth_ver.blue().bold(),
-                synth_ref = self.synth_ref.bold(),
-                synth_rev = self.synth_rev.bold(),
                 path = self.path.bold(),
                 arch = self.arch.bold(),
                 os = self.os.bold(),

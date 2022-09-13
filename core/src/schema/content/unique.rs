@@ -6,7 +6,7 @@ use crate::{Compiler, Content, Graph};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Hash)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
 pub enum UniqueAlgorithm {
     Hash { retries: Option<usize> },
 }
@@ -18,6 +18,7 @@ impl Default for UniqueAlgorithm {
     }
 }
 
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct UniqueContent {

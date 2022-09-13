@@ -1,4 +1,4 @@
-#![feature(async_closure, map_first_last, box_patterns, error_iter, try_blocks)]
+#![feature(map_first_last, box_patterns, error_iter, try_blocks)]
 #![allow(type_alias_bounds)]
 
 #[macro_export]
@@ -54,7 +54,7 @@ macro_rules! schema {
     {
         $($inner:tt)*
     } => {
-        serde_json::from_value::<crate::schema::Content>(serde_json::json!($($inner)*))
+        serde_json::from_value::<$crate::schema::Content>(serde_json::json!($($inner)*))
             .expect("could not deserialize value into a schema")
     }
 }
@@ -69,7 +69,7 @@ macro_rules! generator {
 #[macro_export]
 macro_rules! try_generator {
     { $($inner:tt)* } => {
-        crate::Graph::from_content(&schema!($($inner)*))
+        $crate::Graph::from_content(&schema!($($inner)*))
     }
 }
 

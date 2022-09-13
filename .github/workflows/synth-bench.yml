@@ -19,12 +19,12 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: nightly-2022-08-01
     - uses: actions/setup-python@v2
     - name: run benchmark
       id: bench
       run: |
-        body=$(cargo +nightly bench --manifest-path /home/runner/work/synth/synth/synth/Cargo.toml)
+        body=$(cargo +nightly-2022-08-01 bench --manifest-path /home/runner/work/synth/synth/synth/Cargo.toml)
         body="${body//'%'/'%25'}"
         body="${body//$'\n'/'%0A'}"
         body="${body//$'\r'/'%0D'}" 

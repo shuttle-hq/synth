@@ -66,12 +66,7 @@ Synth's telemetry collects 8 fields:
   - `telemetry::disabled`
 - `success`: If the command completed in success.
 - `version`: The current semver of Synth. For example `v0.4.3`.
-- `os`: The target platform for which the binary was built. This is the value
-  of `cargo`'s `CARGO_CFG_TARGET_OS` environment variable under which `synth`
-  was built in CI/CD. Currently, this is one of:
-  - `linux`
-  - `windows`
-  - `macos`
+- `os`: The target platform for which the binary was built. This value is [std::env::consts::OS](https://doc.rust-lang.org/std/env/consts/constant.OS.html), a constant set at compile time. For example `windows`.
 - `timestamp`: The time at which the command was issued. For
   example `2021-05-06T16:13:40.084Z`.
 - `generators`: A list of generators that were used by the `generate` command. For example `string::title, number::I32::Range`.

@@ -20,7 +20,7 @@ pub enum StringContent {
     Constant(ConstantContent),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct Uuid;
 
 impl StringContent {
@@ -129,7 +129,7 @@ impl Default for StringContent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FakerContentArgument(Value);
 
 impl FakerContentArgument {
@@ -164,7 +164,7 @@ impl Serialize for FakerContentArgument {
     }
 }
 
-#[derive(Debug, Serialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
 pub struct FakerContent {
     pub generator: String,
     /// deprecated: Use FakerArgs::locale instead
@@ -268,7 +268,7 @@ pub struct SlicedContent {
     slice: Box<Content>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct ConstantContent(String);
 
 impl From<String> for ConstantContent {

@@ -1,6 +1,6 @@
 [package]
 name = "synth"
-version = "0.6.5"
+version = "0.6.8"
 authors = [
   "Damien Broka <damien@getsynth.com>",
   "Christos Hadjiaslanis <christos@getsynth.com>",
@@ -17,10 +17,7 @@ harness = false
 
 [features]
 default = []
-telemetry = ["posthog-rs", "uuid", "backtrace", "console"]
-
-[build-dependencies]
-git2 = "0.13.20"
+telemetry = ["posthog-unofficial", "uuid", "backtrace", "console"]
 
 [dev-dependencies]
 lazy_static = "1.4.0"
@@ -36,7 +33,7 @@ serde_json = "1.0"
 
 # Telemetry related dependencies
 uuid = { version = "0.8.2", features = ["v4"], optional = true }
-posthog-rs = { version = "0.2.2", optional = true }
+posthog-unofficial = { version = "0.2.3", optional = true }
 backtrace = { version = "0.3", optional = true }
 console = { version = "0.14.1", default-features = false, optional = true }
 
@@ -72,11 +69,11 @@ indicatif = "0.15.0"
 dirs = "3.0.2"
 mongodb = {version = "2.0.0-beta.3", features = ["sync", "bson-chrono-0_4"] , default-features = false}
 
-sqlx = { version = "0.5.7", features = [ "postgres", "mysql", "runtime-async-std-native-tls", "decimal", "chrono" ] }
+sqlx = { version = "0.5.7", features = [ "postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono" ] }
 
 beau_collector = "0.2.1"
 
-reqwest = { version = "0.11", features = ["json", "blocking"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "blocking","rustls-tls"] }
 
 semver = "1.0.4"
 
