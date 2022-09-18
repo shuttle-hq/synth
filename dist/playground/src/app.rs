@@ -1,11 +1,12 @@
 use crate::prelude::*;
 
 use axum::{
+    extract::Query,
+    http,
     http::{HeaderValue, Method, StatusCode},
     response::IntoResponse,
     routing::put,
-    extract::Query,
-    http, Extension, Json, Router,
+    Extension, Json, Router,
 };
 use tower_http::cors::CorsLayer;
 
@@ -95,7 +96,11 @@ impl std::fmt::Display for ErrorResponseBody {
 
 impl std::error::Error for ErrorResponseBody {}
 
-async fn put_compile(Extension(mut states): Extension<Arc<State>>, Json(body): Json<Content>, query: Query<CompileRequestQuery>) -> impl IntoResponse {
+async fn put_compile(
+    Extension(mut states): Extension<Arc<State>>,
+    Json(body): Json<Content>,
+    query: Query<CompileRequestQuery>,
+) -> impl IntoResponse {
     let state = *states;
     let query: CompileRequestQuery = query.0;
     info!(
@@ -105,10 +110,7 @@ async fn put_compile(Extension(mut states): Extension<Arc<State>>, Json(body): J
     );
     match state.compile_and_generate(body, query.size) {
         Ok(as_ser) => {
-            let resp = (
-                StatusCode::OK,
-                Json(&as_ser),
-            );
+            let resp = (StatusCode::OK, Json(&as_ser));
             return resp;
         }
         Err(err) => {
@@ -122,22 +124,13 @@ async fn put_compile(Extension(mut states): Extension<Arc<State>>, Json(body): J
                     kind,
                     text: synth_err.msg.clone(),
                 };
-                let resp = (
-                    StatusCode::from_u16(400).unwrap(),
-                    Json(&body),
-                );
+                let resp = (StatusCode::from_u16(400).unwrap(), Json(&body));
                 return resp;
             } else if let Some(app_err) = err.downcast_ref::<ErrorResponseBody>() {
-                let resp = (
-                    StatusCode::from_u16(400),
-                    Json(&app_err),
-                );
+                let resp = (StatusCode::from_u16(400), Json(&app_err));
                 return resp;
             } else {
-                let resp = (
-                    StatusCode::from_u16(500),
-                    err.to_string(),
-                );
+                let resp = (StatusCode::from_u16(500), err.to_string());
                 return resp;
             }
         }
@@ -160,7 +153,17 @@ pub async fn serve(args: ServeCmd) -> Result<()> {
 
     let mut allowed_methods = Vec::new();
 
-    let methods = [Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::HEAD, Method::OPTIONS, Method::CONNECT, Method::PATCH, Method::TRACE];
+    let methods = [
+        Method::GET,
+        Method::POST,
+        Method::PUT,
+        Method::DELETE,
+        Method::HEAD,
+        Method::OPTIONS,
+        Method::CONNECT,
+        Method::PATCH,
+        Method::TRACE,
+    ];
     for i in 0..8 {
         if allow_methods.contains(methods[i].as_str()) {
             allowed_methods.push(methods[i].clone());
@@ -176,7 +179,7 @@ pub async fn serve(args: ServeCmd) -> Result<()> {
                 .allow_credentials(true)
                 .allow_origin(allow_origin.parse::<HeaderValue>().unwrap())
                 .allow_credentials(false)
-                .allow_headers(vec![http::header::CONTENT_TYPE])
+                .allow_headers(vec![http::header::CONTENT_TYPE]),
         );
 
     let bind = SocketAddr::new(addr, port);
