@@ -34,7 +34,7 @@ pub struct ServeCmd {
     allow_origin: String,
 }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     pretty_env_logger::init();
     match Args::from_args() {
