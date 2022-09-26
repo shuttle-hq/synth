@@ -1,7 +1,7 @@
 use anyhow::{Context, Error, Result};
 use backtrace::Backtrace;
-use owo_colors::OwoColorize;
 use lazy_static::lazy_static;
+use owo_colors::OwoColorize;
 
 use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
