@@ -1,6 +1,6 @@
 use anyhow::{Context, Error, Result};
 use backtrace::Backtrace;
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use lazy_static::lazy_static;
 
 use std::cell::RefCell;

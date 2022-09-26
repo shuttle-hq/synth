@@ -32,7 +32,7 @@ impl FromStr for DataDirectoryPath {
 #[cfg(debug_assertions)]
 pub mod splash {
     use anyhow::Result;
-    use colored::Colorize;
+    use owo_colors::OwoColorize;
     use sysinfo::{System, SystemExt};
 
     use crate::version::version;
