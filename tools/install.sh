@@ -36,7 +36,7 @@ main() {
 install_based_on_os() {
   case "$(uname)" in
   "Linux")
-    HOME_LOCAL_BIN="$HOME/.local/bin"
+    HOME_LOCAL_BIN="${SYNTH_INSTALL_PATH:-$HOME/.local/bin}"
 
     # Assuming [ ${GLIBC_MAJOR} -e 2 ]...
     GLIBC_MINOR=$(ldd --version 2>/dev/null | head -n1 | grep -o -e "[0-9]\{2\}$")
@@ -67,7 +67,7 @@ install_based_on_os() {
 
     ;;
   "Darwin")
-    HOME_LOCAL_BIN="/usr/local/bin"
+    HOME_LOCAL_BIN="${SYNTH_INSTALL_PATH:-/usr/local/bin}"
 
     os="latest"
 
