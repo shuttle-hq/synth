@@ -18,6 +18,10 @@ curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh
 ```
 
 :::note
+Change the path Synth is installed to set the `SYNTH_INSTALL_PATH` env variable
+:::
+
+:::note
 To skip the telemetry prompt (if you are installing Synth in CI for example) you can use the `--ci` flag.
 :::
 
@@ -90,6 +94,10 @@ Run the following command to install the `synth` binary:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh
 ```
+
+:::note
+Change the path Synth is installed to set the `SYNTH_INSTALL_PATH` env variable
+:::
 
 :::note
 To skip the telemetry prompt (if you are installing Synth in CI for example) you can use the `--ci` flag.

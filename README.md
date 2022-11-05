@@ -69,6 +69,8 @@ We are currently in Public Alpha. Watch "releases" of this repo to get notified 
 On Linux and MacOS you can get started with the one-liner:
 
 ```bash
+# Optional, set install path
+$ export SYNTH_INSTALL_PATH=~/bin
 $ curl -sSL https://getsynth.com/install | sh
 ```
 
