@@ -20,7 +20,7 @@
     },
     {
       "source": "/static/releases/latest/install.sh",
-      "destination": "https://storage.googleapis.com/getsynth-public/install/install.sh"
+      "destination": "https://raw.githubusercontent.com/shuttle-hq/synth/master/tools/install.sh"
     },
     {
       "source": "/static/releases/latest/:file",
