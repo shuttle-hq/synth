@@ -216,10 +216,7 @@ where
 
     for rows in collection.chunks(batch_size) {
         let table_name = datasource.get_table_name_for_insert(collection_name);
-        let mut query = format!(
-            "INSERT INTO {} ({}) VALUES \n",
-            table_name, column_names
-        );
+        let mut query = format!("INSERT INTO {} ({}) VALUES \n", table_name, column_names);
 
         let mut curr_index = 0;
         let mut query_params = vec![];

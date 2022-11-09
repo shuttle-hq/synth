@@ -85,7 +85,7 @@ impl SqlxDataSource for MySqlDataSource {
     }
 
     fn get_table_name_for_insert(&self, table_name: &str) -> String {
-        format!("{}", table_name)
+        table_name.to_string()
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
