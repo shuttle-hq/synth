@@ -141,10 +141,10 @@ impl SqlxDataSource for PostgresDataSource {
     }
 
     fn get_primary_keys_query(&self) -> &str {
-        r"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+        r#"SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
         FROM pg_index i
         JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-        WHERE  i.indrelid = cast($2 as regclass) AND i.indisprimary"
+        WHERE  i.indrelid = cast(concat('"', $2, '"') as regclass) AND i.indisprimary"#
     }
 
     fn get_foreign_keys_query(&self) -> &str {
@@ -170,7 +170,7 @@ impl SqlxDataSource for PostgresDataSource {
     }
 
     fn get_deterministic_samples_query(&self, table_name: String) -> String {
-        format!("SELECT * FROM {} ORDER BY random() LIMIT 10", table_name)
+        format!("SELECT * FROM \"{}\" ORDER BY random() LIMIT 10", table_name)
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
