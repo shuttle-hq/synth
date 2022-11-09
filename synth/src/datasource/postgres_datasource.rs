@@ -170,7 +170,10 @@ impl SqlxDataSource for PostgresDataSource {
     }
 
     fn get_deterministic_samples_query(&self, table_name: String) -> String {
-        format!("SELECT * FROM \"{}\" ORDER BY random() LIMIT 10", table_name)
+        format!(
+            "SELECT * FROM \"{}\" ORDER BY random() LIMIT 10",
+            table_name
+        )
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
