@@ -84,6 +84,10 @@ impl SqlxDataSource for MySqlDataSource {
         format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name)
     }
 
+    fn get_collection_name_for_insert(&self, table_name: &str) -> String {
+        format!("{}", table_name)
+    }
+
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {
         let content = match column_info.data_type.to_lowercase().as_str() {
             "char" | "varchar" | "text" | "binary" | "varbinary" | "enum" | "set" => {

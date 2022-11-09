@@ -76,6 +76,9 @@ pub trait SqlxDataSource: DataSource {
     /// Get query for columns info
     fn get_columns_info_query(&self) -> &str;
 
+    /// Get properly formatted table name
+    fn get_table_name_for_insert(&self, table_name: &str) -> String;
+
     async fn set_seed(&self) -> Result<()> {
         // Default for sources that don't need to set a seed
         Ok(())
@@ -212,9 +215,10 @@ where
     let mut futures = Vec::with_capacity(collection.len());
 
     for rows in collection.chunks(batch_size) {
+        let table_name = datasource.get_table_name_for_insert(collection_name);
         let mut query = format!(
             "INSERT INTO {} ({}) VALUES \n",
-            collection_name, column_names
+            table_name, column_names
         );
 
         let mut curr_index = 0;
