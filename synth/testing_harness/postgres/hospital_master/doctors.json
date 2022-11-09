@@ -30,7 +30,7 @@
     },
     "hospital_id": {
       "type": "same_as",
-      "ref": "hospitals.content.id"
+      "ref": "Hospitals.content.id"
     },
     "id": {
       "type": "number",
