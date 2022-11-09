@@ -84,7 +84,7 @@ impl SqlxDataSource for MySqlDataSource {
         format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name)
     }
 
-    fn get_collection_name_for_insert(&self, table_name: &str) -> String {
+    fn get_table_name_for_insert(&self, table_name: &str) -> String {
         format!("{}", table_name)
     }
 

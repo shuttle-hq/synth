@@ -176,7 +176,7 @@ impl SqlxDataSource for PostgresDataSource {
         )
     }
 
-    fn get_collection_name_for_insert(&self, table_name: &str) -> String {
+    fn get_table_name_for_insert(&self, table_name: &str) -> String {
         format!("\"{}\"", table_name)
     }
 
