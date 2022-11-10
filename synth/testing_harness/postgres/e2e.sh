@@ -46,7 +46,7 @@ function test-generate() {
   load-schema --no-data || { echo -e "${ERROR}Failed to load schema${NC}"; return 1; }
   $SYNTH generate hospital_master --to postgres://postgres:$PASSWORD@localhost:$PORT/postgres --size 30 || return 1
 
-  sum_rows_query="SELECT (SELECT count(*) FROM hospitals) +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
+  sum_rows_query="SELECT (SELECT count(*) FROM \"Hospitals\") +  (SELECT count(*) FROM doctors) + (SELECT count(*) FROM patients)"
   sum=`docker exec -i $NAME psql -tA postgres://postgres:$PASSWORD@localhost:5432/postgres -c "$sum_rows_query"`
   [ "$sum" -gt "30" ] || { echo -e "${ERROR}Generation did not create more than 30 records${NC}"; return 1; }
 }
