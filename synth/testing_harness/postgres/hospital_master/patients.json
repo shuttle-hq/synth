@@ -33,8 +33,8 @@
           "type": "date_time",
           "format": "%Y-%m-%d",
           "subtype": "naive_date",
-          "begin": "2010-04-06",
-          "end": "2019-07-24"
+          "begin": "2010-03-29",
+          "end": "2018-11-27"
         },
         {
           "weight": 1.0,
@@ -53,9 +53,9 @@
           "weight": 1.0,
           "type": "string",
           "categorical": {
-            "female": 3,
-            "male": 6,
-            "unspecified": 1
+            "female": 1,
+            "male": 7,
+            "unspecified": 2
           }
         },
         {
