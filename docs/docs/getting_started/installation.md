@@ -73,7 +73,7 @@ SYNTH_TMP=$(mktemp); \
 To get started, make sure you have a recent version of the [Rust nightly toolchain](https://www.rust-lang.org/tools/install). Then run:
 
 ```bash
-cargo +nightly-2022-08-01 install --locked --git https://github.com/getsynth/synth.git synth
+cargo +nightly install --locked --git https://github.com/getsynth/synth.git synth
 ```
 
 :::note

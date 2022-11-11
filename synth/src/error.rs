@@ -41,7 +41,7 @@ impl UserError {
 impl From<&(dyn std::error::Error + 'static)> for UserError {
     fn from(original: &(dyn std::error::Error + 'static)) -> Self {
         let mut final_error: Option<UserError> = None;
-        let mut chain = original.chain().collect::<Vec<_>>();
+        let mut chain = original.sources().collect::<Vec<_>>();
         chain.reverse();
         for error in chain {
             match &mut final_error {

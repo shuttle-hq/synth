@@ -24,7 +24,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly-2022-08-01
+        toolchain: nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo build --release --features telemetry --bin synth
@@ -66,7 +66,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly-2022-08-01
+        toolchain: nightly
         target: aarch64-unknown-linux-musl
         override: true
     - id: tag
@@ -90,7 +90,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly-2022-08-01
+        toolchain: nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo build --release --features telemetry --bin synth
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-08-01
+          toolchain: nightly
       - id: tag
         uses: dawidd6/action-get-tag@v1
       - id: version
