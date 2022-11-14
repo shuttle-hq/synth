@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_or_else_default)]
 use serde::{Deserialize, Serialize};
 
 pub use synth_core::error::*;

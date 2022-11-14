@@ -1,3 +1,4 @@
+#![allow(clippy::collapsible_str_replace)]
 extern crate proc_macro;
 use std::{collections::HashMap, ffi::OsStr};
 

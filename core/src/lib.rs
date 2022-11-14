@@ -1,5 +1,9 @@
 #![feature(box_patterns, error_iter, try_blocks)]
-#![allow(type_alias_bounds, clippy::result_large_err, clippy::unwrap_or_else_default)]
+#![allow(
+    type_alias_bounds,
+    clippy::result_large_err,
+    clippy::unwrap_or_else_default
+)]
 
 #[macro_export]
 macro_rules! derive_generator {
