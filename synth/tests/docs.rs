@@ -1,3 +1,4 @@
+#![allow(clippy::needless_borrow, clippy::explicit_counter_loop)]
 use lazy_static::lazy_static;
 use std::{
     collections::HashSet,
