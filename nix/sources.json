@@ -1,14 +1,62 @@
 {
+    "naersk": {
+        "branch": "master",
+        "description": "Build rust crates in Nix. No configuration, no code generation, no IFD. Sandbox friendly. [maintainer: @Patryk27]",
+        "homepage": "",
+        "owner": "nmattia",
+        "repo": "naersk",
+        "rev": "6944160c19cb591eb85bbf9b2f2768a935623ed3",
+        "sha256": "01i282zrx651mpvnmlgk4fgwg56nbr1yljpzcj5irqxf18cqx3gn",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/naersk/archive/6944160c19cb591eb85bbf9b2f2768a935623ed3.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "351d8bc316bf901a81885bab5f52687ec8ccab6e",
+        "sha256": "1yzhz7ihkh6p2sxhp3amqfbmm2yqzaadqqii1xijymvl8alw5rrr",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/351d8bc316bf901a81885bab5f52687ec8ccab6e.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nix-bundle": {
+        "branch": "master",
+        "description": "Bundle Nix derivations to run anywhere!",
+        "homepage": "",
+        "owner": "matthewbauer",
+        "repo": "nix-bundle",
+        "rev": "e9fa7e8a118942adafa8592a28b301ee23d37c13",
+        "sha256": "1mqyyaaj4ks0arv9w3pqah327sxnnhwlw6sjqfmkxkwan3ywgb24",
+        "type": "tarball",
+        "url": "https://github.com/matthewbauer/nix-bundle/archive/e9fa7e8a118942adafa8592a28b301ee23d37c13.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "release-21.05",
         "description": "Nix Packages collection",
         "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "5f244caea76105b63d826911b2a1563d33ff1cdc",
-        "sha256": "1xlgynfw9svy7nvh9nkxsxdzncv9hg99gbvbwv3gmrhmzc3sar75",
+        "rev": "022caabb5f2265ad4006c1fa5b1ebe69fb0c3faf",
+        "sha256": "12q00nbd7fb812zchbcnmdg3pw45qhxm74hgpjmshc2dfmgkjh4n",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/5f244caea76105b63d826911b2a1563d33ff1cdc.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/022caabb5f2265ad4006c1fa5b1ebe69fb0c3faf.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs-mozilla": {
+        "branch": "master",
+        "description": "Mozilla overlay for Nixpkgs.",
+        "homepage": "",
+        "owner": "mozilla",
+        "repo": "nixpkgs-mozilla",
+        "rev": "80627b282705101e7b38e19ca6e8df105031b072",
+        "sha256": "11g9lppm53f5aq7a0fnwh5hivdhn2p1wmhwgmz1052x10hfqjrah",
+        "type": "tarball",
+        "url": "https://github.com/mozilla/nixpkgs-mozilla/archive/80627b282705101e7b38e19ca6e8df105031b072.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
