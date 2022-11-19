@@ -3,7 +3,6 @@
 }:
 pkgs.callPackage (
   {
-    openssl
   , sqlite
   , synthPackages
   }:
@@ -16,7 +15,6 @@ pkgs.callPackage (
       pythonEnv
     ];
     buildInputs = [
-      openssl.dev
       sqlite.dev
     ];
   }
