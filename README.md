@@ -16,7 +16,9 @@
 </p>
 
 ------
-**NOTE**: The Synth project is no longer being actively maintained. New issues and pull requests will likely not be addressed. If you're interested in taking over as a maintainer of the project reach out to `opensource@shuttle.rs`.
+**NOTE**: ~~The Synth project is no longer being actively maintained. New issues and pull requests will likely not be addressed. If you're interested in taking over as a maintainer of the project reach out to `opensource@shuttle.rs`.~~
+
+The project now has new maintainers and a fresh start. Plenty of work to stabilize master, feel free to chip in.
 
 ------
 
@@ -67,6 +69,8 @@ We are currently in Public Alpha. Watch "releases" of this repo to get notified 
 On Linux and MacOS you can get started with the one-liner:
 
 ```bash
+# Optional, set install path
+$ export SYNTH_INSTALL_PATH=~/bin
 $ curl -sSL https://getsynth.com/install | sh
 ```
 

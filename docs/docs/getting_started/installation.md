@@ -18,6 +18,10 @@ curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh
 ```
 
 :::note
+Change the path Synth is installed to set the `SYNTH_INSTALL_PATH` env variable
+:::
+
+:::note
 To skip the telemetry prompt (if you are installing Synth in CI for example) you can use the `--ci` flag.
 :::
 
@@ -69,7 +73,7 @@ SYNTH_TMP=$(mktemp); \
 To get started, make sure you have a recent version of the [Rust nightly toolchain](https://www.rust-lang.org/tools/install). Then run:
 
 ```bash
-cargo +nightly-2022-08-01 install --locked --git https://github.com/getsynth/synth.git synth
+cargo +nightly install --locked --git https://github.com/getsynth/synth.git synth
 ```
 
 :::note
@@ -90,6 +94,10 @@ Run the following command to install the `synth` binary:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh
 ```
+
+:::note
+Change the path Synth is installed to set the `SYNTH_INSTALL_PATH` env variable
+:::
 
 :::note
 To skip the telemetry prompt (if you are installing Synth in CI for example) you can use the `--ci` flag.

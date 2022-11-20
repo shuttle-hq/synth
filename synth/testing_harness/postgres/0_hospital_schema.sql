@@ -1,10 +1,10 @@
 drop table if exists patients;
 drop table if exists doctors;
-drop table if exists hospitals;
+drop table if exists "Hospitals";
 
 drop type if exists gender;
 
-create table hospitals
+create table "Hospitals"
 (
     id            int primary key,
     hospital_name varchar(255),
@@ -15,7 +15,7 @@ create table hospitals
 create table doctors
 (
     id          int primary key,
-    hospital_id int references hospitals (id),
+    hospital_id int references "Hospitals" (id),
     name        varchar(255),
     date_joined date
 );

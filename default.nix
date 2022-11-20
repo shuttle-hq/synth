@@ -5,7 +5,6 @@
 , stdenv
 , pkgconfig
 , sqlite
-, openssl
 , ncurses6
 , libiconv
 , darwin
@@ -13,7 +12,7 @@
 , release ? true
 }:
 let
-  version = "0.6.2";
+  version = "0.6.8";
   darwinBuildInputs =
     stdenv.lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk.frameworks; [
       libiconv
@@ -39,7 +38,6 @@ let
       pkgconfig
       ncurses6.dev
       sqlite.dev
-      openssl.dev
     ] ++ darwinBuildInputs;
   };
   suffix = if release then "" else "-debug";
