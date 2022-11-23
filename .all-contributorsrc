@@ -131,12 +131,26 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "AlexMikhalev",
+      "name": "Dr Alexander Mikhalev",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50685?v=4",
+      "profile": "https://github.com/AlexMikhalev",
+      "contributions": [
+        "maintenance",
+        "doc",
+        "review",
+        "ideas",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
   "projectName": "synth",
-  "projectOwner": "getsynth",
+  "projectOwner": "shuttle-hq",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true
+  "skipCi": true,
+  "commitConvention": "angular"
 }
