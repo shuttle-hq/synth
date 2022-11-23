@@ -157,7 +157,8 @@
         "platform",
         "bug",
         "ideas",
-        "test"
+        "test",
+        "doc"
       ]
     }
   ],
