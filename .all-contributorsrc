@@ -140,7 +140,9 @@
       "contributions": [
         "maintenance",
         "doc",
-        "review"
+        "review",
+        "ideas",
+        "code"
       ]
     }
   ],
