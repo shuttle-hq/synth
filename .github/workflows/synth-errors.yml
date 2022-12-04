@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dtolnay/toolchain@nightly
+      - uses: dtolnay/rust-toolchain@nightly
       - run: cargo +nightly install --locked --debug --path=synth
       - run: ./e2e.sh
         working-directory: synth/testing_harness/errors
