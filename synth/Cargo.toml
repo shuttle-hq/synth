@@ -69,7 +69,7 @@ indicatif = "0.15.0"
 dirs = "3.0.2"
 mongodb = {version = "2.0.0-beta.3", features = ["sync", "bson-chrono-0_4"] , default-features = false}
 
-sqlx = { version = "0.5.7", features = [ "postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono" ] }
+sqlx = { version = "0.6", features = ["postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono"] }
 
 beau_collector = "0.2.1"
 
