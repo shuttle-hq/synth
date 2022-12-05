@@ -22,9 +22,7 @@ jobs:
         - ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
+    - uses: dtolnay/rust-toolchain@nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo build --release --features telemetry --bin synth
@@ -88,9 +86,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
+    - uses: dtolnay/rust-toolchain@nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo build --release --features telemetry --bin synth
@@ -107,9 +103,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
+      - uses: dtolnay/rust-toolchain@nightly
       - id: tag
         uses: dawidd6/action-get-tag@v1
       - id: version
