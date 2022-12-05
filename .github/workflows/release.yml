@@ -22,7 +22,7 @@ jobs:
         - ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
-    - uses: dtolnay/toolchain@nightly
+    - uses: dtolnay/rust-toolchain@nightly
     - id: tag
       uses: dawidd6/action-get-tag@v1
     - run: cargo build --release --features telemetry --bin synth
