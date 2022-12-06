@@ -121,7 +121,7 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.kind)?;
         if let Some(msg) = self.msg.as_ref() {
-            write!(f, ": {}", msg)?;
+            write!(f, ": {msg}")?;
         }
         Ok(())
     }
@@ -164,7 +164,7 @@ impl From<ErrorKind> for tide::StatusCode {
 
 impl std::fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 

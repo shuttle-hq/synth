@@ -47,7 +47,7 @@ fn add_reserved_underscores(key: &str) -> Cow<str> {
 
 fn remove_reserved_underscores(mut key: String) -> String {
     for reserved_field in RESERVED_FIELDS {
-        if key.starts_with(&format!("{}_", reserved_field))
+        if key.starts_with(&format!("{reserved_field}_"))
             && key[reserved_field.len() + 1..].bytes().all(|b| b == b'_')
         {
             key.truncate(key.len() - 1);

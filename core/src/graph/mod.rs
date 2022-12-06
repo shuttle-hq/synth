@@ -380,9 +380,9 @@ impl Value {
                     .join(", ");
 
                 if typ == "jsonb" {
-                    format!("[{}]", inner)
+                    format!("[{inner}]")
                 } else {
-                    format!("{{{}}}", inner)
+                    format!("{{{inner}}}")
                 }
             }
             Self::Null(_) => "NULL".to_string(),
@@ -392,7 +392,7 @@ impl Value {
                 Number::F64(f64) => (*f64).to_string(),
                 _ => num.to_string(),
             },
-            Self::String(str) => format!("\"{}\"", str),
+            Self::String(str) => format!("\"{str}\""),
             Self::DateTime(date) => date.format_to_string(),
             Self::Object(_) => {
                 serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()

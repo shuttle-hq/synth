@@ -163,7 +163,7 @@ fn address(rng: &mut dyn RngCore, args: &FakerArgs) -> String {
     let street_name = (FAKE_MAP.get("street_name").unwrap())(rng, args);
     let state_abbr = (FAKE_MAP.get("state_abbr").unwrap())(rng, args);
     let zip_code = (FAKE_MAP.get("zip_code").unwrap())(rng, args);
-    format!("{} {}, {} {}", number, street_name, state_abbr, zip_code)
+    format!("{number} {street_name}, {state_abbr} {zip_code}")
 }
 
 pub struct RandFaker {

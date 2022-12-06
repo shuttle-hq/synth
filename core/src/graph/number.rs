@@ -102,8 +102,8 @@ any_range_float_impl! { f64 }
 impl<N: std::fmt::Display> AnyRange<N> {
     fn display_bound(bound: &Bound<N>, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match bound {
-            Bound::Included(n) => write!(f, "{} (inclusive)", n),
-            Bound::Excluded(n) => write!(f, "{} (exclusive)", n),
+            Bound::Included(n) => write!(f, "{n} (inclusive)"),
+            Bound::Excluded(n) => write!(f, "{n} (exclusive)"),
             Bound::Unbounded => write!(f, "unbounded"),
         }
     }
