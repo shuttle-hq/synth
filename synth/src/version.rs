@@ -15,9 +15,9 @@ pub fn print_version_message<W: Write>(mut writer: W) {
     let version_update_info = version_update_info()
         .map(|(info, _)| info)
         .unwrap_or_default()
-        .map(|info| format!("\n{}", info))
+        .map(|info| format!("\n{info}"))
         .unwrap_or_default();
-    writeln!(writer, "synth {}{}", current_version, version_update_info)
+    writeln!(writer, "synth {current_version}{version_update_info}")
         .expect("failed to write version");
 }
 
@@ -116,15 +116,14 @@ fn version_update_info_inner(
     if latest_version > current_version {
         let out_of_date = "\nYour version of synth is out of date.";
         let version_compare = format!(
-            "The installed version is {} and the latest version is {}.",
-            current_version, latest_version
+            "The installed version is {current_version} and the latest version is {latest_version}.",
         );
         #[cfg(windows)]
         let install_advice = "You can update by downloading from: https://github.com/getsynth/synth/releases/latest/download/synth-windows-latest-x86_64.exe";
         #[cfg(not(windows))]
         let install_advice = "You can update synth by running: curl --proto '=https' --tlsv1.2 -sSL https://getsynth.com/install | sh -s -- --force";
 
-        let formatted = format!("{}\n{}\n{}\n", out_of_date, version_compare, install_advice);
+        let formatted = format!("{out_of_date}\n{version_compare}\n{install_advice}\n");
         Some(formatted)
     } else {
         None

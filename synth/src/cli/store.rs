@@ -73,7 +73,7 @@ impl Store {
 
         for entry in ns_path
             .read_dir()
-            .with_context(|| format!("At path {:?}", ns_path))?
+            .with_context(|| format!("At path {ns_path:?}"))?
         {
             let entry = entry?;
             if let Some(file_ext) = entry.path().extension() {

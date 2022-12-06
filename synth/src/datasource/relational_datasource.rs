@@ -149,10 +149,7 @@ where
     let batch_size = DEFAULT_INSERT_BATCH_SIZE;
 
     if collection.is_empty() {
-        println!(
-            "Collection {} generated 0 values. Skipping insertion...",
-            collection_name
-        );
+        println!("Collection {collection_name} generated 0 values. Skipping insertion...",);
         return Ok(());
     }
 
@@ -216,7 +213,7 @@ where
 
     for rows in collection.chunks(batch_size) {
         let table_name = datasource.get_table_name_for_insert(collection_name);
-        let mut query = format!("INSERT INTO {} ({}) VALUES \n", table_name, column_names);
+        let mut query = format!("INSERT INTO {table_name} ({column_names}) VALUES \n");
 
         let mut curr_index = 0;
         let mut query_params = vec![];

@@ -41,7 +41,7 @@ impl<W: Write> ExportStrategy for JsonLinesStdoutExportStrategy<W> {
     fn export(&self, _namespace: Namespace, sample: SamplerOutput) -> Result<()> {
         // TODO: Warn user if the collection field name would overwrite an existing field in a collection.
         for line in json_lines_from_sampler_output(sample, &self.collection_field_name) {
-            writeln!(self.writer.borrow_mut(), "{}", line).expect("failed to write jsonl line");
+            writeln!(self.writer.borrow_mut(), "{line}").expect("failed to write jsonl line");
         }
 
         Ok(())

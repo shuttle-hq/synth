@@ -1,5 +1,5 @@
 #![feature(box_patterns, concat_idents, error_iter)]
-#![allow(type_alias_bounds, clippy::needless_borrow)]
+#![allow(type_alias_bounds)]
 
 #[macro_use]
 extern crate log;
