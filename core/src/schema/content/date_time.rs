@@ -185,7 +185,7 @@ impl<'a> ChronoValueFormatter<'a> {
             ChronoValue::NaiveTime(n_t) => n_t.format(self.0),
             ChronoValue::NaiveDate(n_d) => n_d.format(self.0),
         };
-        buf.write_fmt(format_args!("{}", display)).map_err(|err| {
+        buf.write_fmt(format_args!("{display}")).map_err(|err| {
             failed_crate!(
                 target: Release,
                 "could not format date time of type '{}' with '{}': {}",

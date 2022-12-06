@@ -147,5 +147,5 @@ fn insert_data<T: DataSource>(
         non_array => vec![non_array],
     };
     task::block_on(datasource.insert_data(collection_name, &to_insert[..]))
-        .with_context(|| format!("Failed to insert data for collection {}", collection_name))
+        .with_context(|| format!("Failed to insert data for collection {collection_name}"))
 }

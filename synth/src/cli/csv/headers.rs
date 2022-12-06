@@ -171,17 +171,17 @@ impl fmt::Display for CsvHeader {
                 parent: Some(parent),
                 index,
                 ..
-            } => write!(f, "{}[{}]", parent, index),
+            } => write!(f, "{parent}[{index}]"),
             Self::ArrayElement {
                 parent: None,
                 index,
                 ..
-            } => write!(f, "[{}]", index),
+            } => write!(f, "[{index}]"),
             Self::ObjectProperty {
                 parent: Some(parent),
                 key,
-            } => write!(f, "{}.{}", parent, key),
-            Self::ObjectProperty { parent: None, key } => write!(f, "{}", key),
+            } => write!(f, "{parent}.{key}"),
+            Self::ObjectProperty { parent: None, key } => write!(f, "{key}"),
         }
     }
 }

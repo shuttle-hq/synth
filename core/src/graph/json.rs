@@ -28,9 +28,9 @@ fn synth_num_to_json(n: Number) -> serde_json::Number {
         Number::U64(u64) => serde_json::Number::from(u64),
         Number::U128(u128) => serde_json::Number::from(u128 as u64),
         Number::F32(f32) => serde_json::Number::from_f64(*f32 as f64)
-            .unwrap_or_else(|| panic!("Could not convert value '{}' to JSON f64", f32)),
+            .unwrap_or_else(|| panic!("Could not convert value '{f32}' to JSON f64")),
         Number::F64(f64) => serde_json::Number::from_f64(*f64)
-            .unwrap_or_else(|| panic!("Could not convert value '{}' to JSON f64", f64)),
+            .unwrap_or_else(|| panic!("Could not convert value '{f64}' to JSON f64")),
     }
 }
 

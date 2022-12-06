@@ -14,7 +14,7 @@ impl std::fmt::Display for Address {
         let mut chunks = self.iter();
         write!(f, "{}", chunks.next().unwrap_or("{top-level}"))?;
         for chunk in chunks {
-            write!(f, ".{}", chunk)?;
+            write!(f, ".{chunk}")?;
         }
         Ok(())
     }

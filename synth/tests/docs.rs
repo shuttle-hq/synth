@@ -66,18 +66,15 @@ async fn PATH_IDENT() -> Result<()> {
     } else {
         assert!(
             actual.is_err(),
-            "should be one of the following errors: {:#?}\n",
-            expects
+            "should be one of the following errors: {expects:#?}\n"
         );
 
         let err = actual.unwrap_err();
-        let err = format!("{:?}", err);
+        let err = format!("{err:?}");
 
         assert!(
             expects.iter().any(|expect| err.contains(expect)),
-            "{}\nshould contain one of the following errors: {:#?}",
-            err,
-            expects
+            "{err}\nshould contain one of the following errors: {expects:#?}"
         );
     }
 
@@ -251,7 +248,7 @@ fn write_code_block(
             safe_line = safe_line.trim_end_matches(&comment).to_string();
         }
 
-        writeln!(file, "{}", safe_line)?;
+        writeln!(file, "{safe_line}")?;
     }
 
     if is_synth && !is_array_block {

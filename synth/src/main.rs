@@ -40,6 +40,6 @@ async fn main() -> Result<()> {
 
 fn print_notify(handle: JoinHandle<Result<Option<String>>>) {
     if let Ok(Ok(Some(notify_message))) = handle.join() {
-        eprintln!("{}", notify_message);
+        eprintln!("{notify_message}");
     }
 }
