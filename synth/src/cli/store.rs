@@ -106,7 +106,7 @@ impl Store {
         content: Content,
     ) -> Result<()> {
         let abs_ns_path = self.ns_path(ns_path);
-        std::fs::create_dir_all(&abs_ns_path)?;
+        std::fs::create_dir_all(abs_ns_path)?;
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
