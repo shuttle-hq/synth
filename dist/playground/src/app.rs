@@ -200,7 +200,7 @@ pub mod tests {
                 let all_objects = arr.into_iter().all(|elt| matches!(elt, Value::Object(_)));
                 assert!(all_objects);
             }
-            _ => panic!("incorrectly generated: {}", as_str),
+            _ => panic!("incorrectly generated: {as_str}"),
         }
         Ok(())
     }
