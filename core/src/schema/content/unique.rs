@@ -1,13 +1,20 @@
+#![allow(clippy::derivable_impls)]
 use crate::compile::Compile;
 use crate::graph::UniqueNode;
 use crate::{Compiler, Content, Graph};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Default, Serialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
 pub enum UniqueAlgorithm {
-    #[default]
     Hash { retries: Option<usize> },
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for UniqueAlgorithm {
+    fn default() -> Self {
+        Self::Hash { retries: None }
+    }
 }
 
 #[allow(clippy::derive_partial_eq_without_eq)]
