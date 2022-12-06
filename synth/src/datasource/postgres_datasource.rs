@@ -44,7 +44,7 @@ impl DataSource for PostgresDataSource {
             let mut arc = Arc::new(schema.clone());
             let pool = PgPoolOptions::new()
                 .max_connections(3) //TODO expose this as a user config?
-                .after_connect(move |conn| {
+                .after_connect(move |conn, _meta| {
                     let schema = arc.clone();
                     Box::pin(async move {
                         conn.execute(&*format!("SET search_path = '{schema}';"))
@@ -59,7 +59,7 @@ impl DataSource for PostgresDataSource {
             arc = Arc::new(schema.clone());
             let single_thread_pool = PgPoolOptions::new()
                 .max_connections(1)
-                .after_connect(move |conn| {
+                .after_connect(move |conn, _meta| {
                     let schema = arc.clone();
                     Box::pin(async move {
                         conn.execute(&*format!("SET search_path = '{schema}';"))
