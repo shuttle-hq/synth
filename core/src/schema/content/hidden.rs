@@ -1,5 +1,3 @@
-#![allow(clippy::derivable_impls)]
-
 use crate::compile::Compile;
 use crate::{Compiler, Content, Graph};
 use anyhow::Result;
