@@ -112,8 +112,7 @@ impl<'de> Deserialize<'de> for ArrayContent {
                     _ => {
                         return Err(de::Error::custom(
                             format!(
-                                "cannot use {} as an array length",
-                                length
+                                "cannot use {length} as an array length",
                             )
                         ));
                     }

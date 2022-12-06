@@ -47,7 +47,7 @@ impl DataSource for PostgresDataSource {
                 .after_connect(move |conn, _meta| {
                     let schema = arc.clone();
                     Box::pin(async move {
-                        conn.execute(&*format!("SET search_path = '{}';", schema))
+                        conn.execute(&*format!("SET search_path = '{schema}';"))
                             .await?;
                         Ok(())
                     })
@@ -62,7 +62,7 @@ impl DataSource for PostgresDataSource {
                 .after_connect(move |conn, _meta| {
                     let schema = arc.clone();
                     Box::pin(async move {
-                        conn.execute(&*format!("SET search_path = '{}';", schema))
+                        conn.execute(&*format!("SET search_path = '{schema}';"))
                             .await?;
                         Ok(())
                     })
@@ -170,14 +170,11 @@ impl SqlxDataSource for PostgresDataSource {
     }
 
     fn get_deterministic_samples_query(&self, table_name: String) -> String {
-        format!(
-            "SELECT * FROM \"{}\" ORDER BY random() LIMIT 10",
-            table_name
-        )
+        format!("SELECT * FROM \"{table_name}\" ORDER BY random() LIMIT 10",)
     }
 
     fn get_table_name_for_insert(&self, table_name: &str) -> String {
-        format!("\"{}\"", table_name)
+        format!("\"{table_name}\"")
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {

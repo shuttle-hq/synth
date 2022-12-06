@@ -55,7 +55,7 @@ impl ExportStrategy for CsvStdoutExportStrategy {
                     println!("\n{}\n{}\n\n{}\n", name, "-".repeat(name.len()), csv)
                 }
             }
-            CsvOutput::Collection(csv) => println!("{}", csv),
+            CsvOutput::Collection(csv) => println!("{csv}"),
         }
 
         Ok(())
@@ -223,7 +223,7 @@ fn csv_record_to_value(
             .iter()
             .map(csv_str_to_value)
             .enumerate()
-            .map(|(i, val)| (format!("field{}", i), val))
+            .map(|(i, val)| (format!("field{i}"), val))
             .collect();
 
         // Without headers, we can only assume the data was just a flat object.

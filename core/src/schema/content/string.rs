@@ -91,7 +91,7 @@ impl<'de> Deserialize<'de> for RegexContent {
                 E: serde::de::Error,
             {
                 let rand_regex = RandRegex::compile(s.as_str(), 32).map_err(|e| {
-                    let msg = format!("bad regex: {}", e);
+                    let msg = format!("bad regex: {e}");
                     E::custom(msg)
                 })?;
                 Ok(RegexContent(s, rand_regex))
@@ -239,7 +239,7 @@ impl<'de> Deserialize<'de> for FakerContent {
             where
                 E: serde::de::Error,
             {
-                Err(E::custom(format!("`faker` is expected to have a `generator` field. Try '\"faker\": {{\"generator\": \"{}\"}}'", v)))
+                Err(E::custom(format!("`faker` is expected to have a `generator` field. Try '\"faker\": {{\"generator\": \"{v}\"}}'")))
             }
         }
 

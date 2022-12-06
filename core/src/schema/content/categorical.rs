@@ -24,7 +24,7 @@ where
     for (k, v) in hm_string_keys {
         hm_final.insert(
             k.parse()
-                .map_err(|_| serde::de::Error::custom(format!("could not deserialize {}", k)))?,
+                .map_err(|_| serde::de::Error::custom(format!("could not deserialize {k}")))?,
             v,
         );
     }
