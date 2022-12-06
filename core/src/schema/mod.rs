@@ -364,7 +364,7 @@ pub mod tests {
     #[test]
     fn test_new() {
         let reference: FieldRef = "users.address.postcode".parse().unwrap();
-        println!("{:?}", reference);
+        println!("{reference:?}");
         assert_eq!("users".to_string(), *reference.collection());
         let mut fields = reference.iter_fields();
         assert_eq!("address", fields.next().unwrap());
