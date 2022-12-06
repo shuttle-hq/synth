@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Default, Serialize, PartialEq, Eq, Hash)]
 pub enum UniqueAlgorithm {
+    #[default]
     Hash { retries: Option<usize> },
 }
 
