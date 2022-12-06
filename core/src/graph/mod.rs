@@ -380,9 +380,9 @@ impl Value {
                     .join(", ");
 
                 if typ == "jsonb" {
-                    format!("[{}]", inner)
+                    format!("[{inner}]")
                 } else {
-                    format!("{{{}}}", inner)
+                    format!("{{{inner}}}")
                 }
             }
             Self::Null(_) => "NULL".to_string(),
@@ -392,7 +392,7 @@ impl Value {
                 Number::F64(f64) => (*f64).to_string(),
                 _ => num.to_string(),
             },
-            Self::String(str) => format!("\"{}\"", str),
+            Self::String(str) => format!("\"{str}\""),
             Self::DateTime(date) => date.format_to_string(),
             Self::Object(_) => {
                 serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()
@@ -1060,7 +1060,7 @@ pub mod tests {
         let mut model = Graph::from_namespace(&schema)
             .unwrap()
             .inspect(|yielded| {
-                println!("{:?}", yielded);
+                println!("{yielded:?}");
             })
             .aggregate();
 
@@ -1141,11 +1141,11 @@ pub mod tests {
 
             assert_eq!(all_users.len(), 10);
 
-            println!("currencies={:?}", currencies);
+            println!("currencies={currencies:?}");
 
             let mut counts = BTreeMap::new();
             for transaction in &sample_data.transactions {
-                println!("transaction={:?}", transaction);
+                println!("transaction={transaction:?}");
                 assert!(all_users.contains(transaction.username.as_str()));
                 println!(
                     "username={}, amount={}",
@@ -1182,7 +1182,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 15 | 20 | 25 | 30 | 35 => {}
-                n => panic!("Generated '{}' which should not happen", n),
+                n => panic!("Generated '{n}' which should not happen"),
             }
         }
     }
@@ -1195,7 +1195,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 -10 | -5 | 0 | 5 => {}
-                n => panic!("Generated '{}' which should not happen", n),
+                n => panic!("Generated '{n}' which should not happen"),
             }
         }
     }
@@ -1215,7 +1215,7 @@ pub mod tests {
                 && (sample - -1.0).abs() > error_margin
                 && (sample - 0.5).abs() > error_margin
             {
-                panic!("Generated '{}' which should not happen", sample)
+                panic!("Generated '{sample}' which should not happen")
             }
         }
     }
@@ -1234,7 +1234,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 10 => {}
-                n => panic!("Generated '{}' which should not happen", n),
+                n => panic!("Generated '{n}' which should not happen"),
             }
         }
     }
@@ -1247,7 +1247,7 @@ pub mod tests {
         for _ in 1..100 {
             match dist.sample(&mut rng) {
                 10 => {}
-                n => panic!("Generated '{}' which should not happen", n),
+                n => panic!("Generated '{n}' which should not happen"),
             }
         }
     }

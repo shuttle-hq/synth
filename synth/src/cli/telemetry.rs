@@ -319,7 +319,6 @@ where
     }));
 
     let command_name = match &args {
-        Args::Init { .. } => "init",
         Args::Generate { .. } => "generate",
         Args::Import { .. } => "import",
         Args::Telemetry(TelemetryCommand::Enable) => "telemetry::enable",

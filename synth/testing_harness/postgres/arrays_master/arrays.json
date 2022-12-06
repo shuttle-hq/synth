@@ -223,7 +223,7 @@
             "type": "number",
             "range": {
               "low": 1,
-              "high": 10,
+              "high": 9,
               "step": 1
             },
             "subtype": "u64"

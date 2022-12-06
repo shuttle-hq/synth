@@ -51,7 +51,7 @@ pub fn bool_from_str<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<boo
     let as_str = String::deserialize(d)?;
     as_str
         .parse()
-        .map_err(|e| D::Error::custom(format!("not a boolean: {}", e)))
+        .map_err(|e| D::Error::custom(format!("not a boolean: {e}")))
 }
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct FieldRef {
@@ -108,9 +108,9 @@ impl std::fmt::Display for FieldRef {
             }
 
             if chunk.contains('.') {
-                write!(f, "\"{}\"", chunk)?
+                write!(f, "\"{chunk}\"")?
             } else {
-                write!(f, "{}", chunk)?
+                write!(f, "{chunk}")?
             }
         }
         Ok(())
@@ -364,7 +364,7 @@ pub mod tests {
     #[test]
     fn test_new() {
         let reference: FieldRef = "users.address.postcode".parse().unwrap();
-        println!("{:?}", reference);
+        println!("{reference:?}");
         assert_eq!("users".to_string(), *reference.collection());
         let mut fields = reference.iter_fields();
         assert_eq!("address", fields.next().unwrap());

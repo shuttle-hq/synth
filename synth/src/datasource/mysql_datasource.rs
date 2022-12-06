@@ -81,7 +81,11 @@ impl SqlxDataSource for MySqlDataSource {
     }
 
     fn get_deterministic_samples_query(&self, table_name: String) -> String {
-        format!("SELECT * FROM {} ORDER BY rand(0.5) LIMIT 10", table_name)
+        format!("SELECT * FROM {table_name} ORDER BY rand(0.5) LIMIT 10")
+    }
+
+    fn get_table_name_for_insert(&self, table_name: &str) -> String {
+        table_name.to_string()
     }
 
     fn decode_to_content(&self, column_info: &ColumnInfo) -> Result<Content> {

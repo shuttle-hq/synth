@@ -1,6 +1,6 @@
 -- Hospitals
 
-INSERT INTO public.hospitals (id,hospital_name,address,specialities) VALUES
+INSERT INTO public."Hospitals" (id,hospital_name,address,specialities) VALUES
 (1,'Garcia-Washington','194 Davis Ferry Suite 232\nJenningsmouth, NV 83701', '{"Neurology"}'),
 (2,'Cruz, Bowman and Martinez','1938 Key Wall\nMartinshire, OR 24041', '{"Cardiology"}'),
 (3,'Bishop, Hartman and Zuniga','574 Snyder Crossing\nPort Christineland, VT 37567', '{"Neurology"}'),

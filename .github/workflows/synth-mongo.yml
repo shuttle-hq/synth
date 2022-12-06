@@ -22,9 +22,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           docker run -p $PORT:27017 --name mongo-synth-harness -d mongo:latest
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2022-08-01
+      - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install --locked --debug --path=synth
       - run: ./e2e.sh test-generate
         working-directory: synth/testing_harness/mongodb

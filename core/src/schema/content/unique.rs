@@ -1,5 +1,4 @@
 #![allow(clippy::derivable_impls)]
-
 use crate::compile::Compile;
 use crate::graph::UniqueNode;
 use crate::{Compiler, Content, Graph};

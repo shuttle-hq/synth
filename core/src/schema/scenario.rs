@@ -57,7 +57,7 @@ impl Scenario {
         if !extra_collections.is_empty() {
             let extra_collections = extra_collections
                 .into_iter()
-                .map(|e| format!("- {}", e))
+                .map(|e| format!("- {e}"))
                 .collect::<Vec<String>>()
                 .join("\n");
 
