@@ -177,8 +177,7 @@ impl RandFaker {
             None => Err(anyhow!(
                 "Generator '{}' does not exist {}",
                 generator.as_ref(),
-                suggest_closest(FAKE_MAP.keys(), generator.as_ref())
-                    .unwrap_or_else(|| "".to_string())
+                suggest_closest(FAKE_MAP.keys(), generator.as_ref()).unwrap_or_default()
             )),
             Some(generator) => Ok(Self {
                 generator: *generator,
