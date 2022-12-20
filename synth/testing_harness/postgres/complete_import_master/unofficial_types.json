@@ -80,7 +80,7 @@
     },
     "id_serial2": {
       "type": "number",
-      "subtype": "i32",
+      "subtype": "i16",
       "range": {
         "low": 1,
         "high": 10
@@ -88,7 +88,7 @@
     },
     "id_smallserial": {
       "type": "number",
-      "subtype": "i32",
+      "subtype": "i16",
       "range": {
         "low": 1,
         "high": 10
