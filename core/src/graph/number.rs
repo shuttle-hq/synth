@@ -472,6 +472,12 @@ number_node!(
         F32Range<StandardFloatRangeStep<f32>> as range,
         F32Constant as constant,,,
     ) for f32,
+    RandomI16 (
+        I16Range<StandardIntRangeStep<u16, i32>> as range,
+        I32Constant as constant,
+        I32Categorical as cateogrical,
+        Incrementing as incrementing,
+    ) for i16,
 );
 
 #[cfg(test)]

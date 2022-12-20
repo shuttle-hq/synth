@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use super::Categorical;
 
-use crate::graph::number::{RandomF32, RandomI32, RandomU32};
+use crate::graph::number::{RandomF32, RandomI16, RandomI32, RandomU32};
 use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,
@@ -223,6 +223,10 @@ impl NumberContent {
 
     pub fn u64_default_id() -> Self {
         NumberContent::U64(number_content::U64::Id(Id::default()))
+    }
+
+    pub fn i16_default_id() -> Self {
+        NumberContent::I16(number_content::I16::Id(Id::default()))
     }
 
     pub fn i32_default_id() -> Self {

@@ -324,6 +324,17 @@ impl MergeStrategy<number_content::F32, f32> for OptionalMergeStrategy {
     }
 }
 
+impl MergeStrategy<number_content::I16, i16> for OptionalMergeStrategy {
+    fn try_merge(self, master: &mut number_content::I16, candidate: &i16) -> Result<()> {
+        match master {
+            number_content::I16::Range(range) => self.try_merge(range, candidate),
+            number_content::I16::Categorical(cat) => self.try_merge(cat, candidate),
+            number_content::I16::Constant(cst) => self.try_merge(cst, candidate),
+            I16::Id(id) => self.try_merge(id, candidate),
+        }
+    }
+}
+
 impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
     fn try_merge(self, master: &mut NumberContent, value: &Number) -> Result<()> {
         match master {
@@ -373,7 +384,7 @@ impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
                 }
             }
             NumberContent::I16(i16_content) => {
-                if let Some(n) = value.as_i16() {
+                if let Some(n) = value.as_i64() {
                     self.try_merge(i16_content, &(n as i16))
                 } else {
                     todo!()
