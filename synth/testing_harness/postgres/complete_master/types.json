@@ -65,6 +65,11 @@
       "subtype": "f64",
       "constant": 3.14159265358979323
     },
+    "i16_int2": {
+      "type": "number",
+      "subtype": "i16",
+      "constant": -16768
+    },
     "date_time_timestamptz": {
       "type": "date_time",
       "subtype": "date_time",
