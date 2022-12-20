@@ -196,7 +196,7 @@
           "low": -31803,
           "high": 31156
         },
-        "subtype": "i32"
+        "subtype": "i16"
       }
     },
     "timestamp_with_time_zone_array": {
@@ -295,7 +295,7 @@
           "low": 531,
           "high": 32717
         },
-        "subtype": "i32"
+        "subtype": "i16"
       }
     }
   }
