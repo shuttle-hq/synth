@@ -86,6 +86,14 @@
         "high": 3.141592653589793
       }
     },
+    "i16_int2": {
+     "type": "number",
+     "subtype": "i16",
+     "range": {
+       "high": -16768,
+       "low": -16768
+     }
+    },
     "date_time_timestamptz": {
       "type": "one_of",
       "variants": [
