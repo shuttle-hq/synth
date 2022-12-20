@@ -371,7 +371,7 @@ macro_rules! derive_hash {
     };
 }
 
-derive_hash!(i32, u32, i64, u64, f32, f64);
+derive_hash!(i16, i32, u32, i64, u64, f32, f64);
 
 number_content!(
     #[derive(PartialEq, Hash)]
