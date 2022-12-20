@@ -389,6 +389,13 @@ number_content!(
         Id(crate::schema::Id<u64>),
     },
     #[derive(PartialEq, Hash)]
+    i16[is_i16, default_i16_range] as I16 {
+        Range(RangeStep<i16>),
+        Categorical(Categorical<i16>),
+        Constant(i16),
+        Id(crate::schema::Id<i16>),
+    },
+    #[derive(PartialEq, Hash)]
     i32[is_i32, default_i32_range] as I32 {
         Range(RangeStep<i32>),
         Categorical(Categorical<i32>),
