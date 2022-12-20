@@ -209,6 +209,7 @@ impl NumberContent {
         match self {
             NumberContent::U32(_) => Ok(Self::u32_default_id()),
             NumberContent::U64(_) => Ok(Self::u64_default_id()),
+            NumberContent::I16(_) => Ok(Self::i16_default_id()),
             NumberContent::I32(_) => Ok(Self::i32_default_id()),
             NumberContent::I64(_) => Ok(Self::i64_default_id()),
             NumberContent::F64(_) => bail!("could not transmute f64 into id"),
@@ -488,6 +489,19 @@ impl Compile for NumberContent {
                     number_content::F32::Constant(val) => RandomF32::constant(*val),
                 };
                 random_f32.into()
+            }
+            Self::I16(i16_content) => {
+                let random_i16 = match i16_content {
+                    number_content::I16::Range(range) => RandomI16::range(*range)?,
+                    number_content::I16::Categorical(categorical_content) => {
+                        RandomI16::categorical(categorical_content.clone())
+                    }
+                    number_content::I16::Constant(val) => RandomI16::constant(*val),
+                    number_content::I16::Id(id) => {
+                        RandomI16::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
+                    }
+                };
+                random_i16.into()
             }
         };
         Ok(Graph::Number(number_node))

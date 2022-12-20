@@ -372,6 +372,13 @@ impl MergeStrategy<NumberContent, Number> for OptionalMergeStrategy {
                     todo!()
                 }
             }
+            NumberContent::I16(i16_content) => {
+                if let Some(n) = value.as_i16() {
+                    self.try_merge(i16_content, &(n as i16))
+                } else {
+                    todo!()
+                }
+            }
         }
     }
 }
