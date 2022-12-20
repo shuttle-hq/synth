@@ -51,6 +51,7 @@ macro_rules! any_range_int_impl {
     }
 }
 
+any_range_int_impl! { u16 }
 any_range_int_impl! { u32 }
 any_range_int_impl! { u64 }
 
@@ -475,8 +476,8 @@ number_node!(
     ) for f32,
     RandomI16 (
         I16Range<StandardIntRangeStep<u16, i32>> as range,
-        I32Constant as constant,
-        I32Categorical as cateogrical,
+        I16Constant as constant,
+        I16Categorical as categorical,
         Incrementing as incrementing,
     ) for i16,
 );
