@@ -15,7 +15,7 @@ use super::{
     Content, DateTimeContent, Id, NumberContent, NumberKindExt, ObjectContent, OneOfContent,
     RangeStep, StringContent, ValueKindExt,
 };
-use crate::graph::prelude::content::number_content::{I32, I64};
+use crate::graph::prelude::content::number_content::{I16, I32, I64};
 use crate::schema::UniqueContent;
 use num::Zero;
 

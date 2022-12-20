@@ -218,6 +218,7 @@ macro_rules! standard_int_range_step_impl {
     }
 }
 
+standard_int_range_step_impl! { i16, i32, u16}
 standard_int_range_step_impl! { i32, i64, u32 }
 standard_int_range_step_impl! { u32, u32, u32 }
 standard_int_range_step_impl! { i64, i128, u64 }
