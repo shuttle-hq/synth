@@ -135,7 +135,7 @@
           "low": -30856,
           "high": 32726
         },
-        "subtype": "i32"
+        "subtype": "i16"
       }
     },
     "int4_array": {
@@ -463,7 +463,7 @@
           "low": 341,
           "high": 32588
         },
-        "subtype": "i32"
+        "subtype": "i16"
       }
     },
     "uint4_array": {

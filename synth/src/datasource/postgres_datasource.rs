@@ -12,7 +12,7 @@ use sqlx::postgres::{PgColumn, PgPoolOptions, PgRow, PgTypeInfo, PgTypeKind};
 use sqlx::{Column, Executor, Pool, Postgres, Row, TypeInfo};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use synth_core::schema::number_content::{F32, F64, I32, I64};
+use synth_core::schema::number_content::{F32, F64, I16, I32, I64};
 use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValue, ChronoValueAndFormat, ChronoValueType,
     DateTimeContent, NumberContent, ObjectContent, RangeStep, RegexContent, StringContent, Uuid,
@@ -198,7 +198,7 @@ impl SqlxDataSource for PostgresDataSource {
                     RegexContent::pattern(pattern).context("pattern will always compile")?,
                 ))
             }
-            "int2" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
+            "int2" => Content::Number(NumberContent::I16(I16::Range(RangeStep::default()))),
             "int4" => Content::Number(NumberContent::I32(I32::Range(RangeStep::default()))),
             "int8" => Content::Number(NumberContent::I64(I64::Range(RangeStep::default()))),
             "float4" => Content::Number(NumberContent::F32(F32::Range(RangeStep::default()))),

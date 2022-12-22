@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use super::Categorical;
 
-use crate::graph::number::{RandomF32, RandomI32, RandomU32};
+use crate::graph::number::{RandomF32, RandomI16, RandomI32, RandomU32};
 use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,
@@ -209,6 +209,7 @@ impl NumberContent {
         match self {
             NumberContent::U32(_) => Ok(Self::u32_default_id()),
             NumberContent::U64(_) => Ok(Self::u64_default_id()),
+            NumberContent::I16(_) => Ok(Self::i16_default_id()),
             NumberContent::I32(_) => Ok(Self::i32_default_id()),
             NumberContent::I64(_) => Ok(Self::i64_default_id()),
             NumberContent::F64(_) => bail!("could not transmute f64 into id"),
@@ -222,6 +223,10 @@ impl NumberContent {
 
     pub fn u64_default_id() -> Self {
         NumberContent::U64(number_content::U64::Id(Id::default()))
+    }
+
+    pub fn i16_default_id() -> Self {
+        NumberContent::I16(number_content::I16::Id(Id::default()))
     }
 
     pub fn i32_default_id() -> Self {
@@ -371,7 +376,7 @@ macro_rules! derive_hash {
     };
 }
 
-derive_hash!(i32, u32, i64, u64, f32, f64);
+derive_hash!(i16, i32, u32, i64, u64, f32, f64);
 
 number_content!(
     #[derive(PartialEq, Hash)]
@@ -387,6 +392,13 @@ number_content!(
         Categorical(Categorical<u64>),
         Constant(u64),
         Id(crate::schema::Id<u64>),
+    },
+    #[derive(PartialEq, Hash)]
+    i16[is_i16, default_i16_range] as I16 {
+        Range(RangeStep<i16>),
+        Categorical(Categorical<i16>),
+        Constant(i16),
+        Id(crate::schema::Id<i16>),
     },
     #[derive(PartialEq, Hash)]
     i32[is_i32, default_i32_range] as I32 {
@@ -481,6 +493,19 @@ impl Compile for NumberContent {
                     number_content::F32::Constant(val) => RandomF32::constant(*val),
                 };
                 random_f32.into()
+            }
+            Self::I16(i16_content) => {
+                let random_i16 = match i16_content {
+                    number_content::I16::Range(range) => RandomI16::range(*range)?,
+                    number_content::I16::Categorical(categorical_content) => {
+                        RandomI16::categorical(categorical_content.clone())
+                    }
+                    number_content::I16::Constant(val) => RandomI16::constant(*val),
+                    number_content::I16::Id(id) => {
+                        RandomI16::incrementing(Incrementing::new_at(id.start_at.unwrap_or(1)))
+                    }
+                };
+                random_i16.into()
             }
         };
         Ok(Graph::Number(number_node))
