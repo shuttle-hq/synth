@@ -37,7 +37,7 @@ posthog-unofficial = { version = "0.2.3", optional = true }
 backtrace = { version = "0.3", optional = true }
 console = { version = "0.14.1", default-features = false, optional = true }
 
-colored = "2.0.0"
+owo-colors = "3"
 anyhow = "1.0.32"
 
 structopt = "0.3.18"
