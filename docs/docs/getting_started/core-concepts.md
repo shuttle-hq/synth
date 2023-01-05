@@ -128,32 +128,38 @@ is a little involved so there is a section devoted to just the [schema][schema].
 ## Scenarios
 Since [collections](#collections) correspond to closely to a database
 collection, we will have numerous use cases which only uses a subset of the
-collections in a namespace. This is were we will use scenarios.
+collections in a namespace or even only a subset of the fields in the
+collections. This is were we will use scenarios.
 
 Scenarios allow us to define a specific use case for the data in a namespace.
 So expanding from our `bank` example, we can create a scenario which only 
-generates data for users by having the following directory structure:
+generates data for a users `search-by-name` feature by having the following
+directory structure:
 
 ```
 └── bank/
     ├── scenarios
-    │   └── users-only.json
+    │   └── search-by-name.json
     ├── transactions.json
     └── users.json
 ```
 
-This creates a scenario called `users-only` by having a `[scenario-name].json` 
-inside the `scenarios/` directory inside our [namespace](#namespaces).
-The definition for this scenario will look as follow:
+This creates a scenario called `search-by-name` by having a
+`[scenario-name].json` inside the `scenarios/` directory inside our
+[namespace](#namespaces). The definition for this scenario will look as
+follow:
 
-```json synth-scenario[users-only.json]
+```json synth-scenario[search-by-name.json]
 {
-  "users": {}
+  "users": {
+    "username": {},
+    "id": {}
+  }
 }
 ```
 
-This definition explicitly marks the `users` collection for inclusion inside
-this scenario.
+This definition explicitly marks the `username` and `id` fields from the
+`users` collection for inclusion inside this scenario.
 
 ## Importing datasets
 
