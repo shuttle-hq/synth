@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 
+use ::uuid::Uuid;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use sqlx::mysql::MySqlTypeInfo;
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
@@ -23,7 +24,10 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated, UuidGen};
+pub use string::{Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated};
+
+pub mod uuid;
+pub use self::uuid::UuidNode;
 
 pub mod date_time;
 pub use date_time::{DateTimeNode, RandomDateTime};
@@ -161,6 +165,7 @@ derive_from! {
         Bool(bool),
         Number(Number),
         String(String),
+        Uuid(Uuid),
         DateTime(ChronoValueAndFormat),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
@@ -397,6 +402,7 @@ impl Value {
             Self::Object(_) => {
                 serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()
             }
+            Self::Uuid(uid) => uid.to_hyphenated().to_string(),
         }
     }
 
@@ -409,6 +415,7 @@ impl Value {
         // Based on https://docs.rs/sqlx-core/0.5.9/sqlx_core/postgres/types/index.html
         while let Some(c) = current {
             let pair = match c {
+                Value::Uuid(_) => (None, "uuid"),
                 Value::Null(_) => (None, "unknown"),
                 Value::Bool(_) => (None, "bool"),
                 Value::Number(num) => match *num {
@@ -553,6 +560,7 @@ impl Encode<'_, MySql> for Value {
                 buf,
             ),
             Value::Array(_arr) => todo!(), //<Vec<Value> as Encode<'_, MySql>>::encode_by_ref(arr, buf), //TODO special-case for u8 arrays?
+            Value::Uuid(u) => todo!(),
         }
     }
 
@@ -777,6 +785,7 @@ derive_generator!(
         DateTime(DateTimeNode),
         Object(ObjectNode),
         Array(ArrayNode),
+        Uuid(UuidNode),
         OneOf(OneOfNode),
         Series(SeriesNode),
         Unique(UniqueNode),

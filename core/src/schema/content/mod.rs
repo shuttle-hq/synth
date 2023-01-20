@@ -30,7 +30,7 @@ pub use number::{number_content, NumberContent, NumberContentKind, NumberKindExt
 mod string;
 pub use string::{
     ConstantContent, FakerContent, FakerContentArgument, FormatContent, RegexContent,
-    SlicedContent, StringContent, Uuid,
+    SlicedContent, StringContent,
 };
 
 mod date_time;

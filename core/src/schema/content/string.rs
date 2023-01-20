@@ -13,15 +13,11 @@ pub enum StringContent {
     Faker(FakerContent),
     Categorical(Categorical<String>),
     Serialized(SerializedContent),
-    Uuid(Uuid),
     Truncated(TruncatedContent),
     Sliced(SlicedContent),
     Format(FormatContent),
     Constant(ConstantContent),
 }
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
-pub struct Uuid;
 
 impl StringContent {
     pub fn kind(&self) -> String {
@@ -30,7 +26,6 @@ impl StringContent {
             Self::Faker(faker) => faker.kind(),
             Self::Categorical(_) => "categorical".to_string(),
             Self::Serialized(_) => "serialized".to_string(),
-            Self::Uuid(_) => "uuid".to_string(),
             Self::Truncated(_) => "truncated".to_string(),
             Self::Sliced(_) => "sliced".to_string(),
             Self::Constant(_) => "constant".to_string(),
@@ -352,7 +347,6 @@ impl Compile for StringContent {
             StringContent::Constant(ConstantContent(s)) => {
                 RandomString::from(Constant(s.into())).into()
             }
-            StringContent::Uuid(_uuid) => RandomString::from(UuidGen {}).into(),
         };
         Ok(Graph::String(string_node))
     }
