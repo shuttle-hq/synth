@@ -550,7 +550,6 @@ identified by the presence of a distinguishing field which can be
 
 - `"faker"`
 - `"pattern"`
-- `"uuid"`
 - [and a lot more][synth-string]...
 
 Since we are interested in generating email addresses, we will be using
