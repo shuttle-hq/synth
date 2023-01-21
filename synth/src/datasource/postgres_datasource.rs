@@ -233,7 +233,7 @@ impl SqlxDataSource for PostgresDataSource {
                 skip_when_null: false,
                 fields: BTreeMap::new(),
             }),
-            "uuid" => Content::String(StringContent::Uuid(Uuid)),
+            "uuid" => Content::Uuid(UuidContent {}),
             _ => {
                 if let Some(data_type) = column_info.data_type.strip_prefix('_') {
                     let mut column_info = column_info.clone();
