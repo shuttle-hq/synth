@@ -1,7 +1,5 @@
 use super::prelude::*;
 
-use serde::{Deserialize, Serialize};
-
 #[derive(Default, Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]

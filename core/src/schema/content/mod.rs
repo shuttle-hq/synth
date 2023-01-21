@@ -710,7 +710,7 @@ pub mod tests {
         pub static ref USER_SCHEMA: Content = schema!({
             "type": "object",
             "skip_when_null": true,
-            "unecessary_uuid": {
+            "_uuid": {
                 "type": "uuid",
                 "hidden": true
             },
