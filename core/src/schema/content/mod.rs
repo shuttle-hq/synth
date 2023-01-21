@@ -311,7 +311,7 @@ content! {
         Uuid(UuidContent) => None,
         Bool(BoolContent) => "missing a subtype. Try adding `constant`, or `frequency`",
         Number(NumberContent) => "missing a subtype. Try adding `constant`, `range`, or `id`",
-        String(StringContent) => "missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `uuid`, `truncated`, or `format`",
+        String(StringContent) => "missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `truncated`, or `format`",
         DateTime(DateTimeContent) => "missing a `format` field",
         Array(ArrayContent) => "missing a `length` and `content` field",
         Object(ObjectContent) => None,
