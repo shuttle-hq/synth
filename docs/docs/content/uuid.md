@@ -8,6 +8,6 @@ This generator has no parameters.
 
 ```json synth
 {
-  "type": "uuid",
+  "type": "uuid"
 }
 ```
