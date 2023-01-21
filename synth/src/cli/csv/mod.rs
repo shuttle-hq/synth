@@ -308,6 +308,7 @@ fn to_csv_string(collection_name: String, value: Value, namespace: &Namespace) -
 
 fn synth_val_to_csv_record(val: Value, content: &Content, namespace: &Namespace) -> Vec<String> {
     match val {
+        Value::Uuid(u) => vec![u.hyphenated().to_string()],
         Value::Null(_) => vec![String::new()],
         Value::Bool(b) => vec![b.to_string()],
         Value::Number(n) => {
