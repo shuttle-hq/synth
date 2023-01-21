@@ -79,7 +79,7 @@ activity:
 {
   "type": "object",
   "distinct_id": {
-      "type": "uuid",
+      "type": "uuid"
   },
   "command": {
       "type": "string",
