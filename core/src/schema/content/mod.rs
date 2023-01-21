@@ -711,8 +711,7 @@ pub mod tests {
             "type": "object",
             "skip_when_null": true,
             "_uuid": {
-                "type": "string",
-                "uuid": {},
+                "type": "uuid",
                 "hidden": true
             },
             "user_id": {
@@ -907,7 +906,7 @@ pub mod tests {
 
     #[test]
     #[should_panic(
-        expected = "`string` generator is missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `uuid`, `truncated`, or `format`"
+        expected = "`string` generator is missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `truncated`, or `format`"
     )]
     fn string_missing_subtype() {
         let _schema: Content = schema!({
