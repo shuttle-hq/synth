@@ -77,7 +77,6 @@ impl Scenario {
             .namespace
             .keys()
             .map(ToOwned::to_owned)
-            .into_iter()
             .filter(|c| !scenario_collections.contains(&c.as_str()))
             .collect();
 
