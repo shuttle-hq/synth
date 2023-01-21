@@ -711,8 +711,7 @@ pub mod tests {
             "type": "object",
             "skip_when_null": true,
             "_uuid": {
-                "type": "uuid",
-                "hidden": true
+                "type": "uuid"
             },
             "user_id": {
                 "type": "number",
