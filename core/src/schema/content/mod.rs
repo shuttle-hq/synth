@@ -502,6 +502,7 @@ impl Content {
 
     pub fn kind(&self) -> String {
         match self {
+            Content::Uuid(_) => "uuid".to_string(),
             Content::Null(_) => "null".to_string(),
             Content::Bool(content) => format!("bool::{}", content.kind()),
             Content::Number(content) => format!("number::{}", content.kind()),

@@ -7,14 +7,8 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct UuidContent {}
 
-impl UuidContent {
-    pub fn kind(&self) -> String {
-        "uuid".to_string()
-    }
-}
-
 impl Compile for UuidContent {
-    fn compile<'a, C: Compiler<'a>>(&'a self, mut compiler: C) -> Result<Graph> {
+    fn compile<'a, C: Compiler<'a>>(&'a self, mut _compiler: C) -> Result<Graph> {
         let node = UuidNode();
         Ok(Graph::Uuid(node))
     }
