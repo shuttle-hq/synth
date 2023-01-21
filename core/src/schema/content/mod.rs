@@ -44,6 +44,9 @@ pub use array::ArrayContent;
 mod object;
 pub use object::ObjectContent;
 
+mod uuid;
+pub use self::uuid::UuidContent;
+
 mod datasource;
 pub use datasource::DatasourceContent;
 
@@ -305,6 +308,7 @@ content! {
     labels: ContentLabels,
     variants: {
         Null(NullContent) => None,
+        Uuid(UuidContent) => None,
         Bool(BoolContent) => "missing a subtype. Try adding `constant`, or `frequency`",
         Number(NumberContent) => "missing a subtype. Try adding `constant`, `range`, or `id`",
         String(StringContent) => "missing a subtype. Try adding `pattern`, `faker`, `categorical`, `serialized`, `uuid`, `truncated`, or `format`",
@@ -632,6 +636,7 @@ impl Compile for Content {
             Self::Object(object_content) => object_content.compile(compiler),
             Self::Bool(bool_content) => bool_content.compile(compiler),
             Self::String(string_content) => string_content.compile(compiler),
+            Self::Uuid(uuid_content) => uuid_content.compile(compiler),
             Self::DateTime(date_time_content) => date_time_content.compile(compiler),
             Self::Number(number_content) => number_content.compile(compiler),
             Self::Array(array_content) => array_content.compile(compiler),

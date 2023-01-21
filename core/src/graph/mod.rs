@@ -402,7 +402,7 @@ impl Value {
             Self::Object(_) => {
                 serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()
             }
-            Self::Uuid(uid) => uid.to_hyphenated().to_string(),
+            Self::Uuid(uid) => uid.hyphenated().to_string(),
         }
     }
 
@@ -508,6 +508,7 @@ impl Encode<'_, Postgres> for Value {
                 json::synth_val_to_json(self.clone()),
                 buf,
             ),
+            Value::Uuid(u) => <Uuid as Encode<'_, Postgres>>::encode_by_ref(u, buf),
             Value::Array(_) => {
                 let s = self.to_postgres_string();
                 <String as Encode<'_, Postgres>>::encode_by_ref(&s, buf)
@@ -560,7 +561,7 @@ impl Encode<'_, MySql> for Value {
                 buf,
             ),
             Value::Array(_arr) => todo!(), //<Vec<Value> as Encode<'_, MySql>>::encode_by_ref(arr, buf), //TODO special-case for u8 arrays?
-            Value::Uuid(u) => todo!(),
+            Value::Uuid(u) => <Uuid as Encode<'_, MySql>>::encode_by_ref(u, buf),
         }
     }
 
@@ -591,6 +592,7 @@ impl Encode<'_, MySql> for Value {
                 ChronoValue::DateTime(_) => <DateTime<Utc> as Type<MySql>>::type_info(),
             },
             Value::String(_) => <String as Type<MySql>>::type_info(),
+            Value::Uuid(_) => <Uuid as Type<MySql>>::type_info(),
             Value::Object(_) => return None, //TODO: Use JSON here?
             Value::Array(elems) => {
                 if elems.is_empty() {

@@ -9,7 +9,7 @@ pub fn synth_val_to_json(val: Value) -> serde_json::Value {
         Value::Bool(b) => serde_json::Value::Bool(b),
         Value::Number(n) => serde_json::Value::Number(synth_num_to_json(n)),
         Value::String(s) => serde_json::Value::String(s),
-        Value::Uuid(u) => serde_json::Value::String(u.to_hyphenated().to_string()),
+        Value::Uuid(u) => serde_json::Value::String(u.hyphenated().to_string()),
         Value::DateTime(dt) => serde_json::Value::String(dt.format_to_string()),
         Value::Object(obj) => serde_json::Value::Object(synth_obj_to_json(obj)),
         Value::Array(arr) => serde_json::Value::Array(synth_arr_to_json(arr)),
