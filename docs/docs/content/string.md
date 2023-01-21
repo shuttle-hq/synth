@@ -25,8 +25,7 @@ This generator has no parameters.
 
 ```json synth
 {
-  "type": "string",
-  "uuid": {}
+  "type": "uuid",
 }
 ```
 
