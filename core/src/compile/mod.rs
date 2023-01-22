@@ -347,6 +347,15 @@ pub mod tests {
     }
 
     #[test]
+    fn compile_uuid() {
+        let generator = generator! ({
+            "type": "uuid"
+        });
+        let value = complete(generator).unwrap();
+        assert!(value.is_uuid())
+    }
+
+    #[test]
     fn compile_linear() {
         let generator = generator!({
             "type": "object",

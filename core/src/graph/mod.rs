@@ -633,6 +633,10 @@ impl Value {
         self.as_object().is_some()
     }
 
+    pub fn is_uuid(&self) -> bool {
+        self.as_uuid().is_some()
+    }
+
     pub fn is_array(&self) -> bool {
         self.as_array().is_some()
     }
@@ -679,6 +683,13 @@ impl Value {
         }
     }
 
+    pub fn as_uuid(&self) -> Option<&Uuid> {
+        match *self {
+            Value::Uuid(ref u) => Some(u),
+            _ => None,
+        }
+    }
+
     pub fn as_array(&self) -> Option<&Vec<Value>> {
         match *self {
             Value::Array(ref vec) => Some(vec),
@@ -720,6 +731,13 @@ impl Value {
     pub fn as_object_mut(&mut self) -> Option<&mut BTreeMap<String, Value>> {
         match *self {
             Value::Object(ref mut map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn as_uuid(&mut self) -> Option<&mut Uuid> {
+        match *self {
+            Value::Uuid(ref mut u) => Some(u),
             _ => None,
         }
     }
