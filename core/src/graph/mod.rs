@@ -735,7 +735,7 @@ impl Value {
         }
     }
 
-    pub fn as_uuid(&mut self) -> Option<&mut Uuid> {
+    pub fn as_uuid_mut(&mut self) -> Option<&mut Uuid> {
         match *self {
             Value::Uuid(ref mut u) => Some(u),
             _ => None,
