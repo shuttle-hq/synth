@@ -322,6 +322,7 @@ impl TryFrom<Value> for String {
             Value::String(str) => Ok(str),
             Value::Number(num) => Ok(num.to_string()),
             Value::DateTime(date) => Ok(date.format_to_string()),
+            Value::Uuid(u) => Ok(u.hyphenated().to_string()),
             otherwise => Err(failed_crate!(
                 target: Release,
                 "invalid type: expected 'String', found '{}'",
