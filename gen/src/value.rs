@@ -352,7 +352,7 @@ generate_special_enum!(
 
 generate_enum!(
     /// A custom tokenization for the serde data model.
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    #[derive(Clone, PartialEq, Eq, Hash)]
     pub enum Token {
         /// A token encoding serde primitive types.
         Primitive(Primitive),
