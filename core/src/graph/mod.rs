@@ -1201,7 +1201,7 @@ pub mod tests {
         let mut model = Graph::from_namespace(&USER_NAMESPACE).unwrap().aggregate();
         let mut rng = rand::thread_rng();
         let ser = OwnedSerializable::new(model.try_next_yielded(&mut rng).unwrap());
-        dbg!(ser.clone());
+        dbg!(ser);
         serde_json::to_string_pretty(&ser).unwrap();
     }
 
