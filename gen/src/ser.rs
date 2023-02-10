@@ -14,10 +14,9 @@ use std::cell::RefCell;
 use std::iter::Peekable;
 
 #[derive(Debug)]
-struct Hidden<I: Iterator>
+struct Hidden<I: Iterator>(RefCell<Peekable<I>>)
 where
-    I::Item: std::fmt::Debug,
-(RefCell<Peekable<I>>);
+    I::Item: std::fmt::Debug;
 
 impl<I> Hidden<I>
 where
