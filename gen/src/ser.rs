@@ -13,10 +13,7 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct};
 use std::cell::RefCell;
 use std::iter::Peekable;
 
-#[derive(Debug)]
 struct Hidden<I: Iterator>(RefCell<Peekable<I>>)
-where
-    I::Item: std::fmt::Debug;
 
 impl<I> Hidden<I>
 where
@@ -54,7 +51,6 @@ where
 
 /// A wrapper around an iterator of [`Token`](crate::value::Token)s
 /// that implement [`Serialize`](serde::Serialize).
-#[derive(Debug)]
 pub struct OwnedSerializable<I: Iterator> {
     inner: Hidden<I>,
 }
