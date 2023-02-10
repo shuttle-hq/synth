@@ -14,7 +14,7 @@ use std::cell::RefCell;
 use std::iter::Peekable;
 
 #[derive(Debug)]
-struct Hidden<I: Iterator>(RefCell<Peekable<I>>);
+struct Hidden<I: Iterator + std::fmt::Debug>(RefCell<Peekable<I>>);
 
 impl<I> Hidden<I>
 where
