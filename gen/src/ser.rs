@@ -13,7 +13,7 @@ use serde::ser::{SerializeMap, SerializeSeq, SerializeStruct};
 use std::cell::RefCell;
 use std::iter::Peekable;
 
-struct Hidden<I: Iterator>(RefCell<Peekable<I>>)
+struct Hidden<I: Iterator>(RefCell<Peekable<I>>);
 
 impl<I> Hidden<I>
 where
