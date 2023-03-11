@@ -334,6 +334,7 @@ fn infer_date_time_type(
 pub mod tests {
     use super::*;
     use crate::compile::NamespaceCompiler;
+    use chrono::naive::NaiveDate::{MAX, MIN};
 
     macro_rules! date_time_bounds_test_ok {
         ($begin:expr, $end:expr) => {
@@ -372,15 +373,15 @@ pub mod tests {
     #[test]
     fn date_time_compile() {
         date_time_bounds_test_ok!(None, None);
-        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate::MAX));
-        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate::MIN), None);
+        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(MAX)));
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN)), None);
         date_time_bounds_test_ok!(
-            Some(ChronoValue::NaiveDate::MIN),
-            Some(ChronoValue::NaiveDate::MAX)
+            Some(ChronoValue::NaiveDate(MIN)),
+            Some(ChronoValue::NaiveDate(MAX))
         );
 
-        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate::MAX), None);
-        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate::MIN));
+        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX)), None);
+        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN)));
     }
 
     #[test]
