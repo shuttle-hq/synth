@@ -385,8 +385,12 @@ pub mod tests {
 
     #[test]
     fn date_time_subtype_inference() {
-        let some_time = Some(ChronoValue::NaiveTime(NaiveTime::from_hms_opt(1, 2, 3).unwrap()));
-        let some_date = Some(ChronoValue::NaiveDate(NaiveDate::from_ymd_opt(2000, 1, 1).unwrap()));
+        let some_time = Some(ChronoValue::NaiveTime(
+            NaiveTime::from_hms_opt(1, 2, 3).unwrap(),
+        ));
+        let some_date = Some(ChronoValue::NaiveDate(
+            NaiveDate::from_ymd_opt(2000, 1, 1).unwrap(),
+        ));
 
         assert_eq!(
             infer_date_time_type(Some(ChronoValueType::DateTime), &None, &None).unwrap(),
