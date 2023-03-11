@@ -16,11 +16,6 @@
 </p>
 
 ------
-**NOTE**: ~~The Synth project is no longer being actively maintained. New issues and pull requests will likely not be addressed. If you're interested in taking over as a maintainer of the project reach out to `opensource@shuttle.rs`.~~
-
-The project now has new maintainers and a fresh start. Plenty of work to stabilize master, feel free to chip in.
-
-------
 
 Synth is a tool for generating realistic data using a declarative data model. Synth is database agnostic and can scale to millions of rows of data.
 
