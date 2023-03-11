@@ -87,11 +87,11 @@ impl ChronoValue {
     }
 
     pub fn now() -> DateTime<FixedOffset> {
-        FixedOffset::east(0).from_utc_datetime(&Utc::now().naive_local())
+        FixedOffset::east_opt(0).unwrap().from_utc_datetime(&Utc::now().naive_local())
     }
 
     pub fn origin() -> DateTime<FixedOffset> {
-        FixedOffset::east(0).ymd(1970, 1, 1).and_hms(0, 0, 0)
+        FixedOffset::east_opt(0).unwrap().with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap()
     }
 
     pub fn default_of(default: DateTime<FixedOffset>, type_: ChronoValueType) -> Self {
