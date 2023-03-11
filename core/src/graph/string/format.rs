@@ -166,8 +166,8 @@ pub mod tests {
             named: HashMap::from([(
                 "date".to_string(),
                 Graph::DateTime(DateTimeNode::from(RandomDateTime::new(
-                    ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4))
-                        ..ChronoValue::NaiveDate(NaiveDate::from_ymd(2021, 10, 4)),
+                    ChronoValue::NaiveDate(NaiveDate::from_ymd_opt(2021, 10, 4).unwrap())
+                        ..ChronoValue::NaiveDate(NaiveDate::from_ymd_opt(2021, 10, 4).unwrap()),
                     "%Y-%m-%d",
                 ))),
             )]),

@@ -334,7 +334,6 @@ fn infer_date_time_type(
 pub mod tests {
     use super::*;
     use crate::compile::NamespaceCompiler;
-    use chrono::naive::{MAX_DATE, MIN_DATE};
 
     macro_rules! date_time_bounds_test_ok {
         ($begin:expr, $end:expr) => {
@@ -373,21 +372,21 @@ pub mod tests {
     #[test]
     fn date_time_compile() {
         date_time_bounds_test_ok!(None, None);
-        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(MAX_DATE)));
-        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), None);
+        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate::MAX));
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate::MIN), None);
         date_time_bounds_test_ok!(
-            Some(ChronoValue::NaiveDate(MIN_DATE)),
-            Some(ChronoValue::NaiveDate(MAX_DATE))
+            Some(ChronoValue::NaiveDate::MIN),
+            Some(ChronoValue::NaiveDate::MAX)
         );
 
-        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX_DATE)), None);
-        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN_DATE)));
+        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate::MAX), None);
+        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate::MIN));
     }
 
     #[test]
     fn date_time_subtype_inference() {
-        let some_time = Some(ChronoValue::NaiveTime(NaiveTime::from_hms(1, 2, 3)));
-        let some_date = Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(2000, 1, 1)));
+        let some_time = Some(ChronoValue::NaiveTime(NaiveTime::from_hms_opt(1, 2, 3).unwrap()));
+        let some_date = Some(ChronoValue::NaiveDate(NaiveDate::from_ymd_opt(2000, 1, 1).unwrap()));
 
         assert_eq!(
             infer_date_time_type(Some(ChronoValueType::DateTime), &None, &None).unwrap(),

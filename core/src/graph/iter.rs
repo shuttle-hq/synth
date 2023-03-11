@@ -29,7 +29,7 @@ mod tests {
 
     #[test]
     fn generator() {
-        let iter = (1..2).into_iter().map(|i| Value::Number(i.into()));
+        let iter = (1..2).map(|i| Value::Number(i.into()));
 
         let mut graph = Graph::Iter(IterNode {
             iter: Box::new(iter),
@@ -49,7 +49,7 @@ mod tests {
 
     #[test]
     fn generator_cycle() {
-        let iter = (1..2).into_iter().map(|i| Value::Number(i.into())).cycle();
+        let iter = (1..2).map(|i| Value::Number(i.into())).cycle();
 
         let mut graph = Graph::Iter(IterNode {
             iter: Box::new(iter),
