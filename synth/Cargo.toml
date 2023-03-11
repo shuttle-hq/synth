@@ -46,7 +46,7 @@ log = "0.4.11"
 env_logger = "0.7.1"
 
 num_cpus = "1.0"
-sysinfo = "0.15.2"
+sysinfo = "0.28.2"
 strsim = "0.10.0"
 
 async-std = { version = "1.6.4", features = [ "attributes", "unstable" ] }
