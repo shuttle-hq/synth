@@ -87,11 +87,16 @@ impl ChronoValue {
     }
 
     pub fn now() -> DateTime<FixedOffset> {
-        FixedOffset::east(0).from_utc_datetime(&Utc::now().naive_local())
+        FixedOffset::east_opt(0)
+            .unwrap()
+            .from_utc_datetime(&Utc::now().naive_local())
     }
 
     pub fn origin() -> DateTime<FixedOffset> {
-        FixedOffset::east(0).ymd(1970, 1, 1).and_hms(0, 0, 0)
+        FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(1970, 1, 1, 0, 0, 0)
+            .unwrap()
     }
 
     pub fn default_of(default: DateTime<FixedOffset>, type_: ChronoValueType) -> Self {
@@ -329,7 +334,7 @@ fn infer_date_time_type(
 pub mod tests {
     use super::*;
     use crate::compile::NamespaceCompiler;
-    use chrono::naive::{MAX_DATE, MIN_DATE};
+    use chrono::naive::NaiveDate;
 
     macro_rules! date_time_bounds_test_ok {
         ($begin:expr, $end:expr) => {
@@ -368,21 +373,25 @@ pub mod tests {
     #[test]
     fn date_time_compile() {
         date_time_bounds_test_ok!(None, None);
-        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(MAX_DATE)));
-        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(MIN_DATE)), None);
+        date_time_bounds_test_ok!(None, Some(ChronoValue::NaiveDate(NaiveDate::MAX)));
+        date_time_bounds_test_ok!(Some(ChronoValue::NaiveDate(NaiveDate::MIN)), None);
         date_time_bounds_test_ok!(
-            Some(ChronoValue::NaiveDate(MIN_DATE)),
-            Some(ChronoValue::NaiveDate(MAX_DATE))
+            Some(ChronoValue::NaiveDate(NaiveDate::MIN)),
+            Some(ChronoValue::NaiveDate(NaiveDate::MAX))
         );
 
-        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(MAX_DATE)), None);
-        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(MIN_DATE)));
+        date_time_bounds_test_err!(Some(ChronoValue::NaiveDate(NaiveDate::MAX)), None);
+        date_time_bounds_test_err!(None, Some(ChronoValue::NaiveDate(NaiveDate::MIN)));
     }
 
     #[test]
     fn date_time_subtype_inference() {
-        let some_time = Some(ChronoValue::NaiveTime(NaiveTime::from_hms(1, 2, 3)));
-        let some_date = Some(ChronoValue::NaiveDate(NaiveDate::from_ymd(2000, 1, 1)));
+        let some_time = Some(ChronoValue::NaiveTime(
+            NaiveTime::from_hms_opt(1, 2, 3).unwrap(),
+        ));
+        let some_date = Some(ChronoValue::NaiveDate(
+            NaiveDate::from_ymd_opt(2000, 1, 1).unwrap(),
+        ));
 
         assert_eq!(
             infer_date_time_type(Some(ChronoValueType::DateTime), &None, &None).unwrap(),

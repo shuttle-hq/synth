@@ -55,7 +55,7 @@ pub mod splash {
             let arch = std::env::consts::ARCH.to_string();
 
             let system = System::new_all();
-            let mem = system.get_total_memory();
+            let mem = system.total_memory();
 
             Ok(Self {
                 synth_ver,

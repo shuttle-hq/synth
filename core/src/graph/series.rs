@@ -247,7 +247,7 @@ impl Generator for ZipSeries {
     type Return = Never;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        let (mut earliest_index, mut earliest) = (0, &chrono::naive::MAX_DATETIME);
+        let (mut earliest_index, mut earliest) = (0, &chrono::naive::NaiveDateTime::MAX);
         for (child_index, child) in self.children.iter_mut().enumerate() {
             let next = child.peek_next(rng).as_ref().into_yielded().unwrap();
             if next < earliest {
@@ -295,7 +295,7 @@ impl Generator for AutoCorrelatedSeries {
         }
 
         self.v
-            .push(NaiveDateTime::from_timestamp(current / 1000, 0));
+            .push(NaiveDateTime::from_timestamp_opt(current / 1000, 0).unwrap());
 
         GeneratorState::Yielded(*self.v.last().unwrap())
     }
