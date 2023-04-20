@@ -8,7 +8,7 @@ pub struct UuidContent {}
 
 impl Compile for UuidContent {
     fn compile<'a, C: Compiler<'a>>(&'a self, mut _compiler: C) -> Result<Graph> {
-        let random_uuid = RandomUuid{ };
+        let random_uuid = RandomUuid {};
         Ok(Graph::Uuid(random_uuid.into()))
     }
 }

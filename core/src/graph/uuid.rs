@@ -9,12 +9,8 @@ derive_generator! {
 
 impl From<RandomUuid> for UuidNode {
     fn from(value: RandomUuid) -> Self {
-        Self(
-            value
-                .into_token()
-                .map_complete(value_from_ok::<Uuid>),
-            )
-        }
+        Self(value.into_token().map_complete(value_from_ok::<Uuid>))
+    }
 }
 
 pub struct RandomUuid {}
