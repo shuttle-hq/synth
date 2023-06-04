@@ -238,14 +238,30 @@ fn csv_str_to_value(s: &str) -> serde_json::Value {
         serde_json::Value::Bool(true)
     } else if s == "false" {
         serde_json::Value::Bool(false)
-    } else if let Ok(unsigned) = s.trim().parse::<u64>() {
-        serde_json::Value::Number(serde_json::Number::from(unsigned))
-    } else if let Ok(signed) = s.trim().parse::<i64>() {
-        serde_json::Value::Number(serde_json::Number::from(signed))
-    } else if let Ok(float) = s.trim().parse::<f64>() {
-        serde_json::Value::Number(serde_json::Number::from_f64(float).unwrap())
+    } else if let Some(number) = csv_str_to_json_number(s) {
+        number
     } else {
         serde_json::Value::String(s.to_string())
+    }
+}
+
+fn csv_str_to_json_number(s: &str) -> Option<serde_json::Value> {
+    let trimmed = s.trim();
+
+    if let Ok(unsigned) = trimmed.parse::<u64>() {
+        Some(serde_json::Value::Number(serde_json::Number::from(
+            unsigned,
+        )))
+    } else if let Ok(signed) = trimmed.parse::<i64>() {
+        Some(serde_json::Value::Number(serde_json::Number::from(signed)))
+    } else {
+        // Certain float values, such as NaN and (+/-)Inf are not valid JSON Numbers,
+        // so ensure that we handle failures here
+        trimmed
+            .parse::<f64>()
+            .ok()
+            .and_then(serde_json::Number::from_f64)
+            .map(serde_json::Value::Number)
     }
 }
 
@@ -550,5 +566,44 @@ mod tests {
         assert_eq!(csv_str_to_value("64"), serde_json::json!(64));
         assert_eq!(csv_str_to_value("-64"), serde_json::json!(-64));
         assert_eq!(csv_str_to_value("64.1"), serde_json::json!(64.1));
+
+        assert_eq!(
+            csv_str_to_value("Nan"),
+            serde_json::Value::String("Nan".to_string())
+        );
+        assert_eq!(
+            csv_str_to_value("NaN"),
+            serde_json::Value::String("NaN".to_string())
+        );
+        assert_eq!(
+            csv_str_to_value("Inf"),
+            serde_json::Value::String("Inf".to_string())
+        );
+        assert_eq!(
+            csv_str_to_value("-Inf"),
+            serde_json::Value::String("-Inf".to_string())
+        );
+    }
+
+    #[test]
+    fn test_csv_str_to_json_number() {
+        assert_eq!(csv_str_to_json_number("64"), Some(serde_json::json!(64)));
+        assert_eq!(csv_str_to_json_number("-64"), Some(serde_json::json!(-64)));
+        assert_eq!(
+            csv_str_to_json_number("64.1"),
+            Some(serde_json::json!(64.1))
+        );
+
+        assert_eq!(csv_str_to_json_number("0"), Some(serde_json::json!(0)));
+        assert_eq!(csv_str_to_json_number("-0"), Some(serde_json::json!(0)));
+
+        assert_eq!(csv_str_to_json_number("true"), None);
+        assert_eq!(csv_str_to_json_number("false"), None);
+        assert_eq!(csv_str_to_json_number(""), None);
+
+        assert_eq!(csv_str_to_json_number("Nan"), None);
+        assert_eq!(csv_str_to_json_number("NaN"), None);
+        assert_eq!(csv_str_to_json_number("Inf"), None);
+        assert_eq!(csv_str_to_json_number("-Inf"), None);
     }
 }
