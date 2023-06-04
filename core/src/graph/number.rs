@@ -495,6 +495,7 @@ pub mod test {
             overflowed: false,
         };
 
+        #[allow(clippy::default_constructed_unit_structs)]
         let mut rng = OsRng::default();
 
         for i in 0..255 {

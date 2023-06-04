@@ -531,9 +531,7 @@ impl RangeStep<u64> {
 impl Categorical<u64> {
     pub fn upcast(self, to: NumberContentKind) -> Result<NumberContent> {
         match to {
-            NumberContentKind::U64 => {
-                Ok(number_content::U64::Categorical(self).into())
-            }
+            NumberContentKind::U64 => Ok(number_content::U64::Categorical(self).into()),
             NumberContentKind::I64 => {
                 let cast = Categorical {
                     seen: self
@@ -543,12 +541,15 @@ impl Categorical<u64> {
                             i64::try_from(k)
                                 .map(|k_cast| (k_cast, v))
                                 .map_err(|err| err.into())
-                        }).collect::<Result<_>>()?,
+                        })
+                        .collect::<Result<_>>()?,
                     total: self.total,
                 };
                 Ok(number_content::I64::Categorical(cast).into())
             }
-            NumberContentKind::F64 => Err(failed!(target: Release, "cannot upcast categorical subtypes to accept floats; try changing this another numerical subtype manually"))
+            NumberContentKind::F64 => Err(
+                failed!(target: Release, "cannot upcast categorical subtypes to accept floats; try changing this another numerical subtype manually"),
+            ),
         }
     }
 }
@@ -611,7 +612,9 @@ impl Categorical<i64> {
                 Err(failed!(target: Release, "cannot downcast numerical subtypes"))
             }
             NumberContentKind::I64 => Ok(number_content::I64::Categorical(self).into()),
-            NumberContentKind::F64 => Err(failed!(target: Release, "cannot upcast categorical subtypes to accept floats; try changing this another numerical subtype manually")),
+            NumberContentKind::F64 => Err(
+                failed!(target: Release, "cannot upcast categorical subtypes to accept floats; try changing this another numerical subtype manually"),
+            ),
         }
     }
 }
