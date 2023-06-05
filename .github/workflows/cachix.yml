@@ -16,7 +16,7 @@ jobs:
       - name: Install nix
         uses: cachix/install-nix-action@v16
       - name: Setup cachix
-        uses: cachix/cachix-action@v10
+        uses: cachix/cachix-action@v12
         with:
           name: getsynth
           authToken: ${{ secrets.CACHIX_TOKEN }}
