@@ -21,32 +21,37 @@ impl OptionaliseApi for Namespace {
     fn optionalise(&mut self, optionalise: Optionalise) -> Result<()> {
         let target = optionalise.at;
         match target.parent() {
-            Some(parent) => {
-                match self.get_s_node_mut(&parent)? {
-                    Content::Object(object_content) |
-                    Content::Array(ArrayContent { content: box Content::Object(object_content), .. }) => {
-                        let fc = object_content.get_mut(&target.last())?;
-                        let owned = std::mem::replace(fc, Content::null());
-                        *fc = if optionalise.optional {
-                            owned.into_nullable()
-                        } else if owned.is_nullable() {
-                            match owned {
-                                Content::OneOf(OneOfContent { variants }) => {
-                                    variants.into_iter().map(|vc| *vc.content).find(|v| !v.is_null()).unwrap()
-                                }
-                                _ => unreachable!()
-                            }
-                        } else {
-                            owned
-                        };
-                        Ok(())
-                    }
-                    otherwise => Err(failed!(target: Release, "Only fields of objects can be optional. But the reference '{}' (whose parent is '{}') is contained in a content node of type '{}'.", target, parent, otherwise.kind()))
+            Some(parent) => match self.get_s_node_mut(&parent)? {
+                Content::Object(object_content)
+                | Content::Array(ArrayContent {
+                    content: box Content::Object(object_content),
+                    ..
+                }) => {
+                    let fc = object_content.get_mut(&target.last())?;
+                    let owned = std::mem::replace(fc, Content::null());
+                    *fc = if optionalise.optional {
+                        owned.into_nullable()
+                    } else if owned.is_nullable() {
+                        match owned {
+                            Content::OneOf(OneOfContent { variants }) => variants
+                                .into_iter()
+                                .map(|vc| *vc.content)
+                                .find(|v| !v.is_null())
+                                .unwrap(),
+                            _ => unreachable!(),
+                        }
+                    } else {
+                        owned
+                    };
+                    Ok(())
                 }
-            }
-            None => {
-                Err(failed!(target: Release, "Field '{}' is top-level (meaning it just references a collection). Top-level fields cannot be made optional.", target))
-            }
+                otherwise => Err(
+                    failed!(target: Release, "Only fields of objects can be optional. But the reference '{}' (whose parent is '{}') is contained in a content node of type '{}'.", target, parent, otherwise.kind()),
+                ),
+            },
+            None => Err(
+                failed!(target: Release, "Field '{}' is top-level (meaning it just references a collection). Top-level fields cannot be made optional.", target),
+            ),
         }
     }
 }

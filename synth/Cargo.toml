@@ -42,7 +42,7 @@ anyhow = "1.0.32"
 
 structopt = "0.3.18"
 
-log = "0.4.11"
+log = "0.4.18"
 env_logger = "0.7.1"
 
 num_cpus = "1.0"
