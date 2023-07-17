@@ -34,16 +34,6 @@ const Hero = () => {
                                 READ THE DOCS
                             </AccentButton>
                         </div>
-                        <div>
-                            <div className="text-sm font-medium text-gray-400">Backed by</div>
-                            <div className="pt-3 flex">
-                                <a href="https://www.ycombinator.com/">
-                                    <img alt="YCombinator"
-                                         src={`${basePath}/images/yc--grey.png`}
-                                         className="h-16 w-16 mr-6"/>
-                                </a>
-                            </div>
-                        </div>
                     </div>
                     <img src={`${basePath}/images/synth-small-window.svg`} className="m-auto w-"/>
                 </div>
