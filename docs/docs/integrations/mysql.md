@@ -83,7 +83,7 @@ table formatter: https://codebeautify.org/markdown-formatter
 ### Example Import Command
 
 ```bash
-synth import --from mysql://user:pass@localhost:5432/postgres --schema
+synth import --from mysql://user:pass@localhost:3306/mysql --schema
 main my_namespace
 ```
 
@@ -102,6 +102,6 @@ data and inserting it in the right order such that no constraints are violated.
 ### Example Generation Command
 
 ```bash
-synth generate --to mysql://user:pass@localhost:5432/ --schema
+synth generate --to mysql://user:pass@localhost:3306/ --schema
 main my_namespace
 ```
