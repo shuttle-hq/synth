@@ -9,6 +9,7 @@ Synth has the following types of generators:
 * [null](null) generates as many nulls as you ever want
 * [bool](bool) generates `true` or `false`, either constant or
 following a given percentage
+* [uuid](uuid) generates UUIDs
 * [number](number) generates ranges, distributions or series of
 [integer or floating-point](number#subtype) numbers
 * [series](series) generates streams of events (e.g. for logs)
@@ -20,8 +21,6 @@ following a given percentage
 various classes of string:
   * [pattern](string#pattern) takes a regular expression and
   generates matching strings
-  * [uuid](string#uuid) generates hyphenated UUIDs
-  optionally with time zone
   * [faker](string#faker) has a large number of generators for names,
   contact information, credit card numbers, sentences, and much more
   * [format](string#format) combines multiple generators to one

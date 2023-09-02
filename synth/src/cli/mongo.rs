@@ -211,6 +211,7 @@ impl MongoExportStrategy {
 
 fn value_to_bson(value: Value) -> Bson {
     match value {
+        Value::Uuid(u) => Bson::String(u.hyphenated().to_string()),
         Value::Null(_) => Bson::Null,
         Value::Bool(b) => Bson::Boolean(b),
         Value::Number(n) => number_to_bson(n),

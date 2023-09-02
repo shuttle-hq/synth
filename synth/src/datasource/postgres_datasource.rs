@@ -15,7 +15,8 @@ use std::convert::TryFrom;
 use synth_core::schema::number_content::{F32, F64, I16, I32, I64};
 use synth_core::schema::{
     ArrayContent, BoolContent, Categorical, ChronoValue, ChronoValueAndFormat, ChronoValueType,
-    DateTimeContent, NumberContent, ObjectContent, RangeStep, RegexContent, StringContent, Uuid,
+    DateTimeContent, NumberContent, ObjectContent, RangeStep, RegexContent, StringContent,
+    UuidContent,
 };
 use synth_core::{Content, Value};
 
@@ -232,7 +233,7 @@ impl SqlxDataSource for PostgresDataSource {
                 skip_when_null: false,
                 fields: BTreeMap::new(),
             }),
-            "uuid" => Content::String(StringContent::Uuid(Uuid)),
+            "uuid" => Content::Uuid(UuidContent {}),
             _ => {
                 if let Some(data_type) = column_info.data_type.strip_prefix('_') {
                     let mut column_info = column_info.clone();

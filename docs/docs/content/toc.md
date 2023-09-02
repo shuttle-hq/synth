@@ -22,6 +22,7 @@ another collection
 * [null](/content/null) generates as many nulls as you ever want
 * [bool](/content/bool) generates `true` or `false`, either constant or
 following a given percentage
+* [uuid](/content/uuid) generates UUIDs
 * [number](/content/number) generates ranges, distributions or series of
 [integer or floating-point](/content/number#subtype) numbers
 * [series](/content/series) generates streams of events (e.g. for logs)
@@ -33,8 +34,6 @@ following a given percentage
 various classes of string:
   * [pattern](/content/string#pattern) takes a regular expression and
   generates matching strings
-  * [uuid](/content/string#uuid) generates hyphenated UUIDs
-  optionally with time zone
   * [faker](/content/string#faker) has a large number of generators for names,
   contact information, credit card numbers, sentences, and much more
   * [format](/content/string#format) combines multiple generators to one

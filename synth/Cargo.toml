@@ -46,7 +46,7 @@ log = "0.4.18"
 env_logger = "0.7.1"
 
 num_cpus = "1.0"
-sysinfo = "0.28.2"
+sysinfo = "0.28.4"
 strsim = "0.10.0"
 
 async-std = { version = "1.6.4", features = [ "attributes", "unstable" ] }
@@ -67,7 +67,7 @@ rust_decimal = "1.10.3"
 indicatif = "0.15.0"
 
 dirs = "3.0.2"
-mongodb = {version = "2.0.0-beta.3", features = ["sync", "bson-chrono-0_4"] , default-features = false}
+mongodb = {version = "2.4.0", features = ["sync", "bson-chrono-0_4"] , default-features = false}
 
 sqlx = { version = "0.6", features = ["postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono"] }
 

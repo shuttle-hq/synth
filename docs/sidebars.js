@@ -4,7 +4,7 @@ module.exports = {
         "Examples": ['examples/bank'],
         "Tutorials": ['tutorials/creating-logs-with-synth'],
         "Integrations": ['integrations/index', 'integrations/postgres', 'integrations/mysql'],
-        "Generators": ['content/index', 'content/modifiers', 'content/null', 'content/bool', 'content/number', 'content/string', 'content/date-time', 'content/object', 'content/array', 'content/one-of', 'content/same-as', 'content/unique', 'content/series', 'content/datasource'],
+        "Generators": ['content/index', 'content/modifiers', 'content/null', 'content/bool', 'content/uuid', 'content/number', 'content/string', 'content/date-time', 'content/object', 'content/array', 'content/one-of', 'content/same-as', 'content/unique', 'content/series', 'content/datasource'],
         "Other": ['other/telemetry']
     },
 };

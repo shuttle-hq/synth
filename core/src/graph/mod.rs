@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 
+use ::uuid::Uuid;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use sqlx::mysql::MySqlTypeInfo;
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
@@ -23,7 +24,10 @@ pub mod null;
 pub use null::NullNode;
 
 pub mod string;
-pub use string::{Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated, UuidGen};
+pub use string::{Format, FormatArgs, RandFaker, RandomString, StringNode, Truncated};
+
+pub mod uuid;
+pub use self::uuid::UuidNode;
 
 pub mod date_time;
 pub use date_time::{DateTimeNode, RandomDateTime};
@@ -161,6 +165,7 @@ derive_from! {
         Bool(bool),
         Number(Number),
         String(String),
+        Uuid(Uuid),
         DateTime(ChronoValueAndFormat),
         Object(BTreeMap<String, Value>),
         Array(Vec<Value>),
@@ -317,6 +322,7 @@ impl TryFrom<Value> for String {
             Value::String(str) => Ok(str),
             Value::Number(num) => Ok(num.to_string()),
             Value::DateTime(date) => Ok(date.format_to_string()),
+            Value::Uuid(u) => Ok(u.hyphenated().to_string()),
             otherwise => Err(failed_crate!(
                 target: Release,
                 "invalid type: expected 'String', found '{}'",
@@ -397,6 +403,7 @@ impl Value {
             Self::Object(_) => {
                 serde_json::to_string(&json::synth_val_to_json(self.clone())).unwrap()
             }
+            Self::Uuid(uid) => uid.hyphenated().to_string(),
         }
     }
 
@@ -409,6 +416,7 @@ impl Value {
         // Based on https://docs.rs/sqlx-core/0.5.9/sqlx_core/postgres/types/index.html
         while let Some(c) = current {
             let pair = match c {
+                Value::Uuid(_) => (None, "uuid"),
                 Value::Null(_) => (None, "unknown"),
                 Value::Bool(_) => (None, "bool"),
                 Value::Number(num) => match *num {
@@ -501,6 +509,7 @@ impl Encode<'_, Postgres> for Value {
                 json::synth_val_to_json(self.clone()),
                 buf,
             ),
+            Value::Uuid(u) => <Uuid as Encode<'_, Postgres>>::encode_by_ref(u, buf),
             Value::Array(_) => {
                 let s = self.to_postgres_string();
                 <String as Encode<'_, Postgres>>::encode_by_ref(&s, buf)
@@ -553,6 +562,7 @@ impl Encode<'_, MySql> for Value {
                 buf,
             ),
             Value::Array(_arr) => todo!(), //<Vec<Value> as Encode<'_, MySql>>::encode_by_ref(arr, buf), //TODO special-case for u8 arrays?
+            Value::Uuid(u) => <Uuid as Encode<'_, MySql>>::encode_by_ref(u, buf),
         }
     }
 
@@ -583,6 +593,7 @@ impl Encode<'_, MySql> for Value {
                 ChronoValue::DateTime(_) => <DateTime<Utc> as Type<MySql>>::type_info(),
             },
             Value::String(_) => <String as Type<MySql>>::type_info(),
+            Value::Uuid(_) => <Uuid as Type<MySql>>::type_info(),
             Value::Object(_) => return None, //TODO: Use JSON here?
             Value::Array(elems) => {
                 if elems.is_empty() {
@@ -621,6 +632,10 @@ impl Value {
 
     pub fn is_object(&self) -> bool {
         self.as_object().is_some()
+    }
+
+    pub fn is_uuid(&self) -> bool {
+        self.as_uuid().is_some()
     }
 
     pub fn is_array(&self) -> bool {
@@ -669,6 +684,13 @@ impl Value {
         }
     }
 
+    pub fn as_uuid(&self) -> Option<&Uuid> {
+        match *self {
+            Value::Uuid(ref u) => Some(u),
+            _ => None,
+        }
+    }
+
     pub fn as_array(&self) -> Option<&Vec<Value>> {
         match *self {
             Value::Array(ref vec) => Some(vec),
@@ -710,6 +732,13 @@ impl Value {
     pub fn as_object_mut(&mut self) -> Option<&mut BTreeMap<String, Value>> {
         match *self {
             Value::Object(ref mut map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn as_uuid_mut(&mut self) -> Option<&mut Uuid> {
+        match *self {
+            Value::Uuid(ref mut u) => Some(u),
             _ => None,
         }
     }
@@ -777,6 +806,7 @@ derive_generator!(
         DateTime(DateTimeNode),
         Object(ObjectNode),
         Array(ArrayNode),
+        Uuid(UuidNode),
         OneOf(OneOfNode),
         Series(SeriesNode),
         Unique(UniqueNode),

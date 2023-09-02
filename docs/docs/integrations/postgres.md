@@ -73,7 +73,7 @@ table formatter: https://codebeautify.org/markdown-formatter
 | timestamptz     | [date_time](../content/date-time)                |
 | timestamp       | [naive_date_time](../content/date-time)          |
 | date            | [naive_date](../content/date-time)               |
-| uuid            | [string](../content/string#uuid)                        |
+| uuid            | [uuid](../content/uuid)                        |
 
 ### Example Import
 
