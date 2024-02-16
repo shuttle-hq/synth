@@ -33,8 +33,8 @@ jobs:
       mariadb:
         image: mariadb
         env:
-          MYSQL_ROOT_PASSWORD: mysecretpassword
-          MYSQL_DATABASE: test_db
+          MARIADB_ROOT_PASSWORD: mysecretpassword
+          MARIADB_DATABASE: test_db
         ports:
           - 3307:3306
         options: >-
