@@ -242,7 +242,7 @@ pub enum Args {
 fn map_from_uri_query<'a>(query_opt: Option<&'a uriparse::Query<'a>>) -> HashMap<&'a str, &'a str> {
     let query_str = query_opt.map(uriparse::Query::as_str).unwrap_or_default();
 
-    HashMap::<_, _>::from_iter(querystring::querify(query_str).into_iter())
+    HashMap::<_, _>::from_iter(querystring::querify(query_str))
 }
 
 #[derive(StructOpt, Serialize)]

@@ -118,7 +118,7 @@ impl Store {
     /// Save a namespace given it's directory path
     pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Namespace) -> Result<()> {
         let abs_ns_path = self.ns_path(&ns_path);
-        std::fs::create_dir_all(&abs_ns_path)?;
+        std::fs::create_dir_all(abs_ns_path)?;
         for (name, content) in namespace {
             self.save_collection_path(&ns_path, name, content)?;
         }

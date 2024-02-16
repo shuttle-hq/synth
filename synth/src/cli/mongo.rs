@@ -237,12 +237,13 @@ fn date_time_to_bson(datetime: ChronoValue) -> Bson {
     Bson::DateTime(mongodb::bson::DateTime::from(match datetime {
         // those are not optimal as BSON doesn't have a way to specify dates or times, just both at once
         ChronoValue::NaiveDate(nd) => {
-            DateTime::<Utc>::from_utc_datetime(nd.and_hms_opt(0, 0, 0).unwrap(), Utc)
+            DateTime::<Utc>::from_naive_utc_and_offset(nd.and_hms_opt(0, 0, 0).unwrap(), Utc)
         }
-        ChronoValue::NaiveTime(nt) => {
-            DateTime::<Utc>::from_utc_datetime(chrono::naive::NaiveDate::MIN.and_time(nt), Utc)
-        }
-        ChronoValue::NaiveDateTime(ndt) => DateTime::<Utc>::from_utc_datetime(ndt, Utc),
+        ChronoValue::NaiveTime(nt) => DateTime::<Utc>::from_naive_utc_and_offset(
+            chrono::naive::NaiveDate::MIN.and_time(nt),
+            Utc,
+        ),
+        ChronoValue::NaiveDateTime(ndt) => DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc),
         ChronoValue::DateTime(dt) => dt.into(),
     }))
 }

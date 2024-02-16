@@ -49,6 +49,7 @@ impl Display for RegexContent {
 }
 
 impl PartialEq for RegexContent {
+    #[allow(clippy::unconditional_recursion)]
     fn eq(&self, other: &Self) -> bool {
         self.0.eq(&other.0)
     }

@@ -126,7 +126,7 @@ where
             )
         }
 
-        if let Some(primary_key) = primary_keys.get(0) {
+        if let Some(primary_key) = primary_keys.first() {
             let field = FieldRef::new(&format!(
                 "{}.content.{}",
                 table_name, primary_key.column_name

@@ -2,7 +2,7 @@ use crate::graph::prelude::{Error, Rng, Token, TryFilterMap, TryGeneratorExt, Va
 use crate::Graph;
 
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher, BuildHasher};
+use std::hash::BuildHasher;
 
 const MAX_RETRIES: usize = 64;
 

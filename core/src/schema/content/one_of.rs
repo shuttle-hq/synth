@@ -1,3 +1,5 @@
+#![allow(clippy::unconditional_recursion)]
+
 use std::hash::{Hash, Hasher};
 
 use super::prelude::*;

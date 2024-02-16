@@ -21,10 +21,7 @@ impl SamplerOutput {
     pub(crate) fn into_json(self) -> serde_json::Value {
         let as_synth = match self {
             Self::Namespace(key_values) => {
-                let object = key_values
-                    .into_iter()
-                    .map(|(key, value)| (key, value))
-                    .collect();
+                let object = key_values.into_iter().collect();
                 Value::Object(object)
             }
             Self::Collection(_, value) => value,
@@ -100,7 +97,7 @@ impl NamespaceSampleStrategy {
         let ordered: Vec<_> = model
             .iter_ordered()
             .map(|iter| iter.map(|s| s.to_string()).collect())
-            .unwrap_or_else(Vec::new);
+            .unwrap_or_default();
 
         let mut model = model.aggregate();
 
@@ -146,7 +143,7 @@ impl NamespaceSampleStrategy {
             ordered_out.push((name, value));
         }
 
-        ordered_out.extend(out.into_iter());
+        ordered_out.extend(out);
 
         Ok(ordered_out)
     }
