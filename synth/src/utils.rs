@@ -1,34 +1,3 @@
-use std::env;
-use std::path::PathBuf;
-use std::str::FromStr;
-
-use anyhow::Result;
-
-pub struct DataDirectoryPath(PathBuf);
-
-impl Default for DataDirectoryPath {
-    fn default() -> Self {
-        let path = env::current_dir()
-            .expect("Failed to get current directory. Either the current directory does not exist or the user has insufficient permissions.")
-            .join(".synth/");
-        Self(path)
-    }
-}
-
-impl ToString for DataDirectoryPath {
-    fn to_string(&self) -> String {
-        self.0.to_str().unwrap().to_string()
-    }
-}
-
-impl FromStr for DataDirectoryPath {
-    type Err = <PathBuf as FromStr>::Err;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        PathBuf::from_str(s).map(Self)
-    }
-}
-
 #[cfg(debug_assertions)]
 pub mod splash {
     use anyhow::Result;

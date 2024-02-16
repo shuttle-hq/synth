@@ -110,6 +110,7 @@ impl Store {
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(self.collection_path(ns_path, &collection))?;
         serde_json::to_writer_pretty(&mut file, &content)?;
         Ok(())
