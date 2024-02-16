@@ -132,7 +132,7 @@ where
     G: Generator<Yield = Y, Return = R>,
 {
     fn complete<RR: Rng>(&mut self, rng: &mut RR) {
-        #[allow(clippy::blocks_in_if_conditions)]
+        #[allow(clippy::blocks_in_conditions)]
         while {
             let state = self.inner.next(rng);
             let is_complete = state.is_complete();

@@ -39,7 +39,7 @@ impl<'a, G: Generator> StructuredState<'a, G> {
             keys.remove(child);
             ordered.push(child.clone());
         });
-        ordered.into_iter().chain(keys.into_iter())
+        ordered.into_iter().chain(keys)
     }
 
     pub(super) fn iter_ordered(&self) -> std::slice::Iter<String> {

@@ -121,7 +121,7 @@ impl Address {
     #[must_use]
     pub fn concat(&self, other: &Self) -> Self {
         let mut out = self.clone();
-        out.extend(other.clone().into_iter());
+        out.extend(other.clone());
         out
     }
 

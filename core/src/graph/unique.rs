@@ -21,9 +21,7 @@ impl UniqueNode {
     pub fn hash(inner: Graph, retries: Option<usize>) -> Self {
         let mut seen: HashMap<u64, usize> = HashMap::new();
         let filter = move |value: Value| {
-            let mut hasher = seen.hasher().build_hasher();
-            value.hash(&mut hasher);
-            let hash = hasher.finish();
+            let hash = seen.hasher().hash_one(&mut hasher);
 
             let count = seen
                 .entry(hash)

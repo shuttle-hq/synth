@@ -96,7 +96,7 @@ impl IntoIterator for FieldRef {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        std::iter::once(self.collection).chain(self.fields.into_iter())
+        std::iter::once(self.collection).chain(self.fields)
     }
 }
 
