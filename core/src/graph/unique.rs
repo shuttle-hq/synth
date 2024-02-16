@@ -2,7 +2,7 @@ use crate::graph::prelude::{Error, Rng, Token, TryFilterMap, TryGeneratorExt, Va
 use crate::Graph;
 
 use std::collections::HashMap;
-use std::hash::{BuildHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 
 const MAX_RETRIES: usize = 64;
 
@@ -21,7 +21,7 @@ impl UniqueNode {
     pub fn hash(inner: Graph, retries: Option<usize>) -> Self {
         let mut seen: HashMap<u64, usize> = HashMap::new();
         let filter = move |value: Value| {
-            let hash = seen.hasher().hash_one(&mut hasher);
+            let hash = seen.hasher().hash_one(&value);
 
             let count = seen
                 .entry(hash)
