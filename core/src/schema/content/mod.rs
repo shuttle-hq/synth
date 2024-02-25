@@ -19,7 +19,6 @@ use std::hash::{Hash, Hasher};
 
 use paste::paste;
 use serde::{de::IntoDeserializer, Deserialize, Serialize};
-use serde_json::Value;
 
 mod r#bool;
 pub use self::r#bool::BoolContent;

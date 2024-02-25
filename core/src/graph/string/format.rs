@@ -1,7 +1,7 @@
 use crate::graph::prelude::*;
 use anyhow::Result;
 
-use dynfmt::{self, Format as DynFormat};
+use dynfmt::Format as DynFormat;
 
 type Formatted = TryOnce<Unwrap<Yield<Result<String, Error>>>>;
 

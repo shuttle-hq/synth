@@ -10,7 +10,6 @@ pub(super) type JsonObject = Map<String, Value>;
 
 // std
 pub(super) use std::collections::HashMap;
-pub(super) use std::convert::TryFrom;
 pub(super) use std::fmt::{Display, Formatter};
 pub(super) use std::hash::Hash;
 pub(super) use std::iter::{FromIterator, Peekable};

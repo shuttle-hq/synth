@@ -1,7 +1,6 @@
 use synth_gen::prelude::{Generator, GeneratorState};
 
 use std::cell::RefCell;
-use std::iter::IntoIterator;
 use std::ops::Range;
 use std::rc::Rc;
 

@@ -1,6 +1,5 @@
 //! Custom tokenization for the serde data model.
 //!
-use std::convert::{TryFrom, TryInto};
 use std::marker::PhantomData;
 
 use rand::Rng;

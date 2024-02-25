@@ -1,5 +1,5 @@
 use super::prelude::*;
-use std::hash::{Hash, Hasher};
+use std::hash::Hasher;
 
 use super::Categorical;
 

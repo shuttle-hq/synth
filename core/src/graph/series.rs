@@ -1,6 +1,5 @@
 use crate::graph::prelude::content::series::SeriesVariant;
 use crate::graph::prelude::*;
-use crate::schema::content::series::SeriesContent;
 use anyhow::Result;
 use chrono::{Duration, NaiveDateTime};
 use std::f64::consts::PI;

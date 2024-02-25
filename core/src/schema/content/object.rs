@@ -1,8 +1,5 @@
 use super::prelude::*;
-use serde::{
-    de::{Deserialize, Deserializer},
-    ser::Serializer,
-};
+use serde::ser::Serializer;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 

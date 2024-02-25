@@ -2,9 +2,6 @@ use super::prelude::*;
 use crate::graph::series::{
     CyclicalSeries, IncrementingSeries, PoissonSeries, TimeSeries, ZipSeries,
 };
-use crate::{Compile, Compiler, Graph};
-use anyhow::Result;
-use std::convert::TryInto;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]

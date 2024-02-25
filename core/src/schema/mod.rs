@@ -1,6 +1,6 @@
 #![allow(clippy::assertions_on_result_states)]
 use std::collections::VecDeque;
-use std::iter::{Chain, IntoIterator, Once};
+use std::iter::{Chain, Once};
 use std::str::FromStr;
 
 use anyhow::Result;
