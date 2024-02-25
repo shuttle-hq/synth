@@ -278,7 +278,7 @@ mod tests {
     use super::*;
     use synth_core::schema::{
         number_content, BoolContent, FieldRef, NullContent, NumberContent, OneOfContent, RangeStep,
-        SameAsContent, VariantContent,
+        VariantContent,
     };
 
     use std::collections::BTreeMap;

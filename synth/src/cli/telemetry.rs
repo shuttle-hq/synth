@@ -5,7 +5,6 @@ use owo_colors::OwoColorize;
 
 use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
-use std::convert::TryFrom;
 use std::future::Future;
 use std::hash::{Hash, Hasher};
 use std::io::{self, BufRead, Read, Write};

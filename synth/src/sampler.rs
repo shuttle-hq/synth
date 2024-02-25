@@ -2,7 +2,6 @@ use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::SeedableRng;
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::{Graph, Namespace, Value};
 use synth_gen::prelude::*;

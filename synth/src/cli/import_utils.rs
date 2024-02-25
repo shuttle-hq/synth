@@ -7,7 +7,6 @@ use async_std::task;
 use log::debug;
 use serde_json::Value;
 use sqlx::{Executor, Row};
-use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{

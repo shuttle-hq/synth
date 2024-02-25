@@ -10,8 +10,6 @@ use rust_decimal::Decimal;
 use sqlx::mysql::{MySqlColumn, MySqlPoolOptions, MySqlRow};
 use sqlx::{Column, MySql, Pool, Row, TypeInfo};
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
-use std::prelude::rust_2015::Result::Ok;
 use synth_core::schema::number_content::{F64, I64, U64};
 use synth_core::schema::{
     ChronoValueType, DateTimeContent, NumberContent, RangeStep, RegexContent, StringContent,

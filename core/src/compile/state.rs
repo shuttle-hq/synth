@@ -1,7 +1,6 @@
 use anyhow::Result;
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::iter::FromIterator;
 
 use synth_gen::prelude::*;
 

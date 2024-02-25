@@ -1141,8 +1141,6 @@ where
 pub mod tests {
     use super::*;
 
-    use crate::Never;
-
     use rand::rngs::ThreadRng;
 
     #[inline]
