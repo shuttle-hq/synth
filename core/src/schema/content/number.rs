@@ -5,10 +5,7 @@ use std::hash::{Hash, Hasher};
 use super::Categorical;
 
 use crate::graph::number::{RandomF32, RandomI16, RandomI32, RandomU32};
-use serde::{
-    ser::Serializer,
-    Serialize,
-};
+use serde::{ser::Serializer, Serialize};
 
 #[derive(Clone, Copy)]
 pub enum NumberContentKind {

@@ -13,7 +13,6 @@ use synth_gen::prelude::*;
 
 use crate::compile::{Link, NamespaceCompiler};
 
-
 pub mod prelude;
 use prelude::*;
 
