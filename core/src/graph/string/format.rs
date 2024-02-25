@@ -1,7 +1,7 @@
 use crate::graph::prelude::*;
 use anyhow::Result;
 
-use dynfmt::{self, Format as DynFormat};
+use dynfmt::Format as DynFormat;
 
 type Formatted = TryOnce<Unwrap<Yield<Result<String, Error>>>>;
 
@@ -88,8 +88,7 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 pub mod tests {
     use super::*;
     use crate::graph::{
-        ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64,
-        RandomString, StringNode,
+        DateTimeNode, NumberNode, RandFaker, RandomDateTime, RandomI64, RandomString, StringNode,
     };
     use chrono::naive::NaiveDate;
 

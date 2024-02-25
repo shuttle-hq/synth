@@ -10,11 +10,8 @@ use sqlx::{encode::IsNull, Encode, Type};
 use sqlx::{MySql, Postgres};
 
 use synth_gen::prelude::*;
-use synth_gen::value::{Token, Tokenizer};
 
 use crate::compile::{Link, NamespaceCompiler};
-
-use crate::schema::{ChronoValueAndFormat, Namespace};
 
 pub mod prelude;
 use prelude::*;
@@ -889,7 +886,6 @@ pub mod tests {
     use rand::{thread_rng, SeedableRng};
 
     use super::*;
-    use crate::schema::ChronoValueFormatter;
 
     use crate::schema::tests::USER_NAMESPACE;
 

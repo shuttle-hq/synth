@@ -1,6 +1,5 @@
 use crate::graph::prelude::content::series::SeriesVariant;
 use crate::graph::prelude::*;
-use crate::schema::content::series::SeriesContent;
 use anyhow::Result;
 use chrono::{Duration, NaiveDateTime};
 use std::f64::consts::PI;
@@ -304,7 +303,6 @@ impl Generator for AutoCorrelatedSeries {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use chrono::{Duration, NaiveDateTime};
 
     fn ndt(str: &str) -> NaiveDateTime {
         let fmt = "%Y-%m-%d %H:%M:%S";

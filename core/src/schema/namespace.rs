@@ -6,7 +6,7 @@ use crate::graph::prelude::OptionalMergeStrategy;
 use crate::graph::{Graph, KeyValueOrNothing};
 
 use std::collections::BTreeMap;
-use std::{default::Default, iter::FromIterator};
+use std::default::Default;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};

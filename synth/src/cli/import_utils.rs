@@ -7,7 +7,6 @@ use async_std::task;
 use log::debug;
 use serde_json::Value;
 use sqlx::{Executor, Row};
-use std::convert::TryFrom;
 use synth_core::graph::json::synth_val_to_json;
 use synth_core::schema::content::number_content::U64;
 use synth_core::schema::{
@@ -126,7 +125,7 @@ where
             )
         }
 
-        if let Some(primary_key) = primary_keys.get(0) {
+        if let Some(primary_key) = primary_keys.first() {
             let field = FieldRef::new(&format!(
                 "{}.content.{}",
                 table_name, primary_key.column_name

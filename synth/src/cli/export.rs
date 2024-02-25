@@ -8,7 +8,6 @@ use crate::cli::postgres::PostgresExportStrategy;
 use anyhow::{Context, Result};
 
 use std::cell::RefCell;
-use std::convert::TryFrom;
 use std::io::Write;
 use std::path::PathBuf;
 

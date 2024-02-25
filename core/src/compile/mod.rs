@@ -21,7 +21,6 @@
 //! into [`Graph`](crate::graph::Graph).
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::iter::IntoIterator;
 
 use anyhow::{Context, Result};
 

@@ -110,6 +110,7 @@ impl Store {
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(self.collection_path(ns_path, &collection))?;
         serde_json::to_writer_pretty(&mut file, &content)?;
         Ok(())
@@ -118,7 +119,7 @@ impl Store {
     /// Save a namespace given it's directory path
     pub fn save_ns_path(&self, ns_path: PathBuf, namespace: Namespace) -> Result<()> {
         let abs_ns_path = self.ns_path(&ns_path);
-        std::fs::create_dir_all(&abs_ns_path)?;
+        std::fs::create_dir_all(abs_ns_path)?;
         for (name, content) in namespace {
             self.save_collection_path(&ns_path, name, content)?;
         }

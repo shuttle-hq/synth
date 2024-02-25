@@ -1,7 +1,4 @@
-use std::{
-    iter::{Extend, FromIterator},
-    marker::PhantomData,
-};
+use std::marker::PhantomData;
 
 use crate::{GeneratorState, Never};
 
@@ -1140,8 +1137,6 @@ where
 #[cfg(test)]
 pub mod tests {
     use super::*;
-
-    use crate::Never;
 
     use rand::rngs::ThreadRng;
 

@@ -146,7 +146,7 @@ pub fn import_csv_collection(
     let mut content = Content::from_value_wrapped_in_array(&head);
 
     let mut values = vec![head];
-    values.extend(tail.into_iter());
+    values.extend(tail);
 
     OptionalMergeStrategy.try_merge(&mut content, &serde_json::Value::Array(values))?;
 

@@ -334,7 +334,6 @@ fn infer_date_time_type(
 pub mod tests {
     use super::*;
     use crate::compile::NamespaceCompiler;
-    use chrono::naive::NaiveDate;
 
     macro_rules! date_time_bounds_test_ok {
         ($begin:expr, $end:expr) => {

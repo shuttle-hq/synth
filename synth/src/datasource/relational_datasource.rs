@@ -6,7 +6,6 @@ use futures::future::join_all;
 use sqlx::{
     query::Query, Arguments, Connection, Database, Encode, Executor, IntoArguments, Pool, Type,
 };
-use std::convert::TryFrom;
 use synth_core::{Content, Value};
 use synth_gen::value::Number;
 

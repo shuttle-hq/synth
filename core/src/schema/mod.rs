@@ -1,6 +1,6 @@
 #![allow(clippy::assertions_on_result_states)]
 use std::collections::VecDeque;
-use std::iter::{Chain, IntoIterator, Once};
+use std::iter::{Chain, Once};
 use std::str::FromStr;
 
 use anyhow::Result;
@@ -96,7 +96,7 @@ impl IntoIterator for FieldRef {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        std::iter::once(self.collection).chain(self.fields.into_iter())
+        std::iter::once(self.collection).chain(self.fields)
     }
 }
 

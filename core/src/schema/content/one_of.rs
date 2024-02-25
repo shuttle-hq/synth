@@ -1,4 +1,6 @@
-use std::hash::{Hash, Hasher};
+#![allow(clippy::unconditional_recursion)]
+
+use std::hash::Hasher;
 
 use super::prelude::*;
 

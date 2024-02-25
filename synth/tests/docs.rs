@@ -26,12 +26,12 @@ async fn PATH_IDENT() -> Result<()> {
     let tmp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tmp");
     let tmp = tmp.as_path();
 
-    fs::create_dir_all(&tmp)?;
+    fs::create_dir_all(tmp)?;
     env::set_current_dir(tmp)?;
     let path = Path::new("../").join(path);
 
     let ns = get_ns_dir(tmp, &path);
-    fs::create_dir_all(&ns.join("scenarios"))?;
+    fs::create_dir_all(ns.join("scenarios"))?;
 
     let mut expects = HashSet::new();
     let mut scenarios = HashSet::new();

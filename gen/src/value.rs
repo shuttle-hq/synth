@@ -1,6 +1,5 @@
 //! Custom tokenization for the serde data model.
 //!
-use std::convert::{TryFrom, TryInto};
 use std::marker::PhantomData;
 
 use rand::Rng;
@@ -618,7 +617,7 @@ data_model_variant! {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::{ser::OwnedSerializable, GeneratorExt};
+    use crate::ser::OwnedSerializable;
 
     use crate::generator::Random;
 

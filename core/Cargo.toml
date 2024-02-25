@@ -32,8 +32,8 @@ synth-gen = { path = "../gen", features = [ "shared" ] }
 uuid = { version = "0.8.2", features = ["v4"] }
 bimap = { version = "0.6.0", features = [ "std" ] }
 humantime-serde = "1.0.1"
-bloomfilter = "1.0.5"
+bloomfilter = "1.0"
 dynfmt = { version = "0.1.5", features = [ "curly" ] }
-sqlx = { version = "0.6", features = ["postgres", "mysql", "runtime-async-std-rustls", "decimal", "chrono"] }
+sqlx = { version = "0.7", features = ["postgres", "mysql", "rust_decimal", "runtime-async-std-rustls","chrono"] }
 uriparse = "0.6.3"
 paste = "1.0"
