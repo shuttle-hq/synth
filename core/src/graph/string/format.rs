@@ -88,7 +88,7 @@ impl dynfmt::FormatArgs for FormatArgs<String> {
 pub mod tests {
     use super::*;
     use crate::graph::{
-        ChronoValue, DateTimeNode, Graph, NumberNode, RandFaker, RandomDateTime, RandomI64,
+        DateTimeNode, NumberNode, RandFaker, RandomDateTime, RandomI64,
         RandomString, StringNode,
     };
     use chrono::naive::NaiveDate;

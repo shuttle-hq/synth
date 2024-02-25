@@ -303,7 +303,6 @@ impl Generator for AutoCorrelatedSeries {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use chrono::{Duration, NaiveDateTime};
 
     fn ndt(str: &str) -> NaiveDateTime {
         let fmt = "%Y-%m-%d %H:%M:%S";

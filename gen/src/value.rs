@@ -617,7 +617,7 @@ data_model_variant! {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::{ser::OwnedSerializable, GeneratorExt};
+    use crate::ser::OwnedSerializable;
 
     use crate::generator::Random;
 

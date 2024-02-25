@@ -49,7 +49,7 @@ pub mod tests {
     use super::*;
     use crate::graph::{
         prelude::{Generator, GeneratorExt},
-        Graph, NumberNode, RandFaker, RandomString, RandomU64, RangeStep, StringNode,
+        NumberNode, RandFaker, RandomString, RandomU64, RangeStep, StringNode,
     };
 
     const NUM_GENERATED: usize = 1024;

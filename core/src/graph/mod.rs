@@ -886,7 +886,6 @@ pub mod tests {
     use rand::{thread_rng, SeedableRng};
 
     use super::*;
-    use crate::schema::ChronoValueFormatter;
 
     use crate::schema::tests::USER_NAMESPACE;
 
