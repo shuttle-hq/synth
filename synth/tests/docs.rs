@@ -230,6 +230,15 @@ fn write_code_block(
             "length": 1,
             "content": "#
         )?;
+
+        // Make single line items a field in an object
+        if block.len() == 3 {
+            write!(
+                file,
+                r#"{{
+            "type": "object","#
+            )?;
+        }
     }
 
     for line in &block[1..block.len() - 1] {
@@ -252,6 +261,9 @@ fn write_code_block(
     }
 
     if is_synth && !is_array_block {
+        if block.len() == 3 {
+            writeln!(file, "}}")?;
+        }
         writeln!(file, "}}")?;
     }
 
