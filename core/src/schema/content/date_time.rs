@@ -109,19 +109,14 @@ impl ChronoValue {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, Clone, Copy, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum ChronoValueType {
     NaiveDate,
     NaiveTime,
     NaiveDateTime,
+    #[default]
     DateTime,
-}
-
-impl Default for ChronoValueType {
-    fn default() -> Self {
-        Self::DateTime
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Hash)]

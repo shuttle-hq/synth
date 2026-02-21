@@ -41,7 +41,7 @@ impl<'a, G: Generator> StructuredState<'a, G> {
         ordered.into_iter().chain(keys)
     }
 
-    pub(super) fn iter_ordered(&self) -> std::slice::Iter<String> {
+    pub(super) fn iter_ordered(&self) -> std::slice::Iter<'_, String> {
         self.ordering.iter()
     }
 
@@ -215,17 +215,13 @@ pub(super) type GenArtifact<G: Generator> = Artifact<G, G::Yield, G::Return>;
 /// Holds the state of the build output of a node in the compiled DAG.
 ///
 /// Typically follows `Empty -> Waiting -> Some(_) -> Emptied`.
+#[derive(Default)]
 pub(super) enum OutputState<G: Generator> {
     Emptied,
+    #[default]
     Empty,
     Waiting,
     Some(GenArtifact<G>),
-}
-
-impl<G: Generator> Default for OutputState<G> {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 impl<G: Generator> OutputState<G> {
@@ -432,7 +428,7 @@ where
         &mut self,
         inner: SliceRef<G::Yield, G::Return>,
     ) -> Option<SliceRef<G::Yield, G::Return>> {
-        std::mem::replace(&mut self.src, Some(inner))
+        self.src.replace(inner)
     }
 
     pub(super) fn get_source(&self) -> Option<SliceRef<G::Yield, G::Return>> {

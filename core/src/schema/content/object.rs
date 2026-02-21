@@ -32,7 +32,7 @@ fn denormalize_keys<'de, D: Deserializer<'de>>(
         .collect())
 }
 
-fn add_reserved_underscores(key: &str) -> Cow<str> {
+fn add_reserved_underscores(key: &str) -> Cow<'_, str> {
     for reserved_field in RESERVED_FIELDS {
         if key.starts_with(reserved_field) && key[reserved_field.len()..].bytes().all(|b| b == b'_')
         {

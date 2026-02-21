@@ -21,7 +21,6 @@ use synth_gen::prelude::*;
 /// Known issues:
 /// - MySql aliases bool and boolean data types as tinyint. We currently define all tinyint as i8.
 ///   Ideally, the user can define a way to force certain fields as bool rather than i8.
-
 pub struct MySqlDataSource {
     pool: Pool<MySql>,
 }

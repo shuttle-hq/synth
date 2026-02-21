@@ -268,6 +268,6 @@ fn number_to_bson(number: Number) -> Bson {
 fn parse_db_name(uri: &str) -> Result<&str> {
     // this may require a parser instead of `split`
     uri.split('/')
-        .last()
+        .next_back()
         .ok_or_else(|| anyhow!("Cannot export data. No database name specified in the uri"))
 }

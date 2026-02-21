@@ -377,11 +377,11 @@ enum CommandResult {
     Failed,
 }
 
-impl ToString for CommandResult {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for CommandResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CommandResult::Success => "success".to_string(),
-            CommandResult::Failed => "failed".to_string(),
+            CommandResult::Success => write!(f, "success"),
+            CommandResult::Failed => write!(f, "failed"),
         }
     }
 }

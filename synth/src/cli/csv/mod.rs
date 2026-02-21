@@ -362,8 +362,8 @@ fn synth_val_to_csv_record(val: Value, content: &Content, namespace: &Namespace)
                     let scalar_count = elements.len()
                         * count_scalars_in_content(&array_content.content, namespace);
 
-                    let null_padding_iter = std::iter::repeat(Value::Null(()))
-                        .take(expected_scalar_count - scalar_count);
+                    let null_padding_iter =
+                        std::iter::repeat_n(Value::Null(()), expected_scalar_count - scalar_count);
 
                     let iter = elements.into_iter().chain(null_padding_iter).map(|elem| {
                         synth_val_to_csv_record(elem, &array_content.content, namespace)

@@ -1268,6 +1268,7 @@ pub mod tests {
     }
 
     #[test]
+    #[allow(non_local_definitions)]
     fn peek() {
         impl<T> Generator for Vec<T> {
             type Yield = T;

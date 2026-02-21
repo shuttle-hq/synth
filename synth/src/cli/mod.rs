@@ -46,7 +46,7 @@ pub struct Cli {
     telemetry_context: Rc<RefCell<TelemetryContext>>,
 }
 
-impl<'w> Cli {
+impl Cli {
     pub fn new() -> Result<Self> {
         #[cfg(debug_assertions)]
         {
@@ -78,7 +78,7 @@ impl<'w> Cli {
         }
     }
 
-    pub async fn run<W: Write + 'w>(&self, args: Args, writer: W) -> Result<()> {
+    pub async fn run<W: Write>(&self, args: Args, writer: W) -> Result<()> {
         match args {
             Args::Generate(cmd) => self.generate(cmd, writer),
             Args::Import(cmd) => self.import(cmd),
@@ -164,7 +164,7 @@ impl<'w> Cli {
         }
     }
 
-    fn generate<W: Write + 'w>(&self, cmd: GenerateCommand, writer: W) -> Result<()> {
+    fn generate<W: Write>(&self, cmd: GenerateCommand, writer: W) -> Result<()> {
         let mut namespace = self.store.get_ns(cmd.namespace.clone()).context(format!(
             "Unable to open the namespace \"{}\"",
             cmd.namespace

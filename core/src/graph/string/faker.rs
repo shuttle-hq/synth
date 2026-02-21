@@ -13,19 +13,14 @@ use rand::RngCore;
 
 // this needs non-camel-case types because the fake crate has the same
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Deserialize, Debug, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Default, Deserialize, Debug, Serialize, PartialEq, Eq, Hash)]
 /// a locale to look up names, addresses, etc.
 pub enum Locale {
+    #[default]
     EN,
     FR_FR,
     ZH_TW,
     ZH_CN,
-}
-
-impl Default for Locale {
-    fn default() -> Self {
-        Self::EN
-    }
 }
 
 /// The arguments for a faker

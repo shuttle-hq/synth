@@ -174,8 +174,8 @@ impl Generator for PoissonSeries {
     type Return = Never;
 
     fn next<R: Rng>(&mut self, rng: &mut R) -> GeneratorState<Self::Yield, Self::Return> {
-        let delta = self.rate.num_milliseconds() as f64
-            * (-1.0 * (1.0 - rng.gen_range(0.0f64..1.0f64)).ln());
+        let delta =
+            self.rate.num_milliseconds() as f64 * -(1.0 - rng.gen_range(0.0f64..1.0f64)).ln();
         self.current += chrono::Duration::milliseconds(delta as i64);
         GeneratorState::Yielded(self.current)
     }
@@ -219,7 +219,7 @@ impl Generator for CyclicalSeries {
         let min_rate_ms = self.min_rate.num_milliseconds();
         let phase = 2.0 * PI * ((current_ms - start_ms) % period_ms) as f64 / period_ms as f64;
         let delta = 1.0 + (min_rate_ms as f64 + ((max_rate_ms - min_rate_ms) as f64 * phase.sin()));
-        let next_delta = delta * (-1.0 * (1.0 - rng.gen_range(0.0f64..1.0f64)).ln());
+        let next_delta = delta * -(1.0 - rng.gen_range(0.0f64..1.0f64)).ln();
         self.current += chrono::Duration::milliseconds(next_delta as i64);
         GeneratorState::Yielded(self.current)
     }
@@ -259,6 +259,7 @@ impl Generator for ZipSeries {
 }
 
 /// v_t = C + \sum_{i=1}^{N} \alpha_i v_{t - i} + \sum_{j=0}^{M} \beta_j \epsilon_{t-j} , \beta_0 = 1
+#[allow(dead_code)]
 pub struct AutoCorrelatedSeries {
     alpha: Vec<Duration>,
     beta: Vec<Duration>,

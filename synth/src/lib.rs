@@ -1,4 +1,4 @@
-#![feature(box_patterns, concat_idents, error_iter)]
+#![feature(box_patterns, error_iter)]
 #![allow(type_alias_bounds)]
 
 #[macro_use]
